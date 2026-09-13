@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { motion, useMotionValue, useSpring } from 'framer-motion';
+import { AnimatePresence, motion, useMotionValue, useSpring } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 
@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/button';
 interface IconProps {
   id: number;
   icon: React.FC<React.SVGProps<SVGSVGElement>>;
+  /** Üzerine gelindiğinde balonda gösterilen ad. */
+  ad: string;
   className: string; // Used for custom positioning of the icon.
 }
 
@@ -18,6 +20,10 @@ export interface FloatingIconsHeroProps {
   ctaHref: string;
   icons: IconProps[];
 }
+
+// Yaklaşan imleçten kaçma davranışının ayarları.
+const ETKI_YARICAPI = 170; // bu mesafeden itibaren itilmeye başlar
+const ITME_GUCU = 75; // en yakın noktadaki kaçış mesafesi (piksel)
 
 // A single icon component with its own motion logic
 const Icon = ({
@@ -32,6 +38,9 @@ const Icon = ({
   index: number;
 }) => {
   const ref = React.useRef<HTMLDivElement>(null);
+  const [ustunde, setUstunde] = React.useState(false);
+  // Olay dinleyicisi bir kez bağlandığı için durumu ref üzerinden okuyoruz.
+  const ustundeRef = React.useRef(false);
 
   // Motion values for the icon's position, with spring physics for smooth movement
   const x = useMotionValue(0);
@@ -41,28 +50,34 @@ const Icon = ({
 
   React.useEffect(() => {
     const handleMouseMove = () => {
-      if (ref.current) {
-        const rect = ref.current.getBoundingClientRect();
-        const distance = Math.sqrt(
-          Math.pow(mouseX.current - (rect.left + rect.width / 2), 2) +
-            Math.pow(mouseY.current - (rect.top + rect.height / 2), 2)
-        );
+      if (!ref.current) return;
 
-        // If the cursor is close enough, repel the icon
-        if (distance < 150) {
-          const angle = Math.atan2(
-            mouseY.current - (rect.top + rect.height / 2),
-            mouseX.current - (rect.left + rect.width / 2)
-          );
-          // The closer the cursor, the stronger the repulsion
-          const force = (1 - distance / 150) * 50;
-          x.set(-Math.cos(angle) * force);
-          y.set(-Math.sin(angle) * force);
-        } else {
-          // Return to original position when cursor is away
-          x.set(0);
-          y.set(0);
-        }
+      // İmleç simgenin üzerindeyken kaçmıyor: aksi hâlde adını okumak için
+      // üzerine gelmek imkânsız olurdu.
+      if (ustundeRef.current) {
+        x.set(0);
+        y.set(0);
+        return;
+      }
+
+      const rect = ref.current.getBoundingClientRect();
+      const merkezX = rect.left + rect.width / 2;
+      const merkezY = rect.top + rect.height / 2;
+      const distance = Math.sqrt(
+        Math.pow(mouseX.current - merkezX, 2) + Math.pow(mouseY.current - merkezY, 2)
+      );
+
+      // If the cursor is close enough, repel the icon
+      if (distance < ETKI_YARICAPI) {
+        const angle = Math.atan2(mouseY.current - merkezY, mouseX.current - merkezX);
+        // The closer the cursor, the stronger the repulsion
+        const force = (1 - distance / ETKI_YARICAPI) * ITME_GUCU;
+        x.set(-Math.cos(angle) * force);
+        y.set(-Math.sin(angle) * force);
+      } else {
+        // Return to original position when cursor is away
+        x.set(0);
+        y.set(0);
       }
     };
 
@@ -85,14 +100,43 @@ const Icon = ({
         duration: 0.6,
         ease: [0.22, 1, 0.36, 1],
       }}
-      className={cn('absolute', iconData.className)}
+      onMouseEnter={() => {
+        ustundeRef.current = true;
+        setUstunde(true);
+      }}
+      onMouseLeave={() => {
+        ustundeRef.current = false;
+        setUstunde(false);
+      }}
+      className={cn('absolute', iconData.className, ustunde && 'z-20')}
     >
+      {/* Ad balonu: yalnızca imleç simgenin üzerindeyken beliriyor. */}
+      <AnimatePresence>
+        {ustunde && (
+          <motion.span
+            role="tooltip"
+            initial={{ opacity: 0, y: 6, scale: 0.92 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 6, scale: 0.92 }}
+            transition={{ duration: 0.16, ease: [0.22, 1, 0.36, 1] }}
+            className="pointer-events-none absolute -top-10 left-1/2 z-10 -translate-x-1/2 rounded-lg bg-slate-900 px-2.5 py-1.5 text-xs font-medium whitespace-nowrap text-white shadow-lg dark:bg-white dark:text-slate-900"
+          >
+            {iconData.ad}
+            {/* Balonun altındaki küçük ok */}
+            <span
+              aria-hidden="true"
+              className="absolute top-full left-1/2 size-2 -translate-x-1/2 -translate-y-1/2 rotate-45 rounded-[2px] bg-slate-900 dark:bg-white"
+            />
+          </motion.span>
+        )}
+      </AnimatePresence>
+
       {/* Inner wrapper for the continuous floating animation */}
       <motion.div
         /* Kart zemini bilerek her iki temada da beyaz: marka logoları beyaz zemin
            için tasarlanıyor ve koyu zeminde Astro, Markdown gibi koyu renkli
            olanlar kayboluyordu. */
-        className="flex items-center justify-center w-14 h-14 md:w-16 md:h-16 p-2.5 rounded-2xl shadow-lg bg-white/90 backdrop-blur-md border border-black/5 dark:border-white/10"
+        className="flex items-center justify-center w-14 h-14 md:w-16 md:h-16 p-2.5 rounded-2xl shadow-lg bg-white/90 backdrop-blur-md border border-black/5 transition-shadow hover:shadow-xl dark:border-white/10"
         animate={{
           y: [0, -8, 0, 8, 0],
           x: [0, 6, 0, -6, 0],
@@ -106,6 +150,7 @@ const Icon = ({
         }}
       >
         <iconData.icon className="w-7 h-7 md:w-8 md:h-8 text-foreground" />
+        <span className="sr-only">{iconData.ad}</span>
       </motion.div>
     </motion.div>
   );
