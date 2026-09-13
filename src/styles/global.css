@@ -1,6 +1,10 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 
+/* Tailwind v4'te `dark:` varsayılan olarak işletim sisteminin tercihine bakar.
+   Kullanıcı temayı elle seçebilsin diye <html class="dark"> sınıfına bağlıyoruz. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 /* Site genelinde kullanılan tasarım değişkenleri.
    Tailwind v4'te tema doğrudan CSS'ten tanımlanır; tailwind.config.js yok. */
 @theme {

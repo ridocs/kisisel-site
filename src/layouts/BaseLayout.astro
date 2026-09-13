@@ -1,5 +1,5 @@
 ---
-import { Icon } from 'astro-icon/components';
+import Navbar from '../components/Navbar.astro';
 import '../styles/global.css';
 
 interface Props {
@@ -26,23 +26,31 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
 		<meta property="og:description" content={description} />
 		<meta property="og:type" content="website" />
 		<meta property="og:url" content={canonical} />
+
+		{/* Sayfa boyanmadan önce temayı uygular; böylece koyu temada beyaz ekran parlaması olmaz. */}
+		<script is:inline>
+			try {
+				const kayitliTema = localStorage.getItem('tema');
+				const koyu = kayitliTema
+					? kayitliTema === 'koyu'
+					: window.matchMedia('(prefers-color-scheme: dark)').matches;
+				if (koyu) document.documentElement.classList.add('dark');
+			} catch {
+				// Gizli sekmede localStorage engellenebilir; bu durumda varsayılan tema kullanılır.
+			}
+		</script>
 	</head>
 	<body class="min-h-screen bg-white text-slate-800 antialiased dark:bg-slate-950 dark:text-slate-200">
-		<header class="border-b border-slate-200 dark:border-slate-800">
-			<nav class="mx-auto flex max-w-3xl items-center justify-between px-4 py-4">
-				<a href="/" class="font-semibold tracking-tight hover:text-marka-600 dark:hover:text-marka-400">
-					Mustafa
-				</a>
-				<div class="flex items-center gap-5 text-sm">
-					<a href="/blog" class="hover:text-marka-600 dark:hover:text-marka-400">Blog</a>
-					<a href="/rss.xml" aria-label="RSS akışı" class="hover:text-marka-600 dark:hover:text-marka-400">
-						<Icon name="lucide:rss" class="size-4" />
-					</a>
-				</div>
-			</nav>
-		</header>
+		<a
+			href="#icerik"
+			class="sr-only focus:not-sr-only focus:absolute focus:top-3 focus:left-3 focus:z-[60] focus:rounded-lg focus:bg-marka-600 focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-white"
+		>
+			İçeriğe geç
+		</a>
 
-		<main class="mx-auto max-w-3xl px-4 py-12">
+		<Navbar />
+
+		<main id="icerik" class="mx-auto max-w-3xl px-4 py-12">
 			<slot />
 		</main>
 

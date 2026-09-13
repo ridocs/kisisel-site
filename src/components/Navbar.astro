@@ -1,0 +1,171 @@
+---
+import { Icon } from 'astro-icon/components';
+
+// Gezinme bağlantıları. Yeni sayfa eklediğinde buraya bir satır eklemen yeterli;
+// hem masaüstü hem mobil menü bu listeden üretilir.
+const baglantilar = [
+	{ ad: 'Ana Sayfa', yol: '/' },
+	{ ad: 'Blog', yol: '/blog' },
+];
+
+const suAnkiYol = Astro.url.pathname;
+
+// "/" yalnızca tam eşleşmede aktiftir; diğerleri alt sayfalarında da aktif kalır
+// (örn. /blog/merhaba-dunya/ açıkken "Blog" vurgulu görünür).
+function aktifMi(yol: string) {
+	if (yol === '/') return suAnkiYol === '/';
+	return suAnkiYol === yol || suAnkiYol.startsWith(`${yol}/`);
+}
+---
+
+<header
+	class="sticky top-0 z-50 border-b border-slate-200/70 bg-white/80 backdrop-blur-md dark:border-slate-800/70 dark:bg-slate-950/80"
+>
+	<nav aria-label="Ana gezinme" class="mx-auto flex h-16 max-w-3xl items-center justify-between gap-3 px-4">
+		<!-- Marka -->
+		<a
+			href="/"
+			class="flex items-center gap-2.5 rounded-lg font-semibold tracking-tight text-slate-900 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-marka-500 dark:text-white"
+		>
+			<span
+				class="grid size-8 place-items-center rounded-lg bg-marka-600 text-sm font-bold text-white shadow-sm"
+				aria-hidden="true">M</span
+			>
+			<span>Mustafa</span>
+		</a>
+
+		<!-- Masaüstü bağlantıları -->
+		<ul class="hidden items-center gap-1 md:flex">
+			{
+				baglantilar.map((baglanti) => {
+					const aktif = aktifMi(baglanti.yol);
+					return (
+						<li>
+							<a
+								href={baglanti.yol}
+								aria-current={aktif ? 'page' : undefined}
+								class:list={[
+									'relative rounded-lg px-3 py-2 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marka-500',
+									aktif
+										? 'text-marka-600 dark:text-marka-400'
+										: 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white',
+								]}
+							>
+								{baglanti.ad}
+								{aktif && (
+									<span
+										class="absolute inset-x-3 -bottom-[13px] h-0.5 rounded-full bg-marka-500"
+										aria-hidden="true"
+									/>
+								)}
+							</a>
+						</li>
+					);
+				})
+			}
+		</ul>
+
+		<!-- Eylemler -->
+		<div class="flex items-center gap-0.5">
+			<a
+				href="/rss.xml"
+				aria-label="RSS akışı"
+				class="grid size-9 place-items-center rounded-lg text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marka-500 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white"
+			>
+				<Icon name="lucide:rss" class="size-[18px]" />
+			</a>
+
+			<button
+				id="tema-dugmesi"
+				type="button"
+				aria-label="Koyu temaya geç"
+				class="grid size-9 place-items-center rounded-lg text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marka-500 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white"
+			>
+				<Icon name="lucide:moon" class="size-[18px] dark:hidden" />
+				<Icon name="lucide:sun" class="hidden size-[18px] dark:block" />
+			</button>
+
+			<button
+				id="menu-dugmesi"
+				type="button"
+				class="group grid size-9 place-items-center rounded-lg text-slate-600 transition-colors hover:bg-slate-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marka-500 md:hidden dark:text-slate-300 dark:hover:bg-slate-800"
+				aria-expanded="false"
+				aria-controls="mobil-menu"
+				aria-label="Menüyü aç"
+			>
+				<Icon name="lucide:menu" class="size-5 group-aria-expanded:hidden" />
+				<Icon name="lucide:x" class="hidden size-5 group-aria-expanded:block" />
+			</button>
+		</div>
+	</nav>
+
+	<!-- Mobil menü -->
+	<div id="mobil-menu" class="hidden border-t border-slate-200/70 md:hidden dark:border-slate-800/70">
+		<ul class="mx-auto max-w-3xl space-y-1 px-4 py-3">
+			{
+				baglantilar.map((baglanti) => {
+					const aktif = aktifMi(baglanti.yol);
+					return (
+						<li>
+							<a
+								href={baglanti.yol}
+								aria-current={aktif ? 'page' : undefined}
+								class:list={[
+									'block rounded-lg px-3 py-2.5 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marka-500',
+									aktif
+										? 'bg-marka-50 text-marka-600 dark:bg-slate-800 dark:text-marka-400'
+										: 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white',
+								]}
+							>
+								{baglanti.ad}
+							</a>
+						</li>
+					);
+				})
+			}
+		</ul>
+	</div>
+</header>
+
+<script>
+	const menuDugmesi = document.getElementById('menu-dugmesi');
+	const mobilMenu = document.getElementById('mobil-menu');
+	const temaDugmesi = document.getElementById('tema-dugmesi');
+
+	function menuyuAyarla(acik: boolean) {
+		if (!menuDugmesi || !mobilMenu) return;
+		menuDugmesi.setAttribute('aria-expanded', String(acik));
+		menuDugmesi.setAttribute('aria-label', acik ? 'Menüyü kapat' : 'Menüyü aç');
+		mobilMenu.classList.toggle('hidden', !acik);
+	}
+
+	menuDugmesi?.addEventListener('click', () => {
+		menuyuAyarla(menuDugmesi.getAttribute('aria-expanded') !== 'true');
+	});
+
+	// Esc menüyü kapatır ve odağı butona geri verir.
+	document.addEventListener('keydown', (olay) => {
+		if (olay.key === 'Escape' && menuDugmesi?.getAttribute('aria-expanded') === 'true') {
+			menuyuAyarla(false);
+			menuDugmesi.focus();
+		}
+	});
+
+	// Masaüstü genişliğine geçildiğinde açık kalan mobil menüyü sıfırla.
+	window.matchMedia('(min-width: 48rem)').addEventListener('change', (olay) => {
+		if (olay.matches) menuyuAyarla(false);
+	});
+
+	function temaEtiketiniGuncelle() {
+		const koyu = document.documentElement.classList.contains('dark');
+		temaDugmesi?.setAttribute('aria-label', koyu ? 'Açık temaya geç' : 'Koyu temaya geç');
+	}
+
+	temaDugmesi?.addEventListener('click', () => {
+		const koyu = document.documentElement.classList.toggle('dark');
+		localStorage.setItem('tema', koyu ? 'koyu' : 'acik');
+		temaEtiketiniGuncelle();
+	});
+
+	temaEtiketiniGuncelle();
+</script>
