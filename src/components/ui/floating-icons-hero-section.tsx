@@ -9,6 +9,11 @@ interface IconProps {
   icon: React.FC<React.SVGProps<SVGSVGElement>>;
   /** Üzerine gelindiğinde balonda gösterilen ad. */
   ad: string;
+  /**
+   * Tek renk/koyu logolar koyu zeminde kaybolduğu için koyu temada ters
+   * çevrilir. Renkli logolarda kullanılmamalı; renkleri bozar.
+   */
+  koyuTemadaTersle?: boolean;
   className: string; // Used for custom positioning of the icon.
 }
 
@@ -138,10 +143,10 @@ const Icon = ({
 
       {/* Inner wrapper for the continuous floating animation */}
       <motion.div
-        /* Kart zemini bilerek her iki temada da beyaz: marka logoları beyaz zemin
-           için tasarlanıyor ve koyu zeminde Astro, Markdown gibi koyu renkli
-           olanlar kayboluyordu. */
-        className="flex items-center justify-center w-14 h-14 md:w-16 md:h-16 p-2.5 rounded-2xl shadow-lg bg-white/90 backdrop-blur-md border border-black/5 transition-shadow hover:shadow-xl dark:border-white/10"
+        /* Kart, bulunduğu temaya uyuyor. Koyu temada zemin koyu; koyu zeminde
+           kaybolan tek renk/koyu logolar ayrıca `dark:invert` ile ters çevriliyor
+           (bkz. HeroBolumu içindeki `koyuTemadaTersle`). */
+        className="flex items-center justify-center w-14 h-14 md:w-16 md:h-16 p-2.5 rounded-2xl shadow-lg bg-white/90 backdrop-blur-md border border-black/5 transition-shadow hover:shadow-xl dark:bg-slate-800/70 dark:border-white/10"
         animate={{
           y: [0, -8, 0, 8, 0],
           x: [0, 6, 0, -6, 0],
@@ -154,7 +159,12 @@ const Icon = ({
           ease: 'easeInOut',
         }}
       >
-        <iconData.icon className="w-7 h-7 md:w-8 md:h-8 text-foreground" />
+        <iconData.icon
+          className={cn(
+            'w-7 h-7 md:w-8 md:h-8 text-foreground',
+            iconData.koyuTemadaTersle && 'dark:invert'
+          )}
+        />
         <span className="sr-only">{iconData.ad}</span>
       </motion.div>
     </motion.div>

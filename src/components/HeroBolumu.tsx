@@ -60,7 +60,7 @@ import IconVercel from '~icons/logos/vercel-icon';
 */
 const ikonlar: FloatingIconsHeroProps['icons'] = [
 	// --- Dar ekranda da görünen çekirdek (6) ---
-	{ id: 1, icon: IconAstro, ad: 'Astro', className: 'top-[12%] left-[7%]' },
+	{ id: 1, icon: IconAstro, ad: 'Astro', koyuTemadaTersle: true, className: 'top-[12%] left-[7%]' },
 	{ id: 2, icon: IconTypeScript, ad: 'TypeScript', className: 'top-[14%] right-[7%]' },
 	{ id: 3, icon: IconTailwind, ad: 'Tailwind CSS', className: 'bottom-[12%] left-[8%]' },
 	{ id: 4, icon: IconReact, ad: 'React', className: 'bottom-[14%] right-[8%]' },
@@ -87,7 +87,7 @@ const ikonlar: FloatingIconsHeroProps['icons'] = [
 	},
 	{ id: 14, icon: IconLinux, ad: 'Linux', className: 'bottom-[16%] right-[33%] hidden md:block' },
 	{ id: 15, icon: IconVite, ad: 'Vite', className: 'top-[26%] left-[16%] hidden md:block' },
-	{ id: 16, icon: IconVercel, ad: 'Vercel', className: 'bottom-[26%] right-[16%] hidden md:block' },
+	{ id: 16, icon: IconVercel, ad: 'Vercel', koyuTemadaTersle: true, className: 'bottom-[26%] right-[16%] hidden md:block' },
 
 	// --- lg: geniş ekran (+10) ---
 	{ id: 17, icon: IconRust, ad: 'Rust', className: 'top-[5%] left-[60%] hidden lg:block' },
@@ -97,6 +97,7 @@ const ikonlar: FloatingIconsHeroProps['icons'] = [
 		id: 20,
 		icon: IconMarkdown,
 		ad: 'Markdown',
+		koyuTemadaTersle: true,
 		className: 'bottom-[24%] left-[15%] hidden lg:block',
 	},
 	{ id: 21, icon: IconUbuntu, ad: 'Ubuntu', className: 'top-[62%] left-[4%] hidden lg:block' },
@@ -133,7 +134,7 @@ const ikonlar: FloatingIconsHeroProps['icons'] = [
 		ad: 'Terraform',
 		className: 'bottom-[20%] right-[44%] hidden xl:block',
 	},
-	{ id: 33, icon: IconAnsible, ad: 'Ansible', className: 'top-[52%] left-[13%] hidden xl:block' },
+	{ id: 33, icon: IconAnsible, ad: 'Ansible', koyuTemadaTersle: true, className: 'top-[52%] left-[13%] hidden xl:block' },
 	{ id: 34, icon: IconJenkins, ad: 'Jenkins', className: 'top-[74%] right-[20%] hidden xl:block' },
 	{ id: 35, icon: IconBash, ad: 'Bash', className: 'top-[48%] right-[13%] hidden xl:block' },
 ];
