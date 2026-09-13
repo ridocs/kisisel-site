@@ -1,22 +1,33 @@
 ---
 import { Icon } from 'astro-icon/components';
 import IletisimDugmesi from './IletisimDugmesi';
+import { cevirici, digerDilYolu, dilBul, yol } from '@/i18n/ceviriler';
+
+const dil = dilBul(Astro.url);
+const m = cevirici(dil);
+const hakkimdaParcasi = dil === 'en' ? 'about' : 'hakkimda';
+const iletisimCapasi = dil === 'en' ? '#contact' : '#iletisim';
 
 // Gezinme bağlantıları. Yeni sayfa eklediğinde buraya bir satır eklemen yeterli;
 // hem masaüstü hem mobil menü bu listeden üretilir.
 const baglantilar = [
-	{ ad: 'Home', yol: '/' },
-	{ ad: 'Blog', yol: '/blog' },
-	{ ad: 'Hakkımda', yol: '/hakkimda' },
+	{ ad: m('nav.anasayfa'), yol: yol(dil, '') },
+	{ ad: m('nav.blog'), yol: yol(dil, 'blog') },
+	{ ad: m('nav.hakkimda'), yol: yol(dil, hakkimdaParcasi) },
 ];
 
 const suAnkiYol = Astro.url.pathname;
+const digerDil = dil === 'tr' ? 'en' : 'tr';
+const digerDilBaglantisi = digerDilYolu(Astro.url, digerDil);
 
-// "/" yalnızca tam eşleşmede aktiftir; diğerleri alt sayfalarında da aktif kalır
-// (örn. /blog/merhaba-dunya/ açıkken "Blog" vurgulu görünür).
-function aktifMi(yol: string) {
-	if (yol === '/') return suAnkiYol === '/';
-	return suAnkiYol === yol || suAnkiYol.startsWith(`${yol}/`);
+// Kök sayfalar yalnızca tam eşleşmede aktiftir; diğerleri alt sayfalarında da
+// aktif kalır (örn. /blog/merhaba-dunya/ açıkken "Blog" vurgulu görünür).
+function aktifMi(hedef: string) {
+	const sadelestir = (s: string) => s.replace(/\/+$/, '') || '/';
+	const h = sadelestir(hedef);
+	const p = sadelestir(suAnkiYol);
+	if (h === '/' || h === '/en') return p === h;
+	return p === h || p.startsWith(`${h}/`);
 }
 
 // Tipografi ölçeği. Önceki sürümde marka, bağlantılar ve düğme aynı 20px'teydi;
@@ -68,12 +79,12 @@ const iletisimDugmesi =
 			class="overflow-hidden rounded-xl border border-transparent transition-all duration-200 ease-out group-hover:border-slate-900/10 group-hover:bg-white/60 group-hover:backdrop-blur-xl group-data-[kaydirildi=true]:mt-3 group-data-[kaydirildi=true]:border-slate-900/10 group-data-[kaydirildi=true]:bg-white/70 group-data-[kaydirildi=true]:shadow-sm group-data-[kaydirildi=true]:shadow-slate-900/5 group-data-[kaydirildi=true]:backdrop-blur-xl motion-reduce:transition-none dark:group-hover:border-white/15 dark:group-hover:bg-slate-950/60 dark:group-data-[kaydirildi=true]:border-white/15 dark:group-data-[kaydirildi=true]:bg-slate-950/70"
 		>
 			<nav
-				aria-label="Ana gezinme"
+				aria-label={dil === 'en' ? 'Main navigation' : 'Ana gezinme'}
 				class="flex h-[62px] items-center justify-between gap-4 pr-3 pl-4 sm:pr-4 sm:pl-6"
 			>
 				<!-- Marka -->
 				<a
-					href="/"
+					href={yol(dil, '')}
 					class="inline-flex h-10 shrink-0 items-center rounded-lg text-[17px] leading-6 font-semibold tracking-tight whitespace-nowrap text-slate-900 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-current dark:text-white"
 				>
 					Mustafa Eybek
@@ -117,19 +128,35 @@ const iletisimDugmesi =
 
 				<!-- Eylemler -->
 				<div class="flex shrink-0 items-center gap-2">
-					<a href="/rss.xml" aria-label="RSS akışı" class={eylemDugmesi}>
+					<a href="/rss.xml" aria-label={m('nav.rss')} class={eylemDugmesi}>
 						<Icon name="lucide:rss" class="size-[18px]" />
 					</a>
 
-					<button id="tema-dugmesi" type="button" aria-label="Koyu temaya geç" class={eylemDugmesi}>
+					<button id="tema-dugmesi" type="button" aria-label={m('nav.koyuTema')} class={eylemDugmesi}>
 						<Icon name="lucide:moon" class="size-[18px] dark:hidden" />
 						<Icon name="lucide:sun" class="hidden size-[18px] dark:block" />
 					</button>
 
+					{/* Dil değiştirici: karşı dilin kodunu gösterir, aynı sayfanın
+					    o dildeki karşılığına gider. */}
+					<a
+						href={digerDilBaglantisi}
+						hreflang={digerDil}
+						aria-label={m('nav.dilDegistir')}
+						data-dil-secimi={digerDil}
+						class={`${eylemDugmesi} text-[13px] font-semibold tracking-wide`}
+					>
+						{digerDil.toUpperCase()}
+					</a>
+
 					{/* Sıvı metal düğme bir React adacığı; dar ekranda gizlenip yerini
 					    mobil menüdeki düz bağlantıya bırakıyor. */}
 					<div class="hidden md:block">
-						<IletisimDugmesi client:load />
+						<IletisimDugmesi
+							client:load
+							etiket={m('nav.iletisim')}
+							hedef={`${yol(dil, hakkimdaParcasi)}${iletisimCapasi}`}
+						/>
 					</div>
 
 					<button
@@ -138,7 +165,7 @@ const iletisimDugmesi =
 						class={`${eylemDugmesi} group/dugme md:hidden`}
 						aria-expanded="false"
 						aria-controls="mobil-menu"
-						aria-label="Menüyü aç"
+						aria-label={m('nav.menuAc')}
 					>
 						<Icon name="lucide:menu" class="size-5 group-aria-expanded/dugme:hidden" />
 						<Icon name="lucide:x" class="hidden size-5 group-aria-expanded/dugme:block" />
@@ -170,10 +197,10 @@ const iletisimDugmesi =
 					<li>
 						{/* Masaüstündeki "İletişim" düğmesi dar ekranda gizlendiği için buraya taşınıyor. */}
 						<a
-							href="/hakkimda#iletisim"
+							href={`${yol(dil, hakkimdaParcasi)}${iletisimCapasi}`}
 							class="mt-2 grid h-11 place-items-center rounded-lg bg-slate-900 text-[15px] leading-5 font-medium text-white transition-colors hover:bg-slate-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current dark:bg-white dark:text-slate-900 dark:hover:bg-white/85"
 						>
-							İletişim
+							{m('nav.iletisim')}
 						</a>
 					</li>
 				</ul>

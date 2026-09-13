@@ -1,5 +1,5 @@
 ---
-import BaseLayout from '../layouts/BaseLayout.astro';
+import BaseLayout from '../../layouts/BaseLayout.astro';
 import { cevirici, dilBul } from '@/i18n/ceviriler';
 
 const dil = dilBul(Astro.url);
@@ -16,7 +16,7 @@ const m = cevirici(dil);
 		</div>
 	</section>
 
-	<section id="iletisim" class="border-t border-slate-200 py-14 dark:border-slate-800">
+	<section id="contact" class="border-t border-slate-200 py-14 dark:border-slate-800">
 		<h2 class="text-2xl font-semibold text-slate-900 dark:text-white">
 			{m('hakkimda.iletisimBaslik')}
 		</h2>

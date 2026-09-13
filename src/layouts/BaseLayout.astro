@@ -1,5 +1,6 @@
 ---
 import Navbar from '../components/Navbar.astro';
+import { cevirici, digerDilYolu, dilBul } from '@/i18n/ceviriler';
 import '../styles/global.css';
 
 interface Props {
@@ -7,17 +8,26 @@ interface Props {
 	description?: string;
 }
 
-const { title, description = 'Kişisel tanıtım ve blog sitesi.' } = Astro.props;
+const dil = dilBul(Astro.url);
+const m = cevirici(dil);
+const { title, description = m('site.aciklama') } = Astro.props;
 const canonical = new URL(Astro.url.pathname, Astro.site);
+
+// Arama motorlarına aynı sayfanın diğer dildeki karşılığını bildiriyoruz.
+const trYolu = new URL(digerDilYolu(Astro.url, 'tr'), Astro.site);
+const enYolu = new URL(digerDilYolu(Astro.url, 'en'), Astro.site);
 ---
 
 <!doctype html>
-<html lang="tr" class="scroll-smooth">
+<html lang={dil} class="scroll-smooth">
 	<head>
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<link rel="canonical" href={canonical} />
+		<link rel="alternate" hreflang="tr" href={trYolu} />
+		<link rel="alternate" hreflang="en" href={enYolu} />
+		<link rel="alternate" hreflang="x-default" href={trYolu} />
 		<link rel="alternate" type="application/rss+xml" title={title} href="/rss.xml" />
 		<meta name="generator" content={Astro.generator} />
 		<title>{title}</title>
@@ -39,13 +49,35 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
 				// Gizli sekmede localStorage engellenebilir; bu durumda varsayılan tema kullanılır.
 			}
 		</script>
+
+		{/*
+		  Cihaz diline göre yönlendirme. Site statik olduğu için sunucu tarafında
+		  yapılamıyor; ilk ziyarette tarayıcı dili Türkçe değilse İngilizce sürüme
+		  bir kez geçiliyor. Yalnızca ana sayfada çalışır — derin bağlantılarda
+		  yönlendirme yapmak kullanıcıyı istediği sayfadan koparırdı. Kullanıcı dil
+		  değiştiriciyi kullandığında tercihi saklanır ve bir daha araya girilmez.
+		*/}
+		<script is:inline>
+			(function () {
+				try {
+					if (localStorage.getItem('dil-secildi')) return;
+					if (window.location.pathname !== '/') return;
+					var tarayiciDili = (navigator.language || 'tr').toLowerCase();
+					if (tarayiciDili.indexOf('tr') === 0) return;
+					localStorage.setItem('dil-secildi', 'otomatik');
+					window.location.replace('/en/');
+				} catch (hata) {
+					// localStorage engelliyse yönlendirme yapılmaz; Türkçe sürüm açılır.
+				}
+			})();
+		</script>
 	</head>
 	<body class="min-h-screen bg-white text-slate-800 antialiased dark:bg-slate-950 dark:text-slate-200">
 		<a
 			href="#icerik"
 			class="sr-only focus:not-sr-only focus:absolute focus:top-3 focus:left-3 focus:z-[60] focus:rounded-lg focus:bg-marka-600 focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-white"
 		>
-			İçeriğe geç
+			{m('nav.icerigeGec')}
 		</a>
 
 		<Navbar />
@@ -59,7 +91,23 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
 		</main>
 
 		<footer class="mx-auto max-w-3xl px-4 py-10 text-sm text-slate-500 dark:text-slate-400">
-			&copy; {new Date().getFullYear()} — MIT lisansı ile yayımlanmıştır.
+			&copy; {new Date().getFullYear()} — {m('altbilgi.lisans')}
 		</footer>
+
+		{/* Dil değiştiriciye tıklandığında tercih saklanır; böylece otomatik
+		    yönlendirme bir daha araya girmez. */}
+		<script is:inline>
+			document.addEventListener('click', function (olay) {
+				var hedef =
+					olay.target instanceof Element ? olay.target.closest('[data-dil-secimi]') : null;
+				if (!hedef) return;
+				try {
+					localStorage.setItem('dil-secildi', hedef.getAttribute('data-dil-secimi'));
+				} catch (hata) {
+					// localStorage engelliyse tercih saklanamaz; yönlendirme yine de
+					// yalnızca ana sayfada ve bir kez çalışır.
+				}
+			});
+		</script>
 	</body>
 </html>

@@ -1,0 +1,35 @@
+---
+title: 'Hello world'
+description: 'Which libraries this site is built on, and how to add a post.'
+pubDate: 2026-09-13
+tags: ['astro', 'note']
+dil: 'en'
+---
+
+This sample post exists to verify that the setup works. Feel free to delete it or
+write over it. To add a new post, drop a `.md` or `.mdx` file into
+`src/content/blog/` — nothing else needs editing.
+
+## Frontmatter fields
+
+`title`, `description` and `pubDate` are required. `tags`, `draft` and `dil` are
+optional. Set `draft: true` to keep a post out of the listings and the RSS feed,
+and `dil: 'en'` to place it in the English section.
+
+## Code blocks
+
+Syntax highlighting ships with Astro; no extra library needed:
+
+```js
+export function greet(name) {
+  return `Hello, ${name}!`;
+}
+```
+
+## Components in MDX
+
+In `.mdx` files you can call Astro/JSX components directly — that is the only
+difference from plain `.md`.
+
+> The typography inside a post comes from the `prose` classes of the
+> `@tailwindcss/typography` plugin.

@@ -139,16 +139,31 @@ const ikonlar: FloatingIconsHeroProps['icons'] = [
 	{ id: 35, icon: IconBash, ad: 'Bash', className: 'top-[48%] right-[13%] hidden min-[2100px]:block' },
 ];
 
-export default function HeroBolumu() {
+interface Props {
+	baslik: string;
+	altBaslik: string;
+	birincilMetin: string;
+	birincilHedef: string;
+	ikincilMetin: string;
+	ikincilHedef: string;
+}
+
+export default function HeroBolumu({
+	baslik,
+	altBaslik,
+	birincilMetin,
+	birincilHedef,
+	ikincilMetin,
+	ikincilHedef,
+}: Props) {
 	return (
 		<FloatingIconsHero
-			title="Mustafa Eybek"
-			// Yer tutucu metin; kendi cümlelerinle değiştirilecek.
-			subtitle="Yazılım geliştirici. Web uygulamaları, altyapı ve otomasyon üzerine çalışıyorum; öğrendiklerimi burada yazıyorum."
-			ctaText="Yazıları oku"
-			ctaHref="/blog"
-			ikinciCtaText="GitHub profilim"
-			ikinciCtaHref="https://github.com/ridocs"
+			title={baslik}
+			subtitle={altBaslik}
+			ctaText={birincilMetin}
+			ctaHref={birincilHedef}
+			ikinciCtaText={ikincilMetin}
+			ikinciCtaHref={ikincilHedef}
 			ikinciCtaHarici
 			icons={ikonlar}
 			// Sabit üst çubuk için bırakılan boşluğu geri alarak bölümü tam ekran yapar.

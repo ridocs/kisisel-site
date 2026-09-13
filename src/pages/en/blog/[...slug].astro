@@ -1,13 +1,13 @@
 ---
 import { getCollection, render } from 'astro:content';
 import type { GetStaticPaths } from 'astro';
-import BaseLayout from '../../layouts/BaseLayout.astro';
+import BaseLayout from '../../../layouts/BaseLayout.astro';
 
-// Bu dosya Türkçe yazıları üretir; İngilizceleri /en/blog altındaki eşi üretir.
-const SAYFA_DILI = 'tr';
+// Bu dosya İngilizce yazıları üretir; Türkçeleri /blog altındaki eşi üretir.
+const SAYFA_DILI = 'en';
 
 export const getStaticPaths: GetStaticPaths = async () => {
-	const posts = await getCollection('blog', ({ data }) => !data.draft && data.dil === 'tr');
+	const posts = await getCollection('blog', ({ data }) => !data.draft && data.dil === 'en');
 	return posts.map((post) => ({
 		params: { slug: post.id },
 		props: { post },

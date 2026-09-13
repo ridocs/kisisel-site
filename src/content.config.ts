@@ -11,6 +11,8 @@ const blog = defineCollection({
 		updatedDate: z.coerce.date().optional(),
 		tags: z.array(z.string()).default([]),
 		draft: z.boolean().default(false),
+		// Yazının dili. Belirtilmezse Türkçe sayılır; listeler buna göre süzülür.
+		dil: z.enum(['tr', 'en']).default('tr'),
 	}),
 });
 

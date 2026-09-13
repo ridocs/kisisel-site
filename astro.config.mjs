@@ -12,6 +12,12 @@ export default defineConfig({
 	// Sitemap ve RSS mutlak URL üretebilmek için buna ihtiyaç duyar.
 	// Kendi alan adını aldığında burayı değiştir.
 	site: 'https://ridocs.github.io',
+	// Türkçe varsayılan ve ön ek almıyor: "/blog". İngilizce "/en/blog".
+	i18n: {
+		defaultLocale: 'tr',
+		locales: ['tr', 'en'],
+		routing: { prefixDefaultLocale: false },
+	},
 	// React yalnızca hero gibi etkileşimli adacıklar için; sayfaların geri kalanı
 	// istemciye JavaScript göndermemeye devam ediyor.
 	integrations: [mdx(), sitemap(), icon(), react()],
