@@ -1,0 +1,33 @@
+---
+title: 'Merhaba dünya'
+description: 'Bu site hangi kütüphanelerle kuruldu ve nasıl yazı eklenir.'
+pubDate: 2026-09-13
+tags: ['astro', 'not']
+---
+
+Bu örnek yazı, kurulumun çalıştığını doğrulamak için buradadır. Silebilir ya da
+üzerine yazabilirsin. Yeni yazı eklemek için `src/content/blog/` altına bir
+`.md` veya `.mdx` dosyası koyman yeterli — başka hiçbir yeri düzenlemen gerekmez.
+
+## Frontmatter alanları
+
+`title`, `description` ve `pubDate` zorunludur. `tags` ve `draft` isteğe bağlıdır.
+`draft: true` yaparsan yazı listelerde ve RSS akışında görünmez.
+
+## Kod blokları
+
+Kod vurgulama Astro'nun kendi motoruyla gelir, ayrıca bir kütüphane kurmana gerek yok:
+
+```js
+export function selamla(isim) {
+  return `Merhaba, ${isim}!`;
+}
+```
+
+## MDX ile bileşen kullanımı
+
+`.mdx` uzantılı yazılarda doğrudan Astro/JSX bileşeni çağırabilirsin — düz `.md`
+dosyalarında bu mümkün değildir, aradaki tek fark budur.
+
+> Yazı içindeki tipografi `@tailwindcss/typography` eklentisinin `prose`
+> sınıflarından gelir.

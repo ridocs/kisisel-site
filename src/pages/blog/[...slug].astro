@@ -1,0 +1,34 @@
+---
+import { getCollection, render } from 'astro:content';
+import type { GetStaticPaths } from 'astro';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+export const getStaticPaths: GetStaticPaths = async () => {
+	const posts = await getCollection('blog', ({ data }) => !data.draft);
+	return posts.map((post) => ({
+		params: { slug: post.id },
+		props: { post },
+	}));
+};
+
+const { post } = Astro.props;
+const { Content } = await render(post);
+---
+
+<BaseLayout title={post.data.title} description={post.data.description}>
+	<article>
+		<header class="mb-8 space-y-2">
+			<h1 class="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
+				{post.data.title}
+			</h1>
+			<time datetime={post.data.pubDate.toISOString()} class="text-sm text-slate-500">
+				{post.data.pubDate.toLocaleDateString('tr-TR', { dateStyle: 'long' })}
+			</time>
+		</header>
+
+		{/* prose sınıfları @tailwindcss/typography eklentisinden gelir */}
+		<div class="prose prose-slate max-w-none dark:prose-invert">
+			<Content />
+		</div>
+	</article>
+</BaseLayout>

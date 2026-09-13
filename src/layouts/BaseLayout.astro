@@ -1,0 +1,53 @@
+---
+import { Icon } from 'astro-icon/components';
+import '../styles/global.css';
+
+interface Props {
+	title: string;
+	description?: string;
+}
+
+const { title, description = 'Kişisel tanıtım ve blog sitesi.' } = Astro.props;
+const canonical = new URL(Astro.url.pathname, Astro.site);
+---
+
+<!doctype html>
+<html lang="tr" class="scroll-smooth">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<link rel="canonical" href={canonical} />
+		<link rel="alternate" type="application/rss+xml" title={title} href="/rss.xml" />
+		<meta name="generator" content={Astro.generator} />
+		<title>{title}</title>
+		<meta name="description" content={description} />
+		<meta property="og:title" content={title} />
+		<meta property="og:description" content={description} />
+		<meta property="og:type" content="website" />
+		<meta property="og:url" content={canonical} />
+	</head>
+	<body class="min-h-screen bg-white text-slate-800 antialiased dark:bg-slate-950 dark:text-slate-200">
+		<header class="border-b border-slate-200 dark:border-slate-800">
+			<nav class="mx-auto flex max-w-3xl items-center justify-between px-4 py-4">
+				<a href="/" class="font-semibold tracking-tight hover:text-marka-600 dark:hover:text-marka-400">
+					Mustafa
+				</a>
+				<div class="flex items-center gap-5 text-sm">
+					<a href="/blog" class="hover:text-marka-600 dark:hover:text-marka-400">Blog</a>
+					<a href="/rss.xml" aria-label="RSS akışı" class="hover:text-marka-600 dark:hover:text-marka-400">
+						<Icon name="lucide:rss" class="size-4" />
+					</a>
+				</div>
+			</nav>
+		</header>
+
+		<main class="mx-auto max-w-3xl px-4 py-12">
+			<slot />
+		</main>
+
+		<footer class="mx-auto max-w-3xl px-4 py-10 text-sm text-slate-500 dark:text-slate-400">
+			&copy; {new Date().getFullYear()} — MIT lisansı ile yayımlanmıştır.
+		</footer>
+	</body>
+</html>
