@@ -50,6 +50,10 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
 
 		<Navbar />
 
+		{/* Kenardan kenara uzanması gereken bölümler (ör. hero) için: metin sütunu
+		    genişliğiyle sınırlanmadan, main'in dışında render edilir. */}
+		<slot name="tam-genislik" />
+
 		<main id="icerik" class="mx-auto max-w-3xl px-4 py-12">
 			<slot />
 		</main>
