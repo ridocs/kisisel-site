@@ -26,16 +26,16 @@ import IconGo from '~icons/logos/go';
 import IconRust from '~icons/logos/rust';
 import IconPhp from '~icons/logos/php';
 import IconSwift from '~icons/logos/swift';
-import IconKotlin from '~icons/logos/kotlin';
-import IconFlutter from '~icons/logos/flutter';
-import IconBash from '~icons/logos/bash';
+import IconKotlin from '~icons/logos/kotlin-icon';
+import IconFlutter from '~icons/logos/flutter-icon';
+import IconBash from '~icons/logos/bash-icon';
 
 // DevOps ve altyapı
 import IconDocker from '~icons/logos/docker-icon';
 import IconKubernetes from '~icons/logos/kubernetes';
 import IconGit from '~icons/logos/git-icon';
 import IconGithubActions from '~icons/logos/github-actions';
-import IconGitlab from '~icons/logos/gitlab';
+import IconGitlab from '~icons/logos/gitlab-icon';
 import IconLinux from '~icons/logos/linux-tux';
 import IconUbuntu from '~icons/logos/ubuntu';
 import IconNginx from '~icons/logos/nginx';

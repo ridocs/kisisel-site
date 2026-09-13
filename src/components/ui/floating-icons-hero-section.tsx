@@ -92,7 +92,7 @@ const Icon = ({
         /* Kart zemini bilerek her iki temada da beyaz: marka logoları beyaz zemin
            için tasarlanıyor ve koyu zeminde Astro, Markdown gibi koyu renkli
            olanlar kayboluyordu. */
-        className="flex items-center justify-center w-16 h-16 md:w-20 md:h-20 p-3 rounded-3xl shadow-xl bg-white/90 backdrop-blur-md border border-black/5 dark:border-white/10"
+        className="flex items-center justify-center w-14 h-14 md:w-16 md:h-16 p-2.5 rounded-2xl shadow-lg bg-white/90 backdrop-blur-md border border-black/5 dark:border-white/10"
         animate={{
           y: [0, -8, 0, 8, 0],
           x: [0, 6, 0, -6, 0],
@@ -105,7 +105,7 @@ const Icon = ({
           ease: 'easeInOut',
         }}
       >
-        <iconData.icon className="w-8 h-8 md:w-10 md:h-10 text-foreground" />
+        <iconData.icon className="w-7 h-7 md:w-8 md:h-8 text-foreground" />
       </motion.div>
     </motion.div>
   );
