@@ -11,6 +11,8 @@
 @theme {
 	/* @fontsource-variable/inter ailesini "Inter Variable" adıyla tanımlar. */
 	--font-sans: "Inter Variable", "Inter", ui-sans-serif, system-ui, sans-serif;
+	/* Başlık üzerinde soldan sağa geçen parıltı. */
+	--animate-parilti: parilti 4s linear infinite;
 	--color-marka-50: oklch(0.97 0.02 250);
 	--color-marka-500: oklch(0.62 0.18 250);
 	--color-marka-600: oklch(0.55 0.19 250);
@@ -80,6 +82,17 @@
 	--color-border: var(--border);
 	--color-input: var(--input);
 	--color-ring: var(--ring);
+}
+
+/* Parıltı, arka plan konumunu kaydırarak ilerliyor; metnin kendisi
+   `bg-clip-text` ile bu arka planı maskeliyor. */
+@keyframes parilti {
+	0% {
+		background-position: 200% 0;
+	}
+	100% {
+		background-position: -200% 0;
+	}
 }
 
 html {

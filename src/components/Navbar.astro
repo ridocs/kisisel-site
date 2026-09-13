@@ -1,5 +1,6 @@
 ---
 import { Icon } from 'astro-icon/components';
+import IletisimDugmesi from './IletisimDugmesi';
 
 // Gezinme bağlantıları. Yeni sayfa eklediğinde buraya bir satır eklemen yeterli;
 // hem masaüstü hem mobil menü bu listeden üretilir.
@@ -125,7 +126,11 @@ const iletisimDugmesi =
 						<Icon name="lucide:sun" class="hidden size-[18px] dark:block" />
 					</button>
 
-					<a href="/hakkimda#iletisim" class={iletisimDugmesi}>İletişim</a>
+					{/* Sıvı metal düğme bir React adacığı; dar ekranda gizlenip yerini
+					    mobil menüdeki düz bağlantıya bırakıyor. */}
+					<div class="hidden md:block">
+						<IletisimDugmesi client:load />
+					</div>
 
 					<button
 						id="menu-dugmesi"

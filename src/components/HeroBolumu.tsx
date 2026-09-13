@@ -142,7 +142,7 @@ const ikonlar: FloatingIconsHeroProps['icons'] = [
 export default function HeroBolumu() {
 	return (
 		<FloatingIconsHero
-			title="Ben Mustafa Eybek"
+			title="Mustafa Eybek"
 			// Yer tutucu metin; kendi cümlelerinle değiştirilecek.
 			subtitle="Yazılım geliştirici. Web uygulamaları, altyapı ve otomasyon üzerine çalışıyorum; öğrendiklerimi burada yazıyorum."
 			ctaText="Yazıları oku"

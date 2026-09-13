@@ -223,7 +223,10 @@ const FloatingIconsHero = React.forwardRef<
 
       {/* Container for the foreground content */}
       <div className="relative z-10 text-center px-4">
-        <h1 className="text-5xl md:text-7xl font-bold tracking-tight bg-gradient-to-b from-foreground to-foreground/70 text-transparent bg-clip-text">
+        {/* Başlığın üzerinden soldan sağa geçen parıltı: gradyan metne
+            maskeleniyor ve arka plan konumu animasyonla kaydırılıyor.
+            Hareketi azaltılmış tercihte animasyon durur, metin okunur kalır. */}
+        <h1 className="animate-parilti bg-gradient-to-r from-foreground/55 via-foreground to-foreground/55 bg-[length:200%_100%] bg-clip-text text-5xl font-bold tracking-tight text-transparent md:text-7xl motion-reduce:animate-none">
           {title}
         </h1>
         <p className="mt-6 max-w-xl mx-auto text-lg text-muted-foreground">
