@@ -16,122 +16,142 @@ function aktifMi(yol: string) {
 	if (yol === '/') return suAnkiYol === '/';
 	return suAnkiYol === yol || suAnkiYol.startsWith(`${yol}/`);
 }
+
+// Bağlantı stilleri iki menüde de aynı olsun diye tek yerde tutuluyor.
+const bagTemel =
+	'rounded-full px-3.5 py-2 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marka-500';
+const bagAktif = 'bg-marka-50 text-marka-600 dark:bg-marka-500/15 dark:text-marka-400';
+const bagPasif =
+	'text-slate-600 hover:bg-slate-900/5 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-white';
+const eylemDugmesi =
+	'grid size-9 place-items-center rounded-full text-slate-500 transition-colors hover:bg-slate-900/5 hover:text-slate-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marka-500 dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-white';
 ---
 
-<header
-	class="sticky top-0 z-50 border-b border-slate-200/70 bg-white/80 backdrop-blur-md dark:border-slate-800/70 dark:bg-slate-950/80"
->
-	<nav aria-label="Ana gezinme" class="mx-auto flex h-16 max-w-3xl items-center justify-between gap-3 px-4">
-		<!-- Marka -->
-		<a
-			href="/"
-			class="flex items-center gap-2.5 rounded-lg font-semibold tracking-tight text-slate-900 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-marka-500 dark:text-white"
+{/*
+  Çubuk iki durum arasında geçiş yapar ve durum `data-kaydirildi` ile taşınır:
+  - "false" (sayfanın tepesi / hero): tam genişlik, zeminsiz, yüksek
+  - "true"  (aşağı kaydırılmış): ortada yüzen, dar, yuvarlatılmış, bulanık zeminli kapsül
+  Alt öğeler bu duruma `group-data-[kaydirildi=true]:` ile tepki verir.
+*/}
+<header id="ust-cubuk" data-kaydirildi="false" class="group fixed inset-x-0 top-0 z-50">
+	<div
+		class="mx-auto w-full max-w-5xl px-4 transition-all duration-500 ease-out group-data-[kaydirildi=true]:max-w-3xl motion-reduce:transition-none sm:px-6 group-data-[kaydirildi=true]:sm:px-4"
+	>
+		<div
+			class="overflow-hidden border border-transparent transition-all duration-500 ease-out group-data-[kaydirildi=true]:mt-3 group-data-[kaydirildi=true]:rounded-2xl group-data-[kaydirildi=true]:border-slate-900/10 group-data-[kaydirildi=true]:bg-white/75 group-data-[kaydirildi=true]:shadow-lg group-data-[kaydirildi=true]:shadow-slate-900/5 group-data-[kaydirildi=true]:backdrop-blur-xl motion-reduce:transition-none dark:group-data-[kaydirildi=true]:border-white/10 dark:group-data-[kaydirildi=true]:bg-slate-900/75 dark:group-data-[kaydirildi=true]:shadow-black/20"
 		>
-			<span
-				class="grid size-8 place-items-center rounded-lg bg-marka-600 text-sm font-bold text-white shadow-sm"
-				aria-hidden="true">M</span
+			<nav
+				aria-label="Ana gezinme"
+				class="flex h-20 items-center justify-between gap-3 px-2 transition-all duration-500 ease-out group-data-[kaydirildi=true]:h-14 group-data-[kaydirildi=true]:px-2.5 motion-reduce:transition-none"
 			>
-			<span>Mustafa</span>
-		</a>
+				<!-- Marka -->
+				<a
+					href="/"
+					class="flex shrink-0 items-center gap-2.5 rounded-full px-1.5 py-1 font-semibold tracking-tight text-slate-900 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-marka-500 dark:text-white"
+				>
+					<span
+						class="grid size-9 place-items-center rounded-xl bg-marka-600 text-sm font-bold text-white shadow-sm transition-all duration-500 ease-out group-data-[kaydirildi=true]:size-8 group-data-[kaydirildi=true]:rounded-lg motion-reduce:transition-none"
+						aria-hidden="true">M</span
+					>
+					<span>Mustafa</span>
+				</a>
 
-		<!-- Masaüstü bağlantıları -->
-		<ul class="hidden items-center gap-1 md:flex">
-			{
-				baglantilar.map((baglanti) => {
-					const aktif = aktifMi(baglanti.yol);
-					return (
-						<li>
-							<a
-								href={baglanti.yol}
-								aria-current={aktif ? 'page' : undefined}
-								class:list={[
-									'relative rounded-lg px-3 py-2 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marka-500',
-									aktif
-										? 'text-marka-600 dark:text-marka-400'
-										: 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white',
-								]}
-							>
-								{baglanti.ad}
-								{aktif && (
-									<span
-										class="absolute inset-x-3 -bottom-[13px] h-0.5 rounded-full bg-marka-500"
-										aria-hidden="true"
-									/>
-								)}
-							</a>
-						</li>
-					);
-				})
-			}
-		</ul>
+				<!-- Masaüstü bağlantıları -->
+				<ul class="hidden items-center gap-1 md:flex">
+					{
+						baglantilar.map((baglanti) => (
+							<li>
+								<a
+									href={baglanti.yol}
+									aria-current={aktifMi(baglanti.yol) ? 'page' : undefined}
+									class:list={[bagTemel, aktifMi(baglanti.yol) ? bagAktif : bagPasif]}
+								>
+									{baglanti.ad}
+								</a>
+							</li>
+						))
+					}
+				</ul>
 
-		<!-- Eylemler -->
-		<div class="flex items-center gap-0.5">
-			<a
-				href="/rss.xml"
-				aria-label="RSS akışı"
-				class="grid size-9 place-items-center rounded-lg text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marka-500 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white"
-			>
-				<Icon name="lucide:rss" class="size-[18px]" />
-			</a>
+				<!-- Eylemler -->
+				<div class="flex shrink-0 items-center gap-0.5">
+					<a href="/rss.xml" aria-label="RSS akışı" class={eylemDugmesi}>
+						<Icon name="lucide:rss" class="size-[18px]" />
+					</a>
 
-			<button
-				id="tema-dugmesi"
-				type="button"
-				aria-label="Koyu temaya geç"
-				class="grid size-9 place-items-center rounded-lg text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marka-500 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white"
-			>
-				<Icon name="lucide:moon" class="size-[18px] dark:hidden" />
-				<Icon name="lucide:sun" class="hidden size-[18px] dark:block" />
-			</button>
+					<button id="tema-dugmesi" type="button" aria-label="Koyu temaya geç" class={eylemDugmesi}>
+						<Icon name="lucide:moon" class="size-[18px] dark:hidden" />
+						<Icon name="lucide:sun" class="hidden size-[18px] dark:block" />
+					</button>
 
-			<button
-				id="menu-dugmesi"
-				type="button"
-				class="group grid size-9 place-items-center rounded-lg text-slate-600 transition-colors hover:bg-slate-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marka-500 md:hidden dark:text-slate-300 dark:hover:bg-slate-800"
-				aria-expanded="false"
-				aria-controls="mobil-menu"
-				aria-label="Menüyü aç"
-			>
-				<Icon name="lucide:menu" class="size-5 group-aria-expanded:hidden" />
-				<Icon name="lucide:x" class="hidden size-5 group-aria-expanded:block" />
-			</button>
+					<button
+						id="menu-dugmesi"
+						type="button"
+						class={`${eylemDugmesi} group/dugme md:hidden`}
+						aria-expanded="false"
+						aria-controls="mobil-menu"
+						aria-label="Menüyü aç"
+					>
+						<Icon name="lucide:menu" class="size-5 group-aria-expanded/dugme:hidden" />
+						<Icon name="lucide:x" class="hidden size-5 group-aria-expanded/dugme:block" />
+					</button>
+				</div>
+			</nav>
+
+			<!-- Mobil menü: kapsülün içinde açılır, böylece yuvarlatılmış form bozulmaz -->
+			<div id="mobil-menu" class="hidden border-t border-slate-900/10 md:hidden dark:border-white/10">
+				<ul class="space-y-1 p-2">
+					{
+						baglantilar.map((baglanti) => (
+							<li>
+								<a
+									href={baglanti.yol}
+									aria-current={aktifMi(baglanti.yol) ? 'page' : undefined}
+									class:list={[
+										'block',
+										bagTemel,
+										aktifMi(baglanti.yol) ? bagAktif : bagPasif,
+									]}
+								>
+									{baglanti.ad}
+								</a>
+							</li>
+						))
+					}
+				</ul>
+			</div>
 		</div>
-	</nav>
-
-	<!-- Mobil menü -->
-	<div id="mobil-menu" class="hidden border-t border-slate-200/70 md:hidden dark:border-slate-800/70">
-		<ul class="mx-auto max-w-3xl space-y-1 px-4 py-3">
-			{
-				baglantilar.map((baglanti) => {
-					const aktif = aktifMi(baglanti.yol);
-					return (
-						<li>
-							<a
-								href={baglanti.yol}
-								aria-current={aktif ? 'page' : undefined}
-								class:list={[
-									'block rounded-lg px-3 py-2.5 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marka-500',
-									aktif
-										? 'bg-marka-50 text-marka-600 dark:bg-slate-800 dark:text-marka-400'
-										: 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white',
-								]}
-							>
-								{baglanti.ad}
-							</a>
-						</li>
-					);
-				})
-			}
-		</ul>
 	</div>
 </header>
 
+{/* Çubuk fixed olduğu için sayfa içeriğinin altına kaymasını engelleyen boşluk. */}
+<div class="h-20" aria-hidden="true"></div>
+
 <script>
+	const ustCubuk = document.getElementById('ust-cubuk');
 	const menuDugmesi = document.getElementById('menu-dugmesi');
 	const mobilMenu = document.getElementById('mobil-menu');
 	const temaDugmesi = document.getElementById('tema-dugmesi');
 
+	// --- Kaydırma durumu -----------------------------------------------------
+	// 32 piksel, hero'dan ayrıldığını anlamak için yeterli; daha küçük bir eşik
+	// dokunmatik cihazlarda esneme hareketinde çubuğu titretiyor.
+	const ESIK = 32;
+
+	// Bilinçli olarak requestAnimationFrame ile kısıtlamıyoruz: rAF'ın duraklatıldığı
+	// durumlarda (arka plan sekmesi, gömülü çerçeve) bekleme bayrağı kilitlenip çubuğu
+	// kalıcı olarak donduruyordu. Yapılan iş yalnızca bir karşılaştırma; değer
+	// değişmediğinde DOM'a hiç yazmıyoruz, dolayısıyla her olayda çalışması güvenli.
+	function kaydirmayiUygula() {
+		if (!ustCubuk) return;
+		const yeniDurum = window.scrollY > ESIK ? 'true' : 'false';
+		if (ustCubuk.dataset.kaydirildi !== yeniDurum) ustCubuk.dataset.kaydirildi = yeniDurum;
+	}
+
+	window.addEventListener('scroll', kaydirmayiUygula, { passive: true });
+	kaydirmayiUygula();
+
+	// --- Mobil menü ----------------------------------------------------------
 	function menuyuAyarla(acik: boolean) {
 		if (!menuDugmesi || !mobilMenu) return;
 		menuDugmesi.setAttribute('aria-expanded', String(acik));
@@ -151,11 +171,19 @@ function aktifMi(yol: string) {
 		}
 	});
 
+	// Menü açıkken dışarı tıklanırsa kapansın.
+	document.addEventListener('click', (olay) => {
+		if (menuDugmesi?.getAttribute('aria-expanded') !== 'true') return;
+		const hedef = olay.target as Node;
+		if (!ustCubuk?.contains(hedef)) menuyuAyarla(false);
+	});
+
 	// Masaüstü genişliğine geçildiğinde açık kalan mobil menüyü sıfırla.
 	window.matchMedia('(min-width: 48rem)').addEventListener('change', (olay) => {
 		if (olay.matches) menuyuAyarla(false);
 	});
 
+	// --- Tema ----------------------------------------------------------------
 	function temaEtiketiniGuncelle() {
 		const koyu = document.documentElement.classList.contains('dark');
 		temaDugmesi?.setAttribute('aria-label', koyu ? 'Açık temaya geç' : 'Koyu temaya geç');

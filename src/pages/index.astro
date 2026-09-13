@@ -8,25 +8,45 @@ const posts = (await getCollection('blog', ({ data }) => !data.draft))
 ---
 
 <BaseLayout title="Mustafa — Kişisel Site">
-	<section class="space-y-4">
-		<h1 class="text-4xl font-bold tracking-tight text-slate-900 dark:text-white">Merhaba, ben Mustafa</h1>
-		<p class="text-lg text-slate-600 dark:text-slate-400">
-			Buraya kendini tanıtan birkaç cümle yaz. Ne yaptığın, neyle ilgilendiğin, nasıl ulaşılacağı.
+	<section class="flex min-h-[68vh] flex-col justify-center py-10">
+		<p class="text-sm font-medium text-marka-600 dark:text-marka-400">Merhaba 👋</p>
+		<h1
+			class="mt-3 text-4xl font-bold tracking-tight text-balance text-slate-900 sm:text-5xl lg:text-6xl dark:text-white"
+		>
+			Ben Mustafa
+		</h1>
+		<p class="mt-6 max-w-xl text-lg text-pretty text-slate-600 dark:text-slate-400">
+			Buraya kendini tanıtan birkaç cümle yaz. Ne yaptığın, neyle ilgilendiğin ve sana nasıl
+			ulaşılabileceği burada dursun.
 		</p>
+		<div class="mt-9 flex flex-wrap items-center gap-3">
+			<a
+				href="/blog"
+				class="inline-flex items-center gap-2 rounded-full bg-marka-600 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-marka-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marka-500"
+			>
+				Yazıları oku
+			</a>
+			<a
+				href="/rss.xml"
+				class="inline-flex items-center gap-2 rounded-full border border-slate-300 px-5 py-2.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-900/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marka-500 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-white/10"
+			>
+				RSS ile takip et
+			</a>
+		</div>
 	</section>
 
-	<section class="mt-14">
+	<section class="border-t border-slate-200 py-14 dark:border-slate-800">
 		<h2 class="text-xl font-semibold text-slate-900 dark:text-white">Son yazılar</h2>
-		<ul class="mt-5 space-y-5">
+		<ul class="mt-6 space-y-6">
 			{
 				posts.map((post) => (
 					<li>
 						<a href={`/blog/${post.id}/`} class="group block">
-							<h3 class="font-medium group-hover:text-marka-600 dark:group-hover:text-marka-400">
+							<h3 class="font-medium text-slate-900 group-hover:text-marka-600 dark:text-white dark:group-hover:text-marka-400">
 								{post.data.title}
 							</h3>
-							<p class="text-sm text-slate-600 dark:text-slate-400">{post.data.description}</p>
-							<time datetime={post.data.pubDate.toISOString()} class="text-xs text-slate-500">
+							<p class="mt-1 text-sm text-slate-600 dark:text-slate-400">{post.data.description}</p>
+							<time datetime={post.data.pubDate.toISOString()} class="mt-1 block text-xs text-slate-500">
 								{post.data.pubDate.toLocaleDateString('tr-TR', { dateStyle: 'long' })}
 							</time>
 						</a>
@@ -34,7 +54,10 @@ const posts = (await getCollection('blog', ({ data }) => !data.draft))
 				))
 			}
 		</ul>
-		<a href="/blog" class="mt-6 inline-block text-sm text-marka-600 hover:underline dark:text-marka-400">
+		<a
+			href="/blog"
+			class="mt-8 inline-block text-sm font-medium text-marka-600 hover:underline dark:text-marka-400"
+		>
 			Tüm yazılar →
 		</a>
 	</section>
