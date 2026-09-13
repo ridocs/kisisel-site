@@ -58,9 +58,32 @@ const Icon = ({
   const springX = useSpring(x, { stiffness: 300, damping: 20 });
   const springY = useSpring(y, { stiffness: 300, damping: 20 });
 
+  // Simgenin kaçma uygulanmamış hâlindeki merkezi. Her fare hareketinde
+  // getBoundingClientRect çağırmak 35 simgede kare başına 35 zorunlu yeniden
+  // yerleşim demekti; konum yalnızca yeniden boyutlanma ve kaydırmada ölçülüyor.
+  const merkezRef = React.useRef<{ x: number; y: number } | null>(null);
+
   React.useEffect(() => {
-    const handleMouseMove = () => {
+    const olc = () => {
       if (!ref.current) return;
+      const r = ref.current.getBoundingClientRect();
+      // Ölçüm anında uygulanmış kaçma miktarını geri alıyoruz.
+      merkezRef.current = {
+        x: r.left + r.width / 2 - springX.get(),
+        y: r.top + r.height / 2 - springY.get(),
+      };
+    };
+
+    olc();
+    // Giriş animasyonu bittikten sonra bir kez daha: ölçek 0.5'ten 1'e çıkarken
+    // alınan ölçüm gerçek konumu vermiyor.
+    const zamanlayici = window.setTimeout(olc, 1200);
+    window.addEventListener('resize', olc, { passive: true });
+    window.addEventListener('scroll', olc, { passive: true });
+
+    const handleMouseMove = () => {
+      const merkez = merkezRef.current;
+      if (!merkez) return;
 
       // İmleç simgenin üzerindeyken kaçmıyor: aksi hâlde adını okumak için
       // üzerine gelmek imkânsız olurdu.
@@ -70,9 +93,8 @@ const Icon = ({
         return;
       }
 
-      const rect = ref.current.getBoundingClientRect();
-      const merkezX = rect.left + rect.width / 2;
-      const merkezY = rect.top + rect.height / 2;
+      const merkezX = merkez.x;
+      const merkezY = merkez.y;
       const distance = Math.sqrt(
         Math.pow(mouseX.current - merkezX, 2) + Math.pow(mouseY.current - merkezY, 2)
       );
@@ -91,9 +113,14 @@ const Icon = ({
       }
     };
 
-    window.addEventListener('mousemove', handleMouseMove);
-    return () => window.removeEventListener('mousemove', handleMouseMove);
-  }, [x, y, mouseX, mouseY]);
+    window.addEventListener('mousemove', handleMouseMove, { passive: true });
+    return () => {
+      window.clearTimeout(zamanlayici);
+      window.removeEventListener('resize', olc);
+      window.removeEventListener('scroll', olc);
+      window.removeEventListener('mousemove', handleMouseMove);
+    };
+  }, [x, y, springX, springY, mouseX, mouseY]);
 
   return (
     <motion.div

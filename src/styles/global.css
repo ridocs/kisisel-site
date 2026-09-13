@@ -41,6 +41,12 @@
 	--border: oklch(0.929 0.013 255.508);
 	--input: oklch(0.929 0.013 255.508);
 	--ring: oklch(0.62 0.18 250);
+
+	/* Sıvı metal düğme. Açık temada koyu gövde sayfadan ayrışıyor. */
+	--lm-ust: #202020;
+	--lm-alt: #000000;
+	--lm-metin: #ffffff;
+	--lm-kenar: rgba(0, 0, 0, 0.3);
 }
 
 .dark {
@@ -61,6 +67,13 @@
 	--border: oklch(0.279 0.041 260.031);
 	--input: oklch(0.279 0.041 260.031);
 	--ring: oklch(0.72 0.16 250);
+
+	/* Koyu temada gövde açılıyor: saf siyah, koyu sayfa zemininde kayboluyor ve
+	   düğme düz bir leke gibi duruyordu. Açık kenar çizgisi sınırı belirginleştirir. */
+	--lm-ust: #3d3d3d;
+	--lm-alt: #1a1a1a;
+	--lm-metin: #ffffff;
+	--lm-kenar: rgba(255, 255, 255, 0.22);
 }
 
 /* Değişkenleri Tailwind yardımcı sınıflarına bağlar (bg-background, text-foreground…). */
