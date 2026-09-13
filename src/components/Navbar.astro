@@ -19,12 +19,12 @@ function aktifMi(yol: string) {
 
 // Bağlantı stilleri iki menüde de aynı olsun diye tek yerde tutuluyor.
 const bagTemel =
-	'rounded-full px-3.5 py-2 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marka-500';
+	'rounded-md px-3.5 py-2 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marka-500';
 const bagAktif = 'bg-marka-50 text-marka-600 dark:bg-marka-500/15 dark:text-marka-400';
 const bagPasif =
 	'text-slate-600 hover:bg-slate-900/5 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-white';
 const eylemDugmesi =
-	'grid size-9 place-items-center rounded-full text-slate-500 transition-colors hover:bg-slate-900/5 hover:text-slate-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marka-500 dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-white';
+	'grid size-9 place-items-center rounded-md text-slate-500 transition-colors hover:bg-slate-900/5 hover:text-slate-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marka-500 dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-white';
 ---
 
 {/*
@@ -35,22 +35,22 @@ const eylemDugmesi =
 */}
 <header id="ust-cubuk" data-kaydirildi="false" class="group fixed inset-x-0 top-0 z-50">
 	<div
-		class="mx-auto w-full max-w-6xl px-4 transition-all duration-500 ease-out group-data-[kaydirildi=true]:max-w-4xl motion-reduce:transition-none sm:px-6 group-data-[kaydirildi=true]:sm:px-4"
+		class="mx-auto w-full max-w-7xl px-4 transition-all duration-200 ease-out group-data-[kaydirildi=true]:max-w-5xl motion-reduce:transition-none sm:px-6 group-data-[kaydirildi=true]:sm:px-4"
 	>
 		<div
-			class="overflow-hidden border border-transparent transition-all duration-500 ease-out group-data-[kaydirildi=true]:mt-3 group-data-[kaydirildi=true]:rounded-2xl group-data-[kaydirildi=true]:border-slate-900/10 group-data-[kaydirildi=true]:bg-white/75 group-data-[kaydirildi=true]:shadow-lg group-data-[kaydirildi=true]:shadow-slate-900/5 group-data-[kaydirildi=true]:backdrop-blur-xl motion-reduce:transition-none dark:group-data-[kaydirildi=true]:border-white/10 dark:group-data-[kaydirildi=true]:bg-slate-900/75 dark:group-data-[kaydirildi=true]:shadow-black/20"
+			class="overflow-hidden border border-transparent transition-all duration-200 ease-out group-data-[kaydirildi=true]:mt-2.5 group-data-[kaydirildi=true]:rounded-md group-data-[kaydirildi=true]:border-slate-900/15 group-data-[kaydirildi=true]:bg-white/85 group-data-[kaydirildi=true]:shadow-md group-data-[kaydirildi=true]:shadow-slate-900/10 group-data-[kaydirildi=true]:backdrop-blur-md motion-reduce:transition-none dark:group-data-[kaydirildi=true]:border-white/15 dark:group-data-[kaydirildi=true]:bg-slate-900/85 dark:group-data-[kaydirildi=true]:shadow-black/30"
 		>
 			<nav
 				aria-label="Ana gezinme"
-				class="flex h-20 items-center justify-between gap-3 px-2 transition-all duration-500 ease-out group-data-[kaydirildi=true]:h-14 group-data-[kaydirildi=true]:px-2.5 motion-reduce:transition-none"
+				class="flex h-20 items-center justify-between gap-3 px-2 transition-all duration-200 ease-out group-data-[kaydirildi=true]:h-14 group-data-[kaydirildi=true]:px-2.5 motion-reduce:transition-none"
 			>
 				<!-- Marka -->
 				<a
 					href="/"
-					class="flex shrink-0 items-center gap-2.5 rounded-full px-1.5 py-1 font-semibold tracking-tight text-slate-900 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-marka-500 dark:text-white"
+					class="flex shrink-0 items-center gap-2.5 rounded-md px-1.5 py-1 font-semibold tracking-tight text-slate-900 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-marka-500 dark:text-white"
 				>
 					<span
-						class="grid size-9 place-items-center rounded-xl bg-marka-600 text-sm font-bold text-white shadow-sm transition-all duration-500 ease-out group-data-[kaydirildi=true]:size-8 group-data-[kaydirildi=true]:rounded-lg motion-reduce:transition-none"
+						class="grid size-9 place-items-center rounded-md bg-marka-600 text-sm font-bold text-white shadow-sm transition-all duration-200 ease-out group-data-[kaydirildi=true]:size-8 motion-reduce:transition-none"
 						aria-hidden="true">M</span
 					>
 					<span>Mustafa</span>
