@@ -173,7 +173,7 @@ const Icon = ({
         /* Kart, bulunduğu temaya uyuyor. Koyu temada zemin koyu; koyu zeminde
            kaybolan tek renk/koyu logolar ayrıca `dark:invert` ile ters çevriliyor
            (bkz. HeroBolumu içindeki `koyuTemadaTersle`). */
-        className="flex items-center justify-center w-14 h-14 md:w-16 md:h-16 p-2.5 rounded-2xl shadow-lg bg-white/90 backdrop-blur-md border border-black/5 transition-shadow hover:shadow-xl dark:bg-slate-800/70 dark:border-white/10"
+        className="flex items-center justify-center w-12 h-12 md:w-14 md:h-14 p-2 rounded-xl shadow-lg bg-white/90 backdrop-blur-md border border-black/5 transition-shadow hover:shadow-xl dark:bg-slate-800/70 dark:border-white/10"
         animate={{
           y: [0, -8, 0, 8, 0],
           x: [0, 6, 0, -6, 0],
@@ -188,7 +188,7 @@ const Icon = ({
       >
         <iconData.icon
           className={cn(
-            'w-7 h-7 md:w-8 md:h-8 text-foreground',
+            'w-6 h-6 md:w-7 md:h-7 text-foreground',
             iconData.koyuTemadaTersle && 'dark:invert'
           )}
         />
@@ -253,10 +253,12 @@ const FloatingIconsHero = React.forwardRef<
         {/* Başlığın üzerinden soldan sağa geçen parıltı: gradyan metne
             maskeleniyor ve arka plan konumu animasyonla kaydırılıyor.
             Hareketi azaltılmış tercihte animasyon durur, metin okunur kalır. */}
-        <h1 className="animate-parilti bg-gradient-to-r from-foreground/55 via-foreground to-foreground/55 bg-[length:200%_100%] bg-clip-text text-5xl font-bold tracking-tight text-transparent md:text-7xl motion-reduce:animate-none">
+        {/* Ölçüler ekran genişliğiyle akıyor: sabit kademeler 24 inçlik bir
+            ekranda 27 inçlik orana göre kaba duruyordu. */}
+        <h1 className="animate-parilti bg-gradient-to-r from-foreground/55 via-foreground to-foreground/55 bg-[length:200%_100%] bg-clip-text text-[clamp(2.25rem,4.2vw,4.75rem)] leading-[1.05] font-bold tracking-tight text-transparent motion-reduce:animate-none">
           {title}
         </h1>
-        <p className="mt-6 max-w-xl mx-auto text-lg text-muted-foreground">
+        <p className="mx-auto mt-6 max-w-[min(36rem,90vw)] text-[clamp(1rem,1.15vw,1.2rem)] text-muted-foreground">
           {subtitle}
         </p>
         <div className="mt-10 flex flex-wrap items-center justify-center gap-3">

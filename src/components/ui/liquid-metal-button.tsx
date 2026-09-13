@@ -273,11 +273,15 @@ export function LiquidMetalButton({
                 height: `${dimensions.height}px`,
                 width: `${dimensions.width}px`,
                 borderRadius: "100px",
+                /* Aşağı uzanan gölgeler kaldırıldı: gezinme çubuğunun kapsülü
+                   `overflow: hidden` olduğu için gölge kesiliyor ve düğmenin
+                   altında keskin kenarlı bir leke bırakıyordu. Derinlik hissi
+                   artık yalnızca kenar çizgisinin kalınlığıyla veriliyor. */
                 boxShadow: isPressed
-                  ? "0px 0px 0px 1px rgba(0, 0, 0, 0.5), 0px 1px 2px 0px rgba(0, 0, 0, 0.3)"
+                  ? "0px 0px 0px 1px var(--lm-kenar)"
                   : isHovered
-                    ? "0px 0px 0px 1px var(--lm-kenar), 0px 12px 6px 0px rgba(0, 0, 0, 0.05), 0px 8px 5px 0px rgba(0, 0, 0, 0.1), 0px 4px 4px 0px rgba(0, 0, 0, 0.15), 0px 1px 2px 0px rgba(0, 0, 0, 0.2)"
-                    : "0px 0px 0px 1px var(--lm-kenar), 0px 36px 14px 0px rgba(0, 0, 0, 0.02), 0px 20px 12px 0px rgba(0, 0, 0, 0.08), 0px 9px 9px 0px rgba(0, 0, 0, 0.12), 0px 2px 5px 0px rgba(0, 0, 0, 0.15)",
+                    ? "0px 0px 0px 2px var(--lm-kenar)"
+                    : "0px 0px 0px 1px var(--lm-kenar)",
                 transition:
                   "all 0.8s cubic-bezier(0.34, 1.56, 0.64, 1), width 0.4s ease, height 0.4s ease, box-shadow 0.15s cubic-bezier(0.4, 0, 0.2, 1)",
                 background: "rgb(0 0 0 / 0)",
