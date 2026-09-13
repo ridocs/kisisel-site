@@ -20,8 +20,14 @@ function aktifMi(yol: string) {
 // Bağlantı stilleri iki menüde de aynı olsun diye tek yerde tutuluyor.
 const bagTemel =
 	'rounded-md px-3.5 py-2 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marka-500';
-const bagAktif = 'bg-marka-50 text-marka-600 dark:bg-marka-500/15 dark:text-marka-400';
-const bagPasif =
+
+// Masaüstünde zemini kayan gösterge çizdiği için bağlantıların kendi arka planı yok;
+// yalnızca metin rengi değişir. Mobil menüde gösterge bulunmadığından zemin orada kalır.
+const bagAktifMasaustu = 'text-marka-600 dark:text-marka-400';
+const bagPasifMasaustu =
+	'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white';
+const bagAktifMobil = 'bg-marka-50 text-marka-600 dark:bg-marka-500/15 dark:text-marka-400';
+const bagPasifMobil =
 	'text-slate-600 hover:bg-slate-900/5 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-white';
 const eylemDugmesi =
 	'grid size-9 place-items-center rounded-md text-slate-500 transition-colors hover:bg-slate-900/5 hover:text-slate-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marka-500 dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-white';
@@ -56,15 +62,23 @@ const eylemDugmesi =
 					<span>Mustafa</span>
 				</a>
 
-				<!-- Masaüstü bağlantıları -->
-				<ul class="hidden items-center gap-1 md:flex">
+				<!-- Masaüstü bağlantıları: zemini, imleci izleyen tek bir gösterge çizer -->
+				<ul id="menu-listesi" class="relative hidden items-center gap-1 md:flex">
+					<span
+						id="gosterge"
+						class="gosterge pointer-events-none absolute top-0 left-0 h-full rounded-md bg-marka-50 dark:bg-marka-500/15"
+						aria-hidden="true"></span>
 					{
 						baglantilar.map((baglanti) => (
-							<li>
+							<li class="relative">
 								<a
 									href={baglanti.yol}
+									data-menu-bag
 									aria-current={aktifMi(baglanti.yol) ? 'page' : undefined}
-									class:list={[bagTemel, aktifMi(baglanti.yol) ? bagAktif : bagPasif]}
+									class:list={[
+										bagTemel,
+										aktifMi(baglanti.yol) ? bagAktifMasaustu : bagPasifMasaustu,
+									]}
 								>
 									{baglanti.ad}
 								</a>
@@ -110,7 +124,7 @@ const eylemDugmesi =
 									class:list={[
 										'block',
 										bagTemel,
-										aktifMi(baglanti.yol) ? bagAktif : bagPasif,
+										aktifMi(baglanti.yol) ? bagAktifMobil : bagPasifMobil,
 									]}
 								>
 									{baglanti.ad}
@@ -126,6 +140,52 @@ const eylemDugmesi =
 
 {/* Çubuk fixed olduğu için sayfa içeriğinin altına kaymasını engelleyen boşluk. */}
 <div class="h-20" aria-hidden="true"></div>
+
+<style>
+	/* Kayan gösterge. Konum ve genişlik CSS değişkenleriyle sürülür; JS yalnızca
+	   bu iki değeri yazar. Zamanlama eğrisi sonda hedefi hafifçe aşarak yay hissi verir. */
+	.gosterge {
+		width: var(--gosterge-w, 0px);
+		translate: var(--gosterge-x, 0px) 0;
+		opacity: 0;
+		transition:
+			translate 250ms cubic-bezier(1, 0.2, 0.1, 1.2),
+			width 250ms cubic-bezier(1, 0.2, 0.1, 1.2),
+			opacity 150ms ease;
+	}
+
+	.gosterge[data-gorunur='true'] {
+		opacity: 1;
+	}
+
+	/* Yapışkan his: gösterge yer değiştirirken hareket ekseninde uzayıp dik eksende
+	   inceliyor, sonra toparlanıyor. `scale` bağımsız bir özellik olduğu için
+	   `translate` ile çakışmaz — ikisi aynı anda sürülebilir. */
+	.gosterge[data-akiyor='true'] {
+		animation: gooey-yatay 250ms 1;
+	}
+
+	@keyframes gooey-yatay {
+		0% {
+			scale: 1 1;
+		}
+		45% {
+			scale: 1.22 0.72;
+		}
+		100% {
+			scale: 1 1;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.gosterge {
+			transition: opacity 150ms ease;
+		}
+		.gosterge[data-akiyor='true'] {
+			animation: none;
+		}
+	}
+</style>
 
 <script>
 	const ustCubuk = document.getElementById('ust-cubuk');
@@ -196,4 +256,55 @@ const eylemDugmesi =
 	});
 
 	temaEtiketiniGuncelle();
+
+	// --- Kayan gösterge ------------------------------------------------------
+	const menuListesi = document.getElementById('menu-listesi');
+	const gosterge = document.getElementById('gosterge');
+	const menuBaglantilari = menuListesi
+		? [...menuListesi.querySelectorAll<HTMLAnchorElement>('a[data-menu-bag]')]
+		: [];
+	const aktifBaglanti = menuListesi?.querySelector<HTMLAnchorElement>('a[aria-current="page"]');
+
+	function gostergeyiTasi(hedef: HTMLElement, akitMi = true) {
+		if (!menuListesi || !gosterge) return;
+		// Konum listeye göre ölçülür; bağlantılar eşit genişlikte olmadığı için
+		// sabit bölme yerine gerçek kutu ölçüleri kullanılıyor.
+		const listeKutusu = menuListesi.getBoundingClientRect();
+		const hedefKutusu = hedef.getBoundingClientRect();
+		gosterge.style.setProperty('--gosterge-x', `${hedefKutusu.left - listeKutusu.left}px`);
+		gosterge.style.setProperty('--gosterge-w', `${hedefKutusu.width}px`);
+		gosterge.dataset.gorunur = 'true';
+		if (!akitMi) return;
+		// Aynı animasyonu yeniden tetiklemek için sıfırlayıp yeniden başlatıyoruz.
+		gosterge.dataset.akiyor = 'false';
+		void gosterge.offsetWidth;
+		gosterge.dataset.akiyor = 'true';
+	}
+
+	function gostergeyiAktifeAl(akitMi = true) {
+		if (!gosterge) return;
+		if (aktifBaglanti) gostergeyiTasi(aktifBaglanti, akitMi);
+		else gosterge.dataset.gorunur = 'false';
+	}
+
+	if (menuListesi && gosterge) {
+		menuBaglantilari.forEach((bag) => {
+			bag.addEventListener('mouseenter', () => gostergeyiTasi(bag));
+			bag.addEventListener('focus', () => gostergeyiTasi(bag));
+		});
+
+		menuListesi.addEventListener('mouseleave', () => gostergeyiAktifeAl());
+		menuListesi.addEventListener('focusout', (olay) => {
+			if (!menuListesi.contains(olay.relatedTarget as Node)) gostergeyiAktifeAl();
+		});
+
+		// İlk yerleşim animasyonsuz olmalı; aksi hâlde sayfa açılırken gösterge
+		// sol kenardan hedefe doğru süzülüyor.
+		gosterge.style.transition = 'none';
+		gostergeyiAktifeAl(false);
+		void gosterge.offsetWidth;
+		gosterge.style.transition = '';
+
+		window.addEventListener('resize', () => gostergeyiAktifeAl(false), { passive: true });
+	}
 </script>
