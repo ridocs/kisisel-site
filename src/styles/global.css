@@ -19,6 +19,16 @@
 
 html {
 	scroll-behavior: smooth;
+	/* Sabit üst çubuk, sayfa içi bağlantıyla ya da klavyeyle gelinen öğeyi
+	   örtmesin — WCAG 2.2 "Focus Not Obscured (Minimum)". Çubuk 64px,
+	   üstüne bir miktar nefes payı. */
+	scroll-padding-top: 5rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	html {
+		scroll-behavior: auto;
+	}
 }
 
 /* Tailwind typography satır içi kodun etrafına varsayılan olarak ` karakteri

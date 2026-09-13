@@ -18,25 +18,33 @@ function aktifMi(yol: string) {
 	return suAnkiYol === yol || suAnkiYol.startsWith(`${yol}/`);
 }
 
-// Tasarımdaki tipografi: Inter, 400, 20px / 24px satır yüksekliği.
+// Tipografi ölçeği. Önceki sürümde marka, bağlantılar ve düğme aynı 20px'teydi;
+// hepsi eşit ağırlıkta görününce göz nereye bakacağını bulamıyordu. Swiss tipografi
+// mantığıyla üç kademe: marka 17/600, gezinme 15/500, yardımcı eylemler ikon.
+// Dolgu, kayan göstergenin çizdiği alanı belirliyor: metnin çevresinde 18px yatay,
+// 11px dikey nefes payı bırakıyor ki vurgu metne yapışık görünmesin.
 const bagTemel =
-	'rounded-md px-3 py-1.5 text-[20px] leading-6 font-normal transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current';
+	'rounded-lg px-[18px] py-[11px] text-[15px] leading-5 font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current';
 
-// Tasarım tüm bağlantıları beyaz veriyor; hangisinin açık olduğunu kayan gösterge
-// belirtiyor. Pasifler yalnızca bir tık soluk, böylece vurgu tamamen kaybolmuyor.
-// Beyaz metin koyu zemin varsayar; açık temada aynı değerlerin koyu karşılığı kullanılır.
+// Hangi sayfanın açık olduğunu kayan gösterge belirtiyor; metin rengi yalnızca
+// destekliyor. Pasifler bir tık soluk ama WCAG 4.5:1'in altına düşmüyor.
 const bagAktifMasaustu = 'text-slate-900 dark:text-white';
 const bagPasifMasaustu =
-	'text-slate-900/70 hover:text-slate-900 dark:text-white/70 dark:hover:text-white';
+	'text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white';
 const bagAktifMobil = 'bg-slate-900/10 text-slate-900 dark:bg-white/15 dark:text-white';
 const bagPasifMobil =
-	'text-slate-900/70 hover:bg-slate-900/5 hover:text-slate-900 dark:text-white/70 dark:hover:bg-white/10 dark:hover:text-white';
-const eylemDugmesi =
-	'grid size-9 place-items-center rounded-md text-slate-900/70 transition-colors hover:bg-slate-900/5 hover:text-slate-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current dark:text-white/70 dark:hover:bg-white/10 dark:hover:text-white';
+	'text-slate-600 hover:bg-slate-900/5 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white';
 
-// Tasarımdaki "Rectangle 1": 158x37, #D9D9D9 zemin, 10px köşe.
+// İkon düğmeleri 40px: WCAG 2.2 AA web için 24px istiyor, ancak dokunmatikte
+// 40-44px aralığı isabet hatasını belirgin biçimde azaltıyor.
+const eylemDugmesi =
+	'grid size-10 cursor-pointer place-items-center rounded-lg text-slate-600 transition-colors hover:bg-slate-900/5 hover:text-slate-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white';
+
+// Birincil eylem: gri (#D9D9D9) zemin üzerinde koyu metin yalnızca 1.9:1 veriyordu.
+// Tam kontrastlı solid zemin hem 15:1 üzerine çıkıyor hem düğmeyi tek birincil
+// eylem olarak okutuyor.
 const iletisimDugmesi =
-	'hidden h-[37px] w-[158px] shrink-0 place-items-center rounded-[10px] bg-[#D9D9D9] text-[20px] leading-6 font-normal text-slate-900 transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current md:grid';
+	'hidden h-10 shrink-0 cursor-pointer items-center rounded-lg bg-slate-900 px-5 text-[15px] leading-5 font-medium text-white transition-colors hover:bg-slate-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current md:inline-flex dark:bg-white dark:text-slate-900 dark:hover:bg-white/85';
 ---
 
 {/*
@@ -56,25 +64,32 @@ const iletisimDugmesi =
 		  aynı ilişkinin koyu karşılığı kullanılır.
 		*/}
 		<div
-			class="overflow-hidden rounded-[15px] border border-transparent transition-all duration-200 ease-out group-data-[kaydirildi=true]:mt-2.5 group-data-[kaydirildi=true]:border-slate-900/20 group-data-[kaydirildi=true]:bg-slate-900/5 group-data-[kaydirildi=true]:backdrop-blur-md motion-reduce:transition-none dark:group-data-[kaydirildi=true]:border-white dark:group-data-[kaydirildi=true]:bg-white/10"
+			class="overflow-hidden rounded-xl border border-transparent transition-all duration-200 ease-out group-data-[kaydirildi=true]:mt-3 group-data-[kaydirildi=true]:border-slate-900/10 group-data-[kaydirildi=true]:bg-white/70 group-data-[kaydirildi=true]:shadow-sm group-data-[kaydirildi=true]:shadow-slate-900/5 group-data-[kaydirildi=true]:backdrop-blur-xl motion-reduce:transition-none dark:group-data-[kaydirildi=true]:border-white/15 dark:group-data-[kaydirildi=true]:bg-slate-950/70"
 		>
 			<nav
 				aria-label="Ana gezinme"
-				class="flex h-[78px] items-center justify-between gap-4 pr-[18px] pl-[22px] sm:pr-[32px]"
+				class="flex h-[62px] items-center justify-between gap-4 pr-3 pl-4 sm:pr-4 sm:pl-6"
 			>
 				<!-- Marka -->
 				<a
 					href="/"
-					class="shrink-0 rounded-md text-[20px] leading-6 font-normal whitespace-nowrap text-slate-900 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-current dark:text-white"
+					class="inline-flex h-10 shrink-0 items-center rounded-lg text-[17px] leading-6 font-semibold tracking-tight whitespace-nowrap text-slate-900 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-current dark:text-white"
 				>
 					Mustafa Eybek
 				</a>
 
 				<!-- Masaüstü bağlantıları: zemini, imleci izleyen tek bir gösterge çizer -->
-				<ul id="menu-listesi" class="relative hidden items-center gap-6 md:flex lg:gap-[80px]">
+				{/*
+				  Bağlantılar tek bir küme olarak duruyor. Önceki 80px'lik aralık onları
+				  birbirinden kopuk üç ayrı öğe gibi gösteriyordu; yakın yerleşim hem
+				  gruplandırmayı hem de gösterge kaymasının okunabilirliğini artırıyor.
+				*/}
+				<ul id="menu-listesi" class="relative hidden items-center gap-2 md:flex">
+					{/* Gösterge, sitenin marka mavisinin saydam hâli: zeminin dokusunu
+					    örtmeden vurguyu taşıyor. */}
 					<span
 						id="gosterge"
-						class="gosterge pointer-events-none absolute top-0 left-0 h-full rounded-md bg-slate-900/10 dark:bg-white/15"
+						class="gosterge pointer-events-none absolute top-0 left-0 h-full rounded-lg bg-marka-500/15 dark:bg-marka-400/25"
 						aria-hidden="true"></span>
 					{
 						baglantilar.map((baglanti) => (
@@ -132,7 +147,8 @@ const iletisimDugmesi =
 									href={baglanti.yol}
 									aria-current={aktifMi(baglanti.yol) ? 'page' : undefined}
 									class:list={[
-										'block',
+										// Dar ekranda parmakla kullanıldığı için 44px'lik rahat bir hedef.
+										'flex min-h-11 items-center',
 										bagTemel,
 										aktifMi(baglanti.yol) ? bagAktifMobil : bagPasifMobil,
 									]}
@@ -146,7 +162,7 @@ const iletisimDugmesi =
 						{/* Masaüstündeki "İletişim" düğmesi dar ekranda gizlendiği için buraya taşınıyor. */}
 						<a
 							href="/hakkimda#iletisim"
-							class="mt-1 grid h-[37px] place-items-center rounded-[10px] bg-[#D9D9D9] text-[20px] leading-6 font-normal text-slate-900 transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current"
+							class="mt-2 grid h-11 place-items-center rounded-lg bg-slate-900 text-[15px] leading-5 font-medium text-white transition-colors hover:bg-slate-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current dark:bg-white dark:text-slate-900 dark:hover:bg-white/85"
 						>
 							İletişim
 						</a>
@@ -157,19 +173,24 @@ const iletisimDugmesi =
 	</div>
 </header>
 
-{/* Çubuk fixed olduğu için sayfa içeriğinin altına kaymasını engelleyen boşluk. */}
-<div class="h-20" aria-hidden="true"></div>
+{/* Çubuk fixed olduğu için sayfa içeriğinin altına kaymasını engelleyen boşluk:
+    62px gezinme + 1px üst ve alt kenarlık. */}
+<div class="h-16" aria-hidden="true"></div>
 
 <style>
 	/* Kayan gösterge. Konum ve genişlik CSS değişkenleriyle sürülür; JS yalnızca
 	   bu iki değeri yazar. Zamanlama eğrisi sonda hedefi hafifçe aşarak yay hissi verir. */
+	/* Yükseklik ve dikey konum da ölçülerek veriliyor: `height: 100%` bağlantının
+	   kutusunu değil listenin kutusunu izliyordu ve vurgu metne yapışık kalıyordu. */
 	.gosterge {
 		width: var(--gosterge-w, 0px);
-		translate: var(--gosterge-x, 0px) 0;
+		height: var(--gosterge-h, 100%);
+		translate: var(--gosterge-x, 0px) var(--gosterge-y, 0px);
 		opacity: 0;
 		transition:
 			translate 250ms cubic-bezier(1, 0.2, 0.1, 1.2),
 			width 250ms cubic-bezier(1, 0.2, 0.1, 1.2),
+			height 250ms cubic-bezier(1, 0.2, 0.1, 1.2),
 			opacity 150ms ease;
 	}
 
@@ -291,7 +312,9 @@ const iletisimDugmesi =
 		const listeKutusu = menuListesi.getBoundingClientRect();
 		const hedefKutusu = hedef.getBoundingClientRect();
 		gosterge.style.setProperty('--gosterge-x', `${hedefKutusu.left - listeKutusu.left}px`);
+		gosterge.style.setProperty('--gosterge-y', `${hedefKutusu.top - listeKutusu.top}px`);
 		gosterge.style.setProperty('--gosterge-w', `${hedefKutusu.width}px`);
+		gosterge.style.setProperty('--gosterge-h', `${hedefKutusu.height}px`);
 		gosterge.dataset.gorunur = 'true';
 		if (!akitMi) return;
 		// Aynı animasyonu yeniden tetiklemek için sıfırlayıp yeniden başlatıyoruz.
