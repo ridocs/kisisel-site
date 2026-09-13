@@ -85,11 +85,15 @@ const iletisimDugmesi =
 				  gruplandırmayı hem de gösterge kaymasının okunabilirliğini artırıyor.
 				*/}
 				<ul id="menu-listesi" class="relative hidden items-center gap-2 md:flex">
-					{/* Gösterge, sitenin marka mavisinin saydam hâli: zeminin dokusunu
-					    örtmeden vurguyu taşıyor. */}
+					{/*
+					  Gösterge saydam koyu gri. Tam opak siyah, üzerindeki koyu metni
+					  okunmaz hâle getirirdi; saydamlık hem "siyaha yakın" tonu veriyor
+					  hem metin kontrastını koruyor. Koyu temada aynı ton görünmez
+					  olacağı için orada beyazın saydamı kullanılıyor.
+					*/}
 					<span
 						id="gosterge"
-						class="gosterge pointer-events-none absolute top-0 left-0 h-full rounded-lg bg-marka-500/15 dark:bg-marka-400/25"
+						class="gosterge pointer-events-none absolute top-0 left-0 h-full rounded-lg bg-slate-900/12 dark:bg-white/12"
 						aria-hidden="true"></span>
 					{
 						baglantilar.map((baglanti) => (
