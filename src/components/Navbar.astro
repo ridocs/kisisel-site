@@ -4,8 +4,9 @@ import { Icon } from 'astro-icon/components';
 // Gezinme bağlantıları. Yeni sayfa eklediğinde buraya bir satır eklemen yeterli;
 // hem masaüstü hem mobil menü bu listeden üretilir.
 const baglantilar = [
-	{ ad: 'Ana Sayfa', yol: '/' },
+	{ ad: 'Home', yol: '/' },
 	{ ad: 'Blog', yol: '/blog' },
+	{ ad: 'Hakkımda', yol: '/hakkimda' },
 ];
 
 const suAnkiYol = Astro.url.pathname;
@@ -17,20 +18,25 @@ function aktifMi(yol: string) {
 	return suAnkiYol === yol || suAnkiYol.startsWith(`${yol}/`);
 }
 
-// Bağlantı stilleri iki menüde de aynı olsun diye tek yerde tutuluyor.
+// Tasarımdaki tipografi: Inter, 400, 20px / 24px satır yüksekliği.
 const bagTemel =
-	'rounded-md px-3.5 py-2 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marka-500';
+	'rounded-md px-3 py-1.5 text-[20px] leading-6 font-normal transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current';
 
-// Masaüstünde zemini kayan gösterge çizdiği için bağlantıların kendi arka planı yok;
-// yalnızca metin rengi değişir. Mobil menüde gösterge bulunmadığından zemin orada kalır.
-const bagAktifMasaustu = 'text-marka-600 dark:text-marka-400';
+// Tasarım tüm bağlantıları beyaz veriyor; hangisinin açık olduğunu kayan gösterge
+// belirtiyor. Pasifler yalnızca bir tık soluk, böylece vurgu tamamen kaybolmuyor.
+// Beyaz metin koyu zemin varsayar; açık temada aynı değerlerin koyu karşılığı kullanılır.
+const bagAktifMasaustu = 'text-slate-900 dark:text-white';
 const bagPasifMasaustu =
-	'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white';
-const bagAktifMobil = 'bg-marka-50 text-marka-600 dark:bg-marka-500/15 dark:text-marka-400';
+	'text-slate-900/70 hover:text-slate-900 dark:text-white/70 dark:hover:text-white';
+const bagAktifMobil = 'bg-slate-900/10 text-slate-900 dark:bg-white/15 dark:text-white';
 const bagPasifMobil =
-	'text-slate-600 hover:bg-slate-900/5 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-white';
+	'text-slate-900/70 hover:bg-slate-900/5 hover:text-slate-900 dark:text-white/70 dark:hover:bg-white/10 dark:hover:text-white';
 const eylemDugmesi =
-	'grid size-9 place-items-center rounded-md text-slate-500 transition-colors hover:bg-slate-900/5 hover:text-slate-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marka-500 dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-white';
+	'grid size-9 place-items-center rounded-md text-slate-900/70 transition-colors hover:bg-slate-900/5 hover:text-slate-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current dark:text-white/70 dark:hover:bg-white/10 dark:hover:text-white';
+
+// Tasarımdaki "Rectangle 1": 158x37, #D9D9D9 zemin, 10px köşe.
+const iletisimDugmesi =
+	'hidden h-[37px] w-[158px] shrink-0 place-items-center rounded-[10px] bg-[#D9D9D9] text-[20px] leading-6 font-normal text-slate-900 transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current md:grid';
 ---
 
 {/*
@@ -41,32 +47,34 @@ const eylemDugmesi =
 */}
 <header id="ust-cubuk" data-kaydirildi="false" class="group fixed inset-x-0 top-0 z-50">
 	<div
-		class="mx-auto w-full max-w-7xl px-4 transition-all duration-200 ease-out group-data-[kaydirildi=true]:max-w-5xl motion-reduce:transition-none sm:px-6 group-data-[kaydirildi=true]:sm:px-4"
+		class="mx-auto w-full max-w-[1352px] px-4 transition-all duration-200 ease-out group-data-[kaydirildi=true]:max-w-[1232px] motion-reduce:transition-none sm:px-6 group-data-[kaydirildi=true]:sm:px-4"
 	>
+		{/*
+		  Tasarımdaki çerçeve: 1200x80, rgba(255,255,255,0.1) zemin, 1px beyaz kenarlık,
+		  15px köşe. Zemin ve kenarlık yalnızca kaydırıldığında beliriyor; sayfanın
+		  tepesinde çubuk saydam kalıyor. Beyaz değerler koyu zemin içindir, açık temada
+		  aynı ilişkinin koyu karşılığı kullanılır.
+		*/}
 		<div
-			class="overflow-hidden border border-transparent transition-all duration-200 ease-out group-data-[kaydirildi=true]:mt-2.5 group-data-[kaydirildi=true]:rounded-md group-data-[kaydirildi=true]:border-slate-900/15 group-data-[kaydirildi=true]:bg-white/85 group-data-[kaydirildi=true]:shadow-md group-data-[kaydirildi=true]:shadow-slate-900/10 group-data-[kaydirildi=true]:backdrop-blur-md motion-reduce:transition-none dark:group-data-[kaydirildi=true]:border-white/15 dark:group-data-[kaydirildi=true]:bg-slate-900/85 dark:group-data-[kaydirildi=true]:shadow-black/30"
+			class="overflow-hidden rounded-[15px] border border-transparent transition-all duration-200 ease-out group-data-[kaydirildi=true]:mt-2.5 group-data-[kaydirildi=true]:border-slate-900/20 group-data-[kaydirildi=true]:bg-slate-900/5 group-data-[kaydirildi=true]:backdrop-blur-md motion-reduce:transition-none dark:group-data-[kaydirildi=true]:border-white dark:group-data-[kaydirildi=true]:bg-white/10"
 		>
 			<nav
 				aria-label="Ana gezinme"
-				class="flex h-20 items-center justify-between gap-3 px-2 transition-all duration-200 ease-out group-data-[kaydirildi=true]:h-14 group-data-[kaydirildi=true]:px-2.5 motion-reduce:transition-none"
+				class="flex h-[78px] items-center justify-between gap-4 pr-[18px] pl-[22px] sm:pr-[32px]"
 			>
 				<!-- Marka -->
 				<a
 					href="/"
-					class="flex shrink-0 items-center gap-2.5 rounded-md px-1.5 py-1 font-semibold tracking-tight text-slate-900 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-marka-500 dark:text-white"
+					class="shrink-0 rounded-md text-[20px] leading-6 font-normal whitespace-nowrap text-slate-900 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-current dark:text-white"
 				>
-					<span
-						class="grid size-9 place-items-center rounded-md bg-marka-600 text-sm font-bold text-white shadow-sm transition-all duration-200 ease-out group-data-[kaydirildi=true]:size-8 motion-reduce:transition-none"
-						aria-hidden="true">M</span
-					>
-					<span>Mustafa</span>
+					Mustafa Eybek
 				</a>
 
 				<!-- Masaüstü bağlantıları: zemini, imleci izleyen tek bir gösterge çizer -->
-				<ul id="menu-listesi" class="relative hidden items-center gap-1 md:flex">
+				<ul id="menu-listesi" class="relative hidden items-center gap-6 md:flex lg:gap-[80px]">
 					<span
 						id="gosterge"
-						class="gosterge pointer-events-none absolute top-0 left-0 h-full rounded-md bg-marka-50 dark:bg-marka-500/15"
+						class="gosterge pointer-events-none absolute top-0 left-0 h-full rounded-md bg-slate-900/10 dark:bg-white/15"
 						aria-hidden="true"></span>
 					{
 						baglantilar.map((baglanti) => (
@@ -88,7 +96,7 @@ const eylemDugmesi =
 				</ul>
 
 				<!-- Eylemler -->
-				<div class="flex shrink-0 items-center gap-0.5">
+				<div class="flex shrink-0 items-center gap-2">
 					<a href="/rss.xml" aria-label="RSS akışı" class={eylemDugmesi}>
 						<Icon name="lucide:rss" class="size-[18px]" />
 					</a>
@@ -97,6 +105,8 @@ const eylemDugmesi =
 						<Icon name="lucide:moon" class="size-[18px] dark:hidden" />
 						<Icon name="lucide:sun" class="hidden size-[18px] dark:block" />
 					</button>
+
+					<a href="/hakkimda#iletisim" class={iletisimDugmesi}>İletişim</a>
 
 					<button
 						id="menu-dugmesi"
@@ -132,6 +142,15 @@ const eylemDugmesi =
 							</li>
 						))
 					}
+					<li>
+						{/* Masaüstündeki "İletişim" düğmesi dar ekranda gizlendiği için buraya taşınıyor. */}
+						<a
+							href="/hakkimda#iletisim"
+							class="mt-1 grid h-[37px] place-items-center rounded-[10px] bg-[#D9D9D9] text-[20px] leading-6 font-normal text-slate-900 transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current"
+						>
+							İletişim
+						</a>
+					</li>
 				</ul>
 			</div>
 		</div>
