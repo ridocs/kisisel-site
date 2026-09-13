@@ -142,9 +142,13 @@ export default function HeroBolumu() {
 	return (
 		<FloatingIconsHero
 			title="Ben Mustafa Eybek"
-			subtitle="Yazdıklarımı, üzerinde çalıştığım işleri ve öğrendiklerimi burada topluyorum. İmleci ikonların üzerine götür, kaçışlarını izle."
+			// Yer tutucu metin; kendi cümlelerinle değiştirilecek.
+			subtitle="Yazılım geliştirici. Web uygulamaları, altyapı ve otomasyon üzerine çalışıyorum; öğrendiklerimi burada yazıyorum."
 			ctaText="Yazıları oku"
 			ctaHref="/blog"
+			ikinciCtaText="GitHub profilim"
+			ikinciCtaHref="https://github.com/ridocs"
+			ikinciCtaHarici
 			icons={ikonlar}
 			// Sabit üst çubuk için bırakılan boşluğu geri alarak bölümü tam ekran yapar.
 			className="-mt-16"

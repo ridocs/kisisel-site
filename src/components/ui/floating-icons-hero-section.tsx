@@ -18,6 +18,11 @@ export interface FloatingIconsHeroProps {
   subtitle: string;
   ctaText: string;
   ctaHref: string;
+  /** İkincil düğme. Verilmezse yalnızca birincil düğme çizilir. */
+  ikinciCtaText?: string;
+  ikinciCtaHref?: string;
+  /** İkincil düğme siteden çıkıyorsa: yeni sekmede açılır ve bu belirtilir. */
+  ikinciCtaHarici?: boolean;
   icons: IconProps[];
 }
 
@@ -159,7 +164,21 @@ const Icon = ({
 const FloatingIconsHero = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement> & FloatingIconsHeroProps
->(({ className, title, subtitle, ctaText, ctaHref, icons, ...props }, ref) => {
+>((
+  {
+    className,
+    title,
+    subtitle,
+    ctaText,
+    ctaHref,
+    ikinciCtaText,
+    ikinciCtaHref,
+    ikinciCtaHarici,
+    icons,
+    ...props
+  },
+  ref
+) => {
   // Refs to track the raw mouse position
   const mouseX = React.useRef(0);
   const mouseY = React.useRef(0);
@@ -200,10 +219,29 @@ const FloatingIconsHero = React.forwardRef<
         <p className="mt-6 max-w-xl mx-auto text-lg text-muted-foreground">
           {subtitle}
         </p>
-        <div className="mt-10">
+        <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
           <Button asChild size="lg" className="px-8 py-6 text-base font-semibold">
             <a href={ctaHref}>{ctaText}</a>
           </Button>
+          {ikinciCtaText && ikinciCtaHref && (
+            <Button
+              asChild
+              variant="outline"
+              size="lg"
+              className="px-8 py-6 text-base font-semibold"
+            >
+              <a
+                href={ikinciCtaHref}
+                {...(ikinciCtaHarici
+                  ? { target: '_blank', rel: 'noopener noreferrer' }
+                  : {})}
+              >
+                {ikinciCtaText}
+                {/* Yeni sekmede açıldığını ekran okuyucuya bildirir. */}
+                {ikinciCtaHarici && <span className="sr-only"> (yeni sekmede açılır)</span>}
+              </a>
+            </Button>
+          )}
         </div>
       </div>
     </section>
