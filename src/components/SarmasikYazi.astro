@@ -2,9 +2,9 @@
 /**
  * Sayfanın tamamı boyunca sağlı sollu inen tek bir yazı sarmaşığı.
  *
- * Tek bir eğri: tepeden başlıyor, sağa salınıp sola dönüyor ve aşağı doğru
- * böyle devam ediyor. Yazı bu eğrinin üzerinde akıyor, düz bir satır değil.
- * Yazı ayrıca eğri boyunca sürekli aşağı kayıyor — akan bir nehir gibi.
+ * Eğri SABİT duruyor. Hareket eden şey yazı: harfler eğrinin üzerinde, kendi
+ * yörüngelerinde, tek yönde ve durmadan akıyor — bir reklam bandının soldan
+ * sağa akması gibi, ama yörünge düz değil sarmaşık.
  *
  * Süs öğesi: okunacak bir metin değil, sayfaya doku veriyor. Bu yüzden
  * `aria-hidden` ve ekran okuyucuya hiç verilmiyor.
@@ -14,8 +14,9 @@
  * ve dikey teğeti aynı; alt alta dizildiklerinde ek yeri görünmeyen tek bir
  * eğri çıkıyor. Sayfadan uzun kalan parçalar kırpılıyor.
  *
- * Hareket tamamen CSS. Sitede hiç JavaScript yok, bu bileşen de o kuralı
- * bozmuyor.
+ * Akış SMIL (`<animate>`) ile. CSS `startOffset` özelliğini canlandıramıyor —
+ * o bir sunum özniteliği, CSS özelliği değil. SMIL bildirimsel SVG, JavaScript
+ * değil; sitenin "sıfır JavaScript" kuralı korunuyor.
  */
 interface Props {
 	/** Sarmaşık boyunca tekrarlanacak kelime. */
@@ -31,54 +32,135 @@ const { metin } = Astro.props;
 */
 const onek = `sarmasik-${Math.random().toString(36).slice(2, 8)}`;
 
-/*
-  Parça sayısı: en uzun sayfanın altına yetişecek kadar, artı sürekli akış
-  için bir parça yedek. Akış parçaları bir parça boyu kaydırdığı için üstte
-  açılan boşluğu bu yedek kapatıyor.
-
-  Sayı burada ve CSS'te aynı olmak zorunda; bu yüzden CSS'e değişken olarak
-  geçiyor, iki yere ayrı ayrı yazılmıyor.
-*/
 const PARCA_SAYISI = 7;
 const parcalar = Array.from({ length: PARCA_SAYISI }, (_, i) => i);
 
 /*
-  Tek parçanın yolu. Kutu 1000 × 1800.
+  Tek parçanın yolu. Kutu 1000 × 1100.
 
-  Kutunun boyu genişliğinin 1.8 katı: viraj yarıçapları bu yüzden geniş.
-  Daha basık bir kutuda dönüşler sertleşiyor ve yazı virajın iç tarafında
-  üst üste biniyordu — `textPath` harfleri yolun üzerine dizerken eğrilik
-  yarıçapı yazı boyuna yaklaşınca harfler birbirine giriyor. Salınım genliği
-  de bu yüzden kenarlara dayanmıyor (180–820), dönüşler yumuşak kalsın diye.
+  Dönüşlerin yarıçapı iki şeyden geliyor: salınım genliği (120–880, kenarlara
+  dayanmıyor) ve kontrol kollarının uzunluğu (her dönüşte 190 birim). Daha
+  kısa kollarla dönüşler sertleşiyor ve `textPath` harfleri virajın iç
+  tarafında üst üste biniyor — eğrilik yarıçapı yazı boyuna yaklaşınca harfler
+  birbirine giriyor.
 
-  Başlangıç ve bitiş noktasının x'i (500) ve dikey teğeti aynı olduğu için
-  parçalar eklendiğinde kırılma olmuyor.
+  Her dönüşte teğet dikey (kontrol noktası ile uç noktanın x'i aynı), başlangıç
+  ve bitiş de x=500'de dikey. Bu yüzden parçalar eklendiğinde kırılma olmuyor.
 */
-const YOL =
-	'M 500 0 C 500 210 820 350 820 570 C 820 790 180 930 180 1150 C 180 1370 500 1590 500 1800';
+const DUGUMLER = [
+	// [p0, c1, c2, p3]
+	[
+		[500, 0],
+		[500, 150],
+		[880, 190],
+		[880, 380],
+	],
+	[
+		[880, 380],
+		[880, 570],
+		[120, 530],
+		[120, 720],
+	],
+	[
+		[120, 720],
+		[120, 910],
+		[500, 950],
+		[500, 1100],
+	],
+] as const;
 
-// Yazı eğriyi dolduracak kadar tekrarlanıyor; taşan kısmı tarayıcı yolun
-// sonunda kendiliğinden kesiyor.
-const tekrarliMetin = `${metin} · `.repeat(16);
+const YOL = `M ${DUGUMLER[0][0].join(' ')} ${DUGUMLER.map(
+	([, c1, c2, p3]) => `C ${c1.join(' ')} ${c2.join(' ')} ${p3.join(' ')}`,
+).join(' ')}`;
+
+/*
+  Yolun uzunluğu — akışın dikişsiz döngü yapabilmesi için gerekiyor.
+
+  Örnekleyerek ölçülüyor: kübik Bézier'in kapalı bir yay uzunluğu formülü yok.
+  200 adım bu ölçekte binde birin altında hata bırakıyor, fazlası gereksiz.
+*/
+function kubikUzunluk(
+	p0: readonly number[],
+	c1: readonly number[],
+	c2: readonly number[],
+	p3: readonly number[],
+	adim = 200,
+): number {
+	const nokta = (t: number, i: number) => {
+		const u = 1 - t;
+		return u * u * u * p0[i] + 3 * u * u * t * c1[i] + 3 * u * t * t * c2[i] + t * t * t * p3[i];
+	};
+	let uzunluk = 0;
+	let ox = nokta(0, 0);
+	let oy = nokta(0, 1);
+	for (let k = 1; k <= adim; k++) {
+		const t = k / adim;
+		const x = nokta(t, 0);
+		const y = nokta(t, 1);
+		uzunluk += Math.hypot(x - ox, y - oy);
+		ox = x;
+		oy = y;
+	}
+	return uzunluk;
+}
+
+const YOL_UZUNLUGU = Math.round(
+	DUGUMLER.reduce((toplam, [p0, c1, c2, p3]) => toplam + kubikUzunluk(p0, c1, c2, p3), 0),
+);
+
+/*
+  DİKİŞSİZ AKIŞ
+
+  Yazı yolun tam İKİ KATI uzunluğa zorlanıyor (`textLength`) ve tekrar sayısı
+  ÇİFT. Böylece metnin ilk yarısı ile ikinci yarısı birebir aynı diziliyor.
+
+  Akış `startOffset`'i bir yol boyu kaydırıyor: `-uzunluk` → `0`. Başlangıçta
+  yolu metnin ikinci yarısı, sonunda ilk yarısı kaplıyor — ikisi aynı olduğu
+  için döngü başa dönerken görüntü hiç değişmiyor, sıçrama olmuyor.
+
+  Tekrar sayısı hedef uzunluğa göre seçiliyor ki `lengthAdjust` harf aralığını
+  fazla germesin; sonra çift sayıya yuvarlanıyor.
+*/
+const HEDEF_UZUNLUK = YOL_UZUNLUGU * 2;
+// Kaba harf genişliği: yazı boyu 26, harf arası 0.16em. Kesin olması gerekmiyor,
+// yalnızca tekrar sayısını makul bir aralıkta tutuyor.
+const HARF_GENISLIGI = 26 * 0.6 + 26 * 0.16;
+const birim = `${metin} · `;
+const kabaTekrar = Math.max(2, Math.round(HEDEF_UZUNLUK / (birim.length * HARF_GENISLIGI)));
+const TEKRAR = kabaTekrar % 2 === 0 ? kabaTekrar : kabaTekrar + 1;
+const tekrarliMetin = birim.repeat(TEKRAR);
+
+// Akış süresi: yavaş bir sürüklenme. Yolun tamamını bu sürede kat ediyor.
+const SURE = 34;
 ---
 
-<div class="sarmasik-alan" aria-hidden="true" style={`--parca-sayisi: ${PARCA_SAYISI}`}>
-	{/* İki ayrı hareket, iki ayrı katman: dıştaki kaydırmaya bağlı, içteki
-	    sürekli akan. İkisi de `translate` yazdığı için aynı ögede olamazlar. */}
-	<div class="sarmasik-akis">
-		{
-			parcalar.map((i) => (
-				<svg class="parca" viewBox="0 0 1000 1800" focusable="false">
-					<defs>
-						<path id={`${onek}-${i}`} fill="none" d={YOL} />
-					</defs>
-					<text class="sarmasik-yazi">
-						<textPath href={`#${onek}-${i}`}>{tekrarliMetin}</textPath>
-					</text>
-				</svg>
-			))
-		}
-	</div>
+<div class="sarmasik-alan" aria-hidden="true">
+	{
+		parcalar.map((i) => (
+			<svg class="parca" viewBox="0 0 1000 1100" focusable="false">
+				<defs>
+					<path id={`${onek}-${i}`} fill="none" d={YOL} />
+				</defs>
+				<text class="sarmasik-yazi">
+					<textPath
+						href={`#${onek}-${i}`}
+						startOffset={-YOL_UZUNLUGU}
+						textLength={HEDEF_UZUNLUK}
+						lengthAdjust="spacing"
+					>
+						{tekrarliMetin}
+						<animate
+							attributeName="startOffset"
+							from={-YOL_UZUNLUGU}
+							to="0"
+							dur={`${SURE}s`}
+							repeatCount="indefinite"
+						/>
+					</textPath>
+				</text>
+			</svg>
+		))
+	}
 </div>
 
 <style>
@@ -96,6 +178,11 @@ const tekrarliMetin = `${metin} · `.repeat(16);
 		z-index: -1;
 		overflow: hidden;
 		pointer-events: none;
+		/* Parçalar alt alta, aralarında boşluk olmadan. `line-height: 0`
+		   satır içi SVG'lerin altında kalan boşluğu siliyor. */
+		display: flex;
+		flex-direction: column;
+		line-height: 0;
 		/*
 		  METİNLE ÇAKIŞMA
 
@@ -118,16 +205,6 @@ const tekrarliMetin = `${metin} · `.repeat(16);
 		);
 	}
 
-	.sarmasik-akis {
-		/* Parçalar alt alta, aralarında boşluk olmadan. `line-height: 0`
-		   satır içi SVG'lerin altında kalan boşluğu siliyor. */
-		display: flex;
-		flex-direction: column;
-		line-height: 0;
-		/* Akış bir parça boyu yukarıdan başlıyor; yukarı kaydırma payı burada. */
-		margin-top: 0;
-	}
-
 	.parca {
 		width: 100%;
 		height: auto;
@@ -137,85 +214,34 @@ const tekrarliMetin = `${metin} · `.repeat(16);
 	.sarmasik-yazi {
 		font-weight: 700;
 		font-size: 26px;
-		/*
-		  Harf arası genişletildi: virajın iç tarafında harfler birbirine
-		  yaklaşıyor, düz aralıkla dönüşlerde sıkışıp okunmaz oluyorlardı.
-		*/
+		/* Harf arası genişletildi: virajın iç tarafında harfler birbirine
+		   yaklaşıyor, düz aralıkla dönüşlerde sıkışıyorlardı. */
 		letter-spacing: 0.16em;
 		text-transform: uppercase;
-		/*
-		  Renk nötr `--foreground` üzerinden geliyor, böylece koyu temada renk
-		  sapması olmuyor. Doku olarak okunacak kadar var, içeriğin okunmasını
-		  zorlaştırmayacak kadar geride.
-		*/
+		/* Renk nötr `--foreground` üzerinden geliyor, böylece koyu temada renk
+		   sapması olmuyor. */
 		fill: color-mix(in oklab, var(--foreground) 16%, transparent);
 	}
 
 	/*
-	  SÜREKLİ AKIŞ
+	  Hareketi azaltılmış tercihte sarmaşık tamamen kaldırılıyor.
 
-	  Parçalar birbirinin aynı ve ek yeri vermeden diziliyor; bu yüzden
-	  yığını tam BİR PARÇA boyu kaydırmak başladığı görüntüye geri dönüyor.
-	  Döngü böylece dikişsiz: yazı sonsuza kadar aşağı akıyor.
-
-	  Kaydırma miktarı yüzdeyle veriliyor ve yüzde ögenin kendi boyuna göre
-	  hesaplanıyor; parça sayısına bölünce tam bir parça ediyor. Sabit bir
-	  piksel değeri ekran genişliğiyle değişen parça boyunu tutturamazdı.
-
-	  Yön yukarıdan sıfıra: yığın hep yukarı kaymış durumda duruyor, yani
-	  üstte boşluk açılmıyor. Altta fazlası zaten kırpılıyor.
+	  Sebep teknik: akış SMIL ile çalışıyor ve SMIL bir CSS animasyonu değil,
+	  medya sorgusuyla durdurulamıyor. Sürekli hareket eden bir öğeyi hareket
+	  istemeyen kullanıcıya göstermektense süsü hiç göstermemek doğru taraf —
+	  sayfanın hiçbir bilgisi bu katmanda değil.
 	*/
-	@media (prefers-reduced-motion: no-preference) {
-		.sarmasik-akis {
-			animation: sarmasik-nehir 60s linear infinite;
-		}
-	}
-
-	@keyframes sarmasik-nehir {
-		from {
-			translate: 0 calc(-100% / var(--parca-sayisi));
-		}
-		to {
-			translate: 0 0;
-		}
-	}
-
-	/*
-	  Kaydırmaya bağlı ikinci hareket: sayfa indikçe sarmaşık biraz yukarı
-	  kayıyor. İçerikten farklı hızda hareket ettiği için sabit bir arka plan
-	  deseni gibi değil, sayfayla birlikte akan bir öğe gibi okunuyor.
-
-	  `@supports` bilinçli: Firefox'ta özellik hâlâ bayrak arkasında. Destek
-	  yoksa bu katman kıpırdamıyor, akış ise çalışmaya devam ediyor.
-
-	  Uzun yazım bilinçli, `animation` kısayolu DEĞİL: CSS küçültücü kısayolu
-	  kurarken zaman çizelgesini de içine katıyor, tarayıcı ise kısayolda
-	  zaman çizelgesi kabul etmiyor ve bildirimin tamamını sessizce atıyor.
-	*/
-	@supports (animation-timeline: scroll()) {
-		@media (prefers-reduced-motion: no-preference) {
-			.sarmasik-alan {
-				animation-name: sarmasik-kayma;
-				animation-timing-function: linear;
-				animation-fill-mode: both;
-				animation-timeline: scroll(root block);
-			}
-		}
-	}
-
-	@keyframes sarmasik-kayma {
-		to {
-			translate: 0 -6%;
+	@media (prefers-reduced-motion: reduce) {
+		.sarmasik-alan {
+			display: none;
 		}
 	}
 
 	/*
 	  Mobilde bu tasarım yok.
 
-	  İki sebep: dar ekranda eğri sıkışıp sarmaşık yerine tırtıklı bir çizgiye
-	  dönüşüyor, ve sürekli çalışan bir animasyon sayfa boyunda bir katmanı
-	  her karede yeniden çizdiriyor — iOS'ta bu maliyet daha önce sayfayı
-	  dondurmuştu.
+	  Dar ekranda eğri sıkışıp sarmaşık yerine tırtıklı bir çizgiye dönüşüyor,
+	  ayrıca sayfa boyunda sürekli canlanan bir katman iOS'ta pahalı.
 	*/
 	@media (max-width: 767px) {
 		.sarmasik-alan {
