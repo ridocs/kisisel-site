@@ -15,7 +15,16 @@ const gorsel =
 	'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=900&q=80&auto=format&fit=crop';
 ---
 
-<section class="relative overflow-hidden py-20 sm:py-28" data-belir>
+{/*
+  Masaüstünde bölüm ekranı tam kaplıyor: sayfa sayfa ilerleme ancak her bölüm
+  bir ekran boyunda olduğunda anlamlı. Mobilde doğal akış korunuyor —
+  içeriği zorla ekrana yaymak küçük ekranda boşluk ve kayma üretiyordu.
+*/}
+<section
+	class="relative overflow-hidden py-20 sm:py-28 md:grid md:min-h-screen md:place-items-center md:py-24"
+	data-belir
+	data-sayfa
+>
 	{/* Arkadaki yumuşak parıltı; içeriğin okunmasını engellemesin diye çok soluk. */}
 	<div
 		class="pointer-events-none absolute top-0 left-1/2 -z-10 size-[520px] -translate-x-1/2 rounded-full bg-marka-500/10 blur-[160px]"
@@ -38,7 +47,9 @@ const gorsel =
 		</defs>
 	</svg>
 
-	<div class="mx-auto flex max-w-5xl flex-col items-center gap-12 px-4 md:flex-row md:gap-16">
+	<div
+		class="mx-auto flex w-full max-w-5xl flex-col items-center gap-12 px-4 md:flex-row md:gap-16"
+	>
 		{/* Görsel: dikdörtgen yerine organik bir maske ile şekillendirildi. */}
 		<div class="relative shrink-0">
 			{/* Arkadaki katman aynı şekli alıp sağ-aşağı kaydırılıyor; clip-path

@@ -1,0 +1,266 @@
+---
+import { Icon } from 'astro-icon/components';
+
+interface Props {
+	baslik: string;
+	altBaslik: string;
+	birincilMetin: string;
+	birincilHedef: string;
+	ikincilMetin: string;
+	ikincilHedef: string;
+}
+
+const { baslik, altBaslik, birincilMetin, birincilHedef, ikincilMetin, ikincilHedef } =
+	Astro.props;
+
+/*
+  Bu bölüm React'ten Astro'ya taşındı. Önceden framer-motion ve React DOM
+  yalnızca bu animasyonlar için indiriliyordu (yaklaşık 155 KB). Yüzme ve giriş
+  animasyonları artık saf CSS; imleçten kaçma küçük bir betikle yapılıyor.
+
+  Logolar Iconify "logos" setinden, derleme sırasında satır içi SVG olarak
+  gömülüyor. `tersle` işaretli olanlar koyu zeminde kaybolduğu için koyu temada
+  ters çevriliyor.
+*/
+const ikonlar = [
+	// --- Dar ekranda da görünen çekirdek (10) ---
+	{ ad: 'Astro', ikon: 'logos:astro-icon', tersle: true, sinif: 'top-[21%] left-[13%] md:top-[12%] md:left-[7%]' },
+	{ ad: 'TypeScript', ikon: 'logos:typescript-icon', sinif: 'top-[15%] right-[17%] md:top-[14%] md:right-[7%]' },
+	{ ad: 'Tailwind CSS', ikon: 'logos:tailwindcss-icon', sinif: 'bottom-[13%] left-[19%] md:bottom-[12%] md:left-[8%]' },
+	{ ad: 'React', ikon: 'logos:react', sinif: 'bottom-[23%] right-[8%] md:bottom-[14%] md:right-[8%]' },
+	{ ad: 'JavaScript', ikon: 'logos:javascript', sinif: 'top-[14%] left-[36%] md:top-[6%] md:left-[40%]' },
+	{ ad: 'Docker', ikon: 'logos:docker-icon', sinif: 'bottom-[8%] left-[34%] md:bottom-[6%] md:left-[42%]' },
+	{ ad: 'HTML5', ikon: 'logos:html-5', sinif: 'top-[22%] left-[31%] md:top-[7%] md:left-[22%]' },
+	{ ad: 'CSS3', ikon: 'logos:css-3', sinif: 'top-[19%] right-[33%] md:top-[8%] md:right-[22%]' },
+	{ ad: 'Node.js', ikon: 'logos:nodejs-icon', sinif: 'bottom-[18%] left-[32%] md:bottom-[7%] md:left-[24%]' },
+	{ ad: 'Git', ikon: 'logos:git-icon', sinif: 'bottom-[27%] right-[23%] md:bottom-[8%] md:right-[24%]' },
+
+	// --- md (768) ---
+	{ ad: 'Google Cloud', ikon: 'logos:google-cloud', sinif: 'top-[40%] left-[4%] hidden md:block' },
+	{ ad: 'Go', ikon: 'logos:go', sinif: 'top-[58%] right-[4%] hidden md:block' },
+
+	// --- lg (1024) ---
+	{ ad: 'Kubernetes', ikon: 'logos:kubernetes', sinif: 'top-[16%] left-[32%] hidden lg:block' },
+	{ ad: 'Linux', ikon: 'logos:linux-tux', sinif: 'bottom-[16%] right-[33%] hidden lg:block' },
+	{ ad: 'Vite', ikon: 'logos:vitejs', sinif: 'top-[26%] left-[16%] hidden lg:block' },
+	{ ad: 'Vercel', ikon: 'logos:vercel-icon', tersle: true, sinif: 'bottom-[26%] right-[16%] hidden lg:block' },
+
+	// --- xl (1280) ---
+	{ ad: 'Rust', ikon: 'logos:rust', sinif: 'top-[5%] left-[60%] hidden xl:block' },
+	{ ad: 'PHP', ikon: 'logos:php', sinif: 'bottom-[5%] left-[60%] hidden xl:block' },
+	{ ad: 'npm', ikon: 'logos:npm-icon', sinif: 'top-[24%] right-[14%] hidden xl:block' },
+	{ ad: 'Markdown', ikon: 'logos:markdown', tersle: true, sinif: 'bottom-[24%] left-[15%] hidden xl:block' },
+
+	// --- 1600 ---
+	{ ad: 'Ubuntu', ikon: 'logos:ubuntu', sinif: 'top-[62%] left-[4%] hidden min-[1600px]:block' },
+	{ ad: 'Nginx', ikon: 'logos:nginx', sinif: 'top-[36%] right-[4%] hidden min-[1600px]:block' },
+	{ ad: 'GitLab', ikon: 'logos:gitlab-icon', sinif: 'top-[10%] left-[52%] hidden min-[1600px]:block' },
+	{ ad: 'PostgreSQL', ikon: 'logos:postgresql', sinif: 'bottom-[10%] left-[52%] hidden min-[1600px]:block' },
+	{ ad: 'Cloudflare', ikon: 'logos:cloudflare-icon', sinif: 'top-[18%] right-[36%] hidden min-[1600px]:block' },
+	{ ad: 'Swift', ikon: 'logos:swift', sinif: 'bottom-[18%] left-[36%] hidden min-[1600px]:block' },
+
+	// --- 2100 ---
+	{ ad: 'VS Code', ikon: 'logos:visual-studio-code', sinif: 'top-[30%] left-[9%] hidden min-[2100px]:block' },
+	{ ad: 'MongoDB', ikon: 'logos:mongodb-icon', sinif: 'bottom-[30%] right-[9%] hidden min-[2100px]:block' },
+	{ ad: 'Kotlin', ikon: 'logos:kotlin-icon', sinif: 'top-[5%] left-[14%] hidden min-[2100px]:block' },
+	{ ad: 'Flutter', ikon: 'logos:flutter-icon', sinif: 'bottom-[5%] right-[14%] hidden min-[2100px]:block' },
+	{ ad: 'GitHub Actions', ikon: 'logos:github-actions', sinif: 'top-[20%] left-[44%] hidden min-[2100px]:block' },
+	{ ad: 'Terraform', ikon: 'logos:terraform-icon', sinif: 'bottom-[20%] right-[44%] hidden min-[2100px]:block' },
+	{ ad: 'Ansible', ikon: 'logos:ansible', tersle: true, sinif: 'top-[52%] left-[13%] hidden min-[2100px]:block' },
+	{ ad: 'Jenkins', ikon: 'logos:jenkins', sinif: 'top-[74%] right-[20%] hidden min-[2100px]:block' },
+	{ ad: 'Bash', ikon: 'logos:bash-icon', sinif: 'top-[48%] right-[13%] hidden min-[2100px]:block' },
+];
+---
+
+<section
+	data-sayfa class="bolum relative -mt-16 flex h-screen min-h-[700px] w-full items-center justify-center overflow-hidden bg-background"
+>
+	{/* Renk katmanları: düşük opaklık, yüksek bulanıklık; metin kontrastını
+	    düşürmeden zemine derinlik veriyor. */}
+	<div class="pointer-events-none absolute inset-0 -z-10 overflow-hidden" aria-hidden="true">
+		<div class="absolute -top-32 left-[12%] size-[34rem] rounded-full bg-marka-500/30 blur-[110px] dark:bg-marka-500/35"></div>
+		<div class="absolute top-[18%] right-[6%] size-[28rem] rounded-full bg-sky-400/25 blur-[120px] dark:bg-sky-500/30"></div>
+		<div class="absolute -bottom-40 left-[38%] size-[36rem] rounded-full bg-indigo-400/25 blur-[130px] dark:bg-indigo-500/30"></div>
+	</div>
+
+	<div id="logo-kabi" class="absolute inset-0 h-full w-full">
+		{
+			ikonlar.map((veri, sira) => (
+				<div
+					class:list={['logo-yuva absolute', veri.sinif]}
+					style={`--gecikme:${(sira % 12) * 70}ms; --sure:${6 + (sira % 5)}s`}
+				>
+					<span class="logo-balon" aria-hidden="true">{veri.ad}</span>
+					<div class="logo-kart flex size-12 items-center justify-center rounded-xl border border-black/5 bg-white/90 p-2 shadow-lg backdrop-blur-md md:size-14 dark:border-white/10 dark:bg-slate-800/70">
+						<Icon
+							name={veri.ikon}
+							class:list={['size-6 md:size-7', veri.tersle && 'dark:invert']}
+						/>
+						<span class="sr-only">{veri.ad}</span>
+					</div>
+				</div>
+			))
+		}
+	</div>
+
+	<div class="relative z-10 px-4 text-center">
+		<h1
+			class="animate-parilti bg-gradient-to-r from-foreground/55 via-foreground to-foreground/55 bg-clip-text bg-[length:200%_100%] text-[clamp(2.25rem,4.2vw,4.75rem)] leading-[1.05] font-bold tracking-tight text-transparent motion-reduce:animate-none"
+		>
+			{baslik}
+		</h1>
+		<p class="mx-auto mt-6 max-w-[min(36rem,90vw)] text-[clamp(1rem,1.15vw,1.2rem)] text-muted-foreground">
+			{altBaslik}
+		</p>
+		<div class="mt-10 flex flex-wrap items-center justify-center gap-3">
+			<a
+				href={birincilHedef}
+				class="inline-flex items-center rounded-lg bg-primary px-8 py-4 text-base font-semibold text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current"
+			>
+				{birincilMetin}
+			</a>
+			<a
+				href={ikincilHedef}
+				target="_blank"
+				rel="noopener noreferrer"
+				class="inline-flex items-center rounded-lg border border-input bg-background px-8 py-4 text-base font-semibold transition-colors hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current"
+			>
+				{ikincilMetin}
+				<span class="sr-only"> (yeni sekmede açılır)</span>
+			</a>
+		</div>
+	</div>
+</section>
+
+<style>
+	/* Giriş ve sürekli yüzme animasyonları saf CSS. Her logo kendi gecikme ve
+	   süresini satır içi değişkenlerden alıyor, böylece hareket tekdüze olmuyor. */
+	.logo-yuva {
+		animation:
+			logo-giris 600ms cubic-bezier(0.22, 1, 0.36, 1) both,
+			logo-yuzme var(--sure, 7s) ease-in-out infinite alternate;
+		animation-delay: var(--gecikme, 0ms), calc(var(--gecikme, 0ms) + 600ms);
+		will-change: transform;
+	}
+
+	@keyframes logo-giris {
+		from {
+			opacity: 0;
+			scale: 0.5;
+		}
+		to {
+			opacity: 1;
+			scale: 1;
+		}
+	}
+
+	@keyframes logo-yuzme {
+		from {
+			translate: 0 0;
+			rotate: -4deg;
+		}
+		to {
+			translate: 6px -10px;
+			rotate: 4deg;
+		}
+	}
+
+	/* İmleçten kaçma: betik yalnızca bu iki değişkeni yazıyor. */
+	.logo-kart {
+		translate: var(--kacis-x, 0) var(--kacis-y, 0);
+		transition: translate 380ms cubic-bezier(0.22, 1, 0.36, 1);
+	}
+
+	/* Ad balonu: JavaScript gerekmeden hover ve odakla açılıyor. */
+	.logo-balon {
+		position: absolute;
+		bottom: calc(100% + 10px);
+		left: 50%;
+		translate: -50% 6px;
+		z-index: 10;
+		white-space: nowrap;
+		border-radius: 0.5rem;
+		background: var(--color-slate-900, #0f172a);
+		padding: 0.375rem 0.625rem;
+		font-size: 0.75rem;
+		font-weight: 500;
+		color: #fff;
+		opacity: 0;
+		pointer-events: none;
+		transition:
+			opacity 160ms ease,
+			translate 160ms ease;
+	}
+
+	:global(.dark) .logo-balon {
+		background: #fff;
+		color: var(--color-slate-900, #0f172a);
+	}
+
+	.logo-yuva:hover .logo-balon,
+	.logo-yuva:focus-within .logo-balon {
+		opacity: 1;
+		translate: -50% 0;
+	}
+
+	.logo-yuva:hover {
+		z-index: 20;
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.logo-yuva {
+			animation: none;
+			opacity: 1;
+		}
+		.logo-kart {
+			transition: none;
+		}
+	}
+</style>
+
+<script>
+	// İmleçten kaçma. Konumlar önbellekte; her fare hareketinde yeniden yerleşim
+	// tetiklenmiyor.
+	const kap = document.getElementById('logo-kabi');
+	if (kap) {
+		const ETKI = 170;
+		const GUC = 75;
+		const kartlar = [...kap.querySelectorAll<HTMLElement>('.logo-kart')];
+		let merkezler: { x: number; y: number }[] = [];
+
+		const olc = () => {
+			merkezler = kartlar.map((kart) => {
+				const r = kart.getBoundingClientRect();
+				return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+			});
+		};
+
+		olc();
+		window.setTimeout(olc, 1400);
+		window.addEventListener('resize', olc, { passive: true });
+		window.addEventListener('scroll', olc, { passive: true });
+
+		window.addEventListener(
+			'mousemove',
+			(olay) => {
+				for (let i = 0; i < kartlar.length; i++) {
+					const m = merkezler[i];
+					if (!m) continue;
+					const dx = olay.clientX - m.x;
+					const dy = olay.clientY - m.y;
+					const uzaklik = Math.hypot(dx, dy);
+					if (uzaklik < ETKI) {
+						const aci = Math.atan2(dy, dx);
+						const kuvvet = (1 - uzaklik / ETKI) * GUC;
+						kartlar[i].style.setProperty('--kacis-x', `${-Math.cos(aci) * kuvvet}px`);
+						kartlar[i].style.setProperty('--kacis-y', `${-Math.sin(aci) * kuvvet}px`);
+					} else {
+						kartlar[i].style.setProperty('--kacis-x', '0px');
+						kartlar[i].style.setProperty('--kacis-y', '0px');
+					}
+				}
+			},
+			{ passive: true },
+		);
+	}
+</script>

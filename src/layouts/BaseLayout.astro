@@ -146,6 +146,117 @@ const enYolu = new URL(digerDilYolu(Astro.url, 'en'), Astro.site);
 			})();
 		</script>
 
+		{/*
+		  Sayfa sayfa ilerleme: tekerlek ne kadar döndürülürse döndürülsün bir
+		  hamlede bir bölüm ileri gidiliyor.
+
+		  Sınırlar bilinçli:
+		  - Yalnızca 768 piksel ve üzerinde. Dokunmatikte parmak hareketini ele
+		    geçirmek rahatsız edici ve hataya açık.
+		  - Bir bölüm ekrandan uzunsa, sonuna gelinene kadar normal kaydırma
+		    çalışıyor; yoksa görülemeyen içerik kalırdı.
+		  - Hareketi azaltılmış tercihte tamamen kapalı (kaydırmayı ele geçirmek
+		    baş dönmesi yapabiliyor).
+		  - Klavye ve ekran okuyucu akışına dokunulmuyor.
+		*/}
+		<script is:inline>
+			(function () {
+				var bolumler = [].slice.call(document.querySelectorAll('[data-sayfa]'));
+				if (bolumler.length < 2) return;
+
+				var genisMi = window.matchMedia('(min-width: 768px)');
+				var azHareket = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+				// Sıçrama sürerken gelen tekerlek olayları yok sayılıyor.
+				var kilitBitis = 0;
+				var sicramaAni = 0;
+
+				function etkinMi() {
+					return genisMi.matches && !azHareket.matches;
+				}
+
+				function enFazlaKaydirma() {
+					return Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+				}
+
+				// Bölümün belge içindeki üst konumu.
+				//
+				// getBoundingClientRect bilinçli olarak kullanılmıyor: belirme
+				// efekti bölümleri `translateY(28px)` ile kaydırıyor ve ölçüm bu
+				// dönüşümü içeriyor, yani daha belirmemiş bir bölüme 28 piksel
+				// şaşarak gidilirdi. offsetTop düzen konumunu verir, dönüşümden
+				// etkilenmez.
+				//
+				// scrollIntoView da kullanılmıyor: `scroll-padding-top` hedefi
+				// 80 piksel aşağı kaydırıyor, bölüm ekrana sığmıyor sanılıyor ve
+				// sonraki hamle olağan kaydırmaya düşüyordu.
+				function belgeUstu(oge) {
+					var y = 0;
+					for (var n = oge; n; n = n.offsetParent) y += n.offsetTop;
+					return y;
+				}
+
+				function konum(i) {
+					return Math.round(Math.min(Math.max(belgeUstu(bolumler[i]), 0), enFazlaKaydirma()));
+				}
+
+				function aktifIndeks() {
+					var enIyi = 0;
+					var enKucuk = Infinity;
+					for (var i = 0; i < bolumler.length; i++) {
+						var uzaklik = Math.abs(belgeUstu(bolumler[i]) - window.scrollY);
+						if (uzaklik < enKucuk) {
+							enKucuk = uzaklik;
+							enIyi = i;
+						}
+					}
+					return enIyi;
+				}
+
+				window.addEventListener(
+					'wheel',
+					function (olay) {
+						if (!etkinMi() || olay.ctrlKey || !olay.deltaY) return;
+
+						var simdi = performance.now();
+
+						// Dokunmatik yüzeyin ataleti tek hareket için onlarca olay
+						// üretiyor; hepsi yutulmazsa bir hamlede birkaç bölüm birden
+						// atlanırdı. Kilit her olayda biraz uzuyor ama toplamı sınırlı:
+						// kullanıcı gerçekten kaydırmayı sürdürüyorsa tıkanıp kalmıyor.
+						if (simdi < kilitBitis) {
+							kilitBitis = Math.min(simdi + 320, sicramaAni + 1500);
+							olay.preventDefault();
+							return;
+						}
+
+						var i = aktifIndeks();
+						var ust = belgeUstu(bolumler[i]) - window.scrollY;
+						var alt = ust + bolumler[i].offsetHeight;
+						var yon = olay.deltaY > 0 ? 1 : -1;
+
+						// Bölüm ekrana sığmıyorsa, kenarına gelene kadar olağan kaydırma.
+						if (yon > 0 && alt > window.innerHeight + 4) return;
+						if (yon < 0 && ust < -4) return;
+
+						var hedef = i + yon;
+						if (hedef < 0 || hedef > bolumler.length - 1) return;
+
+						var y = konum(hedef);
+						// Gidilecek yer kalmadıysa (ör. son bölümün altındaki altbilgi)
+						// olayı ele geçirmiyoruz; sayfa normal biçimde kaydırılabilsin.
+						if (Math.abs(y - window.scrollY) < 2) return;
+
+						olay.preventDefault();
+						sicramaAni = simdi;
+						kilitBitis = simdi + 800;
+						window.scrollTo({ top: y, behavior: 'smooth' });
+					},
+					{ passive: false },
+				);
+			})();
+		</script>
+
 		{/* Dil değiştiriciye tıklandığında tercih saklanır; böylece otomatik
 		    yönlendirme bir daha araya girmez. */}
 		<script is:inline>

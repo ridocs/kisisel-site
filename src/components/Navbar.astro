@@ -1,6 +1,6 @@
 ---
 import { Icon } from 'astro-icon/components';
-import IletisimDugmesi from './IletisimDugmesi';
+import IletisimDugmesi from './IletisimDugmesi.astro';
 import { cevirici, digerDilYolu, dilBul, yol } from '@/i18n/ceviriler';
 
 const dil = dilBul(Astro.url);
@@ -152,11 +152,10 @@ const iletisimDugmesi =
 						{digerDil.toUpperCase()}
 					</a>
 
-					{/* Sıvı metal düğme bir React adacığı; dar ekranda gizlenip yerini
-					    mobil menüdeki düz bağlantıya bırakıyor. */}
+					{/* Sıvı metal düğme; dar ekranda gizlenip yerini mobil menüdeki
+					    düz bağlantıya bırakıyor. */}
 					<div class="hidden md:block">
 						<IletisimDugmesi
-							client:media="(min-width: 768px)"
 							etiket={m('nav.iletisim')}
 							hedef={`${yol(dil, hakkimdaParcasi)}${iletisimCapasi}`}
 						/>

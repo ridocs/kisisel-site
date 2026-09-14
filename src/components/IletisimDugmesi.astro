@@ -1,0 +1,122 @@
+---
+/**
+ * Gezinme çubuğundaki "İletişim" düğmesi — sıvı metal görünümü.
+ *
+ * Önceki sürüm React + WebGL shader ile çiziliyordu ve sitenin tarayıcıya inen
+ * JavaScript'inin tamamını (≈79 KB) tek başına bu düğme oluşturuyordu. Görünüm
+ * burada saf CSS ile üretiliyor: dönen konik gradyan metal akışını, üstteki
+ * yumuşak parlama cam hissini veriyor. Böylece sayfada hiç JavaScript kalmıyor.
+ *
+ * Ayrıca artık bir bağlantı: JavaScript çalışmasa da, orta tıklama ve "yeni
+ * sekmede aç" ile de çalışır — React sürümündeki <button> bunu yapamıyordu.
+ */
+interface Props {
+	etiket: string;
+	hedef: string;
+}
+
+const { etiket, hedef } = Astro.props;
+---
+
+<a class="sivi-metal" href={hedef}>
+	<span class="sivi-metal-yazi">{etiket}</span>
+</a>
+
+<style>
+	.sivi-metal {
+		position: relative;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 142px;
+		height: 46px;
+		border-radius: 100px;
+		background: linear-gradient(180deg, var(--lm-ust) 0%, var(--lm-alt) 100%);
+		/* Gölge yerine yalnızca kenar çizgisi: gezinme kapsülü `overflow: hidden`
+		   olduğu için aşağı uzanan gölge kesilip keskin bir leke bırakıyordu. */
+		box-shadow: 0 0 0 1px var(--lm-kenar);
+		overflow: hidden;
+		/* Yığın bağlamını kendi içinde tutar; içerideki katmanlar navbar'ın
+		   diğer öğelerinin üstüne taşmaz. */
+		isolation: isolate;
+		text-decoration: none;
+		transition:
+			box-shadow 150ms cubic-bezier(0.4, 0, 0.2, 1),
+			transform 150ms cubic-bezier(0.4, 0, 0.2, 1);
+	}
+
+	/* Akan metal: geniş bir konik gradyan yavaşça dönüyor, bulanıklık
+	   bantların keskin kenarını yumuşatıp sıvı hissini veriyor. */
+	.sivi-metal::before {
+		content: "";
+		position: absolute;
+		/* Kutudan taşacak kadar büyük: döndüğünde köşelerde boşluk kalmasın. */
+		inset: -70%;
+		background: conic-gradient(
+			from 0deg,
+			rgba(255, 255, 255, 0) 0deg,
+			rgba(255, 255, 255, 0.45) 38deg,
+			rgba(255, 255, 255, 0) 82deg,
+			rgba(170, 200, 255, 0.3) 145deg,
+			rgba(255, 255, 255, 0) 195deg,
+			rgba(255, 255, 255, 0.4) 252deg,
+			rgba(255, 255, 255, 0) 300deg,
+			rgba(255, 185, 165, 0.24) 332deg,
+			rgba(255, 255, 255, 0) 360deg
+		);
+		filter: blur(7px);
+		opacity: 0.7;
+		animation: sivi-metal-don 9s linear infinite;
+	}
+
+	/* Üstten aşağı sönen parlama: yüzeye cam/krom hissi verir. */
+	.sivi-metal::after {
+		content: "";
+		position: absolute;
+		inset: 0;
+		border-radius: inherit;
+		background: linear-gradient(180deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0) 48%);
+	}
+
+	.sivi-metal-yazi {
+		position: relative;
+		z-index: 1;
+		font-size: 14px;
+		font-weight: 400;
+		white-space: nowrap;
+		color: var(--lm-metin);
+		text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+	}
+
+	.sivi-metal:hover {
+		box-shadow: 0 0 0 2px var(--lm-kenar);
+	}
+
+	/* Üzerine gelindiğinde metal hızlanıyor — React sürümündeki setSpeed(1)
+	   davranışının karşılığı. */
+	.sivi-metal:hover::before {
+		animation-duration: 4s;
+	}
+
+	.sivi-metal:active {
+		transform: translateY(1px) scale(0.98);
+	}
+
+	.sivi-metal:focus-visible {
+		outline: 2px solid var(--ring);
+		outline-offset: 2px;
+	}
+
+	@keyframes sivi-metal-don {
+		to {
+			transform: rotate(360deg);
+		}
+	}
+
+	/* Hareketi azaltılmış tercihte metal duruyor; düğme yine de metalik kalıyor. */
+	@media (prefers-reduced-motion: reduce) {
+		.sivi-metal::before {
+			animation: none;
+		}
+	}
+</style>
