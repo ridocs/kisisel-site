@@ -81,6 +81,9 @@ export const ceviriler = {
 
 		'altbilgi.tanim': 'Web uygulamaları, altyapı ve otomasyon üzerine çalışıyorum.',
 		'altbilgi.gezinme': 'Altbilgi gezinmesi',
+		'altbilgi.gezinmeBaslik': 'Sayfalar',
+		'altbilgi.baglantiBaslik': 'Bağlantılar',
+		'altbilgi.sifirJs': 'tarayıcıya inen JavaScript yok',
 		'altbilgi.lisans': 'MIT lisansı ile yayımlanmıştır.',
 
 		// Yetkinlikler
@@ -167,6 +170,9 @@ export const ceviriler = {
 
 		'altbilgi.tanim': 'I work on web applications, infrastructure and automation.',
 		'altbilgi.gezinme': 'Footer navigation',
+		'altbilgi.gezinmeBaslik': 'Pages',
+		'altbilgi.baglantiBaslik': 'Links',
+		'altbilgi.sifirJs': 'zero JavaScript shipped',
 		'altbilgi.lisans': 'Published under the MIT license.',
 
 		// Skills

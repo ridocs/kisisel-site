@@ -17,56 +17,96 @@ const disBaglantilar = [
 	{ etiket: 'GitHub', adres: 'https://github.com/ridocs', ikon: 'lucide:github' },
 	{ etiket: m('nav.rss'), adres: yol(dil, 'rss.xml'), ikon: 'lucide:rss' },
 ];
+
+/*
+  Derleme zamanı. Site statik olduğu için bu değer sayfanın üretildiği andır —
+  "ne zaman güncellendi" sorusunun dürüst cevabı. Çalışma anında hesaplansaydı
+  ziyaretçinin saatini gösterirdi ve hiçbir şey anlatmazdı.
+*/
+const derlemeZamani = new Date();
+const derlemeEtiketi = derlemeZamani.toISOString().slice(0, 10);
+const yil = derlemeZamani.getFullYear();
 ---
 
 <footer class="altbilgi">
 	<div class="mx-auto w-full max-w-3xl px-4 lg:max-w-4xl">
 		<div class="ust">
-			<div class="marka">
-				<p class="ad">Mustafa Eybek</p>
-				<p class="not">{m('altbilgi.tanim')}</p>
+			{/*
+			  Uçbirim bloğu: sitenin ne olduğunu yazılımcı diliyle söylüyor.
+			  Süs değil, taklit de değil — gerçek bir komut çıktısı gibi okunan
+			  üç satır. Tamamı metin, ekran okuyucu da aynı şeyi okuyor.
+			*/}
+			<div class="ucbirim">
+				<div class="ucbirim-cubuk" aria-hidden="true">
+					<span class="lamba lamba-a"></span>
+					<span class="lamba lamba-b"></span>
+					<span class="lamba lamba-c"></span>
+					<span class="ucbirim-ad">~/mustafa-eybek</span>
+				</div>
+				<pre class="ucbirim-govde"><code><span class="istem">$</span> whoami
+<span class="cikti">{m('altbilgi.tanim')}</span>
+
+<span class="istem">$</span> stack --list
+<span class="cikti">astro · typescript · tailwind · postgres · docker</span>
+
+<span class="istem">$</span> cat build.txt
+<span class="cikti">{derlemeEtiketi} · {m('altbilgi.sifirJs')}</span></code></pre>
 			</div>
 
-			<nav class="baglantilar" aria-label={m('altbilgi.gezinme')}>
-				<ul>
-					{
-						baglantilar.map((b) => (
-							<li>
-								<a href={b.yol}>{b.etiket}</a>
-							</li>
-						))
-					}
-				</ul>
-			</nav>
+			<div class="yan-sutun">
+				<nav aria-label={m('altbilgi.gezinme')}>
+					<p class="baslik">{m('altbilgi.gezinmeBaslik')}</p>
+					<ul class="baglantilar">
+						{
+							baglantilar.map((b) => (
+								<li>
+									<a href={b.yol}>
+										<span class="ok" aria-hidden="true">
+											&rsaquo;
+										</span>
+										<span>{b.etiket}</span>
+									</a>
+								</li>
+							))
+						}
+					</ul>
+				</nav>
 
-			<div class="yan">
-				{
-					disBaglantilar.map((b) => (
-						<a
-							class="simge"
-							href={b.adres}
-							aria-label={b.etiket}
-							{...(b.adres.startsWith('http') ? { rel: 'noopener' } : {})}
-						>
-							<Icon name={b.ikon} class="size-[18px]" />
+				<div>
+					<p class="baslik">{m('altbilgi.baglantiBaslik')}</p>
+					<div class="yan">
+						{
+							disBaglantilar.map((b) => (
+								<a
+									class="simge"
+									href={b.adres}
+									aria-label={b.etiket}
+									{...(b.adres.startsWith('http') ? { rel: 'noopener' } : {})}
+								>
+									<Icon name={b.ikon} class="size-[18px]" />
+								</a>
+							))
+						}
+						<a class="dil" href={digerDilBaglantisi} hreflang={digerDil}>
+							{digerDil.toUpperCase()}
 						</a>
-					))
-				}
-				<a class="dil" href={digerDilBaglantisi} hreflang={digerDil}>
-					{digerDil.toUpperCase()}
-				</a>
+					</div>
+				</div>
 			</div>
 		</div>
 
 		<div class="alt">
-			<p>&copy; {new Date().getFullYear()} Mustafa Eybek</p>
-			<p>{m('altbilgi.lisans')}</p>
+			<p><span class="kod">&copy; {yil}</span> Mustafa Eybek</p>
+			<p class="kod">{m('altbilgi.lisans')}</p>
 		</div>
 	</div>
 </footer>
 
 <style>
 	.altbilgi {
+		/* Sayfa kısaysa altbilgi ortada asılı kalmasın: gövde sütun düzeninde
+		   ve bu `auto` pay onu görünüm alanının dibine itiyor. */
+		margin-top: auto;
 		border-top: 1px solid var(--border);
 		padding-block: 2.5rem 2rem;
 		font-size: 0.875rem;
@@ -76,42 +116,127 @@ const disBaglantilar = [
 	.ust {
 		display: flex;
 		flex-direction: column;
-		gap: 1.75rem;
+		gap: 2rem;
 	}
 
-	.ad {
-		font-size: 1rem;
-		font-weight: 600;
+	/* --- Uçbirim bloğu --- */
+	.ucbirim {
+		border: 1px solid var(--border);
+		border-radius: 0.875rem;
+		overflow: hidden;
+		background: color-mix(in oklab, var(--foreground) 3%, transparent);
+		flex: 1 1 auto;
+		min-width: 0;
+	}
+
+	.ucbirim-cubuk {
+		display: flex;
+		align-items: center;
+		gap: 0.4rem;
+		padding: 0.55rem 0.75rem;
+		border-bottom: 1px solid var(--border);
+		background: color-mix(in oklab, var(--foreground) 4%, transparent);
+	}
+
+	.lamba {
+		width: 0.625rem;
+		height: 0.625rem;
+		border-radius: 9999px;
+		flex: none;
+		/* Renkler nötr: koyu temada renkli noktalar tek renkli bir altbilgide
+		   gereksiz gürültü yapıyordu. Biçim zaten uçbirimi anlatıyor. */
+		background: color-mix(in oklab, var(--foreground) 22%, transparent);
+	}
+
+	.lamba-b {
+		opacity: 0.75;
+	}
+
+	.lamba-c {
+		opacity: 0.5;
+	}
+
+	.ucbirim-ad {
+		margin-inline-start: 0.4rem;
+		font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+		font-size: 0.75rem;
+		color: var(--muted-foreground);
+	}
+
+	/*
+	  `white-space: pre-wrap`: satır sonları korunuyor ama uzun satırlar dar
+	  ekranda sarıyor. Düz `pre` olsaydı telefonda yatay kaydırma açardı.
+	*/
+	.ucbirim-govde {
+		margin: 0;
+		padding: 0.875rem 0.75rem;
+		font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+		font-size: 0.8125rem;
+		line-height: 1.7;
+		white-space: pre-wrap;
+		word-break: break-word;
+		overflow-wrap: anywhere;
+	}
+
+	.istem {
+		color: color-mix(in oklab, var(--color-marka-500) 85%, var(--foreground));
+		font-weight: 700;
+		user-select: none;
+	}
+
+	.cikti {
 		color: var(--foreground);
 	}
 
-	.not {
-		margin-top: 0.25rem;
-		max-width: 22rem;
+	/* --- Yan sütun --- */
+	.yan-sutun {
+		display: flex;
+		flex-direction: column;
+		gap: 1.5rem;
+		flex: none;
 	}
 
-	.baglantilar ul {
+	.baslik {
+		font-size: 0.6875rem;
+		font-weight: 700;
+		letter-spacing: 0.16em;
+		text-transform: uppercase;
+		color: var(--muted-foreground);
+		margin-bottom: 0.625rem;
+	}
+
+	.baglantilar {
 		list-style: none;
 		padding: 0;
 		margin: 0;
-		display: flex;
-		flex-wrap: wrap;
-		gap: 0.25rem 1.25rem;
+		display: grid;
+		gap: 0.15rem;
 	}
 
 	.baglantilar a {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.4rem;
+		min-height: 2rem;
 		color: inherit;
 		text-decoration: none;
-		/* Alt çizgi yalnızca üzerine gelince: üç bağlantı sürekli çizgiliyken
-		   altbilgi gereğinden fazla gürültülü duruyordu. */
-		border-bottom: 1px solid transparent;
-		padding-bottom: 0.1rem;
-		transition: color 200ms ease-out, border-color 200ms ease-out;
+		transition: color 200ms ease-out;
+	}
+
+	/* Ok imleç gelince içeri kayıyor: bağlantının canlandığını alt çizgi
+	   eklemeden söylüyor, altbilgi sade kalıyor. */
+	.ok {
+		font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+		color: color-mix(in oklab, var(--color-marka-500) 85%, var(--foreground));
+		transition: translate 200ms cubic-bezier(0.22, 1, 0.36, 1);
 	}
 
 	.baglantilar a:hover {
 		color: var(--foreground);
-		border-bottom-color: color-mix(in oklab, var(--foreground) 35%, transparent);
+	}
+
+	.baglantilar a:hover .ok {
+		translate: 3px 0;
 	}
 
 	.yan {
@@ -129,16 +254,19 @@ const disBaglantilar = [
 		min-width: 2.5rem;
 		height: 2.5rem;
 		border-radius: 0.625rem;
+		border: 1px solid var(--border);
 		color: inherit;
 		text-decoration: none;
-		transition: background-color 200ms ease-out, color 200ms ease-out;
+		transition:
+			background-color 200ms ease-out,
+			color 200ms ease-out;
 	}
 
 	.dil {
 		padding-inline: 0.6rem;
+		font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 		font-size: 0.75rem;
 		font-weight: 600;
-		letter-spacing: 0.06em;
 	}
 
 	.simge:hover,
@@ -154,6 +282,7 @@ const disBaglantilar = [
 		outline-offset: 2px;
 	}
 
+	/* --- Alt satır --- */
 	.alt {
 		display: flex;
 		flex-wrap: wrap;
@@ -165,24 +294,33 @@ const disBaglantilar = [
 		font-size: 0.8125rem;
 	}
 
+	.kod {
+		font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+	}
+
 	@media (min-width: 768px) {
 		.ust {
 			flex-direction: row;
-			align-items: flex-start;
+			align-items: stretch;
 			justify-content: space-between;
-			gap: 2rem;
+			gap: 2.5rem;
 		}
 
-		.yan {
-			margin-inline-start: auto;
+		.yan-sutun {
+			min-width: 11rem;
 		}
 	}
 
 	@media (prefers-reduced-motion: reduce) {
 		.baglantilar a,
+		.ok,
 		.simge,
 		.dil {
 			transition: none;
+		}
+
+		.baglantilar a:hover .ok {
+			translate: none;
 		}
 	}
 </style>

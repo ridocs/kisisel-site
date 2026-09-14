@@ -20,13 +20,27 @@ const suAnkiYol = Astro.url.pathname;
 const digerDil = dil === 'tr' ? 'en' : 'tr';
 const digerDilBaglantisi = digerDilYolu(Astro.url, digerDil);
 
-// Kök sayfalar yalnızca tam eşleşmede aktiftir; diğerleri alt sayfalarında da
-// aktif kalır (örn. /blog/merhaba-dunya/ açıkken "Blog" vurgulu görünür).
+const sadelestir = (s: string) => s.replace(/\/+$/, '') || '/';
+
+/*
+  Bu dilin kök yolu. Site bir alt dizinde yayınlandığı için "/" değil
+  "/web-sitem" (İngilizcede "/web-sitem/en"). Değer elle yazılmıyor, ana sayfa
+  bağlantısının kendisinden türetiliyor — `base` değişirse burası da uyar.
+*/
+const kokYol = sadelestir(yol(dil, ''));
+
+/*
+  Kök sayfa YALNIZCA tam eşleşmede aktiftir; diğerleri alt sayfalarında da
+  aktif kalır (örn. /blog/merhaba-dunya/ açıkken "Blog" vurgulu görünür).
+
+  Kök kontrolü daha önce düz "/" ile yapılıyordu. Alt dizinde yayınlanınca kök
+  "/web-sitem" oluyor ve öbür her adres onunla başladığı için ANA SAYFA her
+  sayfada aktif görünüyordu — gösterge de imleç ayrılınca oraya dönüyordu.
+*/
 function aktifMi(hedef: string) {
-	const sadelestir = (s: string) => s.replace(/\/+$/, '') || '/';
 	const h = sadelestir(hedef);
 	const p = sadelestir(suAnkiYol);
-	if (h === '/' || h === '/en') return p === h;
+	if (h === kokYol) return p === h;
 	return p === h || p.startsWith(`${h}/`);
 }
 

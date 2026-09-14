@@ -117,7 +117,7 @@ const enYolu = new URL(digerDilYolu(Astro.url, 'en'), Astro.site);
 	{/* Zemin <html> üzerinde: sarmaşık katmanı `z-index: -1` ile içeriğin
 	    arkasında duruyor ve zemin body'de kalsaydı onun da arkasına düşüp
 	    görünmez olurdu. `relative` ise katmanın yaslandığı kutu. */}
-	<body class="relative min-h-screen text-slate-800 antialiased dark:text-neutral-200">
+	<body class="relative flex min-h-svh flex-col text-slate-800 antialiased dark:text-neutral-200">
 		<SarmasikYazi metin={m('sarmasik.metin')} />
 		<KaydirmaSeridi />
 
