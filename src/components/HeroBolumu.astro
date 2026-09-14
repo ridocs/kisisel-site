@@ -88,7 +88,7 @@ const ikonlar = [
 			ikonlar.map((veri, sira) => (
 				<div
 					class:list={['logo-yuva absolute', veri.sinif]}
-					style={`--gecikme:${(sira % 12) * 70}ms; --sure:${6 + (sira % 5)}s`}
+					style={`--gecikme:${(sira % 8) * 45}ms; --sure:${6 + (sira % 5)}s`}
 				>
 					<span class="logo-balon" aria-hidden="true">{veri.ad}</span>
 					<div class="logo-kart flex size-12 items-center justify-center rounded-xl border border-black/5 bg-white/90 p-2 shadow-lg backdrop-blur-md md:size-14 dark:border-white/10 dark:bg-slate-800/70">
@@ -135,12 +135,17 @@ const ikonlar = [
 <style>
 	/* Giriş ve sürekli yüzme animasyonları saf CSS. Her logo kendi gecikme ve
 	   süresini satır içi değişkenlerden alıyor, böylece hareket tekdüze olmuyor. */
+	/* Giriş süresi ve basamaklanması bilinçli olarak kısa: logolar sırası
+	   gelene kadar görünmez (`both` + opacity 0) ve eski değerlerde son
+	   logolar 1370 ms'de tamamlanıyordu — sayfa "geç yükleniyor" gibi
+	   görünüyordu. Yeni değerlerde en geç 735 ms'de hepsi yerinde.
+	   will-change kaldırıldı: süresiz çalışan bir animasyonu tarayıcı
+	   zaten katmanlıyor, 35 öge için elle katman istemek boşuna bellek. */
 	.logo-yuva {
 		animation:
-			logo-giris 600ms cubic-bezier(0.22, 1, 0.36, 1) both,
+			logo-giris 420ms cubic-bezier(0.22, 1, 0.36, 1) both,
 			logo-yuzme var(--sure, 7s) ease-in-out infinite alternate;
-		animation-delay: var(--gecikme, 0ms), calc(var(--gecikme, 0ms) + 600ms);
-		will-change: transform;
+		animation-delay: var(--gecikme, 0ms), calc(var(--gecikme, 0ms) + 420ms);
 	}
 
 	@keyframes logo-giris {
