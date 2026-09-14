@@ -138,9 +138,10 @@ const enYolu = new URL(digerDilYolu(Astro.url, 'en'), Astro.site);
 					oge.setAttribute('data-gorunur', '');
 				}
 
-				// Eşik bilinçli olarak çok düşük: bölümler mobilde görünüm
-				// yüksekliğinden uzun olabiliyor ve yüzdesel bir eşik geç tetikleniyor
-				// ya da hiç tetiklenmiyordu.
+				// Eşik düşük tutuluyor: bölüm ekranın kenarından görünmeye
+				// başladığında animasyon başlasın ki kaydırma yerine oturduğunda
+				// içerik tam gelmiş olsun. Bölümler görünüm yüksekliğinden uzun
+				// olabildiği için yüksek bir yüzde eşiği geç tetikleniyordu.
 				var gozlemci = new IntersectionObserver(
 					function (girisler) {
 						girisler.forEach(function (giris) {
@@ -149,19 +150,16 @@ const enYolu = new URL(digerDilYolu(Astro.url, 'en'), Astro.site);
 							gozlemci.unobserve(giris.target);
 						});
 					},
-					{ threshold: 0.01 },
+					{ threshold: 0.08 },
 				);
 
 				ogeler.forEach(function (oge) {
 					gozlemci.observe(oge);
 				});
 
-				// Güvenlik ağı: gözlemci herhangi bir sebeple tetiklenmezse (arka plan
-				// sekmesi kısıtlaması, beklenmedik yerleşim) içerik kalıcı olarak
-				// görünmez kalırdı. Kısa bir süre sonra kalanlar açılıyor.
-				window.setTimeout(function () {
-					ogeler.forEach(goster);
-				}, 2500);
+				// Güvenlik ağına gerek yok: içerik varsayılan olarak görünür,
+				// `data-gorunur` yalnızca giriş animasyonunu oynatıyor. Gözlemci
+				// hiç tetiklenmezse en kötü ihtimalle animasyon olmuyor.
 			})();
 		</script>
 

@@ -146,41 +146,31 @@ html.menu-acik .logo-yuva {
 	pointer-events: none;
 }
 
-/* Bölümler görünür alana girdikçe beliriyor.
-   Başlangıç gizliliği yalnızca `js-var` sınıfı varken uygulanıyor: JavaScript
-   çalışmazsa (hata, eski tarayıcı, engelli script) içerik hiç görünmeden kalırdı. */
-[data-belir] {
-	transition:
-		opacity 700ms cubic-bezier(0.22, 1, 0.36, 1),
-		transform 700ms cubic-bezier(0.22, 1, 0.36, 1);
+/*
+  Bölüm ekrana geldiğinde içerik yumuşakça yerine oturuyor. Kaydırma sayfa
+  sayfa ilerlediği için varış aksi hâlde sert hissediliyor; bu animasyon
+  geçişi yumuşatıyor.
+
+  Varsayılan durum GÖRÜNÜR olmak zorunda. Önceki sürümde başlangıç durumu
+  gizlilikti (`opacity: 0`) ve görünürlük tamamen gözlemcinin tetiklenmesine
+  bağlıydı; gözlemci tetiklenmeyince mobilde bölümler kalıcı olarak görünmez
+  kalmıştı. Şimdi en kötü ihtimalle animasyon oynamıyor, içerik yerinde
+  duruyor. Bilgiye erişim animasyondan önce gelir.
+*/
+[data-belir][data-gorunur] {
+	animation: bolum-belir 620ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
-html.js-var [data-belir] {
-	opacity: 0;
-	transform: translateY(28px);
-}
-
-html.js-var [data-belir][data-gorunur] {
-	opacity: 1;
-	transform: none;
-}
-
-/* Dar ekranda efekt kapalı: içeriğin görünürlüğü gözlemcinin tetiklenmesine
-   bağlı kalıyordu ve mobilde bölümler gizli kalabiliyordu. Bilgiye erişim,
-   animasyondan önce gelir. */
-@media (max-width: 767px) {
-	html.js-var [data-belir] {
-		opacity: 1;
-		transform: none;
-		transition: none;
+@keyframes bolum-belir {
+	from {
+		opacity: 0;
+		transform: translateY(18px);
 	}
 }
 
 @media (prefers-reduced-motion: reduce) {
-	html.js-var [data-belir] {
-		opacity: 1;
-		transform: none;
-		transition: none;
+	[data-belir][data-gorunur] {
+		animation: none;
 	}
 }
 
