@@ -32,23 +32,34 @@ const m = cevirici(dil);
 			<span class="hayalet-yuva block" style="--sira: 1" data-hayalet>
 				<svg
 					class="hayalet block size-20 md:size-[120px]"
-					viewBox="0 0 120 120"
+					viewBox="0 0 110 130"
 					role="img"
 					aria-label={m('404.hayaletAlt')}
 				>
-					{/* Gövde: üstü kubbe, altı dalgalı etek */}
+					{/* Gövde: kubbe baş, iki yana çıkan kollar, altta yırtık etek.
+					    Tek parça yol; dolgu açık, kontur koyu. */}
 					<path
-						d="M18 62a42 42 0 0 1 84 0v42c0 4-4.6 6.2-7.8 3.7l-7.4-5.8a5 5 0 0 0-6.3.2l-6.6 5.5a5 5 0 0 1-6.4 0l-6.6-5.5a5 5 0 0 0-6.3 0l-6.6 5.5a5 5 0 0 1-6.4 0l-6.6-5.5a5 5 0 0 0-6.3-.2l-7.4 5.8C21.1 110.2 18 108 18 104z"
 						class="hayalet-govde"
-					></path>
-					{/* Yüz ayrı bir grupta: imleç takibinde gövde sabit kalıp
-					    yalnızca yüz kayıyor, böylece hareket canlı ama abartısız. */}
-					<g class="hayalet-yuz">
-						<ellipse cx="45" cy="58" rx="6" ry="8" class="hayalet-goz"></ellipse>
-						<ellipse cx="75" cy="58" rx="6" ry="8" class="hayalet-goz"></ellipse>
-						{/* Şaşkın ağız */}
-						<ellipse cx="60" cy="80" rx="7" ry="9" class="hayalet-agiz"></ellipse>
+						d="M55 6C36 6 24 24 24 48l0 18c-6-4-14 0-16 8c-2 8 4 14 12 12c2 6 2 12 2 18c0 8 2 16 6 20c3 3 6 0 7-5c1 5 4 8 7 5c3-3 4-8 5-12c2 6 5 12 8 12c3 0 6-6 8-12c1 4 2 9 5 12c3 3 6 0 7-5c1 5 4 8 7 5c4-4 6-12 6-20c0-6 0-12 2-18c8 2 14-4 12-12c-2-8-10-12-16-8l0-18C86 24 74 6 55 6Z"
+					/>
+
+					{/* Gövdedeki kıvrım çizgileri */}
+					<g class="hayalet-kivrim">
+						<path d="M36 84v20" />
+						<path d="M55 90v22" />
+						<path d="M74 84v20" />
+						<path d="M45 96v12" />
+						<path d="M65 96v12" />
 					</g>
+
+					{/* Kaşın altındaki küçük parıltı çizgileri (çizimdeki gibi) */}
+					<g class="hayalet-kivrim">
+						<path d="M36 30c2-6 5-10 9-12" />
+					</g>
+
+					<ellipse class="hayalet-goz" cx="44" cy="42" rx="5.5" ry="8" />
+					<ellipse class="hayalet-goz" cx="66" cy="42" rx="5.5" ry="8" />
+					<ellipse class="hayalet-agiz" cx="55" cy="62" rx="2.4" ry="3.4" />
 				</svg>
 			</span>
 
@@ -96,34 +107,33 @@ const m = cevirici(dil);
 		opacity: 0.7;
 	}
 
+	/* Çizim koyu konturlu ve açık gövdeli; iki temada da aynı okunuyor, bu
+	   yüzden tema değişkenlerine bağlanmadı. */
 	.hayalet-govde {
-		fill: var(--foreground);
-		opacity: 0.85;
+		fill: #fbfaf9;
+		stroke: #4a4a4a;
+		stroke-width: 3.2;
+		stroke-linejoin: round;
+	}
+
+	.hayalet-kivrim path {
+		fill: none;
+		stroke: #6f6f6f;
+		stroke-width: 2.4;
+		stroke-linecap: round;
 	}
 
 	.hayalet-goz,
 	.hayalet-agiz {
-		fill: var(--background);
+		fill: #3d3d3d;
 	}
 
-	/* İmleç takibi: betik yalnızca bu iki değişkeni yazıyor, yerleşim hiç
-	   hesaplanmıyor. Yüz gövdeden bağımsız kaydığı için hareket canlı duruyor. */
-	.hayalet-yuz {
-		translate: var(--bakis-x, 0) var(--bakis-y, 0);
-		transition: translate 260ms cubic-bezier(0.22, 1, 0.36, 1);
-	}
-
+	/* Fare yönüne dönüş: betik yalnızca `--egim` yazıyor. Salınım ayrı bir
+	   öğede (svg) duruyor; ikisi aynı öğede olsaydı `rotate` çakışırdı. */
 	.hayalet-yuva {
 		display: inline-block;
 		rotate: var(--egim, 0deg);
-		transition:
-			rotate 420ms cubic-bezier(0.22, 1, 0.36, 1),
-			scale 420ms cubic-bezier(0.34, 1.56, 0.64, 1);
-	}
-
-	/* Üzerine gelince büyüyor — özgün tasarımdaki whileHover'ın karşılığı. */
-	.hayalet-yuva:hover {
-		scale: 1.12;
+		transition: rotate 520ms cubic-bezier(0.22, 1, 0.36, 1);
 	}
 
 	/* --- Giriş animasyonu ---
@@ -146,9 +156,10 @@ const m = cevirici(dil);
 		animation-name: rakam-sag;
 	}
 
-	/* Hayalet giriş bittikten sonra yavaşça süzülmeye devam ediyor. */
+	/* Salınım: giriş bittikten sonra sürekli. Yalnızca transform; boyama
+	   maliyeti yok. */
 	.hayalet {
-		animation: hayalet-suzul 2.4s ease-in-out infinite alternate;
+		animation: hayalet-salin 3.2s ease-in-out infinite alternate;
 		animation-delay: 800ms;
 	}
 
@@ -181,12 +192,12 @@ const m = cevirici(dil);
 		}
 	}
 
-	@keyframes hayalet-suzul {
+	@keyframes hayalet-salin {
 		from {
-			transform: translateY(-5px);
+			transform: translate(-5px, -6px) rotate(-3deg);
 		}
 		to {
-			transform: translateY(5px);
+			transform: translate(5px, 6px) rotate(3deg);
 		}
 	}
 
@@ -312,7 +323,6 @@ const m = cevirici(dil);
 		.etiket,
 		.daire,
 		.ok,
-		.hayalet-yuz,
 		.hayalet-yuva {
 			transition: none;
 		}
@@ -328,22 +338,17 @@ const m = cevirici(dil);
 		var yuva = document.querySelector('[data-hayalet]');
 		if (!yuva) return;
 
-		var yuz = yuva.querySelector('.hayalet-yuz');
 		var inceIsaretci = window.matchMedia('(pointer: fine)');
 		var azHareket = window.matchMedia('(prefers-reduced-motion: reduce)');
-
-		// En fazla kayma: SVG kullanıcı birimi (viewBox 120). Küçük tutuluyor,
-		// gözler yüzün dışına taşmasın.
-		var BAKIS = 5;
-		var EGIM = 6; // derece
+		var EGIM = 12; // en fazla donus, derece
 
 		function etkinMi() {
 			return inceIsaretci.matches && !azHareket.matches;
 		}
 
-		// Merkez yalnızca yeniden boyutlanma ve kaydırmada ölçülüyor; her fare
-		// hareketinde getBoundingClientRect çağırmak zorunlu yeniden yerleşim
-		// demekti (hero'daki simgelerde aynı hata ölçülmüştü).
+		// Merkez yalnizca yeniden boyutlanma ve kaydirmada olculuyor; her fare
+		// hareketinde getBoundingClientRect cagirmak zorunlu yeniden yerlesim
+		// demekti (hero'daki simgelerde ayni maliyet olculmustu).
 		var merkez = null;
 
 		function olc() {
@@ -363,24 +368,17 @@ const m = cevirici(dil);
 				var dx = olay.clientX - merkez.x;
 				var dy = olay.clientY - merkez.y;
 				var uzaklik = Math.hypot(dx, dy) || 1;
-
-				// Yakınlaştıkça etki artıyor ama hiçbir zaman BAKIS'ı aşmıyor:
-				// oran, uzaklığın 260 pikselde doyuma ulaşan hâli.
+				// Uzaklik 260 pikselde doyuma ulasiyor: yakinken donus belirgin,
+				// uzakken sabit kaliyor.
 				var oran = Math.min(uzaklik / 260, 1);
-				var bx = (dx / uzaklik) * BAKIS * oran;
-				var by = (dy / uzaklik) * BAKIS * oran;
 
-				yuz.style.setProperty('--bakis-x', bx.toFixed(2) + 'px');
-				yuz.style.setProperty('--bakis-y', by.toFixed(2) + 'px');
 				yuva.style.setProperty('--egim', ((dx / uzaklik) * EGIM * oran).toFixed(2) + 'deg');
 			},
 			{ passive: true },
 		);
 
-		// İmleç pencereden çıkınca hayalet düz bakışa dönüyor.
+		// Imlec pencereden cikinca hayalet dikleiyor.
 		document.addEventListener('mouseleave', function () {
-			yuz.style.setProperty('--bakis-x', '0px');
-			yuz.style.setProperty('--bakis-y', '0px');
 			yuva.style.setProperty('--egim', '0deg');
 		});
 	})();

@@ -106,7 +106,7 @@ const ikonlar = [
 					style={`--gecikme:${(sira % 8) * 15}ms; --sure:${5 + (sira % 4)}s; --kay-x:${KAY_X[sira % 8]}px; --kay-y:${KAY_Y[sira % 8]}px; --don:${DON[sira % 8]}deg`}
 				>
 					<span class="logo-balon" aria-hidden="true">{veri.ad}</span>
-					<div class="logo-kart flex size-12 items-center justify-center rounded-xl border border-black/5 bg-white/95 p-2 shadow-lg md:size-14 dark:border-white/10 dark:bg-slate-800/90">
+					<div class="logo-kart flex size-12 items-center justify-center rounded-xl border border-black/5 bg-white/95 p-2 shadow-lg md:size-14 dark:border-white/10 dark:bg-neutral-800/90">
 						<Icon
 							name={veri.ikon}
 							class:list={['size-6 md:size-7', veri.tersle && 'dark:invert']}
@@ -138,7 +138,7 @@ const ikonlar = [
 				href={ikincilHedef}
 				target="_blank"
 				rel="noopener noreferrer"
-				class="inline-flex items-center rounded-lg bg-slate-900 px-8 py-4 text-base font-semibold text-white transition-colors hover:bg-slate-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current dark:bg-white dark:text-slate-900 dark:hover:bg-white/85"
+				class="inline-flex items-center rounded-lg bg-slate-900 px-8 py-4 text-base font-semibold text-white transition-colors hover:bg-slate-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current dark:bg-white dark:text-neutral-900 dark:hover:bg-white/85"
 			>
 				{ikincilMetin}
 				<span class="sr-only"> (yeni sekmede açılır)</span>

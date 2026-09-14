@@ -107,7 +107,7 @@ const enYolu = new URL(digerDilYolu(Astro.url, 'en'), Astro.site);
 			})();
 		</script>
 	</head>
-	<body class="min-h-screen bg-white text-slate-800 antialiased dark:bg-slate-950 dark:text-slate-200">
+	<body class="min-h-screen bg-white text-slate-800 antialiased dark:bg-neutral-950 dark:text-neutral-200">
 		<a
 			href="#icerik"
 			class="sr-only focus:not-sr-only focus:absolute focus:top-3 focus:left-3 focus:z-[60] focus:rounded-lg focus:bg-marka-600 focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-white"
@@ -131,7 +131,7 @@ const enYolu = new URL(digerDilYolu(Astro.url, 'en'), Astro.site);
 
 		{
 			altbilgi && (
-				<footer class="mx-auto max-w-3xl px-4 py-10 text-sm text-slate-500 dark:text-slate-400">
+				<footer class="mx-auto max-w-3xl px-4 py-10 text-sm text-slate-500 dark:text-neutral-400">
 					&copy; {new Date().getFullYear()} — {m('altbilgi.lisans')}
 				</footer>
 			)
