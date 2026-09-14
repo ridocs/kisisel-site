@@ -1,0 +1,81 @@
+---
+import { Icon } from 'astro-icon/components';
+import { cevirici, dilBul, yol } from '@/i18n/ceviriler';
+
+const dil = dilBul(Astro.url);
+const m = cevirici(dil);
+const hakkimdaYolu = yol(dil, dil === 'en' ? 'about' : 'hakkimda');
+
+/*
+  Yer tutucu görsel. Kendi fotoğrafın hazır olduğunda bu satırı değiştirmen
+  yeterli; en iyi sonuç için dikey (4:5) bir kare veya portre kullan.
+  Yerel bir dosya koyacaksan public/ altına atıp "/fotograf.jpg" yazabilirsin.
+*/
+const gorsel =
+	'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=900&q=80&auto=format&fit=crop';
+---
+
+<section class="relative overflow-hidden py-20 sm:py-28">
+	{/* Arkadaki yumuşak parıltı; içeriğin okunmasını engellemesin diye çok soluk. */}
+	<div
+		class="pointer-events-none absolute top-0 left-1/2 -z-10 size-[520px] -translate-x-1/2 rounded-full bg-marka-500/10 blur-[160px]"
+		aria-hidden="true"
+	>
+	</div>
+
+	<div class="mx-auto flex max-w-5xl flex-col items-center gap-12 px-4 md:flex-row md:gap-16">
+		{/* Görsel: dikdörtgen yerine organik bir maske ile şekillendirildi. */}
+		<div class="relative shrink-0">
+			<div
+				class="gorsel-maske pointer-events-none absolute -inset-3 -z-10 bg-gradient-to-br from-marka-500/25 to-marka-400/10"
+				aria-hidden="true"
+			>
+			</div>
+			<img
+				src={gorsel}
+				alt={m('tanitim.gorselAlt')}
+				width="380"
+				height="475"
+				loading="lazy"
+				decoding="async"
+				class="gorsel-maske w-[min(340px,70vw)] object-cover shadow-2xl shadow-marka-600/20 sm:w-[380px]"
+			/>
+		</div>
+
+		<div class="max-w-lg">
+			<h2 class="text-sm font-semibold tracking-[0.18em] text-slate-500 dark:text-slate-400">
+				{m('tanitim.ustBaslik')}
+			</h2>
+			<div class="mt-3 h-[3px] w-24 rounded-full bg-gradient-to-r from-marka-600 to-marka-400"></div>
+
+			<p class="mt-8 text-slate-600 dark:text-slate-300">{m('tanitim.paragraf1')}</p>
+			<p class="mt-4 text-slate-600 dark:text-slate-300">{m('tanitim.paragraf2')}</p>
+			<p class="mt-4 text-slate-600 dark:text-slate-300">{m('tanitim.paragraf3')}</p>
+
+			<a
+				href={hakkimdaYolu}
+				class="mt-8 inline-flex items-center gap-2 rounded-full bg-slate-900 px-7 py-3 text-sm font-medium text-white transition-transform hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current motion-reduce:transition-none dark:bg-white dark:text-slate-900"
+			>
+				<span>{m('tanitim.dugme')}</span>
+				<Icon name="lucide:arrow-right" class="size-4" />
+			</a>
+		</div>
+	</div>
+</section>
+
+<style>
+	/* Organik maske: köşeleri farklı yarıçaplarla eğerek damla benzeri bir form
+	   veriyor. clip-path yerine border-radius kullanıldı; gölge ve kenar
+	   yumuşaklığı böyle korunuyor. */
+	.gorsel-maske {
+		aspect-ratio: 4 / 5;
+		border-radius: 58% 42% 46% 54% / 48% 52% 48% 52%;
+	}
+
+	/* Dar ekranda form biraz sakinleşiyor, yoksa küçük boyutta abartılı duruyor. */
+	@media (max-width: 640px) {
+		.gorsel-maske {
+			border-radius: 46% 54% 48% 52% / 48% 50% 50% 52%;
+		}
+	}
+</style>

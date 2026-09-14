@@ -32,6 +32,17 @@ export const ceviriler = {
 		'anasayfa.sonYazilar': 'Son yazılar',
 		'anasayfa.tumYazilar': 'Tüm yazılar →',
 
+		// Hero'dan sonra gelen tanıtım bölümü. Metinler yer tutucu; değiştirilecek.
+		'tanitim.ustBaslik': 'NE YAPIYORUM?',
+		'tanitim.paragraf1':
+			'Web uygulamaları geliştiriyorum: arayüzden veritabanına, dağıtımdan otomasyona kadar işin her ucuna dokunuyorum.',
+		'tanitim.paragraf2':
+			'Öğrendiklerimi not almayı seviyorum. Buradaki yazılar çoğunlukla karşılaştığım sorunların ve çözümlerinin kaydı.',
+		'tanitim.paragraf3':
+			'Yeni bir iş, ortak bir proje ya da sadece sohbet için yazabilirsin.',
+		'tanitim.dugme': 'Devamını oku',
+		'tanitim.gorselAlt': 'Mustafa Eybek portre fotoğrafı',
+
 		'blog.baslik': 'Blog',
 		'blog.sayfaBasligi': 'Blog — Mustafa Eybek',
 		'blog.aciklama': 'Yazılar.',
@@ -70,6 +81,15 @@ export const ceviriler = {
 
 		'anasayfa.sonYazilar': 'Latest posts',
 		'anasayfa.tumYazilar': 'All posts →',
+
+		'tanitim.ustBaslik': 'WHAT I DO',
+		'tanitim.paragraf1':
+			'I build web applications — touching every end of the work, from the interface to the database, from deployment to automation.',
+		'tanitim.paragraf2':
+			'I like taking notes on what I learn. Most of the writing here is a record of problems I ran into and how I solved them.',
+		'tanitim.paragraf3': 'Write to me for a new role, a shared project, or just a conversation.',
+		'tanitim.dugme': 'Read more',
+		'tanitim.gorselAlt': 'Portrait photo of Mustafa Eybek',
 
 		'blog.baslik': 'Blog',
 		'blog.sayfaBasligi': 'Blog — Mustafa Eybek',
