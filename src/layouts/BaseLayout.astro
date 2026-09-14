@@ -168,8 +168,9 @@ const enYolu = new URL(digerDilYolu(Astro.url, 'en'), Astro.site);
 		  hamlede bir bölüm ileri gidiliyor.
 
 		  Sınırlar bilinçli:
-		  - Yalnızca 768 piksel ve üzerinde. Dokunmatikte parmak hareketini ele
-		    geçirmek rahatsız edici ve hataya açık.
+		  - Fare tekerleği 768 piksel ve üzerinde; dokunmatik için ayrı bir
+		    işleyici var (aşağıda), çünkü parmak hareketinde karar hareketin
+		    başında bir kez verilmek zorunda.
 		  - Bir bölüm ekrandan uzunsa, sonuna gelinene kadar normal kaydırma
 		    çalışıyor; yoksa görülemeyen içerik kalırdı.
 		  - Hareketi azaltılmış tercihte tamamen kapalı (kaydırmayı ele geçirmek
@@ -300,6 +301,102 @@ const enYolu = new URL(digerDilYolu(Astro.url, 'en'), Astro.site);
 						sicramaAni = simdi;
 						kilitBitis = simdi + GECIS_SURESI + 150;
 						yumusakGit(y);
+					},
+					{ passive: false },
+				);
+
+				/*
+				  Dokunmatikte kayar geçiş.
+
+				  Önce yerel `scroll-snap` kullanılıyordu; akıcıydı ama bölüm bir
+				  anda oturuyordu ve snap süresi CSS'ten ayarlanamıyor. Geçişin
+				  kayarak olması için parmak hareketi burada yönetiliyor; süre
+				  masaüstüyle aynı (GECIS_SURESI).
+
+				  Sınırlar:
+				  - Karar ilk touchmove'da veriliyor. iOS'ta ilk hareket
+				    engellenmezse kaydırma başlıyor ve sonraki preventDefault
+				    çağrıları yok sayılıyor; bu yüzden "karışayım mı" sorusu
+				    hareketin başında bir kez yanıtlanıyor.
+				  - Bölüm o yönde ekrandan taşıyorsa karışılmıyor; olağan kaydırma
+				    çalışıyor, yoksa görülemeyen içerik kalırdı.
+				  - Mobil menü açıkken devre dışı.
+				  - Hareketi azaltılmış tercihte tamamen kapalı.
+				  - JavaScript çalışmazsa CSS'teki scroll-snap devrede kalır:
+				    `kayar-gecis` sınıfı yalnızca betik kurulduğunda ekleniyor ve
+				    snap'i o sınıf kapatıyor.
+				*/
+				var kabaIsaretci = window.matchMedia('(pointer: coarse)');
+				var ESIK = 45; // geçişin başlaması için gereken parmak mesafesi
+
+				function dokunmatikEtkinMi() {
+					return kabaIsaretci.matches && !azHareket.matches;
+				}
+
+				if (dokunmatikEtkinMi()) {
+					document.documentElement.classList.add('kayar-gecis');
+				}
+
+				var baslangicY = 0;
+				var eleGecir = false; // bu hareket bizim mi, yoksa olağan kaydırma mı
+				var karardiMi = false;
+
+				window.addEventListener(
+					'touchstart',
+					function (olay) {
+						if (!dokunmatikEtkinMi()) return;
+						baslangicY = olay.touches[0].clientY;
+						eleGecir = false;
+						karardiMi = false;
+					},
+					{ passive: true },
+				);
+
+				window.addEventListener(
+					'touchmove',
+					function (olay) {
+						if (!dokunmatikEtkinMi()) return;
+						if (document.documentElement.classList.contains('menu-acik')) return;
+
+						var simdi = performance.now();
+
+						// Geçiş sürerken parmak hareketi yutuluyor; yoksa canlandırma
+						// ile olağan kaydırma birbiriyle yarışıyor.
+						if (simdi < kilitBitis) {
+							olay.preventDefault();
+							return;
+						}
+
+						var fark = baslangicY - olay.touches[0].clientY;
+						var yon = fark > 0 ? 1 : -1;
+
+						if (!karardiMi) {
+							karardiMi = true;
+							var i = aktifIndeks();
+							var ust = belgeUstu(bolumler[i]) - window.scrollY;
+							var alt = ust + bolumler[i].offsetHeight;
+							var tasiyor = yon > 0 ? alt > window.innerHeight + 4 : ust < -4;
+							var hedefIndeks = i + yon;
+							eleGecir = !tasiyor && hedefIndeks >= 0 && hedefIndeks < bolumler.length;
+						}
+
+						if (!eleGecir) return;
+
+						olay.preventDefault();
+
+						if (Math.abs(fark) < ESIK) return;
+
+						var j = aktifIndeks();
+						var hedef = konum(Math.min(Math.max(j + yon, 0), bolumler.length - 1));
+						if (Math.abs(hedef - window.scrollY) < 2) return;
+
+						// Parmak kalkmadan ikinci bir geçişin hemen tetiklenmemesi
+						// için başlangıç noktası buraya alınıyor: kullanıcı bir
+						// bölüm daha ilerlemek isterse yeniden ESIK kadar kaydırmalı.
+						baslangicY = olay.touches[0].clientY;
+						sicramaAni = simdi;
+						kilitBitis = simdi + GECIS_SURESI + 150;
+						yumusakGit(hedef);
 					},
 					{ passive: false },
 				);

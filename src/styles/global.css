@@ -239,21 +239,21 @@ html.menu-acik .logo-yuva {
 */
 @media (pointer: coarse) {
 	[data-parcali][data-gorunur] [data-belir-oge] {
-		animation-duration: 620ms;
-		animation-delay: calc(var(--sira, 0) * 105ms);
+		animation-duration: 780ms;
+		animation-delay: calc(var(--sira, 0) * 130ms);
 	}
 
 	[data-parcali][data-gorunur] [data-belir-gorsel] {
-		animation-duration: 820ms;
+		animation-duration: 1000ms;
 	}
 
 	[data-parcali][data-gorunur] [data-belir-cizgi] {
-		animation-duration: 720ms;
+		animation-duration: 880ms;
 	}
 
 	/* Bütün olarak beliren bölümler (ör. Son yazılar) da aynı ölçüde. */
 	[data-belir][data-gorunur]:not([data-parcali]) {
-		animation-duration: 820ms;
+		animation-duration: 1000ms;
 	}
 }
 
@@ -304,6 +304,13 @@ html {
 
 	[data-sayfa] {
 		scroll-snap-align: start;
+	}
+
+	/* Betik kurulduysa geçişi kendisi kayarak yapıyor; yerel snap devre dışı.
+	   Sınıf yalnızca betik çalıştığında ekleniyor, dolayısıyla JavaScript
+	   olmayan durumda snap yedek olarak kalıyor. */
+	html.kayar-gecis {
+		scroll-snap-type: none;
 	}
 
 	/* Sayfa içi bağlantıyla gelinen öğe sabit çubuğun altında kalmasın
