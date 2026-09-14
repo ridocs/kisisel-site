@@ -114,6 +114,33 @@ html.menu-acik {
 	overflow: hidden;
 }
 
+/* Bölümler görünür alana girdikçe beliriyor.
+   Başlangıç gizliliği yalnızca `js-var` sınıfı varken uygulanıyor: JavaScript
+   çalışmazsa (hata, eski tarayıcı, engelli script) içerik hiç görünmeden kalırdı. */
+[data-belir] {
+	transition:
+		opacity 700ms cubic-bezier(0.22, 1, 0.36, 1),
+		transform 700ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+html.js-var [data-belir] {
+	opacity: 0;
+	transform: translateY(28px);
+}
+
+html.js-var [data-belir][data-gorunur] {
+	opacity: 1;
+	transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	html.js-var [data-belir] {
+		opacity: 1;
+		transform: none;
+		transition: none;
+	}
+}
+
 html {
 	scroll-behavior: smooth;
 	/* Sabit üst çubuk, sayfa içi bağlantıyla ya da klavyeyle gelinen öğeyi

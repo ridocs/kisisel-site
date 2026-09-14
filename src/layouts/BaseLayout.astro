@@ -50,6 +50,12 @@ const enYolu = new URL(digerDilYolu(Astro.url, 'en'), Astro.site);
 			}
 		</script>
 
+		{/* Belirme efektinin başlangıç gizliliği yalnızca JavaScript çalışırken
+		    uygulansın diye işaret. Stil hesaplanmadan önce ekleniyor. */}
+		<script is:inline>
+			document.documentElement.classList.add('js-var');
+		</script>
+
 		{/*
 		  Cihaz diline göre yönlendirme. Site statik olduğu için sunucu tarafında
 		  yapılamıyor; ilk ziyarette tarayıcı dili Türkçe değilse İngilizce sürüme
@@ -93,6 +99,38 @@ const enYolu = new URL(digerDilYolu(Astro.url, 'en'), Astro.site);
 		<footer class="mx-auto max-w-3xl px-4 py-10 text-sm text-slate-500 dark:text-slate-400">
 			&copy; {new Date().getFullYear()} — {m('altbilgi.lisans')}
 		</footer>
+
+		{/* Bölümler görünür alana girdikçe belirir. Bir kez göründükten sonra
+		    izleme bırakılıyor; aşağı-yukarı kaydırmada tekrar tekrar oynamıyor. */}
+		<script is:inline>
+			(function () {
+				var ogeler = document.querySelectorAll('[data-belir]');
+				if (!ogeler.length) return;
+
+				// IntersectionObserver yoksa (çok eski tarayıcı) hepsini görünür yap.
+				if (!('IntersectionObserver' in window)) {
+					ogeler.forEach(function (oge) {
+						oge.setAttribute('data-gorunur', '');
+					});
+					return;
+				}
+
+				var gozlemci = new IntersectionObserver(
+					function (girisler) {
+						girisler.forEach(function (giris) {
+							if (!giris.isIntersecting) return;
+							giris.target.setAttribute('data-gorunur', '');
+							gozlemci.unobserve(giris.target);
+						});
+					},
+					{ threshold: 0.12, rootMargin: '0px 0px -8% 0px' },
+				);
+
+				ogeler.forEach(function (oge) {
+					gozlemci.observe(oge);
+				});
+			})();
+		</script>
 
 		{/* Dil değiştiriciye tıklandığında tercih saklanır; böylece otomatik
 		    yönlendirme bir daha araya girmez. */}

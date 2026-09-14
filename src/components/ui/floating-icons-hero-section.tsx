@@ -235,6 +235,17 @@ const FloatingIconsHero = React.forwardRef<
       )}
       {...props}
     >
+      {/*
+        Arka plandaki renk katmanları. Çok geniş bulanıklık ve düşük opaklık
+        bilinçli: metnin kontrastını düşürmeden zemine derinlik veriyor.
+        pointer-events-none, imleçten kaçma etkisini engellememesi için.
+      */}
+      <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden" aria-hidden="true">
+        <div className="absolute -top-32 left-[12%] size-[34rem] rounded-full bg-marka-500/30 blur-[110px] dark:bg-marka-500/35" />
+        <div className="absolute top-[18%] right-[6%] size-[28rem] rounded-full bg-sky-400/25 blur-[120px] dark:bg-sky-500/30" />
+        <div className="absolute -bottom-40 left-[38%] size-[36rem] rounded-full bg-indigo-400/25 blur-[130px] dark:bg-indigo-500/30" />
+      </div>
+
       {/* Container for the background floating icons */}
       <div className="absolute inset-0 w-full h-full">
         {icons.map((iconData, index) => (

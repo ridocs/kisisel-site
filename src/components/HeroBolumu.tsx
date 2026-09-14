@@ -60,18 +60,18 @@ import IconVercel from '~icons/logos/vercel-icon';
 */
 const ikonlar: FloatingIconsHeroProps['icons'] = [
 	// --- Dar ekranda da görünen çekirdek (6) ---
-	{ id: 1, icon: IconAstro, ad: 'Astro', koyuTemadaTersle: true, className: 'top-[21%] left-[13%] md:top-[12%] md:left-[7%]' },
-	{ id: 2, icon: IconTypeScript, ad: 'TypeScript', className: 'top-[18%] right-[13%] md:top-[14%] md:right-[7%]' },
-	{ id: 3, icon: IconTailwind, ad: 'Tailwind CSS', className: 'bottom-[16%] left-[14%] md:bottom-[12%] md:left-[8%]' },
-	{ id: 4, icon: IconReact, ad: 'React', className: 'bottom-[18%] right-[14%] md:bottom-[14%] md:right-[8%]' },
-	{ id: 5, icon: IconJavaScript, ad: 'JavaScript', className: 'top-[9%] left-[40%] md:top-[6%]' },
-	{ id: 6, icon: IconDocker, ad: 'Docker', className: 'bottom-[9%] left-[42%] md:bottom-[6%]' },
+	{ id: 1, icon: IconAstro, ad: 'Astro', koyuTemadaTersle: true, className: 'top-[24%] left-[8%] md:top-[12%] md:left-[7%]' },
+	{ id: 2, icon: IconTypeScript, ad: 'TypeScript', className: 'top-[15%] right-[17%] md:top-[14%] md:right-[7%]' },
+	{ id: 3, icon: IconTailwind, ad: 'Tailwind CSS', className: 'bottom-[13%] left-[19%] md:bottom-[12%] md:left-[8%]' },
+	{ id: 4, icon: IconReact, ad: 'React', className: 'bottom-[23%] right-[8%] md:bottom-[14%] md:right-[8%]' },
+	{ id: 5, icon: IconJavaScript, ad: 'JavaScript', className: 'top-[14%] left-[36%] md:top-[6%] md:left-[40%]' },
+	{ id: 6, icon: IconDocker, ad: 'Docker', className: 'bottom-[8%] left-[34%] md:bottom-[6%] md:left-[42%]' },
 
 	// --- md: orta ekran (+10) ---
-	{ id: 7, icon: IconHtml, ad: 'HTML5', className: 'top-[11%] left-[26%] md:top-[7%] md:left-[22%]' },
-	{ id: 8, icon: IconCss, ad: 'CSS3', className: 'top-[12%] right-[26%] md:top-[8%] md:right-[22%]' },
-	{ id: 9, icon: IconNode, ad: 'Node.js', className: 'bottom-[11%] left-[28%] md:bottom-[7%] md:left-[24%]' },
-	{ id: 10, icon: IconGit, ad: 'Git', className: 'bottom-[12%] right-[28%] md:bottom-[8%] md:right-[24%]' },
+	{ id: 7, icon: IconHtml, ad: 'HTML5', className: 'top-[22%] left-[31%] md:top-[7%] md:left-[22%]' },
+	{ id: 8, icon: IconCss, ad: 'CSS3', className: 'top-[19%] right-[33%] md:top-[8%] md:right-[22%]' },
+	{ id: 9, icon: IconNode, ad: 'Node.js', className: 'bottom-[18%] left-[32%] md:bottom-[7%] md:left-[24%]' },
+	{ id: 10, icon: IconGit, ad: 'Git', className: 'bottom-[27%] right-[23%] md:bottom-[8%] md:right-[24%]' },
 	{
 		id: 11,
 		icon: IconGoogleCloud,
