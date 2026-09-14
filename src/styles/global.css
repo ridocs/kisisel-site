@@ -191,6 +191,41 @@ html {
 	}
 }
 
+/*
+  Dokunmatik cihazlarda sayfa sayfa ilerleme.
+
+  Masaüstündeki tekerlek betiği yerine yerel `scroll-snap` kullanılıyor:
+  iOS'ta parmak hareketini JavaScript ile ele geçirmek ivmeli kaydırmayla
+  çakışıyor ve takılma üretiyor. Snap ise tarayıcının kendi kaydırma
+  işleyicisinde çalıştığı için akıcı.
+
+  Ekrandan uzun bölümler (mobilde Hakkımda) tuzak oluşturmuyor: şartnameye
+  göre bir bölüm görünüm alanından büyükse içindeki her konum geçerli bir
+  durak sayılıyor, yani serbestçe kaydırılabiliyor.
+
+  `pointer: coarse` bilinçli: ayrım ekran genişliği değil, giriş aracı.
+  Dokunmatik dizüstü de dokunmatiktir ama fare kullanan dar pencerede
+  snap istenmez.
+*/
+@media (pointer: coarse) and (prefers-reduced-motion: no-preference) {
+	html {
+		scroll-snap-type: y mandatory;
+		/* Durak hizasını bozmasın diye burada sıfır; bağlantı hedeflerinin
+		   sabit çubuk altında kalmaması aşağıda scroll-margin ile çözülüyor. */
+		scroll-padding-top: 0;
+	}
+
+	[data-sayfa] {
+		scroll-snap-align: start;
+	}
+
+	/* Sayfa içi bağlantıyla gelinen öğe sabit çubuğun altında kalmasın
+	   (WCAG 2.2 "Focus Not Obscured"). */
+	[id] {
+		scroll-margin-top: 5rem;
+	}
+}
+
 /* Tailwind typography satır içi kodun etrafına varsayılan olarak ` karakteri
    ekler; okumayı zorlaştırdığı için kaldırıyoruz. */
 .prose :where(code):not(:where([class~="not-prose"] *))::before,

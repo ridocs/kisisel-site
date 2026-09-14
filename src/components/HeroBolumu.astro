@@ -1,4 +1,13 @@
 ---
+/*
+  Her logo kendi yönüne ve genliğine sahip olsun diye küçük birer desen.
+  Hepsi aynı yöne süzülünce hareket tekdüze ve mekanik görünüyordu.
+  Yalnızca transform değerleri; boyama maliyeti yok.
+*/
+const KAY_X = [12, -14, 9, -11, 15, -8, 13, -15];
+const KAY_Y = [-18, -13, -22, -16, -11, -20, -14, -19];
+const DON = [6, -5, 4, -7, 5, -4, 7, -6];
+
 import { Icon } from 'astro-icon/components';
 
 interface Props {
@@ -73,7 +82,7 @@ const ikonlar = [
 ---
 
 <section
-	data-sayfa class="bolum relative -mt-16 flex h-screen min-h-[700px] w-full items-center justify-center overflow-hidden bg-background"
+	data-sayfa class="bolum relative -mt-16 flex h-[100svh] w-full items-center justify-center overflow-hidden bg-background md:min-h-[700px]"
 >
 	{/* Renk katmanları: düşük opaklık, yüksek bulanıklık; metin kontrastını
 	    düşürmeden zemine derinlik veriyor. */}
@@ -94,7 +103,7 @@ const ikonlar = [
 			ikonlar.map((veri, sira) => (
 				<div
 					class:list={['logo-yuva absolute', veri.sinif]}
-					style={`--gecikme:${(sira % 8) * 15}ms; --sure:${6 + (sira % 5)}s`}
+					style={`--gecikme:${(sira % 8) * 15}ms; --sure:${5 + (sira % 4)}s; --kay-x:${KAY_X[sira % 8]}px; --kay-y:${KAY_Y[sira % 8]}px; --don:${DON[sira % 8]}deg`}
 				>
 					<span class="logo-balon" aria-hidden="true">{veri.ad}</span>
 					<div class="logo-kart flex size-12 items-center justify-center rounded-xl border border-black/5 bg-white/95 p-2 shadow-lg md:size-14 dark:border-white/10 dark:bg-slate-800/90">
@@ -141,20 +150,28 @@ const ikonlar = [
 <style>
 	/* Arka plandaki renk katmanları. Gradyan durakları yumuşak olduğu için
 	   bulanıklık süzgecine gerek yok; maliyeti de yok. */
+	/* Bölge bölge renk: beş ayrı, birbirine karışmayan leke. Yarıçaplar
+	   küçültülüp duraklar sıkılaştırıldı ki her biri kendi bölgesi gibi
+	   okunsun; buna karşılık opaklık düşürüldü, toplamda daha hafif.
+	   Metnin üstünden geçen bölge yok — kontrast korunuyor. */
 	.hero-isik {
 		pointer-events: none;
 		z-index: -10;
 		background:
-			radial-gradient(38rem 34rem at 18% 4%, oklch(0.62 0.18 250 / 0.3), transparent 68%),
-			radial-gradient(32rem 30rem at 90% 28%, oklch(0.75 0.14 230 / 0.26), transparent 68%),
-			radial-gradient(42rem 36rem at 42% 112%, oklch(0.68 0.16 275 / 0.26), transparent 68%);
+			radial-gradient(26rem 22rem at 12% 6%, oklch(0.62 0.18 250 / 0.22), transparent 58%),
+			radial-gradient(22rem 20rem at 88% 14%, oklch(0.75 0.14 230 / 0.2), transparent 58%),
+			radial-gradient(24rem 20rem at 74% 82%, oklch(0.68 0.16 275 / 0.19), transparent 58%),
+			radial-gradient(20rem 18rem at 26% 88%, oklch(0.7 0.15 200 / 0.17), transparent 58%),
+			radial-gradient(18rem 16rem at 52% 40%, oklch(0.72 0.12 260 / 0.1), transparent 62%);
 	}
 
 	:global(.dark) .hero-isik {
 		background:
-			radial-gradient(38rem 34rem at 18% 4%, oklch(0.62 0.18 250 / 0.38), transparent 68%),
-			radial-gradient(32rem 30rem at 90% 28%, oklch(0.7 0.15 230 / 0.32), transparent 68%),
-			radial-gradient(42rem 36rem at 42% 112%, oklch(0.62 0.17 275 / 0.32), transparent 68%);
+			radial-gradient(26rem 22rem at 12% 6%, oklch(0.62 0.18 250 / 0.3), transparent 58%),
+			radial-gradient(22rem 20rem at 88% 14%, oklch(0.7 0.15 230 / 0.26), transparent 58%),
+			radial-gradient(24rem 20rem at 74% 82%, oklch(0.62 0.17 275 / 0.25), transparent 58%),
+			radial-gradient(20rem 18rem at 26% 88%, oklch(0.66 0.15 200 / 0.22), transparent 58%),
+			radial-gradient(18rem 16rem at 52% 40%, oklch(0.66 0.12 260 / 0.14), transparent 62%);
 	}
 
 	/* Giriş ve sürekli yüzme animasyonları saf CSS. Her logo kendi gecikme ve
@@ -187,11 +204,11 @@ const ikonlar = [
 	@keyframes logo-yuzme {
 		from {
 			translate: 0 0;
-			rotate: -4deg;
+			rotate: calc(var(--don, 5deg) * -1);
 		}
 		to {
-			translate: 6px -10px;
-			rotate: 4deg;
+			translate: var(--kay-x, 10px) var(--kay-y, -16px);
+			rotate: var(--don, 5deg);
 		}
 	}
 
