@@ -65,6 +65,22 @@ export const ceviriler = {
 		'hakkimda.iletisimMetin':
 			'Ulaşılmak istediğin kanalları (e-posta, sosyal hesaplar) buraya ekle.',
 
+		'yazi.ustBaslik': 'YAZILAR',
+		'yazi.bos': 'Henüz yayımlanmış bir yazı yok. Yakında burada olacak.',
+
+		'iletisim.ustBaslik': 'İLETİŞİM',
+		'iletisim.baslik': 'Bir fikrin mi var, konuşalım',
+		'iletisim.durum': 'Yeni işlere açığım',
+		'iletisim.rol': 'Yazılım geliştirici',
+		'iletisim.yaz': 'Bana yaz',
+		'iletisim.kopyala': 'E-postayı kopyala',
+		'iletisim.kopyalandi': 'Kopyalandı',
+		'iletisim.qrAlt': 'Sitenin adresini içeren kare kod',
+		'iletisim.qrNot': 'Telefonunla okut, site cebinde açılsın.',
+		'iletisim.serit': 'Genelde aynı gün dönüyorum',
+
+		'altbilgi.tanim': 'Web uygulamaları, altyapı ve otomasyon üzerine çalışıyorum.',
+		'altbilgi.gezinme': 'Altbilgi gezinmesi',
 		'altbilgi.lisans': 'MIT lisansı ile yayımlanmıştır.',
 
 		// Yetkinlikler
@@ -135,6 +151,22 @@ export const ceviriler = {
 		'hakkimda.iletisimBaslik': 'Contact',
 		'hakkimda.iletisimMetin': 'Add the channels you want to be reached on (email, social accounts).',
 
+		'yazi.ustBaslik': 'WRITING',
+		'yazi.bos': 'No posts published yet. They will show up here.',
+
+		'iletisim.ustBaslik': 'CONTACT',
+		'iletisim.baslik': 'Got an idea? Let us talk',
+		'iletisim.durum': 'Available for work',
+		'iletisim.rol': 'Software developer',
+		'iletisim.yaz': 'Write to me',
+		'iletisim.kopyala': 'Copy email',
+		'iletisim.kopyalandi': 'Copied',
+		'iletisim.qrAlt': 'Square code containing the address of this site',
+		'iletisim.qrNot': 'Scan it and the site opens on your phone.',
+		'iletisim.serit': 'I usually reply the same day',
+
+		'altbilgi.tanim': 'I work on web applications, infrastructure and automation.',
+		'altbilgi.gezinme': 'Footer navigation',
 		'altbilgi.lisans': 'Published under the MIT license.',
 
 		// Skills

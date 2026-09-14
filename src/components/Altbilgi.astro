@@ -1,0 +1,188 @@
+---
+import { Icon } from 'astro-icon/components';
+import { cevirici, dilBul, digerDilYolu, yol } from '@/i18n/ceviriler';
+
+const dil = dilBul(Astro.url);
+const m = cevirici(dil);
+const digerDil = dil === 'tr' ? 'en' : 'tr';
+const digerDilBaglantisi = digerDilYolu(Astro.url, digerDil);
+
+const baglantilar = [
+	{ etiket: m('nav.anasayfa'), yol: yol(dil, '') },
+	{ etiket: m('nav.blog'), yol: yol(dil, 'blog') },
+	{ etiket: m('nav.hakkimda'), yol: yol(dil, dil === 'en' ? 'about' : 'hakkimda') },
+];
+
+const disBaglantilar = [
+	{ etiket: 'GitHub', adres: 'https://github.com/ridocs', ikon: 'lucide:github' },
+	{ etiket: m('nav.rss'), adres: yol(dil, 'rss.xml'), ikon: 'lucide:rss' },
+];
+---
+
+<footer class="altbilgi">
+	<div class="mx-auto w-full max-w-3xl px-4 lg:max-w-4xl">
+		<div class="ust">
+			<div class="marka">
+				<p class="ad">Mustafa Eybek</p>
+				<p class="not">{m('altbilgi.tanim')}</p>
+			</div>
+
+			<nav class="baglantilar" aria-label={m('altbilgi.gezinme')}>
+				<ul>
+					{
+						baglantilar.map((b) => (
+							<li>
+								<a href={b.yol}>{b.etiket}</a>
+							</li>
+						))
+					}
+				</ul>
+			</nav>
+
+			<div class="yan">
+				{
+					disBaglantilar.map((b) => (
+						<a
+							class="simge"
+							href={b.adres}
+							aria-label={b.etiket}
+							{...(b.adres.startsWith('http') ? { rel: 'noopener' } : {})}
+						>
+							<Icon name={b.ikon} class="size-[18px]" />
+						</a>
+					))
+				}
+				<a class="dil" href={digerDilBaglantisi} hreflang={digerDil}>
+					{digerDil.toUpperCase()}
+				</a>
+			</div>
+		</div>
+
+		<div class="alt">
+			<p>&copy; {new Date().getFullYear()} Mustafa Eybek</p>
+			<p>{m('altbilgi.lisans')}</p>
+		</div>
+	</div>
+</footer>
+
+<style>
+	.altbilgi {
+		border-top: 1px solid var(--border);
+		padding-block: 2.5rem 2rem;
+		font-size: 0.875rem;
+		color: var(--muted-foreground);
+	}
+
+	.ust {
+		display: flex;
+		flex-direction: column;
+		gap: 1.75rem;
+	}
+
+	.ad {
+		font-size: 1rem;
+		font-weight: 600;
+		color: var(--foreground);
+	}
+
+	.not {
+		margin-top: 0.25rem;
+		max-width: 22rem;
+	}
+
+	.baglantilar ul {
+		list-style: none;
+		padding: 0;
+		margin: 0;
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.25rem 1.25rem;
+	}
+
+	.baglantilar a {
+		color: inherit;
+		text-decoration: none;
+		/* Alt çizgi yalnızca üzerine gelince: üç bağlantı sürekli çizgiliyken
+		   altbilgi gereğinden fazla gürültülü duruyordu. */
+		border-bottom: 1px solid transparent;
+		padding-bottom: 0.1rem;
+		transition: color 200ms ease-out, border-color 200ms ease-out;
+	}
+
+	.baglantilar a:hover {
+		color: var(--foreground);
+		border-bottom-color: color-mix(in oklab, var(--foreground) 35%, transparent);
+	}
+
+	.yan {
+		display: flex;
+		align-items: center;
+		gap: 0.375rem;
+	}
+
+	/* Dokunma hedefi 40 piksel: WCAG 2.2 web için 24 istiyor, dokunmatikte
+	   bu aralık isabet hatasını belirgin azaltıyor. */
+	.simge,
+	.dil {
+		display: grid;
+		place-items: center;
+		min-width: 2.5rem;
+		height: 2.5rem;
+		border-radius: 0.625rem;
+		color: inherit;
+		text-decoration: none;
+		transition: background-color 200ms ease-out, color 200ms ease-out;
+	}
+
+	.dil {
+		padding-inline: 0.6rem;
+		font-size: 0.75rem;
+		font-weight: 600;
+		letter-spacing: 0.06em;
+	}
+
+	.simge:hover,
+	.dil:hover {
+		background: color-mix(in oklab, var(--foreground) 6%, transparent);
+		color: var(--foreground);
+	}
+
+	.simge:focus-visible,
+	.dil:focus-visible,
+	.baglantilar a:focus-visible {
+		outline: 2px solid var(--ring);
+		outline-offset: 2px;
+	}
+
+	.alt {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.25rem 1rem;
+		justify-content: space-between;
+		margin-top: 2rem;
+		padding-top: 1.25rem;
+		border-top: 1px solid var(--border);
+		font-size: 0.8125rem;
+	}
+
+	@media (min-width: 768px) {
+		.ust {
+			flex-direction: row;
+			align-items: flex-start;
+			justify-content: space-between;
+			gap: 2rem;
+		}
+
+		.yan {
+			margin-inline-start: auto;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.baglantilar a,
+		.simge,
+		.dil {
+			transition: none;
+		}
+	}
+</style>

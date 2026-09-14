@@ -1,0 +1,477 @@
+---
+import { Icon } from 'astro-icon/components';
+import QRCode from 'qrcode';
+import { cevirici, dilBul } from '@/i18n/ceviriler';
+
+const dil = dilBul(Astro.url);
+const m = cevirici(dil);
+
+/*
+  İLETİŞİM BİLGİSİ — düzenlenecek tek yer burası.
+
+  E-posta YER TUTUCU. Kendi adresini yazana kadar burada duruyor; site
+  yayında olduğu için uydurma bir adres koymak yerine açıkça yer tutucu
+  bırakıldı. Değiştirdiğinde hem düğmeler hem QR kendiliğinden güncellenir.
+*/
+const EPOSTA = 'eposta@example.com';
+const KONUM = { tr: 'Kayseri, Türkiye', en: 'Kayseri, Türkiye' };
+
+/*
+  QR'ın ne işe yaradığı.
+
+  Bir kartvizit (vCard) kodlamak için gerçek telefon ve e-posta gerekiyor;
+  ikisi de henüz yok. Onun yerine sitenin kendi adresi kodlandı — masaüstünde
+  siteyi gösterirken karşıdaki telefonuyla okutup açabiliyor. Gerçek iletişim
+  bilgisi geldiğinde `QR_ICERIK` bir vCard dizesine çevrilebilir, gerisi aynı
+  kalır.
+*/
+const QR_ICERIK = 'https://twinshareapp.com/web-sitem/';
+
+/*
+  Matris derleme sırasında üretiliyor: tarayıcıya ne kütüphane ne de görsel
+  iniyor, QR sayfanın içinde SVG olarak duruyor. Ölçek ve renk CSS'ten
+  geldiği için koyu temada da doğru görünüyor.
+*/
+// Hata düzeltme yüksek: noktalar tam kare modülden küçük çiziliyor, yani
+// modül alanının bir kısmı boş kalıyor. 'H' seviyesi %30 kayba dayanıyor ve
+// bu biçimde okunabilirliği güvenceye alıyor.
+const qr = QRCode.create(QR_ICERIK, { errorCorrectionLevel: 'H' });
+const boyut = qr.modules.size;
+
+/*
+  Sessiz alan (quiet zone): kodun çevresinde boş bırakılması gereken pay.
+  Şartname 4 modül istiyor; okuyucular kodun nerede bittiğini buradan
+  anlıyor. Kutunun CSS dolgusuna bırakılmıştı ama o pay ölçeğe göre
+  değişiyor ve 4 modülün altında kalıyordu — bu yüzden viewBox'a katıldı,
+  artık koddan ayrılmaz.
+*/
+const SESSIZ_ALAN = 4;
+const doluMu = (satir: number, sutun: number) => qr.modules.get(satir, sutun) === 1;
+
+/*
+  Köşe işaretçileri (finder pattern) ayrı çiziliyor: referanstaki gibi
+  yuvarlatılmış kare olsunlar. Noktalarla çizilseler okuyucular için
+  belirsizleşir — bu üç kare QR'ın yönünü bulmasını sağlayan kısım, biçimi
+  korunmalı.
+*/
+const ISARETCI_BOYU = 7;
+const isaretciler = [
+	{ x: 0, y: 0 },
+	{ x: boyut - ISARETCI_BOYU, y: 0 },
+	{ x: 0, y: boyut - ISARETCI_BOYU },
+];
+const isaretciIcinde = (satir: number, sutun: number) =>
+	isaretciler.some(
+		(i) =>
+			sutun >= i.x && sutun < i.x + ISARETCI_BOYU && satir >= i.y && satir < i.y + ISARETCI_BOYU,
+	);
+
+// Köşe işaretçileri dışında kalan dolu modüller nokta olarak çiziliyor.
+const noktalar: { x: number; y: number }[] = [];
+for (let satir = 0; satir < boyut; satir++) {
+	for (let sutun = 0; sutun < boyut; sutun++) {
+		if (doluMu(satir, sutun) && !isaretciIcinde(satir, sutun)) {
+			noktalar.push({ x: sutun, y: satir });
+		}
+	}
+}
+---
+
+{/*
+  İletişim.
+
+  Referans karttan alınanlar: durum rozeti, ad + rol, iki eylem düğmesi ve
+  altta vurgu şeridi. Canlı saat alınmadı — JavaScript gerektiriyor ve saat
+  ziyaretçiye hiçbir şey anlatmıyor; yerine konum yazıyor.
+*/}
+<section
+	class="iletisim relative overflow-hidden py-16 sm:py-20 md:flex md:min-h-[100svh] md:items-center md:py-12"
+	data-belir
+	data-parcali
+	data-sayfa
+	id="iletisim"
+>
+	<div class="mx-auto w-full max-w-3xl px-4 lg:max-w-4xl">
+		<p
+			class="text-xs font-semibold tracking-[0.22em] text-muted-foreground"
+			data-belir-oge
+			style="--sira: 0"
+		>
+			{m('iletisim.ustBaslik')}
+		</p>
+		<h2
+			class="baslik mt-3 font-bold tracking-tight text-foreground"
+			data-belir-oge
+			style="--sira: 1"
+		>
+			{m('iletisim.baslik')}
+		</h2>
+
+		<div class="kart" data-belir-oge style="--sira: 2">
+			<div class="kart-govde">
+				<div class="kart-sol">
+					<div class="durum">
+						<span class="nokta" aria-hidden="true"></span>
+						<span>{m('iletisim.durum')}</span>
+						<span class="konum">{KONUM[dil]}</span>
+					</div>
+
+					<div class="kimlik">
+						<span class="bas-harf" aria-hidden="true">ME</span>
+						<div>
+							<p class="ad">Mustafa Eybek</p>
+							<p class="rol">{m('iletisim.rol')}</p>
+						</div>
+					</div>
+
+					<div class="dugmeler">
+						<a class="dugme birincil" href={`mailto:${EPOSTA}`}>
+							<Icon name="lucide:mail" class="size-4" />
+							<span>{m('iletisim.yaz')}</span>
+						</a>
+
+						{/*
+						  Kopyala düğmesi JavaScript gerektiriyor; bu yüzden varsayılan
+						  olarak gizli ve yalnızca betik çalıştığında (`js-var`)
+						  görünüyor. Böylece betik çalışmazsa tıklayınca hiçbir şey
+						  yapmayan bir düğme kalmıyor — e-posta zaten aşağıda yazılı.
+						*/}
+						<button
+							class="dugme ikincil kopyala"
+							type="button"
+							data-kopyala={EPOSTA}
+							data-kopyalandi={m('iletisim.kopyalandi')}
+						>
+							<Icon name="lucide:copy" class="size-4" />
+							<span data-kopyala-etiket>{m('iletisim.kopyala')}</span>
+						</button>
+					</div>
+
+					<p class="adres">
+						<a href={`mailto:${EPOSTA}`}>{EPOSTA}</a>
+					</p>
+				</div>
+
+				<div class="kart-sag">
+					<div class="qr-kutu">
+						<svg
+							class="qr"
+							viewBox={`${-SESSIZ_ALAN} ${-SESSIZ_ALAN} ${boyut + SESSIZ_ALAN * 2} ${boyut + SESSIZ_ALAN * 2}`}
+							role="img"
+							aria-label={m('iletisim.qrAlt')}
+						>
+							{
+								noktalar.map((n) => (
+									<circle cx={n.x + 0.5} cy={n.y + 0.5} r={0.42} />
+								))
+							}
+							{
+								isaretciler.map((i) => (
+									<>
+										<rect
+											x={i.x + 0.5}
+											y={i.y + 0.5}
+											width={ISARETCI_BOYU - 1}
+											height={ISARETCI_BOYU - 1}
+											rx={1.6}
+											fill="none"
+											stroke-width={1}
+										/>
+										{/* Merkez kare 3×3: 7×7 işaretçinin 2..4 numaralı
+										    modüllerini kaplıyor. Daha küçük çizilirse okuyucu
+										    işaretçiyi doğrulayamıyor. */}
+										<rect
+											x={i.x + 2}
+											y={i.y + 2}
+											width={3}
+											height={3}
+											rx={0.7}
+										/>
+									</>
+								))
+							}
+						</svg>
+					</div>
+					<p class="qr-not">{m('iletisim.qrNot')}</p>
+				</div>
+			</div>
+
+			<div class="serit">
+				<Icon name="lucide:zap" class="size-4" />
+				<span>{m('iletisim.serit')}</span>
+			</div>
+		</div>
+	</div>
+</section>
+
+<style>
+	.baslik {
+		font-size: clamp(1.5rem, 1.1rem + 1.6vh, 2.125rem);
+		line-height: 1.2;
+	}
+
+	/*
+	  Kart her iki temada da KOYU — referanstaki gibi. Sayfanın geri kalanı
+	  açık temada beyazken bu blok koyu kalıyor ve bölüm sayfanın sonunda bir
+	  durak gibi okunuyor. Renkler bu yüzden temaya bağlı değişkenlerden değil
+	  doğrudan veriliyor; `--foreground` kullanılsaydı açık temada kart
+	  beyazlayıp vurgusunu kaybederdi.
+	*/
+	.kart {
+		margin-top: 2rem;
+		border-radius: 1.5rem;
+		overflow: hidden;
+		background: oklch(0.17 0 0);
+		box-shadow: 0 1px 0 oklch(1 0 0 / 0.08) inset;
+	}
+
+	.kart-govde {
+		display: flex;
+		flex-direction: column;
+		gap: 1.75rem;
+		padding: 1.5rem;
+	}
+
+	.kart-sol {
+		min-width: 0;
+		flex: 1;
+	}
+
+	.durum {
+		display: flex;
+		align-items: center;
+		flex-wrap: wrap;
+		gap: 0.5rem;
+		font-size: 0.8125rem;
+		color: oklch(0.85 0 0);
+	}
+
+	.nokta {
+		width: 0.5rem;
+		height: 0.5rem;
+		border-radius: 9999px;
+		background: oklch(0.82 0.19 130);
+		flex: none;
+	}
+
+	.konum {
+		margin-inline-start: auto;
+		color: oklch(0.65 0 0);
+	}
+
+	.kimlik {
+		display: flex;
+		align-items: center;
+		gap: 0.875rem;
+		margin-top: 1.25rem;
+	}
+
+	/* Fotoğraf yerine baş harfler: sitedeki portre hâlâ yer tutucu, aynı yer
+	   tutucuyu ikinci kez göstermek yerine nötr bir işaret duruyor. */
+	.bas-harf {
+		display: grid;
+		place-items: center;
+		width: 3rem;
+		height: 3rem;
+		border-radius: 9999px;
+		background: oklch(0.26 0 0);
+		color: oklch(0.92 0 0);
+		font-size: 0.875rem;
+		font-weight: 700;
+		letter-spacing: 0.06em;
+		flex: none;
+	}
+
+	.ad {
+		font-size: 1.25rem;
+		font-weight: 700;
+		color: oklch(0.98 0 0);
+		line-height: 1.2;
+	}
+
+	.rol {
+		margin-top: 0.15rem;
+		font-size: 0.875rem;
+		color: oklch(0.68 0 0);
+	}
+
+	.dugmeler {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.625rem;
+		margin-top: 1.5rem;
+	}
+
+	.dugme {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.5rem;
+		min-height: 2.75rem;
+		padding-inline: 1.1rem;
+		border: 0;
+		border-radius: 0.875rem;
+		font-size: 0.875rem;
+		font-weight: 600;
+		text-decoration: none;
+		cursor: pointer;
+		flex: 1 1 auto;
+		transition:
+			background-color 200ms ease-out,
+			translate 200ms cubic-bezier(0.22, 1, 0.36, 1);
+	}
+
+	.dugme:hover {
+		translate: 0 -1px;
+	}
+
+	.dugme:focus-visible {
+		outline: 2px solid oklch(0.82 0.19 130);
+		outline-offset: 2px;
+	}
+
+	.birincil {
+		background: oklch(0.98 0 0);
+		color: oklch(0.17 0 0);
+	}
+
+	.birincil:hover {
+		background: oklch(0.9 0 0);
+	}
+
+	.ikincil {
+		background: oklch(0.26 0 0);
+		color: oklch(0.95 0 0);
+	}
+
+	.ikincil:hover {
+		background: oklch(0.32 0 0);
+	}
+
+	/* Betik çalışmadan kopyalama yapılamaz; düğme o hâlde hiç görünmüyor. */
+	.kopyala {
+		display: none;
+	}
+
+	:global(html.js-var) .kopyala {
+		display: inline-flex;
+	}
+
+	.adres {
+		margin-top: 1rem;
+		font-size: 0.8125rem;
+		color: oklch(0.6 0 0);
+	}
+
+	.adres a {
+		color: inherit;
+		text-decoration: none;
+		border-bottom: 1px solid oklch(1 0 0 / 0.18);
+	}
+
+	.adres a:hover {
+		color: oklch(0.92 0 0);
+	}
+
+	/* --- QR --- */
+	.kart-sag {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 0.625rem;
+		flex: none;
+	}
+
+	.qr-kutu {
+		background: oklch(1 0 0);
+		border-radius: 1rem;
+		padding: 0.875rem;
+		width: fit-content;
+	}
+
+	.qr {
+		display: block;
+		width: 140px;
+		height: 140px;
+		/* Noktalar ve işaretçiler tek renk; kutu beyaz olduğu için koyu. */
+		fill: oklch(0.17 0 0);
+		stroke: oklch(0.17 0 0);
+	}
+
+	.qr-not {
+		font-size: 0.75rem;
+		color: oklch(0.62 0 0);
+		text-align: center;
+		max-width: 11rem;
+	}
+
+	/* --- Alt vurgu şeridi --- */
+	.serit {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.5rem;
+		padding: 0.875rem 1rem;
+		background: oklch(0.82 0.19 130);
+		color: oklch(0.22 0.05 130);
+		font-size: 0.875rem;
+		font-weight: 600;
+	}
+
+	@media (min-width: 768px) {
+		.kart-govde {
+			flex-direction: row;
+			align-items: center;
+			gap: 2.5rem;
+			padding: 2rem;
+		}
+
+		.dugme {
+			flex: 0 0 auto;
+		}
+	}
+
+	@media (min-width: 1024px) {
+		.kart {
+			margin-top: 2.5rem;
+		}
+
+		.qr {
+			width: 160px;
+			height: 160px;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.dugme {
+			transition: none;
+		}
+
+		.dugme:hover {
+			translate: none;
+		}
+	}
+</style>
+
+<script is:inline>
+	(function () {
+		var dugme = document.querySelector('[data-kopyala]');
+		if (!dugme || !navigator.clipboard) return;
+
+		var etiket = dugme.querySelector('[data-kopyala-etiket]');
+		var ilkMetin = etiket.textContent;
+		var zamanlayici;
+
+		dugme.addEventListener('click', function () {
+			navigator.clipboard.writeText(dugme.dataset.kopyala).then(function () {
+				etiket.textContent = dugme.dataset.kopyalandi || 'Kopyalandı';
+				clearTimeout(zamanlayici);
+				// Etiket eski hâline dönüyor; kalıcı "Kopyalandı" bir sonraki
+				// tıklamada geri bildirim vermezdi.
+				zamanlayici = setTimeout(function () {
+					etiket.textContent = ilkMetin;
+				}, 2000);
+			});
+		});
+	})();
+</script>

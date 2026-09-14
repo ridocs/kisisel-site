@@ -1,6 +1,8 @@
 ---
 import Navbar from '../components/Navbar.astro';
 import SarmasikYazi from '../components/SarmasikYazi.astro';
+import KaydirmaSeridi from '../components/KaydirmaSeridi.astro';
+import Altbilgi from '../components/Altbilgi.astro';
 import { cevirici, digerDilYolu, dilBul, taban } from '@/i18n/ceviriler';
 import '../styles/global.css';
 // ?url ile içe aktarıldığında Vite hash'li son adresi veriyor; önyükleme
@@ -117,6 +119,7 @@ const enYolu = new URL(digerDilYolu(Astro.url, 'en'), Astro.site);
 	    görünmez olurdu. `relative` ise katmanın yaslandığı kutu. */}
 	<body class="relative min-h-screen text-slate-800 antialiased dark:text-neutral-200">
 		<SarmasikYazi metin={m('sarmasik.metin')} />
+		<KaydirmaSeridi />
 
 		<a
 			href="#icerik"
@@ -140,11 +143,7 @@ const enYolu = new URL(digerDilYolu(Astro.url, 'en'), Astro.site);
 		}
 
 		{
-			altbilgi && (
-				<footer class="mx-auto max-w-3xl px-4 py-10 text-sm text-slate-500 dark:text-neutral-400">
-					&copy; {new Date().getFullYear()} — {m('altbilgi.lisans')}
-				</footer>
-			)
+			altbilgi && <Altbilgi />
 		}
 
 		{/* Bölümler görünür alana girdikçe belirir. Bir kez göründükten sonra

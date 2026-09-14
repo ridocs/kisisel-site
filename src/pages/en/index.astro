@@ -5,6 +5,8 @@ import HeroBolumu from '../../components/HeroBolumu.astro';
 import TanitimBolumu from '../../components/TanitimBolumu.astro';
 import YetkinlikBolumu from '../../components/YetkinlikBolumu.astro';
 import CalismaBolumu from '../../components/CalismaBolumu.astro';
+import YaziBolumu from '../../components/YaziBolumu.astro';
+import IletisimBolumu from '../../components/IletisimBolumu.astro';
 import { cevirici, dilBul, yol } from '@/i18n/ceviriler';
 
 const dil = dilBul(Astro.url);
@@ -14,7 +16,6 @@ const posts = (await getCollection('blog', ({ data }) => !data.draft && data.dil
 	.sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf())
 	.slice(0, 3);
 
-const tarihBicimi = dil === 'en' ? 'en-GB' : 'tr-TR';
 ---
 
 <BaseLayout title={m('site.baslik')}>
@@ -34,34 +35,7 @@ const tarihBicimi = dil === 'en' ? 'en-GB' : 'tr-TR';
 
 	<CalismaBolumu slot="tam-genislik" />
 
-	<section
-		class="py-14 md:flex md:min-h-[100svh] md:flex-col md:justify-center"
-		data-belir
-		data-sayfa
-	>
-		<h2 class="text-xl font-semibold text-slate-900 dark:text-white">{m('anasayfa.sonYazilar')}</h2>
-		<ul class="mt-6 space-y-6">
-			{
-				posts.map((post) => (
-					<li>
-						<a href={yol(dil, `blog/${post.id}/`)} class="group block">
-							<h3 class="font-medium text-slate-900 group-hover:text-marka-600 dark:text-white dark:group-hover:text-marka-400">
-								{post.data.title}
-							</h3>
-							<p class="mt-1 text-sm text-slate-600 dark:text-neutral-400">{post.data.description}</p>
-							<time datetime={post.data.pubDate.toISOString()} class="mt-1 block text-xs text-slate-500">
-								{post.data.pubDate.toLocaleDateString(tarihBicimi, { dateStyle: 'long' })}
-							</time>
-						</a>
-					</li>
-				))
-			}
-		</ul>
-		<a
-			href={yol(dil, 'blog')}
-			class="mt-8 inline-block text-sm font-medium text-marka-600 hover:underline dark:text-marka-400"
-		>
-			{m('anasayfa.tumYazilar')}
-		</a>
-	</section>
+	<YaziBolumu slot="tam-genislik" yazilar={posts} />
+
+	<IletisimBolumu slot="tam-genislik" />
 </BaseLayout>

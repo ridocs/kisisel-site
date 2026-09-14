@@ -1,0 +1,248 @@
+---
+import { Icon } from 'astro-icon/components';
+import { cevirici, dilBul, yol } from '@/i18n/ceviriler';
+
+interface Props {
+	/** Gösterilecek yazılar; sayfa `getCollection` ile süzüp sıralayıp veriyor. */
+	yazilar: {
+		id: string;
+		data: { title: string; description: string; pubDate: Date };
+	}[];
+}
+
+const { yazilar } = Astro.props;
+
+const dil = dilBul(Astro.url);
+const m = cevirici(dil);
+const tarihBicimi = dil === 'en' ? 'en-GB' : 'tr-TR';
+---
+
+{/*
+  Yazılar.
+
+  Biçim, üstündeki iki bölümden de ayrı tutuldu: Yetkinlikler kart ızgarası,
+  Çalışmalar numaralı ince satırlar. Burası tam genişlikte, çerçeveli ve
+  dikey duran kayıtlar — az sayıda yazıyla da dolu görünüyor. Üç sütunlu bir
+  ızgara tek yazıyla boş bir satır bırakırdı.
+*/}
+<section
+	class="yazi relative overflow-hidden py-16 sm:py-20 md:flex md:min-h-[100svh] md:items-center md:py-12"
+	data-belir
+	data-parcali
+	data-sayfa
+>
+	<div class="mx-auto w-full max-w-3xl px-4 lg:max-w-4xl">
+		<div class="ust">
+			<div>
+				<p
+					class="text-xs font-semibold tracking-[0.22em] text-muted-foreground"
+					data-belir-oge
+					style="--sira: 0"
+				>
+					{m('yazi.ustBaslik')}
+				</p>
+				<h2
+					class="baslik mt-3 font-bold tracking-tight text-foreground"
+					data-belir-oge
+					style="--sira: 1"
+				>
+					{m('anasayfa.sonYazilar')}
+				</h2>
+			</div>
+
+			{/* Dar ekranda başlığın altına iniyor; yanında durunca sıkışıyordu. */}
+			<a class="tumu" href={yol(dil, 'blog')} data-belir-oge style="--sira: 2">
+				<span>{m('anasayfa.tumYazilar')}</span>
+			</a>
+		</div>
+
+		{
+			yazilar.length === 0 ? (
+				/* Dürüst boş durum: uydurma bir yazı listesi göstermektense
+				   bölümün neden boş olduğunu söylemek doğru. */
+				<p class="bos" data-belir-oge style="--sira: 3">
+					{m('yazi.bos')}
+				</p>
+			) : (
+				<ul class="liste">
+					{yazilar.map((y, sira) => (
+						<li data-belir-oge style={`--sira: ${3 + sira}`}>
+							<a class="kayit" href={yol(dil, `blog/${y.id}/`)}>
+								<div class="kayit-ust">
+									<time class="tarih" datetime={y.data.pubDate.toISOString()}>
+										{y.data.pubDate.toLocaleDateString(tarihBicimi, { dateStyle: 'long' })}
+									</time>
+									<span class="ok" aria-hidden="true">
+										<Icon name="lucide:arrow-up-right" class="size-4" />
+									</span>
+								</div>
+								<h3 class="ad">{y.data.title}</h3>
+								<p class="ozet">{y.data.description}</p>
+							</a>
+						</li>
+					))}
+				</ul>
+			)
+		}
+	</div>
+</section>
+
+<style>
+	/* Diğer bölüm başlıklarıyla aynı ölçek; clamp içindeki rem bileşeni zoom
+	   altında ölçeğin büyümesini sağlıyor (WCAG 1.4.4). */
+	.baslik {
+		font-size: clamp(1.5rem, 1.1rem + 1.6vh, 2.125rem);
+		line-height: 1.2;
+	}
+
+	.ust {
+		display: flex;
+		flex-direction: column;
+		gap: 1rem;
+	}
+
+	.tumu {
+		display: inline-flex;
+		align-items: center;
+		align-self: flex-start;
+		gap: 0.4rem;
+		font-size: 0.875rem;
+		font-weight: 500;
+		color: var(--foreground);
+		text-decoration: none;
+		border-bottom: 1px solid color-mix(in oklab, var(--foreground) 30%, transparent);
+		padding-bottom: 0.15rem;
+		transition: border-color 200ms ease-out;
+	}
+
+	.tumu:hover {
+		border-bottom-color: var(--foreground);
+	}
+
+	.tumu:focus-visible {
+		outline: 2px solid var(--ring);
+		outline-offset: 3px;
+	}
+
+	.liste {
+		list-style: none;
+		padding: 0;
+		margin: 2rem 0 0;
+		display: grid;
+		gap: 0.75rem;
+	}
+
+	.kayit {
+		display: block;
+		padding: 1.25rem;
+		border: 1px solid var(--border);
+		border-radius: 1rem;
+		text-decoration: none;
+		color: inherit;
+		transition:
+			border-color 220ms ease-out,
+			background-color 220ms ease-out,
+			translate 260ms cubic-bezier(0.22, 1, 0.36, 1);
+	}
+
+	.kayit:hover {
+		border-color: color-mix(in oklab, var(--foreground) 24%, transparent);
+		background: color-mix(in oklab, var(--foreground) 3%, transparent);
+		translate: 0 -2px;
+	}
+
+	.kayit:focus-visible {
+		outline: 2px solid var(--ring);
+		outline-offset: 2px;
+	}
+
+	.kayit-ust {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 1rem;
+	}
+
+	.tarih {
+		font-size: 0.75rem;
+		letter-spacing: 0.04em;
+		color: var(--muted-foreground);
+		font-variant-numeric: tabular-nums;
+	}
+
+	.ok {
+		display: grid;
+		place-items: center;
+		color: var(--muted-foreground);
+		transition:
+			translate 260ms cubic-bezier(0.22, 1, 0.36, 1),
+			color 220ms ease-out;
+	}
+
+	.kayit:hover .ok {
+		translate: 3px -3px;
+		color: var(--foreground);
+	}
+
+	.ad {
+		margin-top: 0.6rem;
+		font-size: 1.125rem;
+		font-weight: 600;
+		line-height: 1.35;
+		color: var(--foreground);
+	}
+
+	.ozet {
+		margin-top: 0.4rem;
+		font-size: 0.9375rem;
+		line-height: 1.6;
+		color: var(--muted-foreground);
+	}
+
+	.bos {
+		margin-top: 2rem;
+		padding: 1.5rem;
+		border: 1px dashed var(--border);
+		border-radius: 1rem;
+		color: var(--muted-foreground);
+	}
+
+	/* Geniş ekranda "tüm yazılar" başlığın karşısına geçiyor. */
+	@media (min-width: 640px) {
+		.ust {
+			flex-direction: row;
+			align-items: flex-end;
+			justify-content: space-between;
+		}
+	}
+
+	@media (min-width: 1024px) {
+		.liste {
+			margin-top: 2.5rem;
+		}
+
+		.ad {
+			font-size: 1.25rem;
+		}
+
+		.ozet {
+			font-size: 1rem;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.kayit,
+		.ok,
+		.tumu {
+			transition: none;
+		}
+
+		.kayit:hover {
+			translate: none;
+		}
+
+		.kayit:hover .ok {
+			translate: none;
+		}
+	}
+</style>

@@ -131,7 +131,8 @@ const TEKRAR = kabaTekrar % 2 === 0 ? kabaTekrar : kabaTekrar + 1;
 const tekrarliMetin = birim.repeat(TEKRAR);
 
 // Akış süresi: yavaş bir sürüklenme. Yolun tamamını bu sürede kat ediyor.
-const SURE = 34;
+// Süs olduğu için ağır olmalı; hızlı akan bir yazı gözü içerikten çalıyor.
+const SURE = 72;
 ---
 
 <div class="sarmasik-alan" aria-hidden="true">
@@ -197,10 +198,10 @@ const SURE = 34;
 		mask-image: linear-gradient(
 			to right,
 			#000 0%,
-			#000 16%,
-			#0003 34%,
-			#0003 66%,
-			#000 84%,
+			#000 14%,
+			#0002 30%,
+			#0002 70%,
+			#000 86%,
 			#000 100%
 		);
 	}

@@ -1,0 +1,121 @@
+---
+/**
+ * Sol kenarda duran çizgi şeridi. Sayfanın neresinde olduğunu gösteren süs:
+ * kaydırma konumunun denk geldiği çizgiler uzayıp koyulaşıyor, uzaktakiler
+ * kısa ve soluk kalıyor.
+ *
+ * Süs öğesi — hiçbir bilgi yalnızca burada değil. `aria-hidden` ve
+ * tıklanamaz; gerçek konum bilgisi zaten kaydırma çubuğunda.
+ *
+ * Tamamen CSS. Sitede hiç JavaScript yok, bu bileşen de o kuralı bozmuyor.
+ */
+const CIZGI_SAYISI = 26;
+
+/*
+  Her çizginin kendi "penceresi" var: kaydırma ilerlemesi o pencereden
+  geçerken çizgi uzuyor, çıkınca kısalıyor. Pencereler üst üste biniyor ki
+  aynı anda birkaç çizgi uzun olsun — tek çizgi yanıp sönmek yerine
+  yumuşak bir dalga geçiyor.
+*/
+const ADIM = 100 / (CIZGI_SAYISI - 1);
+const PENCERE = ADIM * 5;
+
+const cizgiler = Array.from({ length: CIZGI_SAYISI }, (_, i) => {
+	const merkez = i * ADIM;
+	return {
+		baslangic: Math.max(0, merkez - PENCERE / 2),
+		bitis: Math.min(100, merkez + PENCERE / 2),
+	};
+});
+---
+
+<div class="serit" aria-hidden="true">
+	{
+		cizgiler.map((c) => (
+			<span
+				class="cizgi"
+				style={`--baslangic: ${c.baslangic.toFixed(2)}%; --bitis: ${c.bitis.toFixed(2)}%`}
+			/>
+		))
+	}
+</div>
+
+<style>
+	.serit {
+		position: fixed;
+		left: 1.25rem;
+		top: 50%;
+		translate: 0 -50%;
+		z-index: 30;
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
+		pointer-events: none;
+	}
+
+	/*
+	  Çizgiler soldan büyüyor: `transform-origin` sol kenarda olduğu için
+	  uzarken sağa doğru açılıyorlar, sol uçları hizada kalıyor. Genişlik
+	  yerine `scaleX` kullanılıyor — genişlik animasyonu her karede yeniden
+	  yerleşim tetikler, ölçek yalnızca birleştirme katmanında çalışır.
+	*/
+	.cizgi {
+		display: block;
+		width: 34px;
+		height: 2px;
+		border-radius: 1px;
+		background: var(--foreground);
+		opacity: 0.16;
+		transform-origin: left center;
+		scale: 0.35 1;
+	}
+
+	/*
+	  Kaydırmaya bağlı dalga.
+
+	  Her çizgi kendi penceresinde canlanıyor; pencere `animation-range` ile
+	  veriliyor ve sayfanın kaydırma ilerlemesine göre ölçülüyor.
+
+	  Keyframe'in başı ve sonu AYNI (kısa ve soluk). `both` dolgusuyla birlikte
+	  bu şunu sağlıyor: çizgi penceresinden önce de sonra da kısa kalıyor,
+	  yalnızca içinden geçerken uzuyor. Tek bir keyframe bütün çizgiler için
+	  yetiyor, çizgi başına ayrı keyframe yazmak gerekmiyor.
+
+	  `@supports` bilinçli: Firefox'ta özellik hâlâ bayrak arkasında. Destek
+	  yoksa şerit kıpırdamadan duruyor — görünür ve bozuk değil, yalnızca
+	  hareketsiz.
+
+	  Uzun yazım bilinçli, `animation` kısayolu DEĞİL: CSS küçültücü kısayolu
+	  kurarken zaman çizelgesini de içine katıyor, tarayıcı ise kısayolda
+	  zaman çizelgesi kabul etmiyor ve bildirimin tamamını sessizce atıyor.
+	*/
+	@supports (animation-timeline: scroll()) {
+		@media (prefers-reduced-motion: no-preference) {
+			.cizgi {
+				animation-name: cizgi-dalga;
+				animation-timing-function: ease-in-out;
+				animation-fill-mode: both;
+				animation-timeline: scroll(root block);
+				animation-range: var(--baslangic) var(--bitis);
+			}
+		}
+	}
+
+	@keyframes cizgi-dalga {
+		50% {
+			scale: 1 1;
+			opacity: 0.55;
+		}
+	}
+
+	/*
+	  Yalnızca masaüstü. Dar ekranda kenarda yer yok ve şerit içeriğin üstüne
+	  biniyor; ayrıca dokunmatikte kaydırma çubuğu zaten görünmüyor, süs
+	  orada bir şey anlatmıyor.
+	*/
+	@media (max-width: 1023px) {
+		.serit {
+			display: none;
+		}
+	}
+</style>
