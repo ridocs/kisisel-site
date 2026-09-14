@@ -49,6 +49,17 @@
    bunlar tanımlı olmasa bileşen renksiz render olurdu. Değerler sitenin mevcut
    paletiyle hizalandı, ayrı bir renk dünyası kurulmadı. */
 :root {
+	/*
+	  Üst çubuğun yüksekliği tek yerden. Çubuğun kendisi, altındaki yer tutucu
+	  ve `scroll-padding-top` hep buradan besleniyor; üçü ayrı sabit olduğunda
+	  biri değişip diğerleri unutuluyordu.
+
+	  Masaüstünde daha ince: fareyle kullanılan bir çubuk parmakla kullanılan
+	  kadar yüksek olmak zorunda değil ve 1080p bir ekranda her piksel içeriğe
+	  lazım. Dokunmatik boyut aşağıda, medya sorgusunda korunuyor.
+	*/
+	--cubuk-yuksekligi: 3.5rem;
+
 	--background: oklch(1 0 0);
 	--foreground: oklch(0.208 0.042 265.755);
 	--card: oklch(1 0 0);
@@ -303,12 +314,21 @@ html.menu-acik .logo-yuva {
 	}
 }
 
+/* Masaüstünde çubuk inceliyor. Ayrım giriş aracına göre değil ekran
+   genişliğine göre: burada belirleyici olan dokunma hedefi değil, dar
+   yükseklikte içeriğe kalan yer. */
+@media (min-width: 768px) {
+	:root {
+		--cubuk-yuksekligi: 3.25rem;
+	}
+}
+
 html {
 	scroll-behavior: smooth;
 	/* Sabit üst çubuk, sayfa içi bağlantıyla ya da klavyeyle gelinen öğeyi
-	   örtmesin — WCAG 2.2 "Focus Not Obscured (Minimum)". Çubuk 64px,
-	   üstüne bir miktar nefes payı. */
-	scroll-padding-top: 5rem;
+	   örtmesin — WCAG 2.2 "Focus Not Obscured (Minimum)": çubuk yüksekliği
+	   artı bir miktar nefes payı. */
+	scroll-padding-top: calc(var(--cubuk-yuksekligi) + 1.5rem);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -355,7 +375,7 @@ html {
 	/* Sayfa içi bağlantıyla gelinen öğe sabit çubuğun altında kalmasın
 	   (WCAG 2.2 "Focus Not Obscured"). */
 	[id] {
-		scroll-margin-top: 5rem;
+		scroll-margin-top: calc(var(--cubuk-yuksekligi) + 1.5rem);
 	}
 }
 

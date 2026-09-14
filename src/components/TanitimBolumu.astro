@@ -21,7 +21,7 @@ const gorsel =
   içeriği zorla ekrana yaymak küçük ekranda boşluk ve kayma üretiyordu.
 */}
 <section
-	class="relative overflow-hidden py-20 sm:py-28 md:grid md:min-h-[100svh] md:place-items-center md:py-24"
+	class="relative overflow-hidden py-16 sm:py-20 md:grid md:min-h-[100svh] md:place-items-center md:py-12"
 	data-belir
 	data-parcali
 	data-sayfa
@@ -49,7 +49,7 @@ const gorsel =
 	</svg>
 
 	<div
-		class="mx-auto flex w-full max-w-5xl flex-col items-center gap-12 px-4 md:flex-row md:gap-16 lg:max-w-6xl lg:gap-20 xl:max-w-7xl xl:gap-24"
+		class="mx-auto flex w-full max-w-5xl flex-col items-center gap-10 px-4 md:flex-row md:gap-12 lg:gap-16"
 	>
 		{/* Görsel: dikdörtgen yerine organik bir maske ile şekillendirildi. */}
 		<div class="relative shrink-0" data-belir-oge data-belir-gorsel style="--sira: 0">
@@ -67,20 +67,20 @@ const gorsel =
 				height="475"
 				loading="lazy"
 				decoding="async"
-				class="gorsel-maske w-[min(250px,62vw)] object-cover sm:w-[320px] lg:w-[440px] xl:w-[500px]"
+				class="gorsel-maske object-cover"
 			/>
 		</div>
 
-		<div class="max-w-lg lg:max-w-2xl">
+		<div class="max-w-lg lg:max-w-xl">
 			<h2
-				class="text-sm font-semibold tracking-[0.18em] text-slate-500 lg:text-base dark:text-neutral-400"
+				class="text-sm font-semibold tracking-[0.18em] text-slate-500 dark:text-neutral-400"
 				data-belir-oge
 				style="--sira: 1"
 			>
 				{m('tanitim.ustBaslik')}
 			</h2>
 			<div
-				class="mt-3 h-[3px] w-24 rounded-full bg-gradient-to-r from-marka-600 to-marka-400 lg:w-32"
+				class="mt-3 h-[3px] w-24 rounded-full bg-gradient-to-r from-marka-600 to-marka-400 lg:w-28"
 				data-belir-oge
 				data-belir-cizgi
 				style="--sira: 2"
@@ -88,17 +88,17 @@ const gorsel =
 			</div>
 
 			<p
-				class="mt-8 text-slate-600 lg:text-lg lg:leading-relaxed dark:text-neutral-300"
+				class="mt-6 text-slate-600 leading-relaxed dark:text-neutral-300"
 				data-belir-oge
 				style="--sira: 3"
 			>{m('tanitim.paragraf1')}</p>
 			<p
-				class="mt-4 text-slate-600 lg:text-lg lg:leading-relaxed dark:text-neutral-300"
+				class="mt-4 text-slate-600 leading-relaxed dark:text-neutral-300"
 				data-belir-oge
 				style="--sira: 4"
 			>{m('tanitim.paragraf2')}</p>
 			<p
-				class="mt-4 text-slate-600 lg:text-lg lg:leading-relaxed dark:text-neutral-300"
+				class="mt-4 text-slate-600 leading-relaxed dark:text-neutral-300"
 				data-belir-oge
 				style="--sira: 5"
 			>{m('tanitim.paragraf3')}</p>
@@ -107,7 +107,7 @@ const gorsel =
 				href={hakkimdaYolu}
 				data-belir-oge
 				style="--sira: 6"
-				class="mt-8 inline-flex items-center gap-2 rounded-full bg-slate-900 px-7 py-3 text-sm font-medium text-white transition-transform hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current motion-reduce:transition-none dark:bg-white dark:text-neutral-900"
+				class="mt-7 inline-flex items-center gap-2 rounded-full bg-slate-900 px-6 py-2.5 text-sm font-medium text-white transition-transform hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current motion-reduce:transition-none dark:bg-white dark:text-neutral-900"
 			>
 				<span>{m('tanitim.dugme')}</span>
 				<Icon name="lucide:arrow-right" class="size-4" />
@@ -141,5 +141,34 @@ const gorsel =
 	.gorsel-maske {
 		aspect-ratio: 4 / 5;
 		clip-path: url(#tanitim-maskesi);
+	}
+
+	/* Ölçü yalnızca görselde: arkadaki katman `absolute inset-0` ile zaten
+	   görselin kapladığı alanı alıyor, ona ayrıca genişlik vermek iki kısıtı
+	   çakıştırırdı. */
+	img.gorsel-maske {
+		width: min(250px, 62vw);
+	}
+
+	@media (min-width: 640px) {
+		img.gorsel-maske {
+			width: 300px;
+		}
+	}
+
+	/*
+	  Masaüstünde genişlik ekranın YÜKSEKLİĞİNE bağlı. Görsel 4:5 olduğu için
+	  boyu genişliğinin 1.25 katı; genişliği yalnızca ekran genişliğine
+	  bağlamak 24 inç 1080p gibi "geniş ama alçak" ekranlarda 625 piksellik
+	  bir fotoğraf üretiyordu — görünür alanın yaklaşık dörtte üçü.
+
+	  clamp içinde rem bileşeni bilinçli: salt viewport birimiyle kurulan bir
+	  ölçek kullanıcı yakınlaştırdığında büyümüyor ve WCAG 1.4.4'ü karşılamıyor.
+	  Üst sınır alt sınırın 1.5 katı, yani ölçek zoom altında güvenli.
+	*/
+	@media (min-width: 768px) {
+		img.gorsel-maske {
+			width: clamp(17rem, 12rem + 20vh, 25rem);
+		}
 	}
 </style>

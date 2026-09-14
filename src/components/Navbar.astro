@@ -39,7 +39,7 @@ function aktifMi(hedef: string) {
 // karşıt renge dönerse, gösterge daha gelmeden beyaz yazı açık zeminde kalıyor
 // ve kısa süre okunmuyor. Gecikme, rengin göstergeyle birlikte değişmesini sağlar.
 const bagTemel =
-	'relative rounded-lg px-[18px] py-[11px] text-[15px] leading-5 font-medium transition-colors delay-[110ms] duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current';
+	'relative rounded-lg px-4 py-2 text-[14px] leading-5 font-medium transition-colors delay-[110ms] duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current';
 
 // Göstergenin üzerinde durduğu bağlantı karşıt renge geçer; bunu JS belirler
 // (data-vurgulu), çünkü gösterge ayrı bir öğe ve imleci izliyor.
@@ -51,16 +51,17 @@ const bagAktifMobil = 'bg-slate-900/10 text-slate-900 dark:bg-white/15 dark:text
 const bagPasifMobil =
 	'text-slate-600 hover:bg-slate-900/5 hover:text-slate-900 dark:text-neutral-300 dark:hover:bg-white/10 dark:hover:text-white';
 
-// İkon düğmeleri 40px: WCAG 2.2 AA web için 24px istiyor, ancak dokunmatikte
-// 40-44px aralığı isabet hatasını belirgin biçimde azaltıyor.
+// Dar ekranda 40px kalıyor: WCAG 2.2 AA web için 24px istiyor, ancak
+// dokunmatikte 40-44px aralığı isabet hatasını belirgin biçimde azaltıyor.
+// Masaüstünde 36px — fareyle hedefleme sorun değil ve çubuk inceliyor.
 const eylemDugmesi =
-	'grid size-10 cursor-pointer place-items-center rounded-lg text-slate-600 transition-colors hover:bg-slate-900/5 hover:text-slate-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current dark:text-neutral-300 dark:hover:bg-white/10 dark:hover:text-white';
+	'grid size-10 cursor-pointer place-items-center rounded-lg text-slate-600 transition-colors hover:bg-slate-900/5 hover:text-slate-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current md:size-9 dark:text-neutral-300 dark:hover:bg-white/10 dark:hover:text-white';
 
 // Birincil eylem: gri (#D9D9D9) zemin üzerinde koyu metin yalnızca 1.9:1 veriyordu.
 // Tam kontrastlı solid zemin hem 15:1 üzerine çıkıyor hem düğmeyi tek birincil
 // eylem olarak okutuyor.
 const iletisimDugmesi =
-	'hidden h-10 shrink-0 cursor-pointer items-center rounded-lg bg-slate-900 px-5 text-[15px] leading-5 font-medium text-white transition-colors hover:bg-slate-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current md:inline-flex dark:bg-white dark:text-neutral-900 dark:hover:bg-white/85';
+	'hidden h-9 shrink-0 cursor-pointer items-center rounded-lg bg-slate-900 px-4 text-[14px] leading-5 font-medium text-white transition-colors hover:bg-slate-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current md:inline-flex dark:bg-white dark:text-neutral-900 dark:hover:bg-white/85';
 ---
 
 {/*
@@ -84,12 +85,12 @@ const iletisimDugmesi =
 		>
 			<nav
 				aria-label={dil === 'en' ? 'Main navigation' : 'Ana gezinme'}
-				class="flex h-[62px] items-center justify-between gap-4 pr-3 pl-4 sm:pr-4 sm:pl-6"
+				class="flex h-[var(--cubuk-yuksekligi)] items-center justify-between gap-4 pr-3 pl-4 sm:pr-4 sm:pl-6"
 			>
 				<!-- Marka -->
 				<a
 					href={yol(dil, '')}
-					class="inline-flex h-10 shrink-0 items-center rounded-lg text-[17px] leading-6 font-semibold tracking-tight whitespace-nowrap text-slate-900 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-current dark:text-white"
+					class="inline-flex h-9 shrink-0 items-center rounded-lg text-[16px] leading-6 font-semibold tracking-tight whitespace-nowrap text-slate-900 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-current dark:text-white"
 				>
 					Mustafa Eybek
 				</a>
@@ -214,8 +215,9 @@ const iletisimDugmesi =
 </header>
 
 {/* Çubuk fixed olduğu için sayfa içeriğinin altına kaymasını engelleyen boşluk:
-    62px gezinme + 1px üst ve alt kenarlık. */}
-<div class="h-16" aria-hidden="true"></div>
+    çubuk yüksekliği artı kenarlık payı. Yükseklik değişkenden geliyor, yoksa
+    çubuk incelince burası eski ölçüde kalıp fazladan boşluk bırakıyordu. */}
+<div class="h-[calc(var(--cubuk-yuksekligi)+0.5rem)]" aria-hidden="true"></div>
 
 <style>
 	/* Kayan gösterge. Konum ve genişlik CSS değişkenleriyle sürülür; JS yalnızca
