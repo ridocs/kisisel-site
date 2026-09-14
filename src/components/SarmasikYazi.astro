@@ -1,0 +1,162 @@
+---
+/**
+ * Sayfanın tamamı boyunca sağlı sollu inen tek bir yazı sarmaşığı.
+ *
+ * Tek bir eğri: tepeden başlıyor, sağa salınıp sola dönüyor ve aşağı doğru
+ * böyle devam ediyor. Yazı bu eğrinin üzerinde akıyor, düz bir satır değil.
+ *
+ * Süs öğesi: okunacak bir metin değil, sayfaya doku veriyor. Bu yüzden
+ * `aria-hidden` ve ekran okuyucuya hiç verilmiyor.
+ *
+ * Sayfa yüksekliği baştan bilinemediği için sarmaşık tek parça değil,
+ * ARDIŞIK PARÇALARDAN kuruluyor. Her parça ortadan başlayıp ortada bitiyor
+ * ve dikey teğeti aynı; alt alta dizildiklerinde ek yeri görünmeyen tek bir
+ * eğri çıkıyor. Sayfadan uzun kalan parçalar kırpılıyor.
+ *
+ * Hareket tamamen CSS: `animation-timeline: scroll()` sarmaşığı sayfanın
+ * kaydırma konumuna bağlıyor. Sitede hiç JavaScript yok, bu bileşen de o
+ * kuralı bozmuyor.
+ */
+interface Props {
+	/** Sarmaşık boyunca tekrarlanacak kelime. */
+	metin: string;
+}
+
+const { metin } = Astro.props;
+
+/*
+  Aynı sayfada birden çok kez kullanılabilsin diye her örnek kendi id önekini
+  alıyor: `textPath` yolu id ile çağırıyor, çakışan id'lerde bütün parçalar
+  ilk yolu izlerdi.
+*/
+const onek = `sarmasik-${Math.random().toString(36).slice(2, 8)}`;
+
+/*
+  Parça sayısı: en dar ekranda bile sayfanın altına yetişecek kadar. Parçanın
+  ekrandaki boyu genişliğe bağlı (en-boy oranı sabit), yani dar ekranda kısa
+  kalıyor ve daha çoğu gerekiyor. Geniş ekranda fazlası kırpılıyor —
+  görünmeyen bir parça yalnızca birkaç düğüm, maliyeti yok.
+*/
+const PARCA_SAYISI = 14;
+const parcalar = Array.from({ length: PARCA_SAYISI }, (_, i) => i);
+
+/*
+  Tek parçanın yolu. Kutu 1000 × 1100; eğri ortadan (500) başlayıp sağa
+  (940) salınıyor, sola (60) dönüyor ve yine ortada bitiyor. Başlangıç ve
+  bitiş noktasının x'i ve teğeti aynı olduğu için parçalar eklendiğinde
+  kırılma olmuyor.
+*/
+const YOL = 'M 500 0 C 500 140 940 230 940 370 C 940 510 60 590 60 730 C 60 870 500 960 500 1100';
+
+// Yazı eğriyi dolduracak kadar tekrarlanıyor; taşan kısmı tarayıcı yolun
+// sonunda kendiliğinden kesiyor.
+const tekrarliMetin = `${metin} · `.repeat(14);
+---
+
+<div class="sarmasik-alan" aria-hidden="true">
+	{
+		parcalar.map((i) => (
+			<svg class="parca" viewBox="0 0 1000 1100" focusable="false">
+				<defs>
+					<path id={`${onek}-${i}`} fill="none" d={YOL} />
+				</defs>
+				<text class="sarmasik-yazi">
+					<textPath href={`#${onek}-${i}`}>{tekrarliMetin}</textPath>
+				</text>
+			</svg>
+		))
+	}
+</div>
+
+<style>
+	/*
+	  Sayfanın tamamını kaplayan katman. `overflow: hidden` şart: sarmaşık
+	  kenarlara değiyor ve kırpılmazsa sayfa yatay kaydırma kazanırdı.
+
+	  `z-index: -1` ile bütün içeriğin arkasında. Bunun çalışması için sayfa
+	  zemininin `body` üzerinde değil `html` üzerinde olması gerekiyor —
+	  zemin body'de kalsaydı sarmaşık onun arkasına düşüp görünmezdi.
+	*/
+	.sarmasik-alan {
+		position: absolute;
+		inset: 0;
+		z-index: -1;
+		overflow: hidden;
+		pointer-events: none;
+		/* Parçalar alt alta, aralarında boşluk olmadan. */
+		display: flex;
+		flex-direction: column;
+		line-height: 0;
+	}
+
+	.parca {
+		width: 100%;
+		height: auto;
+		flex: none;
+	}
+
+	.sarmasik-yazi {
+		font-weight: 800;
+		font-size: 26px;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		/*
+		  Soluk: bu bir doku, okunacak bir metin değil. Renk nötr `--foreground`
+		  üzerinden geliyor, böylece koyu temada renk sapması olmuyor.
+		*/
+		fill: color-mix(in oklab, var(--foreground) 13%, transparent);
+	}
+
+	/*
+	  Kaydırmaya bağlı hareket: sayfa indikçe sarmaşık kendi ekseninde biraz
+	  yukarı kayıyor. İçerikten farklı hızda hareket ettiği için sabit bir
+	  arka plan deseni gibi değil, sayfayla birlikte akan bir öğe gibi
+	  okunuyor.
+
+	  `@supports` bilinçli: Firefox'ta özellik hâlâ bayrak arkasında. Destek
+	  yoksa sarmaşık kıpırdamadan yerinde duruyor — yani görünür ve doğru
+	  yerde. Animasyona bağlı bir başlangıç durumu yok.
+
+	  Uzun yazım bilinçli, `animation` kısayolu DEĞİL: CSS küçültücü kısayolu
+	  kurarken zaman çizelgesini de içine katıyor, tarayıcı ise kısayolda
+	  zaman çizelgesi kabul etmiyor ve bildirimin tamamını atıyor.
+	*/
+	@supports (animation-timeline: scroll()) {
+		@media (prefers-reduced-motion: no-preference) {
+			.sarmasik-alan {
+				animation-name: sarmasik-ak;
+				animation-timing-function: linear;
+				animation-fill-mode: both;
+				animation-timeline: scroll(root block);
+			}
+		}
+	}
+
+	@keyframes sarmasik-ak {
+		to {
+			translate: 0 -8%;
+		}
+	}
+
+	/*
+	  Dar ekran.
+
+	  Parçanın boyu genişliğine bağlı olduğu için telefonda her parça kısalıyor
+	  ve salınımlar sıkışıp sarmaşık yerine tırtıklı bir çizgiye dönüşüyordu.
+	  Sarmaşığı ekrandan geniş yapmak boyu da uzatıyor: salınım yine yumuşak,
+	  uçları ekranın dışında kalıyor.
+
+	  Ayrıca daha soluk: küçük ekranda aynı yoğunluktaki bir doku metnin
+	  okunmasını zorlaştırıyor.
+	*/
+	@media (max-width: 640px) {
+		.parca {
+			width: 200%;
+			margin-left: -50%;
+		}
+
+		.sarmasik-yazi {
+			fill: color-mix(in oklab, var(--foreground) 9%, transparent);
+		}
+	}
+</style>

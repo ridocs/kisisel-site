@@ -1,5 +1,6 @@
 ---
 import Navbar from '../components/Navbar.astro';
+import SarmasikYazi from '../components/SarmasikYazi.astro';
 import { cevirici, digerDilYolu, dilBul, taban } from '@/i18n/ceviriler';
 import '../styles/global.css';
 // ?url ile içe aktarıldığında Vite hash'li son adresi veriyor; önyükleme
@@ -33,7 +34,11 @@ const enYolu = new URL(digerDilYolu(Astro.url, 'en'), Astro.site);
 ---
 
 <!doctype html>
-<html lang={dil} class="scroll-smooth" data-taban={taban}>
+<html
+	lang={dil}
+	class="scroll-smooth bg-white dark:bg-neutral-950"
+	data-taban={taban}
+>
 	<head>
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -107,7 +112,12 @@ const enYolu = new URL(digerDilYolu(Astro.url, 'en'), Astro.site);
 			})();
 		</script>
 	</head>
-	<body class="min-h-screen bg-white text-slate-800 antialiased dark:bg-neutral-950 dark:text-neutral-200">
+	{/* Zemin <html> üzerinde: sarmaşık katmanı `z-index: -1` ile içeriğin
+	    arkasında duruyor ve zemin body'de kalsaydı onun da arkasına düşüp
+	    görünmez olurdu. `relative` ise katmanın yaslandığı kutu. */}
+	<body class="relative min-h-screen text-slate-800 antialiased dark:text-neutral-200">
+		<SarmasikYazi metin={m('sarmasik.metin')} />
+
 		<a
 			href="#icerik"
 			class="sr-only focus:not-sr-only focus:absolute focus:top-3 focus:left-3 focus:z-[60] focus:rounded-lg focus:bg-marka-600 focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-white"

@@ -43,6 +43,9 @@ export const ceviriler = {
 		'tanitim.dugme': 'Devamını oku',
 		'tanitim.gorselAlt': 'Mustafa Eybek portre fotoğrafı',
 
+		// Sayfa boyunca inen yazı sarmaşığı. Süs; ekran okuyucuya verilmiyor.
+		'sarmasik.metin': 'Mustafa Eybek',
+
 		'blog.baslik': 'Blog',
 		'blog.sayfaBasligi': 'Blog — Mustafa Eybek',
 		'blog.aciklama': 'Yazılar.',
@@ -106,6 +109,8 @@ export const ceviriler = {
 		'tanitim.paragraf3': 'Write to me for a new role, a shared project, or just a conversation.',
 		'tanitim.dugme': 'Read more',
 		'tanitim.gorselAlt': 'Portrait photo of Mustafa Eybek',
+
+		'sarmasik.metin': 'Mustafa Eybek',
 
 		'blog.baslik': 'Blog',
 		'blog.sayfaBasligi': 'Blog — Mustafa Eybek',
