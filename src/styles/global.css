@@ -139,6 +139,45 @@ html.menu-acik {
 	overflow: hidden;
 }
 
+/*
+  Kaydırma çubuğu. İnce, yuvarlak ve temaya uyumlu; işletim sisteminin kalın
+  gri çubuğu sitenin geri kalanıyla uyuşmuyordu.
+
+  İki ayrı mekanizma bilinçli: `scrollbar-*` standart özellikler (Firefox ve
+  yeni Chrome/Safari), `::-webkit-scrollbar` ise eski WebKit/Blink için.
+  Dokunmatikte çubuk zaten kendiliğinden gizleniyor, orada hiçbir şey değişmiyor.
+*/
+html {
+	scrollbar-width: thin;
+	scrollbar-color: color-mix(in oklab, var(--foreground) 25%, transparent) transparent;
+}
+
+::-webkit-scrollbar {
+	width: 10px;
+	height: 10px;
+}
+
+::-webkit-scrollbar-track {
+	background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+	background-color: color-mix(in oklab, var(--foreground) 22%, transparent);
+	border-radius: 9999px;
+	/* Saydam kenarlık + background-clip: tutamağı inceltip yolun ortasına
+	   oturtuyor; ayrı bir genişlik hesabına gerek kalmıyor. */
+	border: 3px solid transparent;
+	background-clip: content-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+	background-color: color-mix(in oklab, var(--foreground) 38%, transparent);
+}
+
+::-webkit-scrollbar-corner {
+	background: transparent;
+}
+
 /* Mobil menü açıkken hero'daki simgeler etkileşime kapalı.
    Dokunmatikte menüdeki bir seçeneğe dokunmak, arkadaki simgelerin üzerine
    gelme durumunu ve ad balonunu tetikleyebiliyordu. */

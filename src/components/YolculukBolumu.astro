@@ -1,0 +1,231 @@
+---
+import { Icon } from 'astro-icon/components';
+import { cevirici, dilBul } from '@/i18n/ceviriler';
+
+const dil = dilBul(Astro.url);
+const m = cevirici(dil);
+
+/*
+  ZAMAN ÇİZELGESİ İÇERİĞİ — düzenlenecek tek yer burası.
+
+  Her kayıt:
+    yil      : solda/sağda görünen etiket. "2021 — 2025" gibi aralık da olur.
+    tur      : simgeyi ve rengi belirler -> 'okul' | 'belge' | 'egitim' | 'is'
+    baslik   : { tr, en }  kurum ya da belge adı
+    yer      : { tr, en }  bölüm, veren kurum, şehir... (isteğe bağlı)
+    aciklama : { tr, en }  bir iki cümle (isteğe bağlı)
+
+  Sıra yukarıdan aşağıya; en yeniyi en üste koymak alışılmış olan.
+  Şu anki kayıtlar YER TUTUCU — kendi bilgilerinle değiştir.
+*/
+const kayitlar = [
+	{
+		yil: '2025',
+		tur: 'belge',
+		baslik: { tr: 'Sertifika adı', en: 'Certificate name' },
+		yer: { tr: 'Veren kurum', en: 'Issuing organization' },
+		aciklama: {
+			tr: 'Bu belgeyi neyle aldığını bir iki cümleyle yaz.',
+			en: 'A sentence or two about what this certificate covers.',
+		},
+	},
+	{
+		yil: '2024',
+		tur: 'egitim',
+		baslik: { tr: 'Eğitim / kurs adı', en: 'Training / course name' },
+		yer: { tr: 'Platform ya da kurum', en: 'Platform or institution' },
+		aciklama: {
+			tr: 'Neyi öğrendiğini kısaca anlat.',
+			en: 'Briefly describe what you learned.',
+		},
+	},
+	{
+		yil: '2021 — 2025',
+		tur: 'okul',
+		baslik: { tr: 'Üniversite adı', en: 'University name' },
+		yer: { tr: 'Bölüm', en: 'Department' },
+		aciklama: {
+			tr: 'Bölüm hakkında kısa bir not.',
+			en: 'A short note about the programme.',
+		},
+	},
+	{
+		yil: '2017 — 2021',
+		tur: 'okul',
+		baslik: { tr: 'Lise adı', en: 'High school name' },
+		yer: { tr: 'Alan', en: 'Field' },
+		aciklama: { tr: '', en: '' },
+	},
+];
+
+// Türe göre simge. astro-icon derleme sırasında gömüyor; çalışma anında istek yok.
+const simgeler: Record<string, string> = {
+	okul: 'lucide:graduation-cap',
+	belge: 'lucide:award',
+	egitim: 'lucide:book-open',
+	is: 'lucide:briefcase',
+};
+---
+
+{/*
+  Yolculuk (zaman çizelgesi).
+
+  Yerleşim bilinçli olarak tek sütun: iki yana serpiştiren çizelgeler dar
+  ekranda hep sorun çıkarıyor ve okuma sırası ekran okuyucuda karışıyor.
+  Burada sıra her ekranda yukarıdan aşağıya tek akış; masaüstünde yıl etiketi
+  sola ayrılıp çizgi ortalanıyor.
+
+  Animasyon sitedeki diğer bölümlerle aynı kurguyu kullanıyor: varsayılan
+  durum görünür, `data-gorunur` yalnızca giriş animasyonunu oynatıyor.
+*/}
+<section
+	class="yolculuk relative overflow-hidden py-20 sm:py-28 md:min-h-[100svh] md:py-24"
+	data-belir
+	data-parcali
+	data-sayfa
+>
+	<div class="mx-auto w-full max-w-3xl px-4 lg:max-w-4xl">
+		<h2
+			class="text-sm font-semibold tracking-[0.18em] text-slate-500 lg:text-base dark:text-slate-400"
+			data-belir-oge
+			style="--sira: 0"
+		>
+			{m('yolculuk.ustBaslik')}
+		</h2>
+		<div
+			class="mt-3 h-[3px] w-24 rounded-full bg-gradient-to-r from-marka-600 to-marka-400 lg:w-32"
+			data-belir-oge
+			data-belir-cizgi
+			style="--sira: 1"
+		>
+		</div>
+
+		<p
+			class="mt-8 text-2xl font-bold tracking-tight text-slate-900 lg:text-3xl dark:text-white"
+			data-belir-oge
+			style="--sira: 2"
+		>
+			{m('yolculuk.baslik')}
+		</p>
+		<p
+			class="mt-3 text-slate-600 lg:text-lg dark:text-slate-300"
+			data-belir-oge
+			style="--sira: 3"
+		>
+			{m('yolculuk.metin')}
+		</p>
+
+		<ol class="cizelge mt-12 lg:mt-16">
+			{
+				kayitlar.map((kayit, sira) => (
+					<li class="kayit" data-belir-oge style={`--sira: ${4 + sira}`}>
+						<span class="nokta" aria-hidden="true">
+							<Icon name={simgeler[kayit.tur] ?? simgeler.egitim} class="size-4" />
+						</span>
+
+						<div class="govde">
+							<span class="yil">{kayit.yil}</span>
+							<h3 class="baslik">{kayit.baslik[dil]}</h3>
+							{kayit.yer[dil] && <p class="yer">{kayit.yer[dil]}</p>}
+							{kayit.aciklama[dil] && <p class="aciklama">{kayit.aciklama[dil]}</p>}
+						</div>
+					</li>
+				))
+			}
+		</ol>
+	</div>
+</section>
+
+<style>
+	.cizelge {
+		position: relative;
+		list-style: none;
+		padding: 0;
+		margin: 0;
+	}
+
+	/* Dikey çizgi: kayıtların soluna hizalı, aşağı doğru çiziliyor. */
+	.cizelge::before {
+		content: "";
+		position: absolute;
+		top: 0.25rem;
+		bottom: 0.25rem;
+		left: 0.9375rem; /* noktanın merkezi */
+		width: 2px;
+		background: linear-gradient(
+			to bottom,
+			color-mix(in oklab, var(--foreground) 22%, transparent),
+			color-mix(in oklab, var(--foreground) 6%, transparent)
+		);
+		transform-origin: top center;
+	}
+
+	.kayit {
+		position: relative;
+		padding-left: 3rem;
+		padding-bottom: 2.5rem;
+	}
+
+	.kayit:last-child {
+		padding-bottom: 0;
+	}
+
+	.nokta {
+		position: absolute;
+		top: 0;
+		left: 0;
+		display: grid;
+		place-items: center;
+		width: 2rem;
+		height: 2rem;
+		border-radius: 9999px;
+		background: var(--background);
+		color: var(--foreground);
+		box-shadow: 0 0 0 2px color-mix(in oklab, var(--foreground) 18%, transparent);
+		transition:
+			box-shadow 260ms ease-out,
+			scale 260ms cubic-bezier(0.34, 1.56, 0.64, 1);
+	}
+
+	.kayit:hover .nokta {
+		scale: 1.12;
+		box-shadow: 0 0 0 2px var(--primary);
+	}
+
+	.yil {
+		display: block;
+		font-size: 0.8125rem;
+		font-weight: 600;
+		letter-spacing: 0.04em;
+		color: var(--muted-foreground);
+	}
+
+	.baslik {
+		margin-top: 0.25rem;
+		font-size: 1.125rem;
+		font-weight: 600;
+		color: var(--foreground);
+	}
+
+	.yer {
+		margin-top: 0.125rem;
+		font-size: 0.9375rem;
+		color: var(--muted-foreground);
+	}
+
+	.aciklama {
+		margin-top: 0.5rem;
+		color: var(--muted-foreground);
+	}
+
+	@media (min-width: 1024px) {
+		.baslik {
+			font-size: 1.25rem;
+		}
+
+		.aciklama {
+			font-size: 1.0625rem;
+			line-height: 1.7;
+		}
+	}
+</style>

@@ -58,6 +58,11 @@ export const ceviriler = {
 
 		'altbilgi.lisans': 'MIT lisansı ile yayımlanmıştır.',
 
+		// Zaman çizelgesi
+		'yolculuk.ustBaslik': 'YOLCULUK',
+		'yolculuk.baslik': 'Öğrenim ve sertifikalar',
+		'yolculuk.metin': 'Okuduğum okullar, aldığım belgeler ve tamamladığım eğitimler.',
+
 		// 404 sayfası
 		'404.sayfaBasligi': 'Sayfa bulunamadı',
 		'404.baslik': 'Hop! Sayfa kayıp.',
@@ -112,6 +117,11 @@ export const ceviriler = {
 		'hakkimda.iletisimMetin': 'Add the channels you want to be reached on (email, social accounts).',
 
 		'altbilgi.lisans': 'Published under the MIT license.',
+
+		// Timeline
+		'yolculuk.ustBaslik': 'JOURNEY',
+		'yolculuk.baslik': 'Education and certificates',
+		'yolculuk.metin': 'Schools I attended, certificates I earned and trainings I completed.',
 
 		// 404 page
 		'404.sayfaBasligi': 'Page not found',

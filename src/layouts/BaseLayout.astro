@@ -10,11 +10,21 @@ import yaziTipiEk from '../styles/yazitipi/inter-ek.woff2?url';
 interface Props {
 	title: string;
 	description?: string;
+	/**
+	 * Altbilgi gösterilsin mi. Hata sayfası gibi tam ekran, tek ekranlık
+	 * sayfalarda kapatılıyor: altbilgi orada yalnızca gereksiz bir kaydırma
+	 * çubuğu üretiyor.
+	 */
+	altbilgi?: boolean;
 }
 
 const dil = dilBul(Astro.url);
 const m = cevirici(dil);
-const { title, description = m('site.aciklama') } = Astro.props;
+const { title, description = m('site.aciklama'), altbilgi = true } = Astro.props;
+
+// Varsayılan yuvada içerik yoksa <main> hiç çizilmiyor; boş bir main yalnızca
+// dolgusu kadar yer kaplayıp sayfayı görünüm alanından uzatıyordu.
+const icerikVar = Astro.slots.has('default');
 const canonical = new URL(Astro.url.pathname, Astro.site);
 
 // Arama motorlarına aynı sayfanın diğer dildeki karşılığını bildiriyoruz.
@@ -111,13 +121,21 @@ const enYolu = new URL(digerDilYolu(Astro.url, 'en'), Astro.site);
 		    genişliğiyle sınırlanmadan, main'in dışında render edilir. */}
 		<slot name="tam-genislik" />
 
-		<main id="icerik" class="mx-auto max-w-3xl px-4 py-12">
-			<slot />
-		</main>
+		{
+			icerikVar && (
+				<main id="icerik" class="mx-auto max-w-3xl px-4 py-12">
+					<slot />
+				</main>
+			)
+		}
 
-		<footer class="mx-auto max-w-3xl px-4 py-10 text-sm text-slate-500 dark:text-slate-400">
-			&copy; {new Date().getFullYear()} — {m('altbilgi.lisans')}
-		</footer>
+		{
+			altbilgi && (
+				<footer class="mx-auto max-w-3xl px-4 py-10 text-sm text-slate-500 dark:text-slate-400">
+					&copy; {new Date().getFullYear()} — {m('altbilgi.lisans')}
+				</footer>
+			)
+		}
 
 		{/* Bölümler görünür alana girdikçe belirir. Bir kez göründükten sonra
 		    izleme bırakılıyor; aşağı-yukarı kaydırmada tekrar tekrar oynamıyor. */}
