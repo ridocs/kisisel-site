@@ -139,6 +139,13 @@ html.menu-acik {
 	overflow: hidden;
 }
 
+/* Mobil menü açıkken hero'daki simgeler etkileşime kapalı.
+   Dokunmatikte menüdeki bir seçeneğe dokunmak, arkadaki simgelerin üzerine
+   gelme durumunu ve ad balonunu tetikleyebiliyordu. */
+html.menu-acik .logo-yuva {
+	pointer-events: none;
+}
+
 /* Bölümler görünür alana girdikçe beliriyor.
    Başlangıç gizliliği yalnızca `js-var` sınıfı varken uygulanıyor: JavaScript
    çalışmazsa (hata, eski tarayıcı, engelli script) içerik hiç görünmeden kalırdı. */

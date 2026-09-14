@@ -287,9 +287,28 @@ const ikonlar = [
 		window.addEventListener('resize', olc, { passive: true });
 		window.addEventListener('scroll', olc, { passive: true });
 
+		const sifirla = () => {
+			for (const kart of kartlar) {
+				kart.style.setProperty('--kacis-x', '0px');
+				kart.style.setProperty('--kacis-y', '0px');
+			}
+		};
+
 		window.addEventListener(
 			'mousemove',
 			(olay) => {
+				/*
+				  Mobil menü açıkken kaçma etkisi kapalı. Dokunmatikte tarayıcı,
+				  bir ögeye dokunulduğunda tıklamadan önce sentetik bir mousemove
+				  üretiyor; bu betik onu gerçek imleç sanıp menünün arkasındaki
+				  ikonları itiyordu. Menüdeki bir seçeneğe dokunmak arka plandaki
+				  ikonları oynatmamalı.
+				*/
+				if (document.documentElement.classList.contains('menu-acik')) {
+					sifirla();
+					return;
+				}
+
 				for (let i = 0; i < kartlar.length; i++) {
 					const m = merkezler[i];
 					if (!m) continue;

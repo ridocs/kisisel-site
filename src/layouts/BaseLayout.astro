@@ -186,9 +186,41 @@ const enYolu = new URL(digerDilYolu(Astro.url, 'en'), Astro.site);
 				var genisMi = window.matchMedia('(min-width: 768px)');
 				var azHareket = window.matchMedia('(prefers-reduced-motion: reduce)');
 
+				// Bölümler arası geçiş süresi. Tarayıcının `behavior: 'smooth'`
+				// süresi ayarlanamıyor ve mesafeye göre değişiyordu; geçiş burada
+				// elle canlandırılıyor ki süre ve yumuşama denetlenebilsin.
+				var GECIS_SURESI = 950;
+
 				// Sıçrama sürerken gelen tekerlek olayları yok sayılıyor.
 				var kilitBitis = 0;
 				var sicramaAni = 0;
+
+				// Başta hızlanıp sonda yavaşlayan eğri; sabit hızlı bir kaydırma
+				// mekanik duruyor.
+				function yumusat(o) {
+					return o < 0.5 ? 4 * o * o * o : 1 - Math.pow(-2 * o + 2, 3) / 2;
+				}
+
+				function yumusakGit(hedef) {
+					var baslangic = window.scrollY;
+					var mesafe = hedef - baslangic;
+					var ilkZaman = null;
+
+					function adim(zaman) {
+						if (ilkZaman === null) ilkZaman = zaman;
+						var oran = Math.min((zaman - ilkZaman) / GECIS_SURESI, 1);
+						// `behavior: 'instant'` şart: CSS'teki `scroll-behavior: smooth`
+						// yüzünden her scrollTo çağrısı kendi başına da yumuşatılıyor
+						// ve iki canlandırma birbiriyle çakışıyordu.
+						window.scrollTo({
+							top: Math.round(baslangic + mesafe * yumusat(oran)),
+							behavior: 'instant',
+						});
+						if (oran < 1) window.requestAnimationFrame(adim);
+					}
+
+					window.requestAnimationFrame(adim);
+				}
 
 				function etkinMi() {
 					return genisMi.matches && !azHareket.matches;
@@ -268,8 +300,8 @@ const enYolu = new URL(digerDilYolu(Astro.url, 'en'), Astro.site);
 
 						olay.preventDefault();
 						sicramaAni = simdi;
-						kilitBitis = simdi + 800;
-						window.scrollTo({ top: y, behavior: 'smooth' });
+						kilitBitis = simdi + GECIS_SURESI + 150;
+						yumusakGit(y);
 					},
 					{ passive: false },
 				);
