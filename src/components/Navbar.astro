@@ -169,6 +169,8 @@ const iletisimDugmesi =
 						aria-expanded="false"
 						aria-controls="mobil-menu"
 						aria-label={m('nav.menuAc')}
+						data-etiket-ac={m('nav.menuAc')}
+						data-etiket-kapat={m('nav.menuKapat')}
 					>
 						<Icon name="lucide:menu" class="size-5 group-aria-expanded/dugme:hidden" />
 						<Icon name="lucide:x" class="hidden size-5 group-aria-expanded/dugme:block" />
@@ -291,15 +293,46 @@ const iletisimDugmesi =
 	kaydirmayiUygula();
 
 	// --- Mobil menü ----------------------------------------------------------
+	const menuAcikEtiketi = menuDugmesi?.dataset.etiketKapat ?? 'Menüyü kapat';
+	const menuKapaliEtiketi = menuDugmesi?.dataset.etiketAc ?? 'Menüyü aç';
+
+	function menuOgeleri(): HTMLElement[] {
+		if (!mobilMenu) return [];
+		return [...mobilMenu.querySelectorAll<HTMLElement>('a[href]')];
+	}
+
 	function menuyuAyarla(acik: boolean) {
 		if (!menuDugmesi || !mobilMenu) return;
 		menuDugmesi.setAttribute('aria-expanded', String(acik));
-		menuDugmesi.setAttribute('aria-label', acik ? 'Menüyü kapat' : 'Menüyü aç');
+		menuDugmesi.setAttribute('aria-label', acik ? menuAcikEtiketi : menuKapaliEtiketi);
 		mobilMenu.classList.toggle('hidden', !acik);
+		// Menü açıkken arka planın kayması, açılan panelin sabit durması yüzünden
+		// kopuk bir his veriyordu; sayfa kaydırması kilitleniyor.
+		document.documentElement.classList.toggle('menu-acik', acik);
 	}
 
 	menuDugmesi?.addEventListener('click', () => {
-		menuyuAyarla(menuDugmesi.getAttribute('aria-expanded') !== 'true');
+		const acilacak = menuDugmesi.getAttribute('aria-expanded') !== 'true';
+		menuyuAyarla(acilacak);
+		// Odak menüye taşınmazsa klavyeyle gezen kullanıcı, açtığı menüye
+		// ulaşmak için sayfanın başından tab'lamak zorunda kalıyordu.
+		if (acilacak) menuOgeleri()[0]?.focus();
+	});
+
+	// Menü açıkken odak panelin içinde dönsün; arkadaki öğelere geçmesin.
+	mobilMenu?.addEventListener('keydown', (olay) => {
+		if (olay.key !== 'Tab' || !menuDugmesi) return;
+		const ogeler = [menuDugmesi, ...menuOgeleri()];
+		const ilk = ogeler[0];
+		const son = ogeler[ogeler.length - 1];
+		const etkin = document.activeElement;
+		if (olay.shiftKey && etkin === ilk) {
+			olay.preventDefault();
+			son.focus();
+		} else if (!olay.shiftKey && etkin === son) {
+			olay.preventDefault();
+			ilk.focus();
+		}
 	});
 
 	// Esc menüyü kapatır ve odağı butona geri verir.

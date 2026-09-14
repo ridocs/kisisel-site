@@ -108,6 +108,12 @@
 	}
 }
 
+/* Mobil menü açıkken arka planın kayması, sabit duran panelle kopuk bir his
+   yaratıyordu; kaydırma kilitleniyor. */
+html.menu-acik {
+	overflow: hidden;
+}
+
 html {
 	scroll-behavior: smooth;
 	/* Sabit üst çubuk, sayfa içi bağlantıyla ya da klavyeyle gelinen öğeyi

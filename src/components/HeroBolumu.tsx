@@ -68,10 +68,10 @@ const ikonlar: FloatingIconsHeroProps['icons'] = [
 	{ id: 6, icon: IconDocker, ad: 'Docker', className: 'bottom-[6%] left-[42%]' },
 
 	// --- md: orta ekran (+10) ---
-	{ id: 7, icon: IconHtml, ad: 'HTML5', className: 'top-[7%] left-[22%] hidden md:block' },
-	{ id: 8, icon: IconCss, ad: 'CSS3', className: 'top-[8%] right-[22%] hidden md:block' },
-	{ id: 9, icon: IconNode, ad: 'Node.js', className: 'bottom-[7%] left-[24%] hidden md:block' },
-	{ id: 10, icon: IconGit, ad: 'Git', className: 'bottom-[8%] right-[24%] hidden md:block' },
+	{ id: 7, icon: IconHtml, ad: 'HTML5', className: 'top-[7%] left-[22%]' },
+	{ id: 8, icon: IconCss, ad: 'CSS3', className: 'top-[8%] right-[22%]' },
+	{ id: 9, icon: IconNode, ad: 'Node.js', className: 'bottom-[7%] left-[24%]' },
+	{ id: 10, icon: IconGit, ad: 'Git', className: 'bottom-[8%] right-[24%]' },
 	{
 		id: 11,
 		icon: IconGoogleCloud,
