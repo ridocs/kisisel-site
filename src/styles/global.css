@@ -158,7 +158,11 @@ html.menu-acik .logo-yuva {
   duruyor. Bilgiye erişim animasyondan önce gelir.
 */
 [data-belir][data-gorunur] {
-	animation: bolum-belir 620ms cubic-bezier(0.22, 1, 0.36, 1) both;
+	/* Dolgu kipi bilinçli olarak yok. `both` ile animasyon herhangi bir
+	   sebeple ilerlemezse (arka plan sekmesi, duraklatılmış animasyon)
+	   öge `from` durumunda, yani görünmez takılı kalırdı. Dolgusuz hâlde
+	   öge animasyondan önce de sonra da doğal durumunda: görünür. */
+	animation: bolum-belir 620ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 @keyframes bolum-belir {
