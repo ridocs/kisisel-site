@@ -156,7 +156,7 @@ const iletisimDugmesi =
 					    mobil menüdeki düz bağlantıya bırakıyor. */}
 					<div class="hidden md:block">
 						<IletisimDugmesi
-							client:load
+							client:media="(min-width: 768px)"
 							etiket={m('nav.iletisim')}
 							hedef={`${yol(dil, hakkimdaParcasi)}${iletisimCapasi}`}
 						/>

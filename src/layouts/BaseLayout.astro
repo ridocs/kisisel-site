@@ -115,20 +115,34 @@ const enYolu = new URL(digerDilYolu(Astro.url, 'en'), Astro.site);
 					return;
 				}
 
+				function goster(oge) {
+					oge.setAttribute('data-gorunur', '');
+				}
+
+				// Eşik bilinçli olarak çok düşük: bölümler mobilde görünüm
+				// yüksekliğinden uzun olabiliyor ve yüzdesel bir eşik geç tetikleniyor
+				// ya da hiç tetiklenmiyordu.
 				var gozlemci = new IntersectionObserver(
 					function (girisler) {
 						girisler.forEach(function (giris) {
 							if (!giris.isIntersecting) return;
-							giris.target.setAttribute('data-gorunur', '');
+							goster(giris.target);
 							gozlemci.unobserve(giris.target);
 						});
 					},
-					{ threshold: 0.12, rootMargin: '0px 0px -8% 0px' },
+					{ threshold: 0.01 },
 				);
 
 				ogeler.forEach(function (oge) {
 					gozlemci.observe(oge);
 				});
+
+				// Güvenlik ağı: gözlemci herhangi bir sebeple tetiklenmezse (arka plan
+				// sekmesi kısıtlaması, beklenmedik yerleşim) içerik kalıcı olarak
+				// görünmez kalırdı. Kısa bir süre sonra kalanlar açılıyor.
+				window.setTimeout(function () {
+					ogeler.forEach(goster);
+				}, 2500);
 			})();
 		</script>
 

@@ -133,6 +133,17 @@ html.js-var [data-belir][data-gorunur] {
 	transform: none;
 }
 
+/* Dar ekranda efekt kapalı: içeriğin görünürlüğü gözlemcinin tetiklenmesine
+   bağlı kalıyordu ve mobilde bölümler gizli kalabiliyordu. Bilgiye erişim,
+   animasyondan önce gelir. */
+@media (max-width: 767px) {
+	html.js-var [data-belir] {
+		opacity: 1;
+		transform: none;
+		transition: none;
+	}
+}
+
 @media (prefers-reduced-motion: reduce) {
 	html.js-var [data-belir] {
 		opacity: 1;

@@ -18,10 +18,10 @@ const tarihBicimi = dil === 'en' ? 'en-GB' : 'tr-TR';
 <BaseLayout title={m('site.baslik')}>
 	{/*
 	  Sayfadaki tek React adacığı. İmleç etkileşimi ilk ekranda olduğu için
-	  client:load ile yükleniyor; sitenin diğer sayfaları JavaScript almıyor.
+	  client:idle ile, tarayıcı boşa çıkınca yükleniyor: ilk boyamayı geciktirmiyor.
 	*/}
 	<HeroBolumu
-		client:load
+		client:idle
 		slot="tam-genislik"
 		baslik="Mustafa Eybek"
 		altBaslik={m('hero.altBaslik')}
