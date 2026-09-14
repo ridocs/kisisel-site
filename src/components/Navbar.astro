@@ -80,7 +80,7 @@ const iletisimDugmesi =
 		  aynı ilişkinin koyu karşılığı kullanılır.
 		*/}
 		<div
-			class="overflow-hidden rounded-xl border border-transparent transition-all duration-200 ease-out group-hover:border-slate-900/10 group-hover:bg-white/60 group-hover:backdrop-blur-xl group-data-[kaydirildi=true]:mt-3 group-data-[kaydirildi=true]:border-slate-900/10 group-data-[kaydirildi=true]:bg-white/70 group-data-[kaydirildi=true]:shadow-sm group-data-[kaydirildi=true]:shadow-slate-900/5 group-data-[kaydirildi=true]:backdrop-blur-xl motion-reduce:transition-none dark:group-hover:border-white/15 dark:group-hover:bg-slate-950/60 dark:group-data-[kaydirildi=true]:border-white/15 dark:group-data-[kaydirildi=true]:bg-slate-950/70"
+			class="overflow-hidden rounded-xl border border-transparent transition-all duration-200 ease-out group-data-[menu-acik=true]:border-slate-900/10 group-data-[menu-acik=true]:bg-white/95 group-data-[menu-acik=true]:shadow-lg group-data-[menu-acik=true]:backdrop-blur-xl dark:group-data-[menu-acik=true]:border-white/15 dark:group-data-[menu-acik=true]:bg-slate-950/95 group-hover:border-slate-900/10 group-hover:bg-white/60 group-hover:backdrop-blur-xl group-data-[kaydirildi=true]:mt-3 group-data-[kaydirildi=true]:border-slate-900/10 group-data-[kaydirildi=true]:bg-white/70 group-data-[kaydirildi=true]:shadow-sm group-data-[kaydirildi=true]:shadow-slate-900/5 group-data-[kaydirildi=true]:backdrop-blur-xl motion-reduce:transition-none dark:group-hover:border-white/15 dark:group-hover:bg-slate-950/60 dark:group-data-[kaydirildi=true]:border-white/15 dark:group-data-[kaydirildi=true]:bg-slate-950/70"
 		>
 			<nav
 				aria-label={dil === 'en' ? 'Main navigation' : 'Ana gezinme'}
@@ -306,6 +306,8 @@ const iletisimDugmesi =
 		menuDugmesi.setAttribute('aria-expanded', String(acik));
 		menuDugmesi.setAttribute('aria-label', acik ? menuAcikEtiketi : menuKapaliEtiketi);
 		mobilMenu.classList.toggle('hidden', !acik);
+		// Panelin arkasi saydam kalmasin diye kapsule zemin veren durum.
+		if (ustCubuk) ustCubuk.dataset.menuAcik = String(acik);
 		// Menü açıkken arka planın kayması, açılan panelin sabit durması yüzünden
 		// kopuk bir his veriyordu; sayfa kaydırması kilitleniyor.
 		document.documentElement.classList.toggle('menu-acik', acik);
