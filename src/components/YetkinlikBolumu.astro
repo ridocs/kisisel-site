@@ -1,0 +1,257 @@
+---
+import { Icon } from 'astro-icon/components';
+import { cevirici, dilBul } from '@/i18n/ceviriler';
+
+const dil = dilBul(Astro.url);
+const m = cevirici(dil);
+
+/*
+  YETKİNLİK İÇERİĞİ — düzenlenecek tek yer burası.
+
+  Her satır:
+    ad     : teknolojinin adı (çevrilmiyor, özel ad)
+    ikon   : @iconify-json/logos içindeki ad; derleme sırasında gömülüyor
+    oran   : 0-100 arası. Çubuğun dolgusu ve sağdaki yüzde bundan geliyor.
+    alt    : { tr, en }  çubuğun altında solda duran kısa not
+    sure   : { tr, en }  çubuğun altında sağda duran not (deneyim, proje...)
+
+  Oranlar YER TUTUCU — kendi değerlerinle değiştir. Sıra yukarıdan aşağıya.
+*/
+const yetkinlikler = [
+	{
+		ad: 'Python',
+		ikon: 'logos:python',
+		oran: 85,
+		alt: { tr: 'Otomasyon, betikler, veri işleme', en: 'Automation, scripting, data work' },
+		sure: { tr: '4 yıl', en: '4 years' },
+	},
+	{
+		ad: 'Dart',
+		ikon: 'logos:dart',
+		oran: 75,
+		alt: { tr: 'Flutter ile mobil uygulama', en: 'Mobile apps with Flutter' },
+		sure: { tr: '2 yıl', en: '2 years' },
+	},
+	{
+		ad: 'JavaScript',
+		ikon: 'logos:javascript',
+		oran: 80,
+		alt: { tr: 'Web arayüzleri ve Node.js', en: 'Web interfaces and Node.js' },
+		sure: { tr: '3 yıl', en: '3 years' },
+	},
+	{
+		ad: 'TypeScript',
+		ikon: 'logos:typescript-icon',
+		oran: 70,
+		alt: { tr: 'Tipli web projeleri', en: 'Typed web projects' },
+		sure: { tr: '2 yıl', en: '2 years' },
+	},
+	{
+		ad: 'Docker',
+		ikon: 'logos:docker-icon',
+		oran: 65,
+		alt: { tr: 'Kapsayıcı ve dağıtım', en: 'Containers and deployment' },
+		sure: { tr: '2 yıl', en: '2 years' },
+	},
+	{
+		ad: 'PostgreSQL',
+		ikon: 'logos:postgresql',
+		oran: 60,
+		alt: { tr: 'Şema tasarımı ve sorgular', en: 'Schema design and queries' },
+		sure: { tr: '2 yıl', en: '2 years' },
+	},
+];
+---
+
+{/*
+  Yetkinlikler.
+
+  Kutu yok: satırlar doğrudan bölüm zemininde duruyor. Çubuklar `scaleX` ile
+  doluyor (genişlik animasyonu her karede yeniden yerleşim tetikler), dolgu
+  oranı satır içi bir değişkenden geliyor.
+
+  Yüzde hem görsel çubukta hem de yazıyla veriliyor: bilgiyi yalnızca çubuk
+  uzunluğuna bırakmak, ekran okuyucu ve düşük görme durumunda okunmaz yapardı.
+*/}
+<section
+	class="yetkinlik relative overflow-hidden py-20 sm:py-28 md:flex md:min-h-[100svh] md:items-center md:py-24"
+	data-belir
+	data-parcali
+	data-sayfa
+>
+	<div class="mx-auto w-full max-w-3xl px-4 lg:max-w-4xl">
+		<p
+			class="text-xs font-semibold tracking-[0.22em] text-muted-foreground lg:text-sm"
+			data-belir-oge
+			style="--sira: 0"
+		>
+			{m('yetkinlik.ustBaslik')}
+		</p>
+		<h2
+			class="mt-4 text-3xl font-bold tracking-tight text-foreground lg:text-4xl"
+			data-belir-oge
+			style="--sira: 1"
+		>
+			{m('yetkinlik.baslik')}
+		</h2>
+		<p class="mt-4 text-muted-foreground lg:text-lg" data-belir-oge style="--sira: 2">
+			{m('yetkinlik.metin')}
+		</p>
+
+		<ul class="liste">
+			{
+				yetkinlikler.map((y, sira) => (
+					<li class="satir" data-belir-oge style={`--sira: ${3 + sira}`}>
+						<span class="simge" aria-hidden="true">
+							<Icon name={y.ikon} class="size-5" />
+						</span>
+
+						<div class="govde">
+							<div class="ust">
+								<span class="ad">{y.ad}</span>
+								<span class="oran">{y.oran}%</span>
+							</div>
+
+							<div
+								class="cubuk"
+								role="img"
+								aria-label={`${y.ad}: %${y.oran}`}
+								style={`--dolu: ${y.oran / 100}; --gecikme: ${sira * 90}ms`}
+							>
+								<span class="dolgu"></span>
+							</div>
+
+							<div class="alt">
+								<span>{y.alt[dil]}</span>
+								<span>{y.sure[dil]}</span>
+							</div>
+						</div>
+					</li>
+				))
+			}
+		</ul>
+	</div>
+</section>
+
+<style>
+	/*
+	  Üst boşluk Tailwind sınıfıyla değil burada veriliyor: aşağıdaki
+	  `margin: 0` onu eziyordu. Astro kapsamlı stillere nitelik seçicisi
+	  ekliyor ve özgüllüğü tek sınıflı utility'lerin üstüne çıkıyor.
+	*/
+	.liste {
+		list-style: none;
+		padding: 0;
+		margin: 3rem 0 0;
+		display: grid;
+		gap: 1.75rem;
+	}
+
+	.satir {
+		display: grid;
+		grid-template-columns: auto 1fr;
+		align-items: start;
+		gap: 1rem;
+	}
+
+	.simge {
+		display: grid;
+		place-items: center;
+		width: 2.75rem;
+		height: 2.75rem;
+		border-radius: 9999px;
+		background: color-mix(in oklab, var(--foreground) 7%, transparent);
+		/* Satırın ilk metin satırıyla hizalansın diye hafif aşağıda. */
+		margin-top: 0.125rem;
+	}
+
+	.govde {
+		min-width: 0;
+	}
+
+	.ust {
+		display: flex;
+		align-items: baseline;
+		justify-content: space-between;
+		gap: 1rem;
+	}
+
+	.ad {
+		font-size: 1rem;
+		font-weight: 600;
+		color: var(--foreground);
+	}
+
+	.oran {
+		font-size: 0.9375rem;
+		font-weight: 700;
+		color: var(--foreground);
+		font-variant-numeric: tabular-nums;
+	}
+
+	.cubuk {
+		position: relative;
+		margin-top: 0.5rem;
+		height: 0.5rem;
+		border-radius: 9999px;
+		background: color-mix(in oklab, var(--foreground) 10%, transparent);
+		overflow: hidden;
+	}
+
+	.dolgu {
+		display: block;
+		height: 100%;
+		border-radius: inherit;
+		background: var(--foreground);
+		/* Genişlik yerine ölçek: genişlik animasyonu her karede yeniden
+		   yerleşim tetikliyor, ölçek yalnızca birleştirme katmanında çalışıyor. */
+		transform-origin: left center;
+		transform: scaleX(var(--dolu, 0));
+	}
+
+	[data-gorunur] .dolgu {
+		animation: cubuk-dol 900ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+		animation-delay: calc(400ms + var(--gecikme, 0ms));
+	}
+
+	@keyframes cubuk-dol {
+		from {
+			transform: scaleX(0);
+		}
+	}
+
+	.alt {
+		display: flex;
+		align-items: baseline;
+		justify-content: space-between;
+		gap: 1rem;
+		margin-top: 0.5rem;
+		font-size: 0.8125rem;
+		color: var(--muted-foreground);
+	}
+
+	.alt span:last-child {
+		white-space: nowrap;
+	}
+
+	@media (min-width: 1024px) {
+		.liste {
+			margin-top: 4rem;
+			gap: 2rem;
+		}
+
+		.ad {
+			font-size: 1.0625rem;
+		}
+
+		.alt {
+			font-size: 0.875rem;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		[data-gorunur] .dolgu {
+			animation: none;
+		}
+	}
+</style>

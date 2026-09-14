@@ -3,7 +3,7 @@ import { getCollection } from 'astro:content';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import HeroBolumu from '../components/HeroBolumu.astro';
 import TanitimBolumu from '../components/TanitimBolumu.astro';
-import YolculukBolumu from '../components/YolculukBolumu.astro';
+import YetkinlikBolumu from '../components/YetkinlikBolumu.astro';
 import { cevirici, dilBul, yol } from '@/i18n/ceviriler';
 
 const dil = dilBul(Astro.url);
@@ -33,7 +33,7 @@ const tarihBicimi = dil === 'en' ? 'en-GB' : 'tr-TR';
 
 	<TanitimBolumu slot="tam-genislik" />
 
-	<YolculukBolumu slot="tam-genislik" />
+	<YetkinlikBolumu slot="tam-genislik" />
 
 	<section
 		class="py-14 md:flex md:min-h-[100svh] md:flex-col md:justify-center"

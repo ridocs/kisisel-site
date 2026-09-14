@@ -58,10 +58,11 @@ export const ceviriler = {
 
 		'altbilgi.lisans': 'MIT lisansı ile yayımlanmıştır.',
 
-		// Zaman çizelgesi
-		'yolculuk.ustBaslik': 'YOLCULUK',
-		'yolculuk.baslik': 'Öğrenim ve sertifikalar',
-		'yolculuk.metin': 'Okuduğum okullar, aldığım belgeler ve tamamladığım eğitimler.',
+		// Yetkinlikler
+		'yetkinlik.ustBaslik': 'YETKİNLİKLER',
+		'yetkinlik.baslik': 'Kullandığım diller ve araçlar',
+		'yetkinlik.metin':
+			'Günlük işimde en çok dokunduğum teknolojiler ve her biriyle ne kadar yol aldığım.',
 
 		// 404 sayfası
 		'404.sayfaBasligi': 'Sayfa bulunamadı',
@@ -118,10 +119,11 @@ export const ceviriler = {
 
 		'altbilgi.lisans': 'Published under the MIT license.',
 
-		// Timeline
-		'yolculuk.ustBaslik': 'JOURNEY',
-		'yolculuk.baslik': 'Education and certificates',
-		'yolculuk.metin': 'Schools I attended, certificates I earned and trainings I completed.',
+		// Skills
+		'yetkinlik.ustBaslik': 'SKILLS',
+		'yetkinlik.baslik': 'Languages and tools I use',
+		'yetkinlik.metin':
+			'The technologies I touch most in daily work, and how far I have come with each.',
 
 		// 404 page
 		'404.sayfaBasligi': 'Page not found',
