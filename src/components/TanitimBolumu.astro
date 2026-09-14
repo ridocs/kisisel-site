@@ -26,8 +26,10 @@ const gorsel =
 	<div class="mx-auto flex max-w-5xl flex-col items-center gap-12 px-4 md:flex-row md:gap-16">
 		{/* Görsel: dikdörtgen yerine organik bir maske ile şekillendirildi. */}
 		<div class="relative shrink-0">
+			{/* Arkadaki katman aynı şekli alıp sağ-aşağı kaydırılıyor; clip-path
+			    gölgeyi kırptığı için derinlik buradan geliyor. */}
 			<div
-				class="gorsel-maske pointer-events-none absolute -inset-3 -z-10 bg-gradient-to-br from-marka-500/25 to-marka-400/10"
+				class="gorsel-maske pointer-events-none absolute inset-0 -z-10 translate-x-4 translate-y-4 bg-gradient-to-br from-marka-500/40 to-marka-400/15"
 				aria-hidden="true"
 			>
 			</div>
@@ -38,7 +40,7 @@ const gorsel =
 				height="475"
 				loading="lazy"
 				decoding="async"
-				class="gorsel-maske w-[min(340px,70vw)] object-cover shadow-2xl shadow-marka-600/20 sm:w-[380px]"
+				class="gorsel-maske w-[min(340px,70vw)] object-cover sm:w-[380px]"
 			/>
 		</div>
 
@@ -64,18 +66,32 @@ const gorsel =
 </section>
 
 <style>
-	/* Organik maske: köşeleri farklı yarıçaplarla eğerek damla benzeri bir form
-	   veriyor. clip-path yerine border-radius kullanıldı; gölge ve kenar
-	   yumuşaklığı böyle korunuyor. */
+	/*
+	  İki dikdörtgenin birleşimi: biri sol-altta, diğeri sağ-üstte ve birbirinin
+	  içine geçmiş. Nokta sırası saat yönünde, sağ üstteki dikdörtgenin sol
+	  kenarından başlıyor:
+
+	     ┌───────┐  <- sağ üstteki dikdörtgen
+	     │       │
+	  ┌──┤       │
+	  │      ────┘
+	  │          │
+	  └──────┘     <- sol alttaki dikdörtgen
+
+	  clip-path gölgeyi de kırptığı için derinlik, arkadaki katmanın aynı
+	  şekille biraz kaydırılmasından geliyor.
+	*/
 	.gorsel-maske {
 		aspect-ratio: 4 / 5;
-		border-radius: 58% 42% 46% 54% / 48% 52% 48% 52%;
-	}
-
-	/* Dar ekranda form biraz sakinleşiyor, yoksa küçük boyutta abartılı duruyor. */
-	@media (max-width: 640px) {
-		.gorsel-maske {
-			border-radius: 46% 54% 48% 52% / 48% 50% 50% 52%;
-		}
+		clip-path: polygon(
+			28% 0,
+			100% 0,
+			100% 78%,
+			72% 78%,
+			72% 100%,
+			0 100%,
+			0 22%,
+			28% 22%
+		);
 	}
 </style>
