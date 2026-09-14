@@ -23,6 +23,7 @@ const gorsel =
 <section
 	class="relative overflow-hidden py-20 sm:py-28 md:grid md:min-h-[100svh] md:place-items-center md:py-24"
 	data-belir
+	data-parcali
 	data-sayfa
 >
 	{/* Arkadaki yumuşak parıltı; içeriğin okunmasını engellemesin diye çok soluk. */}
@@ -51,7 +52,7 @@ const gorsel =
 		class="mx-auto flex w-full max-w-5xl flex-col items-center gap-12 px-4 md:flex-row md:gap-16"
 	>
 		{/* Görsel: dikdörtgen yerine organik bir maske ile şekillendirildi. */}
-		<div class="relative shrink-0">
+		<div class="relative shrink-0" data-belir-oge data-belir-gorsel style="--sira: 0">
 			{/* Arkadaki katman aynı şekli alıp sağ-aşağı kaydırılıyor; clip-path
 			    gölgeyi kırptığı için derinlik buradan geliyor. */}
 			<div
@@ -71,17 +72,41 @@ const gorsel =
 		</div>
 
 		<div class="max-w-lg">
-			<h2 class="text-sm font-semibold tracking-[0.18em] text-slate-500 dark:text-slate-400">
+			<h2
+				class="text-sm font-semibold tracking-[0.18em] text-slate-500 dark:text-slate-400"
+				data-belir-oge
+				style="--sira: 1"
+			>
 				{m('tanitim.ustBaslik')}
 			</h2>
-			<div class="mt-3 h-[3px] w-24 rounded-full bg-gradient-to-r from-marka-600 to-marka-400"></div>
+			<div
+				class="mt-3 h-[3px] w-24 rounded-full bg-gradient-to-r from-marka-600 to-marka-400"
+				data-belir-oge
+				data-belir-cizgi
+				style="--sira: 2"
+			>
+			</div>
 
-			<p class="mt-8 text-slate-600 dark:text-slate-300">{m('tanitim.paragraf1')}</p>
-			<p class="mt-4 text-slate-600 dark:text-slate-300">{m('tanitim.paragraf2')}</p>
-			<p class="mt-4 text-slate-600 dark:text-slate-300">{m('tanitim.paragraf3')}</p>
+			<p
+				class="mt-8 text-slate-600 dark:text-slate-300"
+				data-belir-oge
+				style="--sira: 3"
+			>{m('tanitim.paragraf1')}</p>
+			<p
+				class="mt-4 text-slate-600 dark:text-slate-300"
+				data-belir-oge
+				style="--sira: 4"
+			>{m('tanitim.paragraf2')}</p>
+			<p
+				class="mt-4 text-slate-600 dark:text-slate-300"
+				data-belir-oge
+				style="--sira: 5"
+			>{m('tanitim.paragraf3')}</p>
 
 			<a
 				href={hakkimdaYolu}
+				data-belir-oge
+				style="--sira: 6"
 				class="mt-8 inline-flex items-center gap-2 rounded-full bg-slate-900 px-7 py-3 text-sm font-medium text-white transition-transform hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current motion-reduce:transition-none dark:bg-white dark:text-slate-900"
 			>
 				<span>{m('tanitim.dugme')}</span>

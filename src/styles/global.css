@@ -157,7 +157,7 @@ html.menu-acik .logo-yuva {
   kalmıştı. Şimdi en kötü ihtimalle animasyon oynamıyor, içerik yerinde
   duruyor. Bilgiye erişim animasyondan önce gelir.
 */
-[data-belir][data-gorunur] {
+[data-belir][data-gorunur]:not([data-parcali]) {
 	/* Dolgu kipi bilinçli olarak yok. `both` ile animasyon herhangi bir
 	   sebeple ilerlemezse (arka plan sekmesi, duraklatılmış animasyon)
 	   öge `from` durumunda, yani görünmez takılı kalırdı. Dolgusuz hâlde
@@ -172,8 +172,63 @@ html.menu-acik .logo-yuva {
 	}
 }
 
+/*
+  Parça parça beliren bölümler (Hakkımda): görsel ve metin blokları topluca
+  değil, sırayla yerine oturuyor. Sıra `--sira` ile veriliyor.
+
+  Süre ve mesafe bilinçli olarak küçük: kaydırmayla belirmede 300-400 ms ve
+  8-16 piksel öneriliyor, daha fazlası "kayma" gibi okunup okumayı geciktiriyor.
+  Basamak 70 ms; öge başına 100 ms'yi geçmek toplam süreyi ağırlaştırıyor.
+
+  Burada `backwards` dolgusu gerekli: gecikme boyunca öge başlangıç durumunda
+  beklemeli, yoksa önce görünüp sonra kaybolup tekrar beliriyordu. Risk yok,
+  çünkü animasyon yalnızca `data-gorunur` geldikten sonra bağlanıyor ve
+  bağlandıysa sekme görünür olduğunda mutlaka tamamlanıyor; işaret hiç
+  gelmezse öge zaten doğal, görünür durumunda kalıyor.
+*/
+[data-parcali][data-gorunur] [data-belir-oge] {
+	animation: parca-belir 420ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+	animation-delay: calc(var(--sira, 0) * 70ms);
+}
+
+@keyframes parca-belir {
+	from {
+		opacity: 0;
+		transform: translateY(14px);
+	}
+}
+
+/* Görsel biraz daha uzun sürede ve hafif büyüyerek geliyor: blokun ağırlık
+   merkezi o, önce oturması gerekiyor. */
+[data-parcali][data-gorunur] [data-belir-gorsel] {
+	animation-name: gorsel-belir;
+	animation-duration: 560ms;
+}
+
+@keyframes gorsel-belir {
+	from {
+		opacity: 0;
+		transform: translateY(16px) scale(0.96);
+	}
+}
+
+/* Başlığın altındaki çizgi soldan sağa çiziliyor. */
+[data-parcali][data-gorunur] [data-belir-cizgi] {
+	animation-name: cizgi-ciz;
+	animation-duration: 520ms;
+	transform-origin: left center;
+}
+
+@keyframes cizgi-ciz {
+	from {
+		opacity: 0;
+		transform: scaleX(0);
+	}
+}
+
 @media (prefers-reduced-motion: reduce) {
-	[data-belir][data-gorunur] {
+	[data-belir][data-gorunur]:not([data-parcali]),
+	[data-parcali][data-gorunur] [data-belir-oge] {
 		animation: none;
 	}
 }
