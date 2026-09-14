@@ -4,6 +4,7 @@
  *
  * Tek bir eğri: tepeden başlıyor, sağa salınıp sola dönüyor ve aşağı doğru
  * böyle devam ediyor. Yazı bu eğrinin üzerinde akıyor, düz bir satır değil.
+ * Yazı ayrıca eğri boyunca sürekli aşağı kayıyor — akan bir nehir gibi.
  *
  * Süs öğesi: okunacak bir metin değil, sayfaya doku veriyor. Bu yüzden
  * `aria-hidden` ve ekran okuyucuya hiç verilmiyor.
@@ -13,9 +14,8 @@
  * ve dikey teğeti aynı; alt alta dizildiklerinde ek yeri görünmeyen tek bir
  * eğri çıkıyor. Sayfadan uzun kalan parçalar kırpılıyor.
  *
- * Hareket tamamen CSS: `animation-timeline: scroll()` sarmaşığı sayfanın
- * kaydırma konumuna bağlıyor. Sitede hiç JavaScript yok, bu bileşen de o
- * kuralı bozmuyor.
+ * Hareket tamamen CSS. Sitede hiç JavaScript yok, bu bileşen de o kuralı
+ * bozmuyor.
  */
 interface Props {
 	/** Sarmaşık boyunca tekrarlanacak kelime. */
@@ -32,40 +32,53 @@ const { metin } = Astro.props;
 const onek = `sarmasik-${Math.random().toString(36).slice(2, 8)}`;
 
 /*
-  Parça sayısı: en dar ekranda bile sayfanın altına yetişecek kadar. Parçanın
-  ekrandaki boyu genişliğe bağlı (en-boy oranı sabit), yani dar ekranda kısa
-  kalıyor ve daha çoğu gerekiyor. Geniş ekranda fazlası kırpılıyor —
-  görünmeyen bir parça yalnızca birkaç düğüm, maliyeti yok.
+  Parça sayısı: en uzun sayfanın altına yetişecek kadar, artı sürekli akış
+  için bir parça yedek. Akış parçaları bir parça boyu kaydırdığı için üstte
+  açılan boşluğu bu yedek kapatıyor.
+
+  Sayı burada ve CSS'te aynı olmak zorunda; bu yüzden CSS'e değişken olarak
+  geçiyor, iki yere ayrı ayrı yazılmıyor.
 */
-const PARCA_SAYISI = 14;
+const PARCA_SAYISI = 7;
 const parcalar = Array.from({ length: PARCA_SAYISI }, (_, i) => i);
 
 /*
-  Tek parçanın yolu. Kutu 1000 × 1100; eğri ortadan (500) başlayıp sağa
-  (940) salınıyor, sola (60) dönüyor ve yine ortada bitiyor. Başlangıç ve
-  bitiş noktasının x'i ve teğeti aynı olduğu için parçalar eklendiğinde
-  kırılma olmuyor.
+  Tek parçanın yolu. Kutu 1000 × 1800.
+
+  Kutunun boyu genişliğinin 1.8 katı: viraj yarıçapları bu yüzden geniş.
+  Daha basık bir kutuda dönüşler sertleşiyor ve yazı virajın iç tarafında
+  üst üste biniyordu — `textPath` harfleri yolun üzerine dizerken eğrilik
+  yarıçapı yazı boyuna yaklaşınca harfler birbirine giriyor. Salınım genliği
+  de bu yüzden kenarlara dayanmıyor (180–820), dönüşler yumuşak kalsın diye.
+
+  Başlangıç ve bitiş noktasının x'i (500) ve dikey teğeti aynı olduğu için
+  parçalar eklendiğinde kırılma olmuyor.
 */
-const YOL = 'M 500 0 C 500 140 940 230 940 370 C 940 510 60 590 60 730 C 60 870 500 960 500 1100';
+const YOL =
+	'M 500 0 C 500 210 820 350 820 570 C 820 790 180 930 180 1150 C 180 1370 500 1590 500 1800';
 
 // Yazı eğriyi dolduracak kadar tekrarlanıyor; taşan kısmı tarayıcı yolun
 // sonunda kendiliğinden kesiyor.
-const tekrarliMetin = `${metin} · `.repeat(14);
+const tekrarliMetin = `${metin} · `.repeat(16);
 ---
 
-<div class="sarmasik-alan" aria-hidden="true">
-	{
-		parcalar.map((i) => (
-			<svg class="parca" viewBox="0 0 1000 1100" focusable="false">
-				<defs>
-					<path id={`${onek}-${i}`} fill="none" d={YOL} />
-				</defs>
-				<text class="sarmasik-yazi">
-					<textPath href={`#${onek}-${i}`}>{tekrarliMetin}</textPath>
-				</text>
-			</svg>
-		))
-	}
+<div class="sarmasik-alan" aria-hidden="true" style={`--parca-sayisi: ${PARCA_SAYISI}`}>
+	{/* İki ayrı hareket, iki ayrı katman: dıştaki kaydırmaya bağlı, içteki
+	    sürekli akan. İkisi de `translate` yazdığı için aynı ögede olamazlar. */}
+	<div class="sarmasik-akis">
+		{
+			parcalar.map((i) => (
+				<svg class="parca" viewBox="0 0 1000 1800" focusable="false">
+					<defs>
+						<path id={`${onek}-${i}`} fill="none" d={YOL} />
+					</defs>
+					<text class="sarmasik-yazi">
+						<textPath href={`#${onek}-${i}`}>{tekrarliMetin}</textPath>
+					</text>
+				</svg>
+			))
+		}
+	</div>
 </div>
 
 <style>
@@ -83,10 +96,36 @@ const tekrarliMetin = `${metin} · `.repeat(14);
 		z-index: -1;
 		overflow: hidden;
 		pointer-events: none;
-		/* Parçalar alt alta, aralarında boşluk olmadan. */
+		/*
+		  METİNLE ÇAKIŞMA
+
+		  Sarmaşık salınırken sayfanın ortasından geçmek zorunda, oysa okunacak
+		  metin tam orada duruyor. Maske sarmaşığı kenarlarda tam güçte bırakıp
+		  orta sütunun arkasında soluklaştırıyor: eğri kopmuyor, yalnızca
+		  metnin arkasına denk gelen yerde geri çekiliyor.
+
+		  Maske alfası kullanılıyor, `transparent` değil — tamamen silmek eğriyi
+		  ortadan ikiye bölüp sarmaşık algısını bozuyordu.
+		*/
+		mask-image: linear-gradient(
+			to right,
+			#000 0%,
+			#000 16%,
+			#0003 34%,
+			#0003 66%,
+			#000 84%,
+			#000 100%
+		);
+	}
+
+	.sarmasik-akis {
+		/* Parçalar alt alta, aralarında boşluk olmadan. `line-height: 0`
+		   satır içi SVG'lerin altında kalan boşluğu siliyor. */
 		display: flex;
 		flex-direction: column;
 		line-height: 0;
+		/* Akış bir parça boyu yukarıdan başlıyor; yukarı kaydırma payı burada. */
+		margin-top: 0;
 	}
 
 	.parca {
@@ -96,35 +135,67 @@ const tekrarliMetin = `${metin} · `.repeat(14);
 	}
 
 	.sarmasik-yazi {
-		font-weight: 800;
+		font-weight: 700;
 		font-size: 26px;
-		letter-spacing: 0.08em;
+		/*
+		  Harf arası genişletildi: virajın iç tarafında harfler birbirine
+		  yaklaşıyor, düz aralıkla dönüşlerde sıkışıp okunmaz oluyorlardı.
+		*/
+		letter-spacing: 0.16em;
 		text-transform: uppercase;
 		/*
-		  Soluk: bu bir doku, okunacak bir metin değil. Renk nötr `--foreground`
-		  üzerinden geliyor, böylece koyu temada renk sapması olmuyor.
+		  Renk nötr `--foreground` üzerinden geliyor, böylece koyu temada renk
+		  sapması olmuyor. Doku olarak okunacak kadar var, içeriğin okunmasını
+		  zorlaştırmayacak kadar geride.
 		*/
-		fill: color-mix(in oklab, var(--foreground) 13%, transparent);
+		fill: color-mix(in oklab, var(--foreground) 16%, transparent);
 	}
 
 	/*
-	  Kaydırmaya bağlı hareket: sayfa indikçe sarmaşık kendi ekseninde biraz
-	  yukarı kayıyor. İçerikten farklı hızda hareket ettiği için sabit bir
-	  arka plan deseni gibi değil, sayfayla birlikte akan bir öğe gibi
-	  okunuyor.
+	  SÜREKLİ AKIŞ
+
+	  Parçalar birbirinin aynı ve ek yeri vermeden diziliyor; bu yüzden
+	  yığını tam BİR PARÇA boyu kaydırmak başladığı görüntüye geri dönüyor.
+	  Döngü böylece dikişsiz: yazı sonsuza kadar aşağı akıyor.
+
+	  Kaydırma miktarı yüzdeyle veriliyor ve yüzde ögenin kendi boyuna göre
+	  hesaplanıyor; parça sayısına bölünce tam bir parça ediyor. Sabit bir
+	  piksel değeri ekran genişliğiyle değişen parça boyunu tutturamazdı.
+
+	  Yön yukarıdan sıfıra: yığın hep yukarı kaymış durumda duruyor, yani
+	  üstte boşluk açılmıyor. Altta fazlası zaten kırpılıyor.
+	*/
+	@media (prefers-reduced-motion: no-preference) {
+		.sarmasik-akis {
+			animation: sarmasik-nehir 60s linear infinite;
+		}
+	}
+
+	@keyframes sarmasik-nehir {
+		from {
+			translate: 0 calc(-100% / var(--parca-sayisi));
+		}
+		to {
+			translate: 0 0;
+		}
+	}
+
+	/*
+	  Kaydırmaya bağlı ikinci hareket: sayfa indikçe sarmaşık biraz yukarı
+	  kayıyor. İçerikten farklı hızda hareket ettiği için sabit bir arka plan
+	  deseni gibi değil, sayfayla birlikte akan bir öğe gibi okunuyor.
 
 	  `@supports` bilinçli: Firefox'ta özellik hâlâ bayrak arkasında. Destek
-	  yoksa sarmaşık kıpırdamadan yerinde duruyor — yani görünür ve doğru
-	  yerde. Animasyona bağlı bir başlangıç durumu yok.
+	  yoksa bu katman kıpırdamıyor, akış ise çalışmaya devam ediyor.
 
 	  Uzun yazım bilinçli, `animation` kısayolu DEĞİL: CSS küçültücü kısayolu
 	  kurarken zaman çizelgesini de içine katıyor, tarayıcı ise kısayolda
-	  zaman çizelgesi kabul etmiyor ve bildirimin tamamını atıyor.
+	  zaman çizelgesi kabul etmiyor ve bildirimin tamamını sessizce atıyor.
 	*/
 	@supports (animation-timeline: scroll()) {
 		@media (prefers-reduced-motion: no-preference) {
 			.sarmasik-alan {
-				animation-name: sarmasik-ak;
+				animation-name: sarmasik-kayma;
 				animation-timing-function: linear;
 				animation-fill-mode: both;
 				animation-timeline: scroll(root block);
@@ -132,31 +203,23 @@ const tekrarliMetin = `${metin} · `.repeat(14);
 		}
 	}
 
-	@keyframes sarmasik-ak {
+	@keyframes sarmasik-kayma {
 		to {
-			translate: 0 -8%;
+			translate: 0 -6%;
 		}
 	}
 
 	/*
-	  Dar ekran.
+	  Mobilde bu tasarım yok.
 
-	  Parçanın boyu genişliğine bağlı olduğu için telefonda her parça kısalıyor
-	  ve salınımlar sıkışıp sarmaşık yerine tırtıklı bir çizgiye dönüşüyordu.
-	  Sarmaşığı ekrandan geniş yapmak boyu da uzatıyor: salınım yine yumuşak,
-	  uçları ekranın dışında kalıyor.
-
-	  Ayrıca daha soluk: küçük ekranda aynı yoğunluktaki bir doku metnin
-	  okunmasını zorlaştırıyor.
+	  İki sebep: dar ekranda eğri sıkışıp sarmaşık yerine tırtıklı bir çizgiye
+	  dönüşüyor, ve sürekli çalışan bir animasyon sayfa boyunda bir katmanı
+	  her karede yeniden çizdiriyor — iOS'ta bu maliyet daha önce sayfayı
+	  dondurmuştu.
 	*/
-	@media (max-width: 640px) {
-		.parca {
-			width: 200%;
-			margin-left: -50%;
-		}
-
-		.sarmasik-yazi {
-			fill: color-mix(in oklab, var(--foreground) 9%, transparent);
+	@media (max-width: 767px) {
+		.sarmasik-alan {
+			display: none;
 		}
 	}
 </style>
