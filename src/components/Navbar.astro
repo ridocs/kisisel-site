@@ -57,11 +57,9 @@ const bagPasifMobil =
 const eylemDugmesi =
 	'grid size-10 cursor-pointer place-items-center rounded-lg text-slate-600 transition-colors hover:bg-slate-900/5 hover:text-slate-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current md:size-9 dark:text-neutral-300 dark:hover:bg-white/10 dark:hover:text-white';
 
-// Birincil eylem: gri (#D9D9D9) zemin üzerinde koyu metin yalnızca 1.9:1 veriyordu.
-// Tam kontrastlı solid zemin hem 15:1 üzerine çıkıyor hem düğmeyi tek birincil
-// eylem olarak okutuyor.
-const iletisimDugmesi =
-	'hidden h-9 shrink-0 cursor-pointer items-center rounded-lg bg-slate-900 px-4 text-[14px] leading-5 font-medium text-white transition-colors hover:bg-slate-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current md:inline-flex dark:bg-white dark:text-neutral-900 dark:hover:bg-white/85';
+// Not: İletişim düğmesinin görünümü burada değil, IletisimDugmesi.astro
+// içinde tanımlı (sıvı metal kapsül). Burada bir zamanlar duran düz düğme
+// sınıfı kullanılmadığı için kaldırıldı.
 ---
 
 {/*

@@ -23,13 +23,23 @@ const { etiket, hedef } = Astro.props;
 </a>
 
 <style>
+	/*
+	  Ölçü çubuğun geri kalanıyla hizalı: ikon düğmeleri, marka ve gezinme
+	  bağlantıları masaüstünde 36 piksel. Önceki 46 piksel, çubuk 52 piksele
+	  inince kapsülün içini neredeyse tamamen dolduruyordu.
+
+	  Genişlik sabit değil: "İletişim" ve "Contact" farklı uzunlukta, sabit
+	  genişlik ikisinden birinde ya sıkışık ya boşluklu duruyordu. Dolgu artı
+	  alt sınır, iki dilde de dengeli bir kapsül veriyor.
+	*/
 	.sivi-metal {
 		position: relative;
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		width: 142px;
-		height: 46px;
+		min-width: 108px;
+		height: 36px;
+		padding-inline: 1.125rem;
 		border-radius: 100px;
 		background: linear-gradient(180deg, var(--lm-ust) 0%, var(--lm-alt) 100%);
 		/* Gölge yerine yalnızca kenar çizgisi: gezinme kapsülü `overflow: hidden`
@@ -81,7 +91,10 @@ const { etiket, hedef } = Astro.props;
 	.sivi-metal-yazi {
 		position: relative;
 		z-index: 1;
+		/* Gezinme bağlantılarıyla aynı boy: düğme onlardan daha iri bir yazıyla
+		   ayrı bir ölçekteymiş gibi duruyordu. */
 		font-size: 14px;
+		line-height: 1;
 		font-weight: 400;
 		white-space: nowrap;
 		color: var(--lm-metin);
