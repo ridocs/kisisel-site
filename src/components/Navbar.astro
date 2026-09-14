@@ -35,14 +35,18 @@ function aktifMi(hedef: string) {
 // mantığıyla üç kademe: marka 17/600, gezinme 15/500, yardımcı eylemler ikon.
 // Dolgu, kayan göstergenin çizdiği alanı belirliyor: metnin çevresinde 18px yatay,
 // 11px dikey nefes payı bırakıyor ki vurgu metne yapışık görünmesin.
+// Renk geçişindeki 110 ms'lik gecikme bilinçli: gösterge kayarken metin hemen
+// karşıt renge dönerse, gösterge daha gelmeden beyaz yazı açık zeminde kalıyor
+// ve kısa süre okunmuyor. Gecikme, rengin göstergeyle birlikte değişmesini sağlar.
 const bagTemel =
-	'rounded-lg px-[18px] py-[11px] text-[15px] leading-5 font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current';
+	'relative rounded-lg px-[18px] py-[11px] text-[15px] leading-5 font-medium transition-colors delay-[110ms] duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current';
 
-// Hangi sayfanın açık olduğunu kayan gösterge belirtiyor; metin rengi yalnızca
-// destekliyor. Pasifler bir tık soluk ama WCAG 4.5:1'in altına düşmüyor.
-const bagAktifMasaustu = 'text-slate-900 dark:text-white';
+// Göstergenin üzerinde durduğu bağlantı karşıt renge geçer; bunu JS belirler
+// (data-vurgulu), çünkü gösterge ayrı bir öğe ve imleci izliyor.
+const bagAktifMasaustu =
+	'text-slate-900 data-vurgulu:text-white dark:text-white dark:data-vurgulu:text-slate-900';
 const bagPasifMasaustu =
-	'text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white';
+	'text-slate-600 data-vurgulu:text-white dark:text-slate-300 dark:data-vurgulu:text-slate-900';
 const bagAktifMobil = 'bg-slate-900/10 text-slate-900 dark:bg-white/15 dark:text-white';
 const bagPasifMobil =
 	'text-slate-600 hover:bg-slate-900/5 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white';
@@ -98,14 +102,13 @@ const iletisimDugmesi =
 				*/}
 				<ul id="menu-listesi" class="relative hidden items-center gap-2 md:flex">
 					{/*
-					  Gösterge saydam koyu gri. Tam opak siyah, üzerindeki koyu metni
-					  okunmaz hâle getirirdi; saydamlık hem "siyaha yakın" tonu veriyor
-					  hem metin kontrastını koruyor. Koyu temada aynı ton görünmez
-					  olacağı için orada beyazın saydamı kullanılıyor.
+					  Gösterge opak: açık temada siyah, koyu temada beyaz. Üzerindeki
+					  bağlantının metni karşıt renge geçtiği için kontrast korunuyor
+					  (siyah zemin + beyaz yazı 16:1 üzerinde).
 					*/}
 					<span
 						id="gosterge"
-						class="gosterge pointer-events-none absolute top-0 left-0 h-full rounded-lg bg-slate-900/20 dark:bg-white/18"
+						class="gosterge pointer-events-none absolute top-0 left-0 h-full rounded-lg bg-slate-900 dark:bg-white"
 						aria-hidden="true"></span>
 					{
 						baglantilar.map((baglanti) => (
@@ -352,6 +355,10 @@ const iletisimDugmesi =
 		gosterge.style.setProperty('--gosterge-w', `${hedefKutusu.width}px`);
 		gosterge.style.setProperty('--gosterge-h', `${hedefKutusu.height}px`);
 		gosterge.dataset.gorunur = 'true';
+
+		// Göstergenin üzerinde durduğu bağlantı karşıt renge geçsin.
+		menuBaglantilari.forEach((bag) => bag.removeAttribute('data-vurgulu'));
+		hedef.setAttribute('data-vurgulu', '');
 		if (!akitMi) return;
 		// Aynı animasyonu yeniden tetiklemek için sıfırlayıp yeniden başlatıyoruz.
 		gosterge.dataset.akiyor = 'false';
@@ -361,8 +368,14 @@ const iletisimDugmesi =
 
 	function gostergeyiAktifeAl(akitMi = true) {
 		if (!gosterge) return;
-		if (aktifBaglanti) gostergeyiTasi(aktifBaglanti, akitMi);
-		else gosterge.dataset.gorunur = 'false';
+		if (aktifBaglanti) {
+			gostergeyiTasi(aktifBaglanti, akitMi);
+		} else {
+			// Bu sayfaya karşılık gelen bağlantı yoksa gösterge gizlenir ve
+			// hiçbir bağlantı karşıt renkte kalmaz.
+			gosterge.dataset.gorunur = 'false';
+			menuBaglantilari.forEach((bag) => bag.removeAttribute('data-vurgulu'));
+		}
 	}
 
 	if (menuListesi && gosterge) {
@@ -384,5 +397,20 @@ const iletisimDugmesi =
 		gosterge.style.transition = '';
 
 		window.addEventListener('resize', () => gostergeyiAktifeAl(false), { passive: true });
+
+		// Bağlantı metinleri sayfa yüklendikten sonra da değişebiliyor: tarayıcının
+		// sayfa çevirisi metinleri değiştiriyor ("Home" -> "Ev") ve gösterge eski
+		// genişlikte kalıp komşu bağlantının üzerine taşıyordu. Metin değişimini
+		// izleyip yeniden ölçüyoruz. Öznitelik değişiklikleri izlenmiyor; aksi hâlde
+		// göstergenin kendi stil güncellemesi sonsuz döngü yaratırdı.
+		const metinGozlemcisi = new MutationObserver(() => gostergeyiAktifeAl(false));
+		metinGozlemcisi.observe(menuListesi, {
+			childList: true,
+			subtree: true,
+			characterData: true,
+		});
+
+		// Yazı tipi geç yüklenirse ölçüler kayıyor; hazır olduğunda bir kez daha.
+		document.fonts?.ready.then(() => gostergeyiAktifeAl(false));
 	}
 </script>
