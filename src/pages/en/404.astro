@@ -1,0 +1,12 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import BulunamadiBolumu from '../../components/BulunamadiBolumu.astro';
+import { cevirici, dilBul } from '@/i18n/ceviriler';
+
+const dil = dilBul(Astro.url);
+const m = cevirici(dil);
+---
+
+<BaseLayout title={m('404.sayfaBasligi')} description={m('404.metin')}>
+	<BulunamadiBolumu slot="tam-genislik" />
+</BaseLayout>

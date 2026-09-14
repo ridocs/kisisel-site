@@ -57,6 +57,14 @@ export const ceviriler = {
 			'Ulaşılmak istediğin kanalları (e-posta, sosyal hesaplar) buraya ekle.',
 
 		'altbilgi.lisans': 'MIT lisansı ile yayımlanmıştır.',
+
+		// 404 sayfası
+		'404.sayfaBasligi': 'Sayfa bulunamadı',
+		'404.baslik': 'Hop! Sayfa kayıp.',
+		'404.metin': 'Aradığın sayfa buralarda değil — galiba hayalet olmuş.',
+		'404.dugme': 'Ana sayfaya dön',
+		'404.ikincilBag': 'Yazılara göz at',
+		'404.hayaletAlt': 'Şaşkın bir hayalet çizimi',
 	},
 	en: {
 		'site.baslik': 'Mustafa Eybek — Personal Site',
@@ -104,6 +112,14 @@ export const ceviriler = {
 		'hakkimda.iletisimMetin': 'Add the channels you want to be reached on (email, social accounts).',
 
 		'altbilgi.lisans': 'Published under the MIT license.',
+
+		// 404 page
+		'404.sayfaBasligi': 'Page not found',
+		'404.baslik': 'Boo! Page missing.',
+		'404.metin': "The page you are looking for isn't here — it must be a ghost.",
+		'404.dugme': 'Back to home',
+		'404.ikincilBag': 'Browse the posts',
+		'404.hayaletAlt': 'Drawing of a puzzled ghost',
 	},
 } as const;
 
