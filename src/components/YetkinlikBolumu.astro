@@ -61,6 +61,13 @@ const yetkinlikler = [
 		sure: { tr: '2 yıl', en: '2 years' },
 	},
 ];
+
+/*
+  Azalan sıralama. Kılavuzun karşılaştırma çubukları için kuralı: sıralama
+  okumanın kendisi, listeyi değere göre büyükten küçüğe diz. Dizideki sırayı
+  değiştirmene gerek yok, burada sıralanıyor.
+*/
+const sirali = [...yetkinlikler].sort((a, b) => b.oran - a.oran);
 ---
 
 {/*
@@ -79,28 +86,30 @@ const yetkinlikler = [
 	data-parcali
 	data-sayfa
 >
-	<div class="mx-auto w-full max-w-3xl px-4 lg:max-w-4xl">
-		<p
-			class="text-xs font-semibold tracking-[0.22em] text-muted-foreground lg:text-sm"
-			data-belir-oge
-			style="--sira: 0"
-		>
-			{m('yetkinlik.ustBaslik')}
-		</p>
-		<h2
-			class="mt-4 text-3xl font-bold tracking-tight text-foreground lg:text-4xl"
-			data-belir-oge
-			style="--sira: 1"
-		>
-			{m('yetkinlik.baslik')}
-		</h2>
-		<p class="mt-4 text-muted-foreground lg:text-lg" data-belir-oge style="--sira: 2">
-			{m('yetkinlik.metin')}
-		</p>
+	<div class="kapsayici mx-auto w-full max-w-3xl px-4 lg:max-w-6xl">
+		<div class="basliklar">
+			<p
+				class="text-xs font-semibold tracking-[0.22em] text-muted-foreground lg:text-sm"
+				data-belir-oge
+				style="--sira: 0"
+			>
+				{m('yetkinlik.ustBaslik')}
+			</p>
+			<h2
+				class="mt-4 text-3xl font-bold tracking-tight text-foreground lg:text-4xl"
+				data-belir-oge
+				style="--sira: 1"
+			>
+				{m('yetkinlik.baslik')}
+			</h2>
+			<p class="mt-4 text-muted-foreground lg:text-lg" data-belir-oge style="--sira: 2">
+				{m('yetkinlik.metin')}
+			</p>
+		</div>
 
 		<ul class="liste">
 			{
-				yetkinlikler.map((y, sira) => (
+				sirali.map((y, sira) => (
 					<li class="satir" data-belir-oge style={`--sira: ${3 + sira}`}>
 						<span class="simge" aria-hidden="true">
 							<Icon name={y.ikon} class="size-5" />
@@ -135,6 +144,25 @@ const yetkinlikler = [
 
 <style>
 	/*
+	  Geniş ekranda iki sütun: başlık solda sabit kalıyor, çubuklar sağda.
+	  Bölüm tam ekran yüksekliğinde olduğu için tek sütunda sağ taraf boş
+	  kalıyordu. Dar ekranda tek sütun, başlık üstte.
+	*/
+	@media (min-width: 1024px) {
+		.kapsayici {
+			display: grid;
+			grid-template-columns: minmax(0, 20rem) minmax(0, 1fr);
+			align-items: start;
+			gap: 4rem;
+		}
+
+		.basliklar {
+			position: sticky;
+			top: 6rem;
+		}
+	}
+
+	/*
 	  Üst boşluk Tailwind sınıfıyla değil burada veriliyor: aşağıdaki
 	  `margin: 0` onu eziyordu. Astro kapsamlı stillere nitelik seçicisi
 	  ekliyor ve özgüllüğü tek sınıflı utility'lerin üstüne çıkıyor.
@@ -160,7 +188,8 @@ const yetkinlikler = [
 		width: 2.75rem;
 		height: 2.75rem;
 		border-radius: 9999px;
-		background: color-mix(in oklab, var(--foreground) 7%, transparent);
+		background: color-mix(in oklab, var(--foreground) 6%, transparent);
+		box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--foreground) 10%, transparent);
 		/* Satırın ilk metin satırıyla hizalansın diye hafif aşağıda. */
 		margin-top: 0.125rem;
 	}
@@ -202,7 +231,10 @@ const yetkinlikler = [
 		display: block;
 		height: 100%;
 		border-radius: inherit;
-		background: var(--foreground);
+		/* Marka gradyanı: çubuk düz bir blok yerine sitenin vurgu rengiyle
+		   akıyor. Bilgi rengin kendisinde değil — ad ve yüzde ayrıca yazılı,
+		   yani renk yalnızca süs. */
+		background: linear-gradient(90deg, var(--color-marka-600), var(--color-marka-400));
 		/* Genişlik yerine ölçek: genişlik animasyonu her karede yeniden
 		   yerleşim tetikliyor, ölçek yalnızca birleştirme katmanında çalışıyor. */
 		transform-origin: left center;
@@ -220,24 +252,26 @@ const yetkinlikler = [
 		}
 	}
 
+	/* Dar ekranda iki not alt alta geçebilsin: kılavuzun kuralı metni sabit
+	   genişlikte kırpmamak. `nowrap` yalnızca sağdaki kısa etikette kalıyor
+	   ve o da sarmalanma serbest olduğu için taşmıyor. */
 	.alt {
 		display: flex;
+		flex-wrap: wrap;
 		align-items: baseline;
 		justify-content: space-between;
-		gap: 1rem;
+		gap: 0.25rem 1rem;
 		margin-top: 0.5rem;
 		font-size: 0.8125rem;
+		line-height: 1.5;
 		color: var(--muted-foreground);
-	}
-
-	.alt span:last-child {
-		white-space: nowrap;
 	}
 
 	@media (min-width: 1024px) {
 		.liste {
-			margin-top: 4rem;
-			gap: 2rem;
+			/* İki sütuna geçince başlık yanda kalıyor, üst boşluğa gerek yok. */
+			margin-top: 0;
+			gap: 2.25rem;
 		}
 
 		.ad {
