@@ -46,6 +46,12 @@ export const ceviriler = {
 		// Sayfa boyunca inen yazı sarmaşığı. Süs; ekran okuyucuya verilmiyor.
 		'sarmasik.metin': 'Mustafa Eybek',
 
+		// Seçilmiş çalışmalar. Proje metinleri yer tutucu.
+		'calisma.ustBaslik': 'SEÇİLMİŞ ÇALIŞMALAR',
+		'calisma.baslik': 'Üzerinde çalıştığım işler',
+		'calisma.metin':
+			'Araçlardan çok sonuç anlatan birkaç iş. Hepsini değil, anlatmaya değer olanları koyuyorum.',
+
 		'blog.baslik': 'Blog',
 		'blog.sayfaBasligi': 'Blog — Mustafa Eybek',
 		'blog.aciklama': 'Yazılar.',
@@ -111,6 +117,11 @@ export const ceviriler = {
 		'tanitim.gorselAlt': 'Portrait photo of Mustafa Eybek',
 
 		'sarmasik.metin': 'Mustafa Eybek',
+
+		'calisma.ustBaslik': 'SELECTED WORK',
+		'calisma.baslik': 'Things I have built',
+		'calisma.metin':
+			'A few pieces of work that speak to outcomes rather than tools. Not everything — only what is worth telling.',
 
 		'blog.baslik': 'Blog',
 		'blog.sayfaBasligi': 'Blog — Mustafa Eybek',

@@ -1,0 +1,297 @@
+---
+import { Icon } from 'astro-icon/components';
+import { cevirici, dilBul } from '@/i18n/ceviriler';
+
+const dil = dilBul(Astro.url);
+const m = cevirici(dil);
+
+/*
+  ÇALIŞMA İÇERİĞİ — düzenlenecek tek yer burası.
+
+  Her kayıt:
+    ad       : { tr, en }  projenin adı
+    ozet     : { tr, en }  bir iki cümle: ne işe yarıyor, senin payın ne
+    etiketler: kullanılan teknolojiler (çevrilmiyor, özel ad)
+    yil      : kartın sağında duran etiket
+    baglanti : adres ya da undefined
+
+  `baglanti` YOKSA satır bağlantı olarak değil düz bir öge olarak basılıyor
+  ve ok işareti çıkmıyor — çalışmayan bir bağlantı, hiç bağlantı olmamasından
+  kötüdür.
+
+  Metinler YER TUTUCU; sitedeki diğer yer tutucular gibi (fotoğraf, tanıtım,
+  yetkinlik metinleri) kullanıcı dolduracak. Uydurma proje adı ya da müşteri
+  ismi yazılmadı: sahte portfolyo ilk soruda çöker.
+*/
+const calismalar = [
+	{
+		ad: { tr: 'Proje adı', en: 'Project name' },
+		ozet: {
+			tr: 'Ne yaptığını ve senin payının ne olduğunu bir iki cümleyle anlat. Sayı verebiliyorsan ver.',
+			en: 'Describe what it does and what your part was, in a sentence or two. Give a number if you have one.',
+		},
+		etiketler: ['Astro', 'TypeScript', 'PostgreSQL'],
+		yil: '2026',
+		baglanti: undefined as string | undefined,
+	},
+	{
+		ad: { tr: 'Proje adı', en: 'Project name' },
+		ozet: {
+			tr: 'Çözdüğü sorunu yaz; teknolojiyi değil sonucu öne al.',
+			en: 'Write the problem it solved; lead with the outcome, not the stack.',
+		},
+		etiketler: ['Flutter', 'Dart'],
+		yil: '2025',
+		baglanti: undefined as string | undefined,
+	},
+	{
+		ad: { tr: 'Proje adı', en: 'Project name' },
+		ozet: {
+			tr: 'Küçük ama iyi anlatılmış bir iş, uzun bir listeden daha çok şey söyler.',
+			en: 'One small piece of work, well told, says more than a long list.',
+		},
+		etiketler: ['Python', 'Docker'],
+		yil: '2025',
+		baglanti: undefined as string | undefined,
+	},
+];
+---
+
+{/*
+  Seçilmiş çalışmalar.
+
+  Biçim bilinçli olarak ızgara DEĞİL: hemen üstteki Yetkinlikler bölümü kart
+  ızgarası, arka arkaya iki ızgara sayfayı tek düze yapıyordu. Buradaki düzen
+  editoryal bir liste — kutu yerine çizgi, satırlar ince ayıraçlarla ayrılmış.
+*/}
+<section
+	class="calisma relative overflow-hidden py-16 sm:py-20 md:flex md:min-h-[100svh] md:items-center md:py-12"
+	data-belir
+	data-parcali
+	data-sayfa
+>
+	<div class="mx-auto w-full max-w-3xl px-4 lg:max-w-4xl">
+		<p
+			class="text-xs font-semibold tracking-[0.22em] text-muted-foreground"
+			data-belir-oge
+			style="--sira: 0"
+		>
+			{m('calisma.ustBaslik')}
+		</p>
+		<h2
+			class="baslik mt-3 font-bold tracking-tight text-foreground"
+			data-belir-oge
+			style="--sira: 1"
+		>
+			{m('calisma.baslik')}
+		</h2>
+		<p class="mt-3 max-w-xl text-muted-foreground" data-belir-oge style="--sira: 2">
+			{m('calisma.metin')}
+		</p>
+
+		<ul class="liste">
+			{
+				calismalar.map((c, sira) => {
+					// Bağlantı varsa satırın tamamı tıklanabilir; yoksa düz bir öge.
+					const Etiket = c.baglanti ? 'a' : 'div';
+					return (
+						<li data-belir-oge style={`--sira: ${3 + sira}`}>
+							<Etiket
+								class="satir"
+								href={c.baglanti}
+								{...(c.baglanti ? { rel: 'noopener' } : {})}
+							>
+								<span class="sira" aria-hidden="true">
+									{String(sira + 1).padStart(2, '0')}
+								</span>
+
+								<span class="govde">
+									<span class="ust">
+										<h3 class="ad">{c.ad[dil]}</h3>
+										<span class="yil">{c.yil}</span>
+									</span>
+									<p class="ozet">{c.ozet[dil]}</p>
+									<span class="etiketler">
+										{c.etiketler.map((e) => (
+											<span class="etiket">{e}</span>
+										))}
+									</span>
+								</span>
+
+								{c.baglanti && (
+									<span class="ok" aria-hidden="true">
+										<Icon name="lucide:arrow-up-right" class="size-5" />
+									</span>
+								)}
+							</Etiket>
+						</li>
+					);
+				})
+			}
+		</ul>
+	</div>
+</section>
+
+<style>
+	/* Başlık ekranın yüksekliğine göre ölçekleniyor — Yetkinlikler'deki ile
+	   aynı ölçek, iki bölüm aynı hiyerarşide duruyor. clamp içindeki rem
+	   bileşeni zoom altında ölçeğin büyümesini sağlıyor (WCAG 1.4.4). */
+	.baslik {
+		font-size: clamp(1.5rem, 1.1rem + 1.6vh, 2.125rem);
+		line-height: 1.2;
+	}
+
+	.liste {
+		list-style: none;
+		padding: 0;
+		margin: 2rem 0 0;
+	}
+
+	/*
+	  Ayıraç satırın kendisinde değil `li`'de: satır üzerine gelince zemin
+	  alıyor ve zemin çizginin üstüne binip onu siliyordu.
+	*/
+	.liste li {
+		border-top: 1px solid var(--border);
+	}
+
+	.liste li:last-child {
+		border-bottom: 1px solid var(--border);
+	}
+
+	.satir {
+		display: grid;
+		grid-template-columns: auto 1fr;
+		align-items: start;
+		gap: 1rem;
+		padding: 1.25rem 0.75rem;
+		text-decoration: none;
+		color: inherit;
+		transition:
+			background-color 220ms ease-out,
+			padding-inline-start 260ms cubic-bezier(0.22, 1, 0.36, 1);
+	}
+
+	/* Yalnızca bağlantı olan satır tepki veriyor; tıklanamayan bir satırın
+	   imleç altında canlanması yanlış söz verir. */
+	a.satir {
+		cursor: pointer;
+	}
+
+	a.satir:hover {
+		background: color-mix(in oklab, var(--foreground) 4%, transparent);
+		padding-inline-start: 1.25rem;
+	}
+
+	a.satir:focus-visible {
+		outline: 2px solid var(--ring);
+		outline-offset: -2px;
+	}
+
+	.sira {
+		font-size: 0.75rem;
+		font-weight: 700;
+		font-variant-numeric: tabular-nums;
+		letter-spacing: 0.1em;
+		color: var(--muted-foreground);
+		padding-top: 0.35rem;
+	}
+
+	.govde {
+		display: block;
+		min-width: 0;
+	}
+
+	.ust {
+		display: flex;
+		align-items: baseline;
+		justify-content: space-between;
+		gap: 1rem;
+	}
+
+	.ad {
+		font-size: 1.125rem;
+		font-weight: 600;
+		color: var(--foreground);
+	}
+
+	.yil {
+		font-size: 0.75rem;
+		font-variant-numeric: tabular-nums;
+		color: var(--muted-foreground);
+		flex: none;
+	}
+
+	.ozet {
+		margin-top: 0.4rem;
+		font-size: 0.9375rem;
+		line-height: 1.6;
+		color: var(--muted-foreground);
+	}
+
+	.etiketler {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.375rem;
+		margin-top: 0.75rem;
+	}
+
+	/* Etiketler kutu değil ince çerçeve: bölümün "çizgiyle anlatma" diline
+	   dolgulu rozetten daha yakın. */
+	.etiket {
+		font-size: 0.6875rem;
+		letter-spacing: 0.04em;
+		padding: 0.15rem 0.5rem;
+		border: 1px solid var(--border);
+		border-radius: 9999px;
+		color: var(--muted-foreground);
+		white-space: nowrap;
+	}
+
+	.ok {
+		display: grid;
+		place-items: center;
+		align-self: center;
+		color: var(--muted-foreground);
+		transition: translate 260ms cubic-bezier(0.22, 1, 0.36, 1);
+	}
+
+	a.satir:hover .ok {
+		translate: 3px -3px;
+		color: var(--foreground);
+	}
+
+	/* Ok varsa üçüncü sütun açılıyor. */
+	.satir:has(.ok) {
+		grid-template-columns: auto 1fr auto;
+	}
+
+	@media (min-width: 1024px) {
+		.liste {
+			margin-top: 2.5rem;
+		}
+
+		.ad {
+			font-size: 1.25rem;
+		}
+
+		.ozet {
+			font-size: 1rem;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.satir,
+		.ok {
+			transition: none;
+		}
+
+		a.satir:hover {
+			padding-inline-start: 0.75rem;
+		}
+
+		a.satir:hover .ok {
+			translate: none;
+		}
+	}
+</style>
