@@ -22,6 +22,11 @@ export default defineConfig({
 	// istemciye JavaScript göndermemeye devam ediyor.
 	integrations: [mdx(), sitemap(), icon(), react()],
 	vite: {
+		// Vite, bilinmeyen host başlıklarını güvenlik gereği reddediyor. Siteyi
+		// geçici bir Cloudflare tüneliyle paylaşırken önizleme sunucusuna bu alan
+		// adından erişilebilmesi için izin veriliyor; yalnızca bu alt alan adları.
+		preview: { allowedHosts: ['.trycloudflare.com'] },
+		server: { allowedHosts: ['.trycloudflare.com'] },
 		plugins: [
 			tailwindcss(),
 			// Teknoloji logolarını derleme sırasında bileşene gömer: çalışma anında
