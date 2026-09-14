@@ -11,14 +11,15 @@ const m = cevirici(dil);
   Her satır:
     ad       : teknolojinin adı (çevrilmiyor, özel ad)
     ikon     : @iconify-json/logos içindeki ad; derleme sırasında gömülüyor
-    oran     : 0-100 arası. Çubuğun dolgusu ve yüzde bundan geliyor.
-    sure     : { tr, en }  çubuğun altında sağda duran not
-    tanim    : { tr, en }  tıklanınca SOLDA çıkan tanım
-    ilerleme : { tr, en }  tıklanınca SAĞDA çıkan metin: projeler, nerede
+    oran     : 0-100 arası. Ekranda GÖRÜNMÜYOR; yalnızca kartların sırasını
+                           belirliyor (büyükten küçüğe).
+    sure     : { tr, en }  kartın altındaki not: kaç yıldır kullandığın
+    tanim    : { tr, en }  kart seçilince panelde SOLDA çıkan tanım
+    ilerleme : { tr, en }  panelde SAĞDA çıkan metin: projeler, nerede
                            kullandığın, nereye geldiğin
 
-  Oranlar ve metinler YER TUTUCU. Sıralama burada değil bileşende yapılıyor —
-  diziye istediğin sırayla yazabilirsin.
+  Metinler YER TUTUCU. Sıralama burada değil bileşende yapılıyor — diziye
+  istediğin sırayla yazabilirsin.
 */
 const yetkinlikler = [
 	{
@@ -108,8 +109,8 @@ const yetkinlikler = [
 ];
 
 /*
-  Azalan sıralama. Kılavuzun karşılaştırma çubukları için kuralı: sıralama
-  okumanın kendisi, listeyi değere göre büyükten küçüğe diz.
+  Azalan sıralama: en çok çalışılan teknoloji ızgaranın ilk gözünde, açılışta
+  seçili olan da o. Okuma sırası böylece kendiliğinden bir öncelik bildiriyor.
 */
 const sirali = [...yetkinlikler].sort((a, b) => b.oran - a.oran);
 ---
@@ -117,13 +118,15 @@ const sirali = [...yetkinlikler].sort((a, b) => b.oran - a.oran);
 {/*
   Yetkinlikler.
 
-  Sekme örüntüsü: liste sekme başlıkları, altındaki panel seçili yetkinliğin
-  ayrıntısı — solda tanım, sağda ilerleme. Erişilebilirlik için gerçek
-  tablist/tab/tabpanel rolleri ve ok tuşu gezinmesi var; yalnızca tıklamayla
-  çalışan bir arayüz klavye kullanıcısını dışarıda bırakırdı.
+  Düzen: teknolojiler kart ızgarası olarak duruyor, seçilen kartın ayrıntısı
+  altındaki panelde açılıyor. Sekme örüntüsü (tablist/tab/tabpanel) ve ok tuşu
+  gezinmesi korundu; yalnızca tıklamayla çalışan bir arayüz klavye kullanıcısını
+  dışarıda bırakırdı.
 
-  Yüzde hem çubukta hem yazıyla veriliyor; bilgiyi yalnızca çubuk uzunluğuna
-  bırakmak ekran okuyucuda ve düşük görmede okunmaz olurdu.
+  Yüzde çubukları bilinçli olarak kaldırıldı: "%85 Python" doğrulanabilir bir
+  şey söylemiyor, okuyan herkes farklı anlıyor. Yerine evrensel olarak okunan
+  iki ölçü var — kaç yıldır kullanıldığı (kartta) ve nerede kullanıldığı
+  (panelde). `oran` alanı yalnızca sıralamayı belirlemek için duruyor.
 */}
 <section
 	class="yetkinlik relative overflow-hidden py-20 sm:py-28 md:flex md:min-h-[100svh] md:items-center md:py-24"
@@ -155,13 +158,13 @@ const sirali = [...yetkinlikler].sort((a, b) => b.oran - a.oran);
 		</p>
 
 		<div class="alan" data-yetkinlik-alani>
-			<ul class="liste" role="tablist" aria-label={m('yetkinlik.baslik')}>
+			<ul class="izgara" role="tablist" aria-label={m('yetkinlik.baslik')}>
 				{
 					sirali.map((y, sira) => (
 						<li>
 							<button
 								type="button"
-								class="satir"
+								class="kart"
 								role="tab"
 								id={`yetkinlik-sekme-${sira}`}
 								aria-controls={`yetkinlik-panel-${sira}`}
@@ -171,29 +174,22 @@ const sirali = [...yetkinlikler].sort((a, b) => b.oran - a.oran);
 								style={`--sira: ${3 + sira}`}
 							>
 								<span class="simge" aria-hidden="true">
-									<Icon name={y.ikon} class="size-5" />
+									<Icon name={y.ikon} class="size-7" />
 								</span>
-
-								<span class="govde">
-									<span class="ust">
-										<span class="ad">{y.ad}</span>
-										<span class="oran">{y.oran}%</span>
-									</span>
-
-									<span class="cubuk" style={`--dolu: ${y.oran / 100}; --gecikme: ${sira * 90}ms`}>
-										<span class="dolgu" />
-									</span>
-
-									<span class="alt">
-										<span class="ipucu">{m('yetkinlik.ipucu')}</span>
-										<span>{y.sure[dil]}</span>
-									</span>
-								</span>
+								<span class="ad">{y.ad}</span>
+								<span class="sure">{y.sure[dil]}</span>
 							</button>
 						</li>
 					))
 				}
 			</ul>
+
+			{/* Izgaranın tıklanabilir olduğunu bir kez söylüyoruz; her kartta
+			    tekrarlanan bir yönerge listeyi gürültülü yapıyordu. */}
+			<p class="ipucu" data-belir-oge style={`--sira: ${3 + sirali.length}`}>
+				<Icon name="lucide:pointer" class="size-3.5" aria-hidden="true" />
+				<span>{m('yetkinlik.ipucu')}</span>
+			</p>
 
 			<div class="paneller">
 				{
@@ -207,7 +203,13 @@ const sirali = [...yetkinlikler].sort((a, b) => b.oran - a.oran);
 							hidden={sira !== 0}
 						>
 							<div>
-								<h3 class="panel-ad">{y.ad}</h3>
+								<div class="panel-ust">
+									<span class="panel-simge" aria-hidden="true">
+										<Icon name={y.ikon} class="size-5" />
+									</span>
+									<h3 class="panel-ad">{y.ad}</h3>
+									<span class="panel-sure">{y.sure[dil]}</span>
+								</div>
 								<p class="panel-tanim">{y.tanim[dil]}</p>
 							</div>
 
@@ -225,169 +227,130 @@ const sirali = [...yetkinlikler].sort((a, b) => b.oran - a.oran);
 
 <style>
 	.alan {
-		margin-top: 3rem;
-		text-align: start;
+		margin-top: 2.5rem;
 	}
 
-	.liste {
+	/* --- Kart ızgarası --- */
+	.izgara {
 		list-style: none;
 		padding: 0;
 		margin: 0;
 		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 0.625rem;
+	}
+
+	.kart {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
 		gap: 0.5rem;
-	}
-
-	/* --- Satır (sekme başlığı) --- */
-	.satir {
-		display: grid;
-		grid-template-columns: auto 1fr;
-		align-items: start;
-		gap: 1rem;
 		width: 100%;
-		padding: 0.75rem;
-		border: 0;
-		border-radius: 0.875rem;
-		background: transparent;
-		text-align: start;
+		height: 100%;
+		padding: 1.125rem 0.75rem;
+		border: 1px solid var(--border);
+		border-radius: 1rem;
+		background: color-mix(in oklab, var(--foreground) 2%, transparent);
 		cursor: pointer;
+		position: relative;
 		transition:
+			border-color 220ms ease-out,
 			background-color 220ms ease-out,
-			translate 220ms cubic-bezier(0.22, 1, 0.36, 1);
+			translate 260ms cubic-bezier(0.22, 1, 0.36, 1);
 	}
 
-	.satir:hover {
-		background: color-mix(in oklab, var(--foreground) 5%, transparent);
-		translate: 0 -2px;
+	.kart:hover {
+		border-color: color-mix(in oklab, var(--foreground) 22%, transparent);
+		translate: 0 -3px;
 	}
 
-	.satir:focus-visible {
+	.kart:focus-visible {
 		outline: 2px solid var(--ring);
 		outline-offset: 2px;
 	}
 
-	.satir[aria-selected="true"] {
+	/* Seçili kart: kenarlık markayla renkleniyor ve alt kenarda panele işaret
+	   eden kısa bir şerit beliriyor. Bilgi yalnızca renge bırakılmıyor —
+	   aria-selected ekran okuyucuya durumu ayrıca söylüyor.
+
+	   Zemin bilinçli olarak nötr: marka tonundan bir dolgu koyu temada kartı
+	   lacivert bir kutuya çeviriyordu. Renk yalnızca kenarlıkta ve şeritte. */
+	.kart[aria-selected='true'] {
+		border-color: color-mix(in oklab, var(--color-marka-500) 55%, transparent);
 		background: color-mix(in oklab, var(--foreground) 7%, transparent);
+	}
+
+	.kart[aria-selected='true']::after {
+		content: '';
+		position: absolute;
+		bottom: -1px;
+		left: 50%;
+		translate: -50% 0;
+		width: 2.25rem;
+		height: 2px;
+		border-radius: 9999px;
+		background: var(--color-marka-500);
 	}
 
 	.simge {
 		display: grid;
 		place-items: center;
-		width: 2.75rem;
-		height: 2.75rem;
-		border-radius: 9999px;
-		background: color-mix(in oklab, var(--foreground) 6%, transparent);
-		box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--foreground) 10%, transparent);
-		margin-top: 0.125rem;
-		transition: scale 260ms cubic-bezier(0.34, 1.56, 0.64, 1);
+		width: 3rem;
+		height: 3rem;
+		border-radius: 0.875rem;
+		background: color-mix(in oklab, var(--foreground) 5%, transparent);
+		/* Seçili olmayan logolar bir tık geride duruyor; ızgara böylece tek tek
+		   logo değil, bir bütün olarak okunuyor. */
+		opacity: 0.8;
+		transition:
+			opacity 220ms ease-out,
+			scale 260ms cubic-bezier(0.34, 1.56, 0.64, 1);
 	}
 
-	.satir:hover .simge,
-	.satir[aria-selected="true"] .simge {
-		scale: 1.08;
-	}
-
-	.govde {
-		display: block;
-		min-width: 0;
-	}
-
-	.ust {
-		display: flex;
-		align-items: baseline;
-		justify-content: space-between;
-		gap: 1rem;
+	.kart:hover .simge,
+	.kart[aria-selected='true'] .simge {
+		opacity: 1;
+		scale: 1.06;
 	}
 
 	.ad {
-		font-size: 1rem;
+		font-size: 0.9375rem;
 		font-weight: 600;
+		line-height: 1.3;
 		color: var(--foreground);
 	}
 
-	.oran {
-		font-size: 0.9375rem;
-		font-weight: 700;
-		color: var(--foreground);
+	.sure {
+		font-size: 0.75rem;
+		line-height: 1.4;
+		color: var(--muted-foreground);
 		font-variant-numeric: tabular-nums;
 	}
 
-	.cubuk {
-		display: block;
-		position: relative;
-		margin-top: 0.5rem;
-		height: 0.5rem;
-		border-radius: 9999px;
-		background: color-mix(in oklab, var(--foreground) 10%, transparent);
-		overflow: hidden;
-	}
-
-	.dolgu {
-		display: block;
-		height: 100%;
-		border-radius: inherit;
-		/* Renk yalnızca süs: ad ve yüzde ayrıca yazılı. */
-		background: linear-gradient(90deg, var(--color-marka-600), var(--color-marka-400));
-		/* Genişlik yerine ölçek: genişlik animasyonu her karede yeniden yerleşim
-		   tetikliyor, ölçek yalnızca birleştirme katmanında çalışıyor. */
-		transform-origin: left center;
-		transform: scaleX(var(--dolu, 0));
-	}
-
-	[data-gorunur] .dolgu {
-		animation: cubuk-dol 900ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
-		animation-delay: calc(400ms + var(--gecikme, 0ms));
-	}
-
-	@keyframes cubuk-dol {
-		from {
-			transform: scaleX(0);
-		}
-	}
-
-	/* Dar ekranda iki not alt alta geçebilsin: metin sabit genişlikte
-	   kırpılmamalı. */
-	.alt {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: baseline;
-		justify-content: space-between;
-		gap: 0.25rem 1rem;
-		margin-top: 0.5rem;
-		font-size: 0.8125rem;
-		line-height: 1.5;
-		color: var(--muted-foreground);
-	}
-
-	/* "Ayrıntı için tıkla" ipucu yalnızca üzerine gelince beliriyor; sürekli
-	   duran bir yönerge listeyi gürültülü yapıyordu. Seçili satırda gizli —
-	   orada panel zaten açık. */
 	.ipucu {
-		opacity: 0;
-		transition: opacity 220ms ease-out;
-	}
-
-	.satir:hover .ipucu,
-	.satir:focus-visible .ipucu {
-		opacity: 1;
-	}
-
-	.satir[aria-selected="true"] .ipucu {
-		opacity: 0;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.375rem;
+		margin-top: 1rem;
+		font-size: 0.75rem;
+		color: var(--muted-foreground);
 	}
 
 	/* --- Ayrıntı paneli --- */
 	.paneller {
 		display: grid;
-		margin-top: 2rem;
+		margin-top: 1.5rem;
 		border-top: 1px solid var(--border);
-		padding-top: 2rem;
+		padding-top: 1.75rem;
+		text-align: start;
 	}
 
 	/* Paneller aynı ızgara gözünde: geçişte yükseklik zıplamıyor. */
 	.panel {
 		grid-area: 1 / 1;
 		display: grid;
-		gap: 1.5rem;
+		gap: 1.25rem;
 		animation: panel-belir 420ms cubic-bezier(0.22, 1, 0.36, 1);
 	}
 
@@ -402,14 +365,36 @@ const sirali = [...yetkinlikler].sort((a, b) => b.oran - a.oran);
 		}
 	}
 
+	.panel-ust {
+		display: flex;
+		align-items: center;
+		gap: 0.625rem;
+	}
+
+	.panel-simge {
+		display: grid;
+		place-items: center;
+		width: 2rem;
+		height: 2rem;
+		border-radius: 0.625rem;
+		background: color-mix(in oklab, var(--foreground) 6%, transparent);
+	}
+
 	.panel-ad {
-		font-size: 1.375rem;
+		font-size: 1.25rem;
 		font-weight: 700;
 		color: var(--foreground);
 	}
 
+	.panel-sure {
+		margin-inline-start: auto;
+		font-size: 0.75rem;
+		color: var(--muted-foreground);
+		font-variant-numeric: tabular-nums;
+	}
+
 	.panel-tanim {
-		margin-top: 0.625rem;
+		margin-top: 0.75rem;
 		color: var(--muted-foreground);
 		line-height: 1.65;
 	}
@@ -427,6 +412,13 @@ const sirali = [...yetkinlikler].sort((a, b) => b.oran - a.oran);
 		line-height: 1.7;
 	}
 
+	@media (min-width: 640px) {
+		.izgara {
+			grid-template-columns: repeat(3, minmax(0, 1fr));
+			gap: 0.75rem;
+		}
+	}
+
 	@media (min-width: 768px) {
 		.panel {
 			grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
@@ -436,36 +428,39 @@ const sirali = [...yetkinlikler].sort((a, b) => b.oran - a.oran);
 
 	@media (min-width: 1024px) {
 		.alan {
-			margin-top: 4rem;
+			margin-top: 3rem;
+		}
+
+		.kart {
+			padding: 1.375rem 1rem;
 		}
 
 		.ad {
-			font-size: 1.0625rem;
-		}
-
-		.alt {
-			font-size: 0.875rem;
+			font-size: 1rem;
 		}
 
 		.panel-ad {
-			font-size: 1.5rem;
+			font-size: 1.375rem;
 		}
 	}
 
 	@media (prefers-reduced-motion: reduce) {
-		[data-gorunur] .dolgu,
 		.panel {
 			animation: none;
 		}
 
-		.satir,
-		.simge,
-		.ipucu {
+		.kart,
+		.simge {
 			transition: none;
 		}
 
-		.satir:hover {
+		.kart:hover {
 			translate: none;
+		}
+
+		.kart:hover .simge,
+		.kart[aria-selected='true'] .simge {
+			scale: none;
 		}
 	}
 </style>
