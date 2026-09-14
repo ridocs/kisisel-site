@@ -143,9 +143,13 @@ function tabansizParcalar(url: URL): string[] {
 }
 
 export function yol(dil: Dil, parca = ''): string {
-	const temiz = parca.replace(/^\/+/, '');
-	if (dil === varsayilanDil) return `${taban}/${temiz}`;
-	return `${taban}/${dil}/${temiz}`;
+	// Sondaki eğik çizgi bilinçli: derleme dizin tabanlı çıktı üretiyor
+	// (/blog/index.html). Çizgisiz bağlantı sunucuda 301 ile çizgili
+	// hâline yönlendiriliyordu; her gezinmede fazladan bir gidiş-dönüş.
+	const temiz = parca.replace(/^\/+/, '').replace(/\/*$/, '');
+	const kuyruk = temiz ? `${temiz}/` : '';
+	if (dil === varsayilanDil) return `${taban}/${kuyruk}`;
+	return `${taban}/${dil}/${kuyruk}`;
 }
 
 /** Aynı sayfanın diğer dildeki karşılığı (dil değiştirici için). */
