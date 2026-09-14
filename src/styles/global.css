@@ -226,6 +226,37 @@ html.menu-acik .logo-yuva {
 	}
 }
 
+/*
+  Dokunmatikte belirme daha yavaş.
+
+  Sebep: mobilde kaydırma yerel scroll-snap ile ilerliyor ve bölüm ekrana
+  çok hızlı oturuyor; masaüstündeki 950 ms'lik yumuşak geçiş yok. Aynı
+  süreler burada aceleci hissediliyordu, dizinin büyük kısmı kullanıcı
+  bakmadan bitiyordu.
+
+  Sıra önemli: genel süre önce, görsel ve çizginin kendi süreleri sonra
+  geliyor — ikisi de [data-belir-oge] ile eşleştiği için sonra gelen kazanır.
+*/
+@media (pointer: coarse) {
+	[data-parcali][data-gorunur] [data-belir-oge] {
+		animation-duration: 620ms;
+		animation-delay: calc(var(--sira, 0) * 105ms);
+	}
+
+	[data-parcali][data-gorunur] [data-belir-gorsel] {
+		animation-duration: 820ms;
+	}
+
+	[data-parcali][data-gorunur] [data-belir-cizgi] {
+		animation-duration: 720ms;
+	}
+
+	/* Bütün olarak beliren bölümler (ör. Son yazılar) da aynı ölçüde. */
+	[data-belir][data-gorunur]:not([data-parcali]) {
+		animation-duration: 820ms;
+	}
+}
+
 @media (prefers-reduced-motion: reduce) {
 	[data-belir][data-gorunur]:not([data-parcali]),
 	[data-parcali][data-gorunur] [data-belir-oge] {
