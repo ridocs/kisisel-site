@@ -9,9 +9,13 @@ import Icons from 'unplugin-icons/vite';
 
 // https://astro.build/config
 export default defineConfig({
-	// Sitemap ve RSS mutlak URL üretebilmek için buna ihtiyaç duyar.
-	// Kendi alan adını aldığında burayı değiştir.
-	site: 'https://ridocs.github.io',
+	// Sitemap, RSS ve canonical mutlak URL üretebilmek için buna ihtiyaç duyar.
+	site: 'https://twinshareapp.com',
+	// Site alan adının kökünde değil, bir alt dizinde yayınlanıyor.
+	// Astro yalnızca kendi ürettiği varlık yollarını (_astro/…) bu önekle
+	// yazar; elle yazdığımız bağlantılar src/i18n/ceviriler.ts içindeki
+	// `taban` üzerinden aynı öneki alıyor.
+	base: '/web-sitem',
 	// Türkçe varsayılan ve ön ek almıyor: "/blog". İngilizce "/en/blog".
 	i18n: {
 		defaultLocale: 'tr',

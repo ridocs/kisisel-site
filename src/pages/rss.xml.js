@@ -1,5 +1,6 @@
 import rss from '@astrojs/rss';
 import { getCollection } from 'astro:content';
+import { taban } from '@/i18n/ceviriler';
 
 export async function GET(context) {
 	const posts = (await getCollection('blog', ({ data }) => !data.draft)).sort(
@@ -9,12 +10,15 @@ export async function GET(context) {
 	return rss({
 		title: 'Mustafa — Blog',
 		description: 'Kişisel blog yazıları.',
-		site: context.site,
+		// Kanalın kendi bağlantısı da alt dizini göstermeli; context.site
+		// yalnızca alan adının kökünü verir.
+		site: new URL(taban + '/', context.site),
 		items: posts.map((post) => ({
 			title: post.data.title,
 			description: post.data.description,
 			pubDate: post.data.pubDate,
-			link: `/blog/${post.id}/`,
+			// Alt dizinde yayınlandığında bağlantılar da öneki taşımalı.
+			link: `${taban}/blog/${post.id}/`,
 		})),
 		customData: '<language>tr-tr</language>',
 	});

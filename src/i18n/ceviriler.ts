@@ -109,7 +109,7 @@ export const ceviriler = {
 
 /** Yol adından dili çıkarır: /en/... -> "en", diğer her şey -> "tr". */
 export function dilBul(url: URL): Dil {
-	const [, ilkParca] = url.pathname.split('/');
+	const [ilkParca] = tabansizParcalar(url);
 	return (diller as readonly string[]).includes(ilkParca) ? (ilkParca as Dil) : varsayilanDil;
 }
 
@@ -123,15 +123,34 @@ export function cevirici(dil: Dil) {
 /**
  * Dile göre yol üretir. Varsayılan dil ön ek almaz: "/blog" ve "/en/blog".
  */
+/**
+ * Sitenin yayınlandığı alt dizin ('' ya da ör. '/web-sitem').
+ *
+ * Astro'nun `base` ayarı yalnızca kendi ürettiği varlık yollarını önekler;
+ * elle yazdığımız bağlantıları öneklemez. Bu yüzden bağlantı üreten her yer
+ * buradan geçiyor. Sondaki eğik çizgi atılıyor ki birleştirmede çift
+ * çizgi oluşmasın.
+ */
+export const taban = (import.meta.env.BASE_URL || '/').replace(/\/+$/, '');
+
+/** Yol parçalarını, varsa alt dizin önekini atarak döndürür. */
+function tabansizParcalar(url: URL): string[] {
+	let yolAdi = url.pathname;
+	if (taban && (yolAdi === taban || yolAdi.startsWith(taban + '/'))) {
+		yolAdi = yolAdi.slice(taban.length);
+	}
+	return yolAdi.split('/').filter(Boolean);
+}
+
 export function yol(dil: Dil, parca = ''): string {
 	const temiz = parca.replace(/^\/+/, '');
-	if (dil === varsayilanDil) return `/${temiz}`;
-	return `/${dil}/${temiz}`;
+	if (dil === varsayilanDil) return `${taban}/${temiz}`;
+	return `${taban}/${dil}/${temiz}`;
 }
 
 /** Aynı sayfanın diğer dildeki karşılığı (dil değiştirici için). */
 export function digerDilYolu(url: URL, hedef: Dil): string {
-	const parcalar = url.pathname.split('/').filter(Boolean);
+	const parcalar = tabansizParcalar(url);
 	if ((diller as readonly string[]).includes(parcalar[0])) parcalar.shift();
 	// Yol adları dile göre değişiyor: hakkımda <-> about
 	const esleme: Record<string, Record<Dil, string>> = {

@@ -1,7 +1,7 @@
 ---
 import { Icon } from 'astro-icon/components';
 import IletisimDugmesi from './IletisimDugmesi.astro';
-import { cevirici, digerDilYolu, dilBul, yol } from '@/i18n/ceviriler';
+import { cevirici, digerDilYolu, dilBul, taban, yol } from '@/i18n/ceviriler';
 
 const dil = dilBul(Astro.url);
 const m = cevirici(dil);
@@ -131,7 +131,7 @@ const iletisimDugmesi =
 
 				<!-- Eylemler -->
 				<div class="flex shrink-0 items-center gap-2">
-					<a href="/rss.xml" aria-label={m('nav.rss')} class={eylemDugmesi}>
+					<a href={`${taban}/rss.xml`} aria-label={m('nav.rss')} class={eylemDugmesi}>
 						<Icon name="lucide:rss" class="size-[18px]" />
 					</a>
 
