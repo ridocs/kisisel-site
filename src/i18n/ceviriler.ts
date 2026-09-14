@@ -67,6 +67,9 @@ export const ceviriler = {
 
 		'yazi.ustBaslik': 'YAZILAR',
 		'yazi.bos': 'Henüz yayımlanmış bir yazı yok. Yakında burada olacak.',
+		'yazi.dakika': 'dk okuma',
+		'yazi.guncellendi': 'güncellendi',
+		'yazi.tumune': '← Tüm yazılar',
 
 		'iletisim.ustBaslik': 'İLETİŞİM',
 		'iletisim.baslik': 'Bir fikrin mi var, konuşalım',
@@ -156,6 +159,9 @@ export const ceviriler = {
 
 		'yazi.ustBaslik': 'WRITING',
 		'yazi.bos': 'No posts published yet. They will show up here.',
+		'yazi.dakika': 'min read',
+		'yazi.guncellendi': 'updated',
+		'yazi.tumune': '← All posts',
 
 		'iletisim.ustBaslik': 'CONTACT',
 		'iletisim.baslik': 'Got an idea? Let us talk',

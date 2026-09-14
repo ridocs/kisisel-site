@@ -1,0 +1,117 @@
+---
+/**
+ * Yazının kapağı. Dosya verilmişse onu, verilmemişse başlıktan türetilen
+ * soyut bir çizimi basıyor.
+ *
+ * Üretilen kapak RASTGELE DEĞİL: başlığın karakterlerinden bir sayı çıkarılıyor
+ * ve bütün seçimler ondan geliyor. Aynı yazı her derlemede aynı kapağı alıyor,
+ * yani iki ziyaret arasında görüntü değişmiyor.
+ *
+ * Renkler sitenin marka tonundan; rastgele renk üretmek sayfanın paletini
+ * dağıtıyordu. Değişen şey ton değil, açı ve yerleşim.
+ */
+interface Props {
+	baslik: string;
+	kapak?: string;
+	kapakAlt?: string;
+	/** Kapak listede mi (küçük) yoksa yazı sayfasında mı (büyük) duruyor. */
+	oncelikli?: boolean;
+}
+
+const { baslik, kapak, kapakAlt, oncelikli = false } = Astro.props;
+
+// Başlıktan türetilen kararlı sayı.
+let tohum = 2166136261;
+for (let i = 0; i < baslik.length; i++) {
+	tohum ^= baslik.charCodeAt(i);
+	tohum = Math.imul(tohum, 16777619) >>> 0;
+}
+const sec = (n: number, kaydir: number) => Math.floor((tohum / 2 ** kaydir) % n);
+
+const aci = 25 + sec(6, 0) * 25;
+// Üç daire; yarıçap ve konum tohumdan. Kutunun dışına taşanlar kırpılıyor,
+// bu da her kapağın farklı bir kesit görünmesini sağlıyor.
+const daireler = [
+	{ cx: 12 + sec(70, 2), cy: 10 + sec(50, 5), r: 26 + sec(22, 8) },
+	{ cx: 20 + sec(70, 11), cy: 30 + sec(50, 14), r: 16 + sec(20, 17) },
+	{ cx: 30 + sec(60, 20), cy: 20 + sec(60, 23), r: 10 + sec(14, 26) },
+];
+const cizgiAcisi = sec(2, 29) === 0 ? 0 : 90;
+---
+
+{
+	kapak ? (
+		<img
+			class="kapak"
+			src={kapak}
+			alt={kapakAlt ?? ''}
+			loading={oncelikli ? 'eager' : 'lazy'}
+			decoding="async"
+		/>
+	) : (
+		/*
+		  Süs çizim: hiçbir bilgi taşımıyor, başlık zaten hemen altında yazılı.
+		  Bu yüzden ekran okuyucuya verilmiyor.
+		*/
+		<svg
+			class="kapak uretilmis"
+			viewBox="0 0 100 60"
+			preserveAspectRatio="xMidYMid slice"
+			aria-hidden="true"
+			focusable="false"
+		>
+			<defs>
+				<linearGradient id={`kapak-${tohum}`} gradientTransform={`rotate(${aci} 0.5 0.5)`}>
+					<stop offset="0%" class="durak-a" />
+					<stop offset="100%" class="durak-b" />
+				</linearGradient>
+			</defs>
+			<rect width="100" height="60" fill={`url(#kapak-${tohum})`} />
+			{daireler.map((d, i) => (
+				<circle cx={d.cx} cy={d.cy} r={d.r} class={`daire daire-${i}`} />
+			))}
+			{/* İnce çizgi ızgarası: düz bir gradyanı dokulu hâle getiriyor. */}
+			<g class="izgara" transform={`rotate(${cizgiAcisi} 50 30)`}>
+				{Array.from({ length: 13 }, (_, i) => (
+					<line x1={i * 8} y1="-20" x2={i * 8} y2="80" />
+				))}
+			</g>
+		</svg>
+	)
+}
+
+<style>
+	.kapak {
+		display: block;
+		width: 100%;
+		aspect-ratio: 5 / 3;
+		object-fit: cover;
+		background: color-mix(in oklab, var(--foreground) 6%, transparent);
+	}
+
+	/* Gradyan durakları CSS'ten: koyu temada da marka tonu doğru çözülüyor. */
+	.durak-a {
+		stop-color: var(--color-marka-600);
+	}
+
+	.durak-b {
+		stop-color: var(--color-marka-400);
+	}
+
+	.daire {
+		fill: oklch(1 0 0 / 0.14);
+	}
+
+	.daire-1 {
+		fill: oklch(0 0 0 / 0.1);
+	}
+
+	.daire-2 {
+		fill: oklch(1 0 0 / 0.2);
+	}
+
+	.izgara line {
+		stroke: oklch(1 0 0 / 0.12);
+		stroke-width: 0.6;
+	}
+</style>

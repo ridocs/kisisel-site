@@ -1,0 +1,171 @@
+---
+import YaziKapagi from './YaziKapagi.astro';
+import { cevirici, dilBul, yol } from '@/i18n/ceviriler';
+
+interface Props {
+	yazi: {
+		id: string;
+		body?: string;
+		data: {
+			title: string;
+			description: string;
+			pubDate: Date;
+			tags?: string[];
+			kapak?: string;
+			kapakAlt?: string;
+		};
+	};
+}
+
+const { yazi } = Astro.props;
+const dil = dilBul(Astro.url);
+const m = cevirici(dil);
+const tarihBicimi = dil === 'en' ? 'en-GB' : 'tr-TR';
+
+/*
+  Okuma süresi yazının kendi gövdesinden hesaplanıyor, elle girilmiyor —
+  girilen bir sayı metin değişince eskiyor ve kimse güncellemeyi hatırlamıyor.
+  Dakikada 200 kelime yaygın bir ortalama; bir dakikanın altı "1 dk" görünüyor.
+*/
+const kelime = (yazi.body ?? '').trim().split(/\s+/).filter(Boolean).length;
+const dakika = Math.max(1, Math.round(kelime / 200));
+---
+
+<a class="kart" href={yol(dil, `blog/${yazi.id}/`)}>
+	<div class="kapak-kutu">
+		<YaziKapagi baslik={yazi.data.title} kapak={yazi.data.kapak} kapakAlt={yazi.data.kapakAlt} />
+	</div>
+
+	<div class="govde">
+		<p class="meta">
+			<time datetime={yazi.data.pubDate.toISOString()}>
+				{yazi.data.pubDate.toLocaleDateString(tarihBicimi, { dateStyle: 'medium' })}
+			</time>
+			<span aria-hidden="true">·</span>
+			<span>{dakika} {m('yazi.dakika')}</span>
+		</p>
+
+		<h3 class="ad">{yazi.data.title}</h3>
+		<p class="ozet">{yazi.data.description}</p>
+
+		{
+			yazi.data.tags && yazi.data.tags.length > 0 && (
+				<p class="etiketler">
+					{yazi.data.tags.slice(0, 2).map((t) => (
+						<span class="etiket">{t}</span>
+					))}
+				</p>
+			)
+		}
+	</div>
+</a>
+
+<style>
+	.kart {
+		display: flex;
+		flex-direction: column;
+		height: 100%;
+		border: 1px solid var(--border);
+		border-radius: 1rem;
+		overflow: hidden;
+		text-decoration: none;
+		color: inherit;
+		background: color-mix(in oklab, var(--foreground) 2%, transparent);
+		transition:
+			border-color 220ms ease-out,
+			translate 260ms cubic-bezier(0.22, 1, 0.36, 1);
+	}
+
+	.kart:hover {
+		border-color: color-mix(in oklab, var(--foreground) 24%, transparent);
+		translate: 0 -3px;
+	}
+
+	.kart:focus-visible {
+		outline: 2px solid var(--ring);
+		outline-offset: 2px;
+	}
+
+	/*
+	  Kapak kutusu kendi içinde kırpıyor ve oranı sabit: görsel yüklenene kadar
+	  yer ayrılmış oluyor, kart zıplamıyor (CLS).
+	*/
+	.kapak-kutu {
+		overflow: hidden;
+		aspect-ratio: 5 / 3;
+	}
+
+	.kapak-kutu :global(.kapak) {
+		height: 100%;
+		transition: scale 400ms cubic-bezier(0.22, 1, 0.36, 1);
+	}
+
+	.kart:hover .kapak-kutu :global(.kapak) {
+		scale: 1.04;
+	}
+
+	.govde {
+		display: flex;
+		flex-direction: column;
+		flex: 1;
+		padding: 1rem;
+	}
+
+	.meta {
+		display: flex;
+		align-items: center;
+		gap: 0.4rem;
+		font-size: 0.75rem;
+		color: var(--muted-foreground);
+		font-variant-numeric: tabular-nums;
+	}
+
+	.ad {
+		margin-top: 0.5rem;
+		font-size: 1.0625rem;
+		font-weight: 600;
+		line-height: 1.35;
+		color: var(--foreground);
+	}
+
+	.ozet {
+		margin-top: 0.4rem;
+		font-size: 0.9375rem;
+		line-height: 1.6;
+		color: var(--muted-foreground);
+	}
+
+	.etiketler {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.375rem;
+		/* `auto` pay etiketleri kartın dibine yapıştırıyor: özetleri farklı
+		   uzunlukta kartlarda etiket satırı yine de hizalı duruyor. */
+		margin-top: auto;
+		padding-top: 0.875rem;
+	}
+
+	.etiket {
+		font-size: 0.6875rem;
+		letter-spacing: 0.03em;
+		padding: 0.15rem 0.5rem;
+		border: 1px solid var(--border);
+		border-radius: 9999px;
+		color: var(--muted-foreground);
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.kart,
+		.kapak-kutu :global(.kapak) {
+			transition: none;
+		}
+
+		.kart:hover {
+			translate: none;
+		}
+
+		.kart:hover .kapak-kutu :global(.kapak) {
+			scale: none;
+		}
+	}
+</style>

@@ -1,11 +1,11 @@
 ---
 import { getCollection } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import YaziKarti from '../../components/YaziKarti.astro';
 import { cevirici, dilBul, yol } from '@/i18n/ceviriler';
 
 const dil = dilBul(Astro.url);
 const m = cevirici(dil);
-const tarihBicimi = dil === 'en' ? 'en-GB' : 'tr-TR';
 
 const posts = (await getCollection('blog', ({ data }) => !data.draft && data.dil === dil)).sort(
 	(a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf(),
@@ -15,26 +15,24 @@ const posts = (await getCollection('blog', ({ data }) => !data.draft && data.dil
 <BaseLayout title={m('blog.sayfaBasligi')} description={m('blog.aciklama')}>
 	<h1 class="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">{m('blog.baslik')}</h1>
 
-	<ul class="mt-8 space-y-8">
-		{
-			posts.map((post) => (
-				<li class="border-b border-slate-200 pb-8 last:border-0 dark:border-neutral-800">
-					<a href={yol(dil, `blog/${post.id}/`)} class="group block space-y-1">
-						<h2 class="text-lg font-medium group-hover:text-marka-600 dark:group-hover:text-marka-400">
-							{post.data.title}
-						</h2>
-						<p class="text-slate-600 dark:text-neutral-400">{post.data.description}</p>
-						<div class="flex items-center gap-3 text-xs text-slate-500">
-							<time datetime={post.data.pubDate.toISOString()}>
-								{post.data.pubDate.toLocaleDateString(tarihBicimi, { dateStyle: 'long' })}
-							</time>
-							{post.data.tags.map((tag) => (
-								<span class="rounded bg-slate-100 px-2 py-0.5 dark:bg-neutral-800">#{tag}</span>
-							))}
-						</div>
-					</a>
-				</li>
-			))
-		}
+	<ul class="blog-izgara">
+		{posts.map((post) => (
+			<li>
+				<YaziKarti yazi={post} />
+			</li>
+		))}
 	</ul>
+
+	<style>
+		/* Ana sayfadaki Son yazılar ile aynı ızgara: iki yerde farklı bir kart
+		   düzeni olsaydı aynı yazı iki farklı biçimde görünürdü. */
+		.blog-izgara {
+			list-style: none;
+			padding: 0;
+			margin: 2rem 0 0;
+			display: grid;
+			gap: 1rem;
+			grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr));
+		}
+	</style>
 </BaseLayout>

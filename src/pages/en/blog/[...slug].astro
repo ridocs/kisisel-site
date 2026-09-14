@@ -2,6 +2,8 @@
 import { getCollection, render } from 'astro:content';
 import type { GetStaticPaths } from 'astro';
 import BaseLayout from '../../../layouts/BaseLayout.astro';
+import YaziKapagi from '../../../components/YaziKapagi.astro';
+import { cevirici, yol } from '@/i18n/ceviriler';
 
 // Bu dosya İngilizce yazıları üretir; Türkçeleri /blog altındaki eşi üretir.
 const SAYFA_DILI = 'en';
@@ -16,26 +18,160 @@ export const getStaticPaths: GetStaticPaths = async () => {
 
 const { post } = Astro.props;
 const { Content } = await render(post);
+
+const DIL = SAYFA_DILI;
+const m = cevirici(DIL);
+const tarih = post.data.pubDate.toLocaleDateString(DIL === 'en' ? 'en-GB' : 'tr-TR', {
+	dateStyle: 'long',
+});
+
+// Okuma süresi gövdeden hesaplanıyor; elle girilen bir sayı metin değişince
+// eskiyor ve kimse güncellemeyi hatırlamıyor.
+const kelime = (post.body ?? '').trim().split(/\s+/).filter(Boolean).length;
+const dakika = Math.max(1, Math.round(kelime / 200));
 ---
 
 <BaseLayout title={post.data.title} description={post.data.description}>
-	<article>
-		<header class="mb-8 space-y-2">
-			<h1 class="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
-				{post.data.title}
-			</h1>
-			<time datetime={post.data.pubDate.toISOString()} class="text-sm text-slate-500">
-				{
-					post.data.pubDate.toLocaleDateString(SAYFA_DILI === 'tr' ? 'tr-TR' : 'en-GB', {
-						dateStyle: 'long',
-					})
-				}
-			</time>
+	{/*
+	  Kapak tam genişlikte, metin sütununun dışında: referanstaki editoryal
+	  düzenin ağırlık merkezi görsel. Başlık ve künye kapağın üstüne binmiyor —
+	  görselin üstündeki yazı her fotoğrafta okunaklı olmuyor, kontrastı
+	  garanti etmenin tek yolu metni görselin dışında tutmak.
+	*/}
+	<div slot="tam-genislik" class="yazi-kapak">
+		<div class="kapak-cerceve">
+			<YaziKapagi
+				baslik={post.data.title}
+				kapak={post.data.kapak}
+				kapakAlt={post.data.kapakAlt}
+				oncelikli
+			/>
+		</div>
+	</div>
+
+	<article class="yazi-govde">
+		<header class="kunye">
+			<p class="meta">
+				<time datetime={post.data.pubDate.toISOString()}>{tarih}</time>
+				<span aria-hidden="true">·</span>
+				<span>{dakika} {m('yazi.dakika')}</span>
+				{post.data.updatedDate && (
+					<>
+						<span aria-hidden="true">·</span>
+						<span>{m('yazi.guncellendi')}</span>
+					</>
+				)}
+			</p>
+
+			<h1 class="baslik">{post.data.title}</h1>
+			<p class="ozet">{post.data.description}</p>
+
+			{post.data.tags.length > 0 && (
+				<p class="etiketler">
+					{post.data.tags.map((t) => (
+						<span class="etiket">{t}</span>
+					))}
+				</p>
+			)}
 		</header>
 
 		{/* prose sınıfları @tailwindcss/typography eklentisinden gelir */}
 		<div class="prose prose-slate max-w-none dark:prose-invert">
 			<Content />
 		</div>
+
+		<footer class="yazi-alt">
+			<a class="geri" href={yol(DIL, 'blog')}>{m('yazi.tumune')}</a>
+		</footer>
 	</article>
 </BaseLayout>
+
+<style>
+	.yazi-kapak {
+		padding-inline: 1rem;
+		padding-top: 0.5rem;
+	}
+
+	/*
+	  Köşeleri yuvarlatılmış çerçeve. `overflow: hidden` görselin köşelerini de
+	  kesiyor; yalnızca görsele `border-radius` vermek büyütme animasyonunda
+	  köşelerin taşmasına yol açıyordu.
+	*/
+	.kapak-cerceve {
+		margin-inline: auto;
+		max-width: 56rem;
+		border-radius: 1.5rem;
+		overflow: hidden;
+		border: 1px solid var(--border);
+	}
+
+	.kunye {
+		margin-bottom: 2rem;
+	}
+
+	.meta {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0.4rem;
+		font-size: 0.8125rem;
+		color: var(--muted-foreground);
+		font-variant-numeric: tabular-nums;
+	}
+
+	.baslik {
+		margin-top: 0.75rem;
+		font-size: clamp(1.75rem, 1.2rem + 2.2vh, 2.75rem);
+		font-weight: 700;
+		line-height: 1.15;
+		letter-spacing: -0.01em;
+		color: var(--foreground);
+	}
+
+	.ozet {
+		margin-top: 0.75rem;
+		font-size: 1.0625rem;
+		line-height: 1.65;
+		color: var(--muted-foreground);
+	}
+
+	.etiketler {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.375rem;
+		margin-top: 1.25rem;
+	}
+
+	.etiket {
+		font-size: 0.6875rem;
+		letter-spacing: 0.03em;
+		padding: 0.15rem 0.5rem;
+		border: 1px solid var(--border);
+		border-radius: 9999px;
+		color: var(--muted-foreground);
+	}
+
+	.yazi-alt {
+		margin-top: 3rem;
+		padding-top: 1.5rem;
+		border-top: 1px solid var(--border);
+	}
+
+	.geri {
+		font-size: 0.875rem;
+		font-weight: 500;
+		color: var(--foreground);
+		text-decoration: none;
+		border-bottom: 1px solid color-mix(in oklab, var(--foreground) 30%, transparent);
+		padding-bottom: 0.15rem;
+	}
+
+	.geri:hover {
+		border-bottom-color: var(--foreground);
+	}
+
+	.geri:focus-visible {
+		outline: 2px solid var(--ring);
+		outline-offset: 3px;
+	}
+</style>

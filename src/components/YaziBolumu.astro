@@ -1,12 +1,20 @@
 ---
-import { Icon } from 'astro-icon/components';
+import YaziKarti from './YaziKarti.astro';
 import { cevirici, dilBul, yol } from '@/i18n/ceviriler';
 
 interface Props {
 	/** Gösterilecek yazılar; sayfa `getCollection` ile süzüp sıralayıp veriyor. */
 	yazilar: {
 		id: string;
-		data: { title: string; description: string; pubDate: Date };
+		body?: string;
+		data: {
+			title: string;
+			description: string;
+			pubDate: Date;
+			tags?: string[];
+			kapak?: string;
+			kapakAlt?: string;
+		};
 	}[];
 }
 
@@ -14,16 +22,17 @@ const { yazilar } = Astro.props;
 
 const dil = dilBul(Astro.url);
 const m = cevirici(dil);
-const tarihBicimi = dil === 'en' ? 'en-GB' : 'tr-TR';
 ---
 
 {/*
   Yazılar.
 
-  Biçim, üstündeki iki bölümden de ayrı tutuldu: Yetkinlikler kart ızgarası,
-  Çalışmalar numaralı ince satırlar. Burası tam genişlikte, çerçeveli ve
-  dikey duran kayıtlar — az sayıda yazıyla da dolu görünüyor. Üç sütunlu bir
-  ızgara tek yazıyla boş bir satır bırakırdı.
+  Kapak görselli kart ızgarası. Yetkinlikler'in logo döşemesinden ve
+  Çalışmalar'ın numaralı ince satırlarından ayrışıyor: buradaki kartların
+  ağırlık merkezi görsel.
+
+  Sütunlar `auto-fit` ile daralıyor, sabit üç sütun değil — tek yazı varken
+  sabit ızgara iki boş göz bırakıyordu.
 */}
 <section
 	class="yazi relative overflow-hidden py-16 sm:py-20 md:flex md:min-h-[100svh] md:items-center md:py-12"
@@ -64,21 +73,10 @@ const tarihBicimi = dil === 'en' ? 'en-GB' : 'tr-TR';
 					{m('yazi.bos')}
 				</p>
 			) : (
-				<ul class="liste">
+				<ul class="izgara">
 					{yazilar.map((y, sira) => (
 						<li data-belir-oge style={`--sira: ${3 + sira}`}>
-							<a class="kayit" href={yol(dil, `blog/${y.id}/`)}>
-								<div class="kayit-ust">
-									<time class="tarih" datetime={y.data.pubDate.toISOString()}>
-										{y.data.pubDate.toLocaleDateString(tarihBicimi, { dateStyle: 'long' })}
-									</time>
-									<span class="ok" aria-hidden="true">
-										<Icon name="lucide:arrow-up-right" class="size-4" />
-									</span>
-								</div>
-								<h3 class="ad">{y.data.title}</h3>
-								<p class="ozet">{y.data.description}</p>
-							</a>
+							<YaziKarti yazi={y} />
 						</li>
 					))}
 				</ul>
@@ -124,80 +122,26 @@ const tarihBicimi = dil === 'en' ? 'en-GB' : 'tr-TR';
 		outline-offset: 3px;
 	}
 
-	.liste {
+	/* Referanstaki gibi kart ızgarası. Tek yazıyla da boş satır bırakmasın
+	   diye sütunlar `auto-fit` ile daralıyor: iki yazı varsa iki sütun,
+	   bir yazı varsa tek ve tam genişlik yerine sınırlı bir kart. */
+	.izgara {
 		list-style: none;
 		padding: 0;
 		margin: 2rem 0 0;
 		display: grid;
-		gap: 0.75rem;
-	}
-
-	.kayit {
-		display: block;
-		padding: 1.25rem;
-		border: 1px solid var(--border);
-		border-radius: 1rem;
-		text-decoration: none;
-		color: inherit;
-		transition:
-			border-color 220ms ease-out,
-			background-color 220ms ease-out,
-			translate 260ms cubic-bezier(0.22, 1, 0.36, 1);
-	}
-
-	.kayit:hover {
-		border-color: color-mix(in oklab, var(--foreground) 24%, transparent);
-		background: color-mix(in oklab, var(--foreground) 3%, transparent);
-		translate: 0 -2px;
-	}
-
-	.kayit:focus-visible {
-		outline: 2px solid var(--ring);
-		outline-offset: 2px;
-	}
-
-	.kayit-ust {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
 		gap: 1rem;
+		grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr));
 	}
 
-	.tarih {
-		font-size: 0.75rem;
-		letter-spacing: 0.04em;
-		color: var(--muted-foreground);
-		font-variant-numeric: tabular-nums;
-	}
 
-	.ok {
-		display: grid;
-		place-items: center;
-		color: var(--muted-foreground);
-		transition:
-			translate 260ms cubic-bezier(0.22, 1, 0.36, 1),
-			color 220ms ease-out;
-	}
 
-	.kayit:hover .ok {
-		translate: 3px -3px;
-		color: var(--foreground);
-	}
 
-	.ad {
-		margin-top: 0.6rem;
-		font-size: 1.125rem;
-		font-weight: 600;
-		line-height: 1.35;
-		color: var(--foreground);
-	}
 
-	.ozet {
-		margin-top: 0.4rem;
-		font-size: 0.9375rem;
-		line-height: 1.6;
-		color: var(--muted-foreground);
-	}
+
+
+
+
 
 	.bos {
 		margin-top: 2rem;
@@ -217,32 +161,15 @@ const tarihBicimi = dil === 'en' ? 'en-GB' : 'tr-TR';
 	}
 
 	@media (min-width: 1024px) {
-		.liste {
+		.izgara {
 			margin-top: 2.5rem;
-		}
-
-		.ad {
-			font-size: 1.25rem;
-		}
-
-		.ozet {
-			font-size: 1rem;
+			gap: 1.25rem;
 		}
 	}
 
 	@media (prefers-reduced-motion: reduce) {
-		.kayit,
-		.ok,
 		.tumu {
 			transition: none;
-		}
-
-		.kayit:hover {
-			translate: none;
-		}
-
-		.kayit:hover .ok {
-			translate: none;
 		}
 	}
 </style>

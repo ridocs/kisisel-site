@@ -13,6 +13,13 @@ const blog = defineCollection({
 		draft: z.boolean().default(false),
 		// Yazının dili. Belirtilmezse Türkçe sayılır; listeler buna göre süzülür.
 		dil: z.enum(['tr', 'en']).default('tr'),
+		/*
+		  Kapak görseli. İsteğe bağlı: verilmezse başlıktan türetilen soyut bir
+		  kapak çiziliyor, yani kapaksız yazı da ızgarada boşluk bırakmıyor.
+		  Yerel dosya için public/ altına koyup "/kapak.jpg" yazmak yeterli.
+		*/
+		kapak: z.string().optional(),
+		kapakAlt: z.string().optional(),
 	}),
 });
 
