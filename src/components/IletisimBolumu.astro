@@ -31,48 +31,49 @@ const QR_ICERIK = 'https://twinshareapp.com/web-sitem/';
   Matris derleme sırasında üretiliyor: tarayıcıya ne kütüphane ne de görsel
   iniyor, QR sayfanın içinde SVG olarak duruyor. Ölçek ve renk CSS'ten
   geldiği için koyu temada da doğru görünüyor.
+
+  Hata düzeltme 'M'. Bir üst seviye ('H') matrisi 29×29'dan 37×37'ye
+  çıkarıyor ve aynı kutuda modüller 4.3 pikselden 3.6 piksele düşüp
+  bulanıklaşıyordu — okunmayan ama sağlam bir kod işe yaramaz.
 */
-// Hata düzeltme yüksek: noktalar tam kare modülden küçük çiziliyor, yani
-// modül alanının bir kısmı boş kalıyor. 'H' seviyesi %30 kayba dayanıyor ve
-// bu biçimde okunabilirliği güvenceye alıyor.
-const qr = QRCode.create(QR_ICERIK, { errorCorrectionLevel: 'H' });
+const qr = QRCode.create(QR_ICERIK, { errorCorrectionLevel: 'M' });
 const boyut = qr.modules.size;
 
 /*
   Sessiz alan (quiet zone): kodun çevresinde boş bırakılması gereken pay.
   Şartname 4 modül istiyor; okuyucular kodun nerede bittiğini buradan
-  anlıyor. Kutunun CSS dolgusuna bırakılmıştı ama o pay ölçeğe göre
-  değişiyor ve 4 modülün altında kalıyordu — bu yüzden viewBox'a katıldı,
-  artık koddan ayrılmaz.
+  anlıyor. Kutunun CSS dolgusuna bırakılmıştı ama o pay ölçeğe göre değişiyor
+  ve 4 modülün altında kalıyordu — bu yüzden viewBox'a katıldı.
 */
 const SESSIZ_ALAN = 4;
-const doluMu = (satir: number, sutun: number) => qr.modules.get(satir, sutun) === 1;
 
 /*
-  Köşe işaretçileri (finder pattern) ayrı çiziliyor: referanstaki gibi
-  yuvarlatılmış kare olsunlar. Noktalarla çizilseler okuyucular için
-  belirsizleşir — bu üç kare QR'ın yönünü bulmasını sağlayan kısım, biçimi
-  korunmalı.
-*/
-const ISARETCI_BOYU = 7;
-const isaretciler = [
-	{ x: 0, y: 0 },
-	{ x: boyut - ISARETCI_BOYU, y: 0 },
-	{ x: 0, y: boyut - ISARETCI_BOYU },
-];
-const isaretciIcinde = (satir: number, sutun: number) =>
-	isaretciler.some(
-		(i) =>
-			sutun >= i.x && sutun < i.x + ISARETCI_BOYU && satir >= i.y && satir < i.y + ISARETCI_BOYU,
-	);
+  KABARTMA (3B)
 
-// Köşe işaretçileri dışında kalan dolu modüller nokta olarak çiziliyor.
-const noktalar: { x: number; y: number }[] = [];
+  Her modül iki kez çiziliyor: önce aşağı-sağa kaydırılmış koyu bir gövde,
+  üstüne asıl yüz. Aradaki fark modülü bir küpün üst yüzü gibi gösteriyor.
+
+  Köşe işaretçileri AYRI bir şekille çizilmiyor, bütün modüller aynı
+  geometriyle basılıyor. Önceki sürümde işaretçiler elle çiziliyordu ve
+  merkez kare bir modül eksik kalmıştı; matrisin kendisini olduğu gibi
+  basmak bu sınıf hataları tamamen ortadan kaldırıyor.
+
+  Derinlik ve boşluk modül biriminde: SVG ölçeklendiğinde oran korunuyor.
+*/
+const DERINLIK = 0.26;
+/*
+  Boşluk küçük ve köşeler az yuvarlak: bitişik modüller birleşip tek bir
+  kabartma kütle oluştursun. Geniş boşluk + çok yuvarlak köşe her modülü ayrı
+  bir noktaya çeviriyordu; kod hem konfeti gibi görünüyor hem de koyu alan
+  küçüldüğü için okunması zorlaşıyordu.
+*/
+const BOSLUK = 0.035;
+const YUZ = 1 - BOSLUK * 2;
+
+const moduller: { x: number; y: number }[] = [];
 for (let satir = 0; satir < boyut; satir++) {
 	for (let sutun = 0; sutun < boyut; sutun++) {
-		if (doluMu(satir, sutun) && !isaretciIcinde(satir, sutun)) {
-			noktalar.push({ x: sutun, y: satir });
-		}
+		if (qr.modules.get(satir, sutun) === 1) moduller.push({ x: sutun, y: satir });
 	}
 }
 ---
@@ -160,36 +161,35 @@ for (let satir = 0; satir < boyut; satir++) {
 							role="img"
 							aria-label={m('iletisim.qrAlt')}
 						>
-							{
-								noktalar.map((n) => (
-									<circle cx={n.x + 0.5} cy={n.y + 0.5} r={0.42} />
-								))
-							}
-							{
-								isaretciler.map((i) => (
-									<>
+							{/* Gövde: kaydırılmış alt katman, kabartmanın yan yüzü. */}
+							<g class="qr-govde">
+								{
+									moduller.map((n) => (
 										<rect
-											x={i.x + 0.5}
-											y={i.y + 0.5}
-											width={ISARETCI_BOYU - 1}
-											height={ISARETCI_BOYU - 1}
-											rx={1.6}
-											fill="none"
-											stroke-width={1}
+											x={n.x + BOSLUK + DERINLIK}
+											y={n.y + BOSLUK + DERINLIK}
+											width={YUZ}
+											height={YUZ}
+											rx={0.12}
 										/>
-										{/* Merkez kare 3×3: 7×7 işaretçinin 2..4 numaralı
-										    modüllerini kaplıyor. Daha küçük çizilirse okuyucu
-										    işaretçiyi doğrulayamıyor. */}
+									))
+								}
+							</g>
+
+							{/* Üst yüz: okunan katman bu. */}
+							<g class="qr-yuz">
+								{
+									moduller.map((n) => (
 										<rect
-											x={i.x + 2}
-											y={i.y + 2}
-											width={3}
-											height={3}
-											rx={0.7}
+											x={n.x + BOSLUK}
+											y={n.y + BOSLUK}
+											width={YUZ}
+											height={YUZ}
+											rx={0.12}
 										/>
-									</>
-								))
-							}
+									))
+								}
+							</g>
 						</svg>
 					</div>
 					<p class="qr-not">{m('iletisim.qrNot')}</p>
@@ -391,11 +391,19 @@ for (let satir = 0; satir < boyut; satir++) {
 
 	.qr {
 		display: block;
-		width: 140px;
-		height: 140px;
-		/* Noktalar ve işaretçiler tek renk; kutu beyaz olduğu için koyu. */
+		width: 168px;
+		height: 168px;
+	}
+
+	/* Gövde üst yüzden açık: ikisi arasındaki fark kabartmayı okutuyor.
+	   Fazla açık olursa okuyucu iki katmanı ayrı modül sanabilir, bu yüzden
+	   ikisi de koyu tarafta kalıyor. */
+	.qr-govde {
+		fill: oklch(0.62 0 0);
+	}
+
+	.qr-yuz {
 		fill: oklch(0.17 0 0);
-		stroke: oklch(0.17 0 0);
 	}
 
 	.qr-not {
@@ -437,8 +445,8 @@ for (let satir = 0; satir < boyut; satir++) {
 		}
 
 		.qr {
-			width: 160px;
-			height: 160px;
+			width: 184px;
+			height: 184px;
 		}
 	}
 
