@@ -27,7 +27,7 @@ const gorsel =
 >
 	{/* Arkadaki yumuşak parıltı; içeriğin okunmasını engellemesin diye çok soluk. */}
 	<div
-		class="pointer-events-none absolute top-0 left-1/2 -z-10 size-[520px] -translate-x-1/2 rounded-full bg-marka-500/10 blur-[160px]"
+		class="tanitim-isik pointer-events-none absolute inset-0 -z-10"
 		aria-hidden="true"
 	>
 	</div>
@@ -92,6 +92,12 @@ const gorsel =
 </section>
 
 <style>
+	/* Bulanıklık süzgeci yerine gradyan: 520 piksellik bir daireye 160 piksel
+	   bulanıklık iOS'ta pahalıya mal oluyordu. Görünüm aynı, maliyeti yok. */
+	.tanitim-isik {
+		background: radial-gradient(34rem 28rem at 50% 0%, oklch(0.62 0.18 250 / 0.12), transparent 70%);
+	}
+
 	/*
 	  İki dikdörtgenin birleşimi: biri sol-altta, diğeri sağ-üstte ve birbirinin
 	  içine geçmiş. Nokta sırası saat yönünde, sağ üstteki dikdörtgenin sol

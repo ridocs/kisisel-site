@@ -78,9 +78,15 @@ const ikonlar = [
 	{/* Renk katmanları: düşük opaklık, yüksek bulanıklık; metin kontrastını
 	    düşürmeden zemine derinlik veriyor. */}
 	<div class="pointer-events-none absolute inset-0 -z-10 overflow-hidden" aria-hidden="true">
-		<div class="absolute -top-32 left-[12%] size-[34rem] rounded-full bg-marka-500/30 blur-[110px] dark:bg-marka-500/35"></div>
-		<div class="absolute top-[18%] right-[6%] size-[28rem] rounded-full bg-sky-400/25 blur-[120px] dark:bg-sky-500/30"></div>
-		<div class="absolute -bottom-40 left-[38%] size-[36rem] rounded-full bg-indigo-400/25 blur-[130px] dark:bg-indigo-500/30"></div>
+		{/*
+		  Renk katmanları radyal gradyanla çiziliyor, filter: blur() ile değil.
+		  Önceki hâlde 544-576 piksellik üç daireye 110-130 piksel Gauss
+		  bulanıklığı uygulanıyordu; iOS'ta piksel oranı 3 olduğu için bu
+		  ~1600 piksellik yüzeylere çok pahalı bir bulanıklık geçişi demekti
+		  ve sayfa saniyelerce takılıyordu. Gradyan görsel olarak aynı yumuşak
+		  geçişi veriyor ama bulanıklık geçişi hiç çalışmıyor.
+		*/}
+		<div class="hero-isik absolute inset-0"></div>
 	</div>
 
 	<div id="logo-kabi" class="absolute inset-0 h-full w-full">
@@ -88,10 +94,10 @@ const ikonlar = [
 			ikonlar.map((veri, sira) => (
 				<div
 					class:list={['logo-yuva absolute', veri.sinif]}
-					style={`--gecikme:${(sira % 8) * 45}ms; --sure:${6 + (sira % 5)}s`}
+					style={`--gecikme:${(sira % 8) * 15}ms; --sure:${6 + (sira % 5)}s`}
 				>
 					<span class="logo-balon" aria-hidden="true">{veri.ad}</span>
-					<div class="logo-kart flex size-12 items-center justify-center rounded-xl border border-black/5 bg-white/90 p-2 shadow-lg backdrop-blur-md md:size-14 dark:border-white/10 dark:bg-slate-800/70">
+					<div class="logo-kart flex size-12 items-center justify-center rounded-xl border border-black/5 bg-white/95 p-2 shadow-lg md:size-14 dark:border-white/10 dark:bg-slate-800/90">
 						<Icon
 							name={veri.ikon}
 							class:list={['size-6 md:size-7', veri.tersle && 'dark:invert']}
@@ -133,19 +139,38 @@ const ikonlar = [
 </section>
 
 <style>
+	/* Arka plandaki renk katmanları. Gradyan durakları yumuşak olduğu için
+	   bulanıklık süzgecine gerek yok; maliyeti de yok. */
+	.hero-isik {
+		pointer-events: none;
+		z-index: -10;
+		background:
+			radial-gradient(38rem 34rem at 18% 4%, oklch(0.62 0.18 250 / 0.3), transparent 68%),
+			radial-gradient(32rem 30rem at 90% 28%, oklch(0.75 0.14 230 / 0.26), transparent 68%),
+			radial-gradient(42rem 36rem at 42% 112%, oklch(0.68 0.16 275 / 0.26), transparent 68%);
+	}
+
+	:global(.dark) .hero-isik {
+		background:
+			radial-gradient(38rem 34rem at 18% 4%, oklch(0.62 0.18 250 / 0.38), transparent 68%),
+			radial-gradient(32rem 30rem at 90% 28%, oklch(0.7 0.15 230 / 0.32), transparent 68%),
+			radial-gradient(42rem 36rem at 42% 112%, oklch(0.62 0.17 275 / 0.32), transparent 68%);
+	}
+
 	/* Giriş ve sürekli yüzme animasyonları saf CSS. Her logo kendi gecikme ve
 	   süresini satır içi değişkenlerden alıyor, böylece hareket tekdüze olmuyor. */
 	/* Giriş süresi ve basamaklanması bilinçli olarak kısa: logolar sırası
-	   gelene kadar görünmez (`both` + opacity 0) ve eski değerlerde son
-	   logolar 1370 ms'de tamamlanıyordu — sayfa "geç yükleniyor" gibi
-	   görünüyordu. Yeni değerlerde en geç 735 ms'de hepsi yerinde.
+	   gelene kadar görünmez (`both` + opacity 0). İlk sürümde son logolar
+	   1370 ms'de tamamlanıyordu ve sayfa "geç yükleniyor" gibi görünüyordu;
+	   şimdi en geç 405 ms'de hepsi yerinde. Basamaklanma korunuyor ama göz
+	   onu gecikme olarak değil, akış olarak okuyor.
 	   will-change kaldırıldı: süresiz çalışan bir animasyonu tarayıcı
 	   zaten katmanlıyor, 35 öge için elle katman istemek boşuna bellek. */
 	.logo-yuva {
 		animation:
-			logo-giris 420ms cubic-bezier(0.22, 1, 0.36, 1) both,
+			logo-giris 300ms cubic-bezier(0.22, 1, 0.36, 1) both,
 			logo-yuzme var(--sure, 7s) ease-in-out infinite alternate;
-		animation-delay: var(--gecikme, 0ms), calc(var(--gecikme, 0ms) + 420ms);
+		animation-delay: var(--gecikme, 0ms), calc(var(--gecikme, 0ms) + 300ms);
 	}
 
 	@keyframes logo-giris {

@@ -2,6 +2,10 @@
 import Navbar from '../components/Navbar.astro';
 import { cevirici, digerDilYolu, dilBul, taban } from '@/i18n/ceviriler';
 import '../styles/global.css';
+// ?url ile içe aktarıldığında Vite hash'li son adresi veriyor; önyükleme
+// bağlantısı ile CSS'in istediği dosya birebir aynı olsun diye böyle.
+import yaziTipiTemel from '../styles/yazitipi/inter-temel.woff2?url';
+import yaziTipiEk from '../styles/yazitipi/inter-ek.woff2?url';
 
 interface Props {
 	title: string;
@@ -24,6 +28,17 @@ const enYolu = new URL(digerDilYolu(Astro.url, 'en'), Astro.site);
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<link rel="icon" type="image/svg+xml" href={`${taban}/favicon.svg`} />
+		{/*
+		  Yazı tipini önden istiyoruz. Aksi hâlde sıra şöyle işliyordu:
+		  HTML in → CSS in → CSS ayrıştır → yazı tipini iste. Üç ardışık
+		  gidiş-dönüş; metin o süre boyunca yedek yazı tipiyle görünüp sonra
+		  yerine oturuyordu. Yazı tipleri için crossorigin zorunlu.
+		  Türkçe'ye özgü harfleri taşıyan ikinci dosya yalnızca Türkçe sayfalarda.
+		*/}
+		<link rel="preload" href={yaziTipiTemel} as="font" type="font/woff2" crossorigin />
+		{dil === 'tr' && (
+			<link rel="preload" href={yaziTipiEk} as="font" type="font/woff2" crossorigin />
+		)}
 		<link rel="canonical" href={canonical} />
 		<link rel="alternate" hreflang="tr" href={trYolu} />
 		<link rel="alternate" hreflang="en" href={enYolu} />
