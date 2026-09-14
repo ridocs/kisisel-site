@@ -63,6 +63,8 @@ export const ceviriler = {
 		'yetkinlik.baslik': 'Kullandığım diller ve araçlar',
 		'yetkinlik.metin':
 			'Günlük işimde en çok dokunduğum teknolojiler ve her biriyle ne kadar yol aldığım.',
+		'yetkinlik.ipucu': 'Ayrıntı için tıkla',
+		'yetkinlik.ilerlemeBaslik': 'NEREDE KULLANDIM',
 
 		// 404 sayfası
 		'404.sayfaBasligi': 'Sayfa bulunamadı',
@@ -124,6 +126,8 @@ export const ceviriler = {
 		'yetkinlik.baslik': 'Languages and tools I use',
 		'yetkinlik.metin':
 			'The technologies I touch most in daily work, and how far I have come with each.',
+		'yetkinlik.ipucu': 'Click for details',
+		'yetkinlik.ilerlemeBaslik': 'WHERE I USED IT',
 
 		// 404 page
 		'404.sayfaBasligi': 'Page not found',

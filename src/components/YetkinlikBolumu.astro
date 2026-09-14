@@ -9,63 +9,107 @@ const m = cevirici(dil);
   YETKİNLİK İÇERİĞİ — düzenlenecek tek yer burası.
 
   Her satır:
-    ad     : teknolojinin adı (çevrilmiyor, özel ad)
-    ikon   : @iconify-json/logos içindeki ad; derleme sırasında gömülüyor
-    oran   : 0-100 arası. Çubuğun dolgusu ve sağdaki yüzde bundan geliyor.
-    alt    : { tr, en }  çubuğun altında solda duran kısa not
-    sure   : { tr, en }  çubuğun altında sağda duran not (deneyim, proje...)
+    ad       : teknolojinin adı (çevrilmiyor, özel ad)
+    ikon     : @iconify-json/logos içindeki ad; derleme sırasında gömülüyor
+    oran     : 0-100 arası. Çubuğun dolgusu ve yüzde bundan geliyor.
+    sure     : { tr, en }  çubuğun altında sağda duran not
+    tanim    : { tr, en }  tıklanınca SOLDA çıkan tanım
+    ilerleme : { tr, en }  tıklanınca SAĞDA çıkan metin: projeler, nerede
+                           kullandığın, nereye geldiğin
 
-  Oranlar YER TUTUCU — kendi değerlerinle değiştir. Sıra yukarıdan aşağıya.
+  Oranlar ve metinler YER TUTUCU. Sıralama burada değil bileşende yapılıyor —
+  diziye istediğin sırayla yazabilirsin.
 */
 const yetkinlikler = [
 	{
 		ad: 'Python',
 		ikon: 'logos:python',
 		oran: 85,
-		alt: { tr: 'Otomasyon, betikler, veri işleme', en: 'Automation, scripting, data work' },
 		sure: { tr: '4 yıl', en: '4 years' },
-	},
-	{
-		ad: 'Dart',
-		ikon: 'logos:dart',
-		oran: 75,
-		alt: { tr: 'Flutter ile mobil uygulama', en: 'Mobile apps with Flutter' },
-		sure: { tr: '2 yıl', en: '2 years' },
+		tanim: {
+			tr: 'Okunabilirliği öne alan, betikten veri işlemeye kadar geniş bir alanda kullanılan genel amaçlı dil.',
+			en: 'A general-purpose language built around readability, used from scripting to data work.',
+		},
+		ilerleme: {
+			tr: 'En rahat olduğum dil. Otomasyon betikleri, veri dönüştürme işleri ve küçük servisler yazdım; bu sitenin yazı tipi alt kümeleme aracı da Python ile.',
+			en: 'The language I am most at home in. Automation scripts, data transforms and small services — even this site’s font-subsetting tool is Python.',
+		},
 	},
 	{
 		ad: 'JavaScript',
 		ikon: 'logos:javascript',
 		oran: 80,
-		alt: { tr: 'Web arayüzleri ve Node.js', en: 'Web interfaces and Node.js' },
 		sure: { tr: '3 yıl', en: '3 years' },
+		tanim: {
+			tr: 'Tarayıcının kendi dili; sunucu tarafında da Node.js ile çalışıyor.',
+			en: 'The browser’s own language; also runs server-side with Node.js.',
+		},
+		ilerleme: {
+			tr: 'Arayüz tarafında günlük işim. Bu sitedeki kaydırma, menü ve etkileşim betikleri kütüphanesiz, saf JavaScript.',
+			en: 'My daily work on the interface side. The scroll, menu and interaction scripts on this site are plain JavaScript, no libraries.',
+		},
+	},
+	{
+		ad: 'Dart',
+		ikon: 'logos:dart',
+		oran: 75,
+		sure: { tr: '2 yıl', en: '2 years' },
+		tanim: {
+			tr: 'Flutter ile tek koddan mobil, masaüstü ve web arayüzü üretmek için tasarlanmış dil.',
+			en: 'Designed for Flutter: one codebase for mobile, desktop and web interfaces.',
+		},
+		ilerleme: {
+			tr: 'Mobil tarafta kullandığım dil. Flutter ile arayüz kurup durum yönetimi ve platform kanalları üzerine çalıştım.',
+			en: 'My language on the mobile side. Built interfaces with Flutter and worked on state management and platform channels.',
+		},
 	},
 	{
 		ad: 'TypeScript',
 		ikon: 'logos:typescript-icon',
 		oran: 70,
-		alt: { tr: 'Tipli web projeleri', en: 'Typed web projects' },
 		sure: { tr: '2 yıl', en: '2 years' },
+		tanim: {
+			tr: 'JavaScript’in tip sistemi eklenmiş hâli; hatayı çalışma anından derleme anına taşıyor.',
+			en: 'JavaScript with a type system; moves errors from runtime to build time.',
+		},
+		ilerleme: {
+			tr: 'Büyüyen web projelerinde tercihim. Bu sitenin çeviri katmanı ve bileşen arayüzleri TypeScript ile yazıldı.',
+			en: 'My preference on growing web projects. This site’s translation layer and component interfaces are written in TypeScript.',
+		},
 	},
 	{
 		ad: 'Docker',
 		ikon: 'logos:docker-icon',
 		oran: 65,
-		alt: { tr: 'Kapsayıcı ve dağıtım', en: 'Containers and deployment' },
 		sure: { tr: '2 yıl', en: '2 years' },
+		tanim: {
+			tr: 'Uygulamayı bağımlılıklarıyla paketleyip her ortamda aynı şekilde çalıştıran kapsayıcı aracı.',
+			en: 'Packages an app with its dependencies so it runs the same everywhere.',
+		},
+		ilerleme: {
+			tr: 'Geliştirme ortamlarını ve küçük servisleri kapsayıcıya aldım; dağıtımda tekrarlanabilirliği buradan sağlıyorum.',
+			en: 'Containerised dev environments and small services; this is how I keep deployments repeatable.',
+		},
 	},
 	{
 		ad: 'PostgreSQL',
 		ikon: 'logos:postgresql',
 		oran: 60,
-		alt: { tr: 'Şema tasarımı ve sorgular', en: 'Schema design and queries' },
 		sure: { tr: '2 yıl', en: '2 years' },
+		tanim: {
+			tr: 'İlişkisel veritabanı; güçlü sorgu yetenekleri ve veri bütünlüğü güvenceleriyle biliniyor.',
+			en: 'A relational database known for strong query capabilities and data-integrity guarantees.',
+		},
+		ilerleme: {
+			tr: 'Şema tasarımı, indeksleme ve sorgu iyileştirme üzerine çalıştım; projelerde ana veri deposu olarak kullanıyorum.',
+			en: 'Worked on schema design, indexing and query tuning; I use it as the primary data store in projects.',
+		},
 	},
 ];
 
 /*
   Azalan sıralama. Kılavuzun karşılaştırma çubukları için kuralı: sıralama
-  okumanın kendisi, listeyi değere göre büyükten küçüğe diz. Dizideki sırayı
-  değiştirmene gerek yok, burada sıralanıyor.
+  okumanın kendisi, listeyi değere göre büyükten küçüğe diz.
 */
 const sirali = [...yetkinlikler].sort((a, b) => b.oran - a.oran);
 ---
@@ -73,12 +117,13 @@ const sirali = [...yetkinlikler].sort((a, b) => b.oran - a.oran);
 {/*
   Yetkinlikler.
 
-  Kutu yok: satırlar doğrudan bölüm zemininde duruyor. Çubuklar `scaleX` ile
-  doluyor (genişlik animasyonu her karede yeniden yerleşim tetikler), dolgu
-  oranı satır içi bir değişkenden geliyor.
+  Sekme örüntüsü: liste sekme başlıkları, altındaki panel seçili yetkinliğin
+  ayrıntısı — solda tanım, sağda ilerleme. Erişilebilirlik için gerçek
+  tablist/tab/tabpanel rolleri ve ok tuşu gezinmesi var; yalnızca tıklamayla
+  çalışan bir arayüz klavye kullanıcısını dışarıda bırakırdı.
 
-  Yüzde hem görsel çubukta hem de yazıyla veriliyor: bilgiyi yalnızca çubuk
-  uzunluğuna bırakmak, ekran okuyucu ve düşük görme durumunda okunmaz yapardı.
+  Yüzde hem çubukta hem yazıyla veriliyor; bilgiyi yalnızca çubuk uzunluğuna
+  bırakmak ekran okuyucuda ve düşük görmede okunmaz olurdu.
 */}
 <section
 	class="yetkinlik relative overflow-hidden py-20 sm:py-28 md:flex md:min-h-[100svh] md:items-center md:py-24"
@@ -86,100 +131,142 @@ const sirali = [...yetkinlikler].sort((a, b) => b.oran - a.oran);
 	data-parcali
 	data-sayfa
 >
-	<div class="kapsayici mx-auto w-full max-w-3xl px-4 lg:max-w-6xl">
-		<div class="basliklar">
-			<p
-				class="text-xs font-semibold tracking-[0.22em] text-muted-foreground lg:text-sm"
-				data-belir-oge
-				style="--sira: 0"
-			>
-				{m('yetkinlik.ustBaslik')}
-			</p>
-			<h2
-				class="mt-4 text-3xl font-bold tracking-tight text-foreground lg:text-4xl"
-				data-belir-oge
-				style="--sira: 1"
-			>
-				{m('yetkinlik.baslik')}
-			</h2>
-			<p class="mt-4 text-muted-foreground lg:text-lg" data-belir-oge style="--sira: 2">
-				{m('yetkinlik.metin')}
-			</p>
-		</div>
+	<div class="mx-auto w-full max-w-3xl px-4 text-center lg:max-w-4xl">
+		<p
+			class="text-xs font-semibold tracking-[0.22em] text-muted-foreground lg:text-sm"
+			data-belir-oge
+			style="--sira: 0"
+		>
+			{m('yetkinlik.ustBaslik')}
+		</p>
+		<h2
+			class="mt-4 text-3xl font-bold tracking-tight text-foreground lg:text-4xl"
+			data-belir-oge
+			style="--sira: 1"
+		>
+			{m('yetkinlik.baslik')}
+		</h2>
+		<p
+			class="mx-auto mt-4 max-w-xl text-muted-foreground lg:text-lg"
+			data-belir-oge
+			style="--sira: 2"
+		>
+			{m('yetkinlik.metin')}
+		</p>
 
-		<ul class="liste">
-			{
-				sirali.map((y, sira) => (
-					<li class="satir" data-belir-oge style={`--sira: ${3 + sira}`}>
-						<span class="simge" aria-hidden="true">
-							<Icon name={y.ikon} class="size-5" />
-						</span>
-
-						<div class="govde">
-							<div class="ust">
-								<span class="ad">{y.ad}</span>
-								<span class="oran">{y.oran}%</span>
-							</div>
-
-							<div
-								class="cubuk"
-								role="img"
-								aria-label={`${y.ad}: %${y.oran}`}
-								style={`--dolu: ${y.oran / 100}; --gecikme: ${sira * 90}ms`}
+		<div class="alan" data-yetkinlik-alani>
+			<ul class="liste" role="tablist" aria-label={m('yetkinlik.baslik')}>
+				{
+					sirali.map((y, sira) => (
+						<li>
+							<button
+								type="button"
+								class="satir"
+								role="tab"
+								id={`yetkinlik-sekme-${sira}`}
+								aria-controls={`yetkinlik-panel-${sira}`}
+								aria-selected={sira === 0 ? 'true' : 'false'}
+								tabindex={sira === 0 ? 0 : -1}
+								data-belir-oge
+								style={`--sira: ${3 + sira}`}
 							>
-								<span class="dolgu"></span>
+								<span class="simge" aria-hidden="true">
+									<Icon name={y.ikon} class="size-5" />
+								</span>
+
+								<span class="govde">
+									<span class="ust">
+										<span class="ad">{y.ad}</span>
+										<span class="oran">{y.oran}%</span>
+									</span>
+
+									<span class="cubuk" style={`--dolu: ${y.oran / 100}; --gecikme: ${sira * 90}ms`}>
+										<span class="dolgu" />
+									</span>
+
+									<span class="alt">
+										<span class="ipucu">{m('yetkinlik.ipucu')}</span>
+										<span>{y.sure[dil]}</span>
+									</span>
+								</span>
+							</button>
+						</li>
+					))
+				}
+			</ul>
+
+			<div class="paneller">
+				{
+					sirali.map((y, sira) => (
+						<div
+							class="panel"
+							role="tabpanel"
+							id={`yetkinlik-panel-${sira}`}
+							aria-labelledby={`yetkinlik-sekme-${sira}`}
+							tabindex="0"
+							hidden={sira !== 0}
+						>
+							<div>
+								<h3 class="panel-ad">{y.ad}</h3>
+								<p class="panel-tanim">{y.tanim[dil]}</p>
 							</div>
 
-							<div class="alt">
-								<span>{y.alt[dil]}</span>
-								<span>{y.sure[dil]}</span>
+							<div>
+								<p class="panel-etiket">{m('yetkinlik.ilerlemeBaslik')}</p>
+								<p class="panel-metin">{y.ilerleme[dil]}</p>
 							</div>
 						</div>
-					</li>
-				))
-			}
-		</ul>
+					))
+				}
+			</div>
+		</div>
 	</div>
 </section>
 
 <style>
-	/*
-	  Geniş ekranda iki sütun: başlık solda sabit kalıyor, çubuklar sağda.
-	  Bölüm tam ekran yüksekliğinde olduğu için tek sütunda sağ taraf boş
-	  kalıyordu. Dar ekranda tek sütun, başlık üstte.
-	*/
-	@media (min-width: 1024px) {
-		.kapsayici {
-			display: grid;
-			grid-template-columns: minmax(0, 20rem) minmax(0, 1fr);
-			align-items: start;
-			gap: 4rem;
-		}
-
-		.basliklar {
-			position: sticky;
-			top: 6rem;
-		}
+	.alan {
+		margin-top: 3rem;
+		text-align: start;
 	}
 
-	/*
-	  Üst boşluk Tailwind sınıfıyla değil burada veriliyor: aşağıdaki
-	  `margin: 0` onu eziyordu. Astro kapsamlı stillere nitelik seçicisi
-	  ekliyor ve özgüllüğü tek sınıflı utility'lerin üstüne çıkıyor.
-	*/
 	.liste {
 		list-style: none;
 		padding: 0;
-		margin: 3rem 0 0;
+		margin: 0;
 		display: grid;
-		gap: 1.75rem;
+		gap: 0.5rem;
 	}
 
+	/* --- Satır (sekme başlığı) --- */
 	.satir {
 		display: grid;
 		grid-template-columns: auto 1fr;
 		align-items: start;
 		gap: 1rem;
+		width: 100%;
+		padding: 0.75rem;
+		border: 0;
+		border-radius: 0.875rem;
+		background: transparent;
+		text-align: start;
+		cursor: pointer;
+		transition:
+			background-color 220ms ease-out,
+			translate 220ms cubic-bezier(0.22, 1, 0.36, 1);
+	}
+
+	.satir:hover {
+		background: color-mix(in oklab, var(--foreground) 5%, transparent);
+		translate: 0 -2px;
+	}
+
+	.satir:focus-visible {
+		outline: 2px solid var(--ring);
+		outline-offset: 2px;
+	}
+
+	.satir[aria-selected="true"] {
+		background: color-mix(in oklab, var(--foreground) 7%, transparent);
 	}
 
 	.simge {
@@ -190,11 +277,17 @@ const sirali = [...yetkinlikler].sort((a, b) => b.oran - a.oran);
 		border-radius: 9999px;
 		background: color-mix(in oklab, var(--foreground) 6%, transparent);
 		box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--foreground) 10%, transparent);
-		/* Satırın ilk metin satırıyla hizalansın diye hafif aşağıda. */
 		margin-top: 0.125rem;
+		transition: scale 260ms cubic-bezier(0.34, 1.56, 0.64, 1);
+	}
+
+	.satir:hover .simge,
+	.satir[aria-selected="true"] .simge {
+		scale: 1.08;
 	}
 
 	.govde {
+		display: block;
 		min-width: 0;
 	}
 
@@ -219,6 +312,7 @@ const sirali = [...yetkinlikler].sort((a, b) => b.oran - a.oran);
 	}
 
 	.cubuk {
+		display: block;
 		position: relative;
 		margin-top: 0.5rem;
 		height: 0.5rem;
@@ -231,12 +325,10 @@ const sirali = [...yetkinlikler].sort((a, b) => b.oran - a.oran);
 		display: block;
 		height: 100%;
 		border-radius: inherit;
-		/* Marka gradyanı: çubuk düz bir blok yerine sitenin vurgu rengiyle
-		   akıyor. Bilgi rengin kendisinde değil — ad ve yüzde ayrıca yazılı,
-		   yani renk yalnızca süs. */
+		/* Renk yalnızca süs: ad ve yüzde ayrıca yazılı. */
 		background: linear-gradient(90deg, var(--color-marka-600), var(--color-marka-400));
-		/* Genişlik yerine ölçek: genişlik animasyonu her karede yeniden
-		   yerleşim tetikliyor, ölçek yalnızca birleştirme katmanında çalışıyor. */
+		/* Genişlik yerine ölçek: genişlik animasyonu her karede yeniden yerleşim
+		   tetikliyor, ölçek yalnızca birleştirme katmanında çalışıyor. */
 		transform-origin: left center;
 		transform: scaleX(var(--dolu, 0));
 	}
@@ -252,9 +344,8 @@ const sirali = [...yetkinlikler].sort((a, b) => b.oran - a.oran);
 		}
 	}
 
-	/* Dar ekranda iki not alt alta geçebilsin: kılavuzun kuralı metni sabit
-	   genişlikte kırpmamak. `nowrap` yalnızca sağdaki kısa etikette kalıyor
-	   ve o da sarmalanma serbest olduğu için taşmıyor. */
+	/* Dar ekranda iki not alt alta geçebilsin: metin sabit genişlikte
+	   kırpılmamalı. */
 	.alt {
 		display: flex;
 		flex-wrap: wrap;
@@ -267,11 +358,85 @@ const sirali = [...yetkinlikler].sort((a, b) => b.oran - a.oran);
 		color: var(--muted-foreground);
 	}
 
+	/* "Ayrıntı için tıkla" ipucu yalnızca üzerine gelince beliriyor; sürekli
+	   duran bir yönerge listeyi gürültülü yapıyordu. Seçili satırda gizli —
+	   orada panel zaten açık. */
+	.ipucu {
+		opacity: 0;
+		transition: opacity 220ms ease-out;
+	}
+
+	.satir:hover .ipucu,
+	.satir:focus-visible .ipucu {
+		opacity: 1;
+	}
+
+	.satir[aria-selected="true"] .ipucu {
+		opacity: 0;
+	}
+
+	/* --- Ayrıntı paneli --- */
+	.paneller {
+		display: grid;
+		margin-top: 2rem;
+		border-top: 1px solid var(--border);
+		padding-top: 2rem;
+	}
+
+	/* Paneller aynı ızgara gözünde: geçişte yükseklik zıplamıyor. */
+	.panel {
+		grid-area: 1 / 1;
+		display: grid;
+		gap: 1.5rem;
+		animation: panel-belir 420ms cubic-bezier(0.22, 1, 0.36, 1);
+	}
+
+	.panel[hidden] {
+		display: none;
+	}
+
+	@keyframes panel-belir {
+		from {
+			opacity: 0;
+			transform: translateY(10px);
+		}
+	}
+
+	.panel-ad {
+		font-size: 1.375rem;
+		font-weight: 700;
+		color: var(--foreground);
+	}
+
+	.panel-tanim {
+		margin-top: 0.625rem;
+		color: var(--muted-foreground);
+		line-height: 1.65;
+	}
+
+	.panel-etiket {
+		font-size: 0.75rem;
+		font-weight: 600;
+		letter-spacing: 0.16em;
+		color: var(--muted-foreground);
+	}
+
+	.panel-metin {
+		margin-top: 0.625rem;
+		color: var(--foreground);
+		line-height: 1.7;
+	}
+
+	@media (min-width: 768px) {
+		.panel {
+			grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+			gap: 3rem;
+		}
+	}
+
 	@media (min-width: 1024px) {
-		.liste {
-			/* İki sütuna geçince başlık yanda kalıyor, üst boşluğa gerek yok. */
-			margin-top: 0;
-			gap: 2.25rem;
+		.alan {
+			margin-top: 4rem;
 		}
 
 		.ad {
@@ -281,11 +446,71 @@ const sirali = [...yetkinlikler].sort((a, b) => b.oran - a.oran);
 		.alt {
 			font-size: 0.875rem;
 		}
+
+		.panel-ad {
+			font-size: 1.5rem;
+		}
 	}
 
 	@media (prefers-reduced-motion: reduce) {
-		[data-gorunur] .dolgu {
+		[data-gorunur] .dolgu,
+		.panel {
 			animation: none;
+		}
+
+		.satir,
+		.simge,
+		.ipucu {
+			transition: none;
+		}
+
+		.satir:hover {
+			translate: none;
 		}
 	}
 </style>
+
+<script is:inline>
+	(function () {
+		var alan = document.querySelector('[data-yetkinlik-alani]');
+		if (!alan) return;
+
+		var sekmeler = [].slice.call(alan.querySelectorAll('[role="tab"]'));
+		var paneller = [].slice.call(alan.querySelectorAll('[role="tabpanel"]'));
+		if (!sekmeler.length) return;
+
+		function sec(indeks, odakla) {
+			for (var i = 0; i < sekmeler.length; i++) {
+				var secili = i === indeks;
+				sekmeler[i].setAttribute('aria-selected', secili ? 'true' : 'false');
+				// Sekme dizisinde yalnızca seçili olan sırada; aralarında ok
+				// tuşlarıyla geziliyor (WAI-ARIA sekme örüntüsü).
+				sekmeler[i].tabIndex = secili ? 0 : -1;
+				paneller[i].hidden = !secili;
+			}
+			if (odakla) sekmeler[indeks].focus();
+		}
+
+		sekmeler.forEach(function (sekme, i) {
+			sekme.addEventListener('click', function () {
+				sec(i, false);
+			});
+		});
+
+		alan.addEventListener('keydown', function (olay) {
+			var su = sekmeler.indexOf(document.activeElement);
+			if (su < 0) return;
+
+			var hedef = null;
+			if (olay.key === 'ArrowDown' || olay.key === 'ArrowRight') hedef = (su + 1) % sekmeler.length;
+			else if (olay.key === 'ArrowUp' || olay.key === 'ArrowLeft')
+				hedef = (su - 1 + sekmeler.length) % sekmeler.length;
+			else if (olay.key === 'Home') hedef = 0;
+			else if (olay.key === 'End') hedef = sekmeler.length - 1;
+
+			if (hedef === null) return;
+			olay.preventDefault();
+			sec(hedef, true);
+		});
+	})();
+</script>
