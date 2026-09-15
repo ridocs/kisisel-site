@@ -143,17 +143,21 @@ const yil = derlemeZamani.getFullYear();
 		height: 0.625rem;
 		border-radius: 9999px;
 		flex: none;
-		/* Renkler nötr: koyu temada renkli noktalar tek renkli bir altbilgide
-		   gereksiz gürültü yapıyordu. Biçim zaten uçbirimi anlatıyor. */
-		background: color-mix(in oklab, var(--foreground) 22%, transparent);
+	}
+
+	/* macOS pencere düğmelerinin kendi renkleri. Doygunluk biraz kısık:
+	   tam parlak hâlleri tek renkli bir altbilgide gözü kendine çekiyor,
+	   oysa bunlar başlık çubuğunun süsü. */
+	.lamba-a {
+		background: oklch(0.68 0.18 25);
 	}
 
 	.lamba-b {
-		opacity: 0.75;
+		background: oklch(0.79 0.15 80);
 	}
 
 	.lamba-c {
-		opacity: 0.5;
+		background: oklch(0.74 0.17 145);
 	}
 
 	.ucbirim-ad {

@@ -3,6 +3,7 @@ import Navbar from '../components/Navbar.astro';
 import SarmasikYazi from '../components/SarmasikYazi.astro';
 import KaydirmaSeridi from '../components/KaydirmaSeridi.astro';
 import Altbilgi from '../components/Altbilgi.astro';
+import SosyalRay from '../components/SosyalRay.astro';
 import { cevirici, digerDilYolu, dilBul, taban } from '@/i18n/ceviriler';
 import '../styles/global.css';
 // ?url ile içe aktarıldığında Vite hash'li son adresi veriyor; önyükleme
@@ -19,11 +20,21 @@ interface Props {
 	 * çubuğu üretiyor.
 	 */
 	altbilgi?: boolean;
+	/*
+	  İçerik sütunu sayfada ortalanmak yerine sola yaslansın mı. Blog ve yazı
+	  sayfalarında okuma sütunu solda duruyor; ana sayfa ve diğerleri ortada.
+	*/
+	solaYasli?: boolean;
 }
 
 const dil = dilBul(Astro.url);
 const m = cevirici(dil);
-const { title, description = m('site.aciklama'), altbilgi = true } = Astro.props;
+const {
+	title,
+	description = m('site.aciklama'),
+	altbilgi = true,
+	solaYasli = false,
+} = Astro.props;
 
 // Varsayılan yuvada içerik yoksa <main> hiç çizilmiyor; boş bir main yalnızca
 // dolgusu kadar yer kaplayıp sayfayı görünüm alanından uzatıyordu.
@@ -120,6 +131,7 @@ const enYolu = new URL(digerDilYolu(Astro.url, 'en'), Astro.site);
 	<body class="relative flex min-h-svh flex-col text-slate-800 antialiased dark:text-neutral-200">
 		<SarmasikYazi metin={m('sarmasik.metin')} />
 		<KaydirmaSeridi />
+		<SosyalRay />
 
 		<a
 			href="#icerik"
@@ -136,7 +148,15 @@ const enYolu = new URL(digerDilYolu(Astro.url, 'en'), Astro.site);
 
 		{
 			icerikVar && (
-				<main id="icerik" class="mx-auto max-w-3xl px-4 py-12">
+				<main
+					id="icerik"
+					class:list={[
+						'max-w-3xl px-4 py-12',
+						// Sola yaslıyken dış pay soldan değil sağdan veriliyor; `mx-auto`
+						// olmadan blok zaten satır başında duruyor.
+						solaYasli ? 'lg:ms-16 xl:ms-24' : 'mx-auto',
+					]}
+				>
 					<slot />
 				</main>
 			)

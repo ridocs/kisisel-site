@@ -14,6 +14,14 @@ const m = cevirici(dil);
   bırakıldı. Değiştirdiğinde hem düğmeler hem QR kendiliğinden güncellenir.
 */
 const EPOSTA = 'eposta@example.com';
+
+/*
+  WhatsApp numarası — YER TUTUCU. Uluslararası biçimde, başında + ve boşluk
+  olmadan yazılacak (örn. 905551112233). Boş bırakılırsa düğme hiç
+  basılmıyor: çalışmayan bir WhatsApp bağlantısı, düğmenin hiç olmamasından
+  kötü.
+*/
+const WHATSAPP = '905551112233';
 const KONUM = { tr: 'Kayseri, Türkiye', en: 'Kayseri, Türkiye' };
 
 /*
@@ -130,6 +138,19 @@ for (let satir = 0; satir < boyut; satir++) {
 							<Icon name="lucide:mail" class="size-4" />
 							<span>{m('iletisim.yaz')}</span>
 						</a>
+
+						{/* Numara boşsa düğme hiç basılmıyor. */}
+						{WHATSAPP && (
+							<a
+								class="dugme whatsapp"
+								href={`https://wa.me/${WHATSAPP}`}
+								rel="noopener"
+								target="_blank"
+							>
+								<Icon name="lucide:message-circle" class="size-4" />
+								<span>WhatsApp</span>
+							</a>
+						)}
 
 						{/*
 						  Kopyala düğmesi JavaScript gerektiriyor; bu yüzden varsayılan
@@ -342,6 +363,18 @@ for (let satir = 0; satir < boyut; satir++) {
 	.ikincil {
 		background: oklch(0.26 0 0);
 		color: oklch(0.95 0 0);
+	}
+
+	/* WhatsApp'ın kendi yeşili; marka tanınırlığı düğmenin ne olduğunu
+	   yazıdan önce söylüyor. Üstündeki metin koyu: bu yeşilde beyaz yazı
+	   kontrast eşiğini geçmiyor. */
+	.whatsapp {
+		background: oklch(0.72 0.17 152);
+		color: oklch(0.21 0.04 152);
+	}
+
+	.whatsapp:hover {
+		background: oklch(0.78 0.16 152);
 	}
 
 	.ikincil:hover {

@@ -70,6 +70,7 @@ export const ceviriler = {
 		'yazi.dakika': 'dk okuma',
 		'yazi.guncellendi': 'güncellendi',
 		'yazi.tumune': '← Tüm yazılar',
+		'yazi.sonraki': 'Sonraki içerik →',
 
 		'iletisim.ustBaslik': 'İLETİŞİM',
 		'iletisim.baslik': 'Bir fikrin mi var, konuşalım',
@@ -162,6 +163,7 @@ export const ceviriler = {
 		'yazi.dakika': 'min read',
 		'yazi.guncellendi': 'updated',
 		'yazi.tumune': '← All posts',
+		'yazi.sonraki': 'Next post →',
 
 		'iletisim.ustBaslik': 'CONTACT',
 		'iletisim.baslik': 'Got an idea? Let us talk',
