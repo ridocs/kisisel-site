@@ -1,7 +1,7 @@
 ---
 import { durumGetir, neKadarOnce } from './durum';
 import { CANLI_ADRES } from './sunucu.mjs';
-import '../styles/global.css';
+import Kabuk from '../panel/Kabuk.astro';
 
 /*
   SİTE DURUMU VE YAYINLAMA
@@ -17,6 +17,9 @@ import '../styles/global.css';
 
   Veri her istekte yeniden toplanıyor: dev sunucusu bileşeni her açılışta
   çalıştırdığı için ayrıca bir tazeleme düzeneğine gerek yok.
+
+  Belgenin kabuğu (üst şerit, tipografi, renk değişkenleri) `src/panel/`
+  altında; üç panel ekranı da aynı kabuktan geçiyor.
 */
 const durum = await durumGetir();
 
@@ -163,17 +166,27 @@ satirlar.push({
 
 const sorunSayisi = satirlar.filter((s) => s.ton !== 'sakin').length;
 
-const TON_NOKTASI: Record<Ton, string> = {
-	sakin: 'bg-neutral-300 dark:bg-neutral-600',
-	dikkat: 'bg-amber-500',
-	agir: 'bg-red-500',
-};
+/*
+  Tonun GÖRSEL KARŞILIĞI tek yerde.
 
-const TON_METNI: Record<Ton, string> = {
-	sakin: 'text-neutral-600 dark:text-neutral-400',
-	dikkat: 'text-amber-800 dark:text-amber-300',
-	agir: 'text-red-800 dark:text-red-300',
-};
+  Renk tek başına taşıyıcı değil: her tonun bir simge harfi (✓ ! ✕) ve bir
+  sözcüğü var. Renk körü bir kullanıcı da aynı bilgiyi okuyor.
+
+  Sakin satırın rozeti bilerek nötr gri: beklenen hâl göz çekmemeli. Yeşile
+  boyansaydı altı satırın dördü yeşil olur ve gerçekten dikkat isteyen satır
+  kalabalıkta kaybolurdu.
+*/
+const TON_GORUNUS: Record<Ton, { im: string; sozcuk: string; rozet: string; metin: string }> =
+	{
+		sakin: { im: '✓', sozcuk: 'Yolunda', rozet: 'p-rozet--notr', metin: '' },
+		dikkat: {
+			im: '!',
+			sozcuk: 'Dikkat',
+			rozet: 'p-rozet--dikkat',
+			metin: 'p-metin-dikkat',
+		},
+		agir: { im: '✕', sozcuk: 'Sorun', rozet: 'p-rozet--agir', metin: 'p-metin-agir' },
+	};
 
 const cekimAni = new Date().toLocaleString('tr-TR', {
 	dateStyle: 'long',
@@ -181,406 +194,330 @@ const cekimAni = new Date().toLocaleString('tr-TR', {
 });
 ---
 
-<!doctype html>
-<html lang="tr" class="bg-neutral-50 dark:bg-neutral-950">
-	<head>
-		<meta charset="utf-8" />
-		<meta name="viewport" content="width=device-width, initial-scale=1" />
-		<title>Site durumu</title>
-		{/* Panel yerelde çalışıyor ama yine de: bu sayfa hiçbir dizine girmemeli. */}
-		<meta name="robots" content="noindex, nofollow" />
-		{/* Sitenin kendi tema düzeneği `.dark` sınıfına bakıyor; panelde tema
-		    değiştirici yok, işletim sisteminin tercihi doğrudan uygulanıyor. */}
-		<script is:inline>
-			try {
-				if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-					document.documentElement.classList.add('dark');
-				}
-			} catch {
-				// Eşleştirme desteklenmiyorsa açık tema kullanılır.
-			}
-		</script>
-	</head>
-	<body
-		class="min-h-svh bg-neutral-50 text-neutral-800 antialiased dark:bg-neutral-950 dark:text-neutral-200"
-	>
-		<div class="mx-auto max-w-4xl px-5 py-10">
-			<header class="mb-8">
-				<h1
-					class="text-2xl font-semibold tracking-tight text-neutral-900 dark:text-neutral-50"
-				>
-					Site durumu
-				</h1>
-				<p class="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
-					{CANLI_ADRES} · {cekimAni} · {
-						sorunSayisi === 0
-							? 'her şey yolunda'
-							: `${sorunSayisi} satır dikkat istiyor`
-					}
-				</p>
-			</header>
-
-			{/* DURUM SATIRLARI */}
-			<section
-				class="divide-y divide-neutral-200 overflow-hidden rounded-xl border border-neutral-200 bg-white dark:divide-neutral-800 dark:border-neutral-800 dark:bg-neutral-900"
-			>
-				{
-					satirlar.map((satir) => (
-						<div class="flex gap-3 p-4">
-							<span
-								class={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${TON_NOKTASI[satir.ton]}`}
-								aria-hidden="true"
-							/>
-							<div class="min-w-0 flex-1">
-								<div class="text-xs font-medium tracking-wide text-neutral-500 uppercase dark:text-neutral-400">
-									{satir.baslik}
-								</div>
-								<p class={`mt-0.5 text-sm ${TON_METNI[satir.ton]}`}>{satir.metin}</p>
-								{satir.ayrinti && satir.ayrinti.length > 0 && (
-									<ul class="mt-2 space-y-1">
-										{satir.ayrinti.map((madde) => (
-											<li class="truncate font-mono text-xs text-neutral-500 dark:text-neutral-400">
-												{madde}
-											</li>
-										))}
-									</ul>
-								)}
-							</div>
+<Kabuk
+	baslik="Site durumu"
+	aktif="durum"
+	dar
+	not={`${CANLI_ADRES} · ${cekimAni} · ${
+		sorunSayisi === 0 ? 'her şey yolunda' : `${sorunSayisi} satır dikkat istiyor`
+	}`}
+>
+	<div class="p-yigin">
+		{/* DURUM SATIRLARI */}
+		<section class="p-kart p-kart--duz">
+			{
+				satirlar.map((satir) => (
+					<div class="p-durum-satir">
+						<div class="p-durum-ad">{satir.baslik}</div>
+						<div class="p-durum-govde">
+							<p class={`p-durum-metin ${TON_GORUNUS[satir.ton].metin}`}>
+								{satir.metin}
+							</p>
+							{satir.ayrinti && satir.ayrinti.length > 0 && (
+								<ul class="p-ayrinti">
+									{satir.ayrinti.map((madde) => (
+										<li>{madde}</li>
+									))}
+								</ul>
+							)}
 						</div>
-					))
-				}
-			</section>
-
-			{/* YAYINLAMA */}
-			<section
-				class="mt-8 rounded-xl border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900"
-			>
-				<h2 class="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
-					Yayınla
-				</h2>
-				<p class="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
-					İki adım: önce derlenip ne değişeceği gösteriliyor, sunucuya ancak siz
-					onayladıktan sonra dokunuluyor.
-				</p>
-
-				<div class="mt-4 flex flex-wrap items-center gap-3">
-					<button
-						id="dugme-derle"
-						type="button"
-						class="rounded-lg bg-neutral-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-neutral-700 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-neutral-300"
-					>
-						Derle ve önizle
-					</button>
-					<label
-						class="flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-400"
-					>
-						<input
-							id="kutu-kuru"
-							type="checkbox"
-							class="h-4 w-4 rounded border-neutral-300 dark:border-neutral-700"
-						/>
-						Kuru çalıştırma (sunucuya dokunma, yalnızca komutları göster)
-					</label>
-				</div>
-
-				{/* ÖNİZLEME — derleme bitene kadar gizli */}
-				<div
-					id="onizleme"
-					hidden
-					class="mt-5 rounded-lg border border-amber-300 bg-amber-50 p-4 dark:border-amber-900/60 dark:bg-amber-950/30"
-				>
-					<h3 class="text-sm font-semibold text-amber-900 dark:text-amber-200">
-						Yayınlamadan önce onaylayın
-					</h3>
-					<div id="onizleme-ozet" class="mt-2 space-y-1 text-sm text-amber-900/90 dark:text-amber-200/80"></div>
-					<p class="mt-3 text-xs text-amber-900/70 dark:text-amber-200/60">
-						Şu anki sürüm sunucuda <code>web-sitem.eski</code> olarak saklanacak;
-						yanlış giderse "Geri al" ile dönülebilir.
-					</p>
-					<div class="mt-4 flex flex-wrap gap-3">
-						<button
-							id="dugme-gonder"
-							type="button"
-							class="rounded-lg bg-amber-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-amber-700 disabled:cursor-not-allowed disabled:opacity-50"
-						>
-							Sunucuya yayınla
-						</button>
-						<button
-							id="dugme-vazgec"
-							type="button"
-							class="rounded-lg border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-700 transition hover:bg-neutral-100 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800"
-						>
-							Vazgeç
-						</button>
+						{/* Rozet en sağda ve sabit genişlikte: göz tek sütunu tarayıp
+						    hangi satırın dikkat istediğini metni okumadan buluyor. */}
+						<span class={`p-rozet ${TON_GORUNUS[satir.ton].rozet}`}>
+							<span class="p-im" aria-hidden="true">
+								{TON_GORUNUS[satir.ton].im}
+							</span>
+							{TON_GORUNUS[satir.ton].sozcuk}
+						</span>
 					</div>
-				</div>
+				))
+			}
+		</section>
 
-				{/* İŞLEM KAYDI — derleme yarım dakika sürüyor, boş ekran donma sanılıyor */}
-				<pre
-					id="kayit"
-					hidden
-					class="mt-5 max-h-80 overflow-auto rounded-lg bg-neutral-100 p-4 text-xs leading-relaxed whitespace-pre-wrap text-neutral-700 dark:bg-neutral-950 dark:text-neutral-300"></pre>
-			</section>
-
-			{/* GERİ ALMA */}
-			<section
-				class="mt-5 rounded-xl border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900"
-			>
-				<h2 class="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
-					Geri al
-				</h2>
-				<p class="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
-					{
-						!durum.sunucu.ulasildi
-							? 'Sunucuya bağlanılamadığı için geri alınacak bir sürüm olup olmadığı bilinmiyor; düğme bu yüzden kapalı.'
-							: geriAlinabilir
-								? 'Sunucudaki bir önceki sürümü yayına alır. Şu anki sürüm silinmez, yer değiştirir — geri almanın kendisi de geri alınabilir.'
-								: 'Şu anda geri alınacak bir sürüm yok. İlk yayından sonra bu düğme çalışır.'
-					}
-				</p>
-				<div class="mt-4">
-					<button
-						id="dugme-geri-al"
-						type="button"
-						disabled={!geriAlinabilir}
-						class="rounded-lg border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-700 transition hover:bg-neutral-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800"
-					>
-						Önceki sürüme dön
-					</button>
-				</div>
-				<div
-					id="geri-al-onay"
-					hidden
-					class="mt-4 rounded-lg border border-amber-300 bg-amber-50 p-4 dark:border-amber-900/60 dark:bg-amber-950/30"
-				>
-					<p class="text-sm text-amber-900 dark:text-amber-200">
-						Yayındaki sürüm kaldırılıp bir öncekiyle değiştirilecek. Emin misiniz?
-					</p>
-					<div class="mt-3 flex flex-wrap gap-3">
-						<button
-							id="dugme-geri-al-onayla"
-							type="button"
-							class="rounded-lg bg-amber-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-amber-700 disabled:cursor-not-allowed disabled:opacity-50"
-						>
-							Evet, geri al
-						</button>
-						<button
-							id="dugme-geri-al-vazgec"
-							type="button"
-							class="rounded-lg border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-700 transition hover:bg-neutral-100 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800"
-						>
-							Vazgeç
-						</button>
-					</div>
-				</div>
-			</section>
-
-			<p class="mt-6 text-xs leading-relaxed text-neutral-500 dark:text-neutral-400">
-				Bu sayfa yalnızca panel kipinde var; yayın derlemesine girmiyor. Sayfayı
-				yenilemek bütün ölçümleri baştan yapar.
+		{/* YAYINLAMA */}
+		<section class="p-kart">
+			<h2 class="p-kart-baslik">Yayınla</h2>
+			<p class="p-not">
+				İki adım: önce derlenip ne değişeceği gösteriliyor, sunucuya ancak siz
+				onayladıktan sonra dokunuluyor.
 			</p>
-		</div>
 
-		{/*
-		  PANELDE JAVASCRIPT SERBEST — sitede değil.
+			<div class="p-dugme-sirasi p-kart-govde">
+				<button id="dugme-derle" type="button" class="p-dugme p-dugme--birincil">
+					Derle ve önizle
+				</button>
+				<label class="p-secim">
+					<input id="kutu-kuru" type="checkbox" />
+					Kuru çalıştırma (sunucuya dokunma, yalnızca komutları göster)
+				</label>
+			</div>
 
-		  "Ziyaretçiye sıfır JavaScript" kuralı yayın çıktısı için. Bu sayfa hiç
-		  yayınlanmıyor; burada betik olmadan yayın sürerken ne olduğunu canlı
-		  göstermenin yolu yok. Çerçeve yok, yalnızca düz betik.
+			{/* ÖNİZLEME — derleme bitene kadar gizli */}
+			<div id="onizleme" hidden class="p-uyari p-kart-govde">
+				<h3 class="p-uyari-baslik">
+					<span class="p-im p-metin-dikkat" aria-hidden="true">!</span>
+					Yayınlamadan önce onaylayın
+				</h3>
+				<div id="onizleme-ozet" class="p-not"></div>
+				<p class="p-not p-not--kisik">
+					Şu anki sürüm sunucuda <code class="p-kod">web-sitem.eski</code> olarak
+					saklanacak; yanlış giderse "Geri al" ile dönülebilir.
+				</p>
+				<div class="p-dugme-sirasi p-kart-govde">
+					<button id="dugme-gonder" type="button" class="p-dugme p-dugme--uyari">
+						Sunucuya yayınla
+					</button>
+					<button id="dugme-vazgec" type="button" class="p-dugme"> Vazgeç </button>
+				</div>
+			</div>
 
-		  `is:inline`: Astro'nun paketleyicisinden geçmesin, kaynakta ne yazıyorsa
-		  o çalışsın.
-		*/}
-		<script is:inline>
-			(() => {
-				const dugmeDerle = document.getElementById('dugme-derle');
-				const dugmeGonder = document.getElementById('dugme-gonder');
-				const dugmeVazgec = document.getElementById('dugme-vazgec');
-				const dugmeGeriAl = document.getElementById('dugme-geri-al');
-				const dugmeGeriAlOnayla = document.getElementById('dugme-geri-al-onayla');
-				const dugmeGeriAlVazgec = document.getElementById('dugme-geri-al-vazgec');
-				const kutuKuru = document.getElementById('kutu-kuru');
-				const onizleme = document.getElementById('onizleme');
-				const onizlemeOzet = document.getElementById('onizleme-ozet');
-				const geriAlOnay = document.getElementById('geri-al-onay');
-				const kayit = document.getElementById('kayit');
+			{/* İŞLEM KAYDI — derleme yarım dakika sürüyor, boş ekran donma sanılıyor */}
+			<pre id="kayit" hidden class="p-kayit p-kart-govde"></pre>
+		</section>
 
-				const RENK = {
-					adim: 'color:inherit;font-weight:600',
-					uyari: 'color:#b45309',
-					hata: 'color:#b91c1c',
-					bitti: 'color:#15803d;font-weight:600',
-				};
-
-				function kayitTemizle() {
-					kayit.textContent = '';
-					kayit.hidden = false;
+		{/* GERİ ALMA */}
+		<section class="p-kart">
+			<h2 class="p-kart-baslik">Geri al</h2>
+			<p class="p-not">
+				{
+					!durum.sunucu.ulasildi
+						? 'Sunucuya bağlanılamadığı için geri alınacak bir sürüm olup olmadığı bilinmiyor; düğme bu yüzden kapalı.'
+						: geriAlinabilir
+							? 'Sunucudaki bir önceki sürümü yayına alır. Şu anki sürüm silinmez, yer değiştirir — geri almanın kendisi de geri alınabilir.'
+							: 'Şu anda geri alınacak bir sürüm yok. İlk yayından sonra bu düğme çalışır.'
 				}
+			</p>
+			<div class="p-kart-govde">
+				<button id="dugme-geri-al" type="button" disabled={!geriAlinabilir} class="p-dugme">
+					Önceki sürüme dön
+				</button>
+			</div>
+			<div id="geri-al-onay" hidden class="p-uyari p-kart-govde">
+				<p class="p-durum-metin">
+					Yayındaki sürüm kaldırılıp bir öncekiyle değiştirilecek. Emin misiniz?
+				</p>
+				<div class="p-dugme-sirasi p-kart-govde">
+					<button id="dugme-geri-al-onayla" type="button" class="p-dugme p-dugme--uyari">
+						Evet, geri al
+					</button>
+					<button id="dugme-geri-al-vazgec" type="button" class="p-dugme">
+						Vazgeç
+					</button>
+				</div>
+			</div>
+		</section>
 
-				function satirYaz(tur, metin) {
-					const satir = document.createElement('div');
-					if (RENK[tur]) satir.setAttribute('style', RENK[tur]);
-					// Komut ve ham çıktı soluk dursun: gözün takılacağı yer adımlar.
-					if (tur === 'cikti' || tur === 'komut' || tur === 'bilgi') {
-						satir.setAttribute('style', 'opacity:.7');
-					}
-					satir.textContent = metin;
-					kayit.appendChild(satir);
-					// Yeni satır her zaman görünsün; kullanıcı elle kaydırmak zorunda
-					// kalırsa uzun derlemede ekran donmuş görünüyor.
-					kayit.scrollTop = kayit.scrollHeight;
+		<p class="p-dipnot">
+			Bu sayfa yalnızca panel kipinde var; yayın derlemesine girmiyor. Sayfayı
+			yenilemek bütün ölçümleri baştan yapar.
+		</p>
+	</div>
+
+	{/*
+	  PANELDE JAVASCRIPT SERBEST — sitede değil.
+
+	  "Ziyaretçiye sıfır JavaScript" kuralı yayın çıktısı için. Bu sayfa hiç
+	  yayınlanmıyor; burada betik olmadan yayın sürerken ne olduğunu canlı
+	  göstermenin yolu yok. Çerçeve yok, yalnızca düz betik.
+
+	  `is:inline`: Astro'nun paketleyicisinden geçmesin, kaynakta ne yazıyorsa
+	  o çalışsın.
+	*/}
+	<script is:inline>
+		(() => {
+			const dugmeDerle = document.getElementById('dugme-derle');
+			const dugmeGonder = document.getElementById('dugme-gonder');
+			const dugmeVazgec = document.getElementById('dugme-vazgec');
+			const dugmeGeriAl = document.getElementById('dugme-geri-al');
+			const dugmeGeriAlOnayla = document.getElementById('dugme-geri-al-onayla');
+			const dugmeGeriAlVazgec = document.getElementById('dugme-geri-al-vazgec');
+			const kutuKuru = document.getElementById('kutu-kuru');
+			const onizleme = document.getElementById('onizleme');
+			const onizlemeOzet = document.getElementById('onizleme-ozet');
+			const geriAlOnay = document.getElementById('geri-al-onay');
+			const kayit = document.getElementById('kayit');
+
+			/*
+			  Satır tonları SINIF adıyla veriliyor, gömülü hex ile değil.
+			  Önceki sürümde renkler betiğin içinde sabit hex'ti (#b45309 gibi) ve
+			  koyu temada kayıt zemininde okunmuyorlardı; şimdi ikisi de panel.css
+			  içindeki tema değişkenlerinden besleniyor.
+			*/
+			const SINIF = {
+				adim: 'p-kayit-adim',
+				uyari: 'p-kayit-uyari',
+				hata: 'p-kayit-hata',
+				bitti: 'p-kayit-bitti',
+				// Komut ve ham çıktı soluk dursun: gözün takılacağı yer adımlar.
+				cikti: 'p-kayit-kisik',
+				komut: 'p-kayit-kisik',
+				bilgi: 'p-kayit-kisik',
+			};
+
+			function kayitTemizle() {
+				kayit.textContent = '';
+				kayit.hidden = false;
+			}
+
+			function satirYaz(tur, metin) {
+				const satir = document.createElement('div');
+				if (SINIF[tur]) satir.className = SINIF[tur];
+				satir.textContent = metin;
+				kayit.appendChild(satir);
+				// Yeni satır her zaman görünsün; kullanıcı elle kaydırmak zorunda
+				// kalırsa uzun derlemede ekran donmuş görünüyor.
+				kayit.scrollTop = kayit.scrollHeight;
+			}
+
+			/*
+			  "Önceki sürüme dön" sunucuda geri alınacak sürüm yoksa baştan
+			  kapalı geliyor. Kilidi açarken bu unutulursa düğme işlem bitince
+			  kendiliğinden tıklanabilir hâle geliyordu — basan da "geri alınacak
+			  sürüm yok" hatasıyla karşılaşıyordu. Başlangıç hâli saklanıyor.
+			*/
+			const geriAlBastanKapali = dugmeGeriAl.disabled;
+
+			function dugmeleriKilitle(kilitli) {
+				for (const d of [dugmeDerle, dugmeGonder, dugmeGeriAlOnayla]) {
+					if (d) d.disabled = kilitli;
 				}
+				dugmeGeriAl.disabled = kilitli || geriAlBastanKapali;
+			}
 
-				/*
-				  "Önceki sürüme dön" sunucuda geri alınacak sürüm yoksa baştan
-				  kapalı geliyor. Kilidi açarken bu unutulursa düğme işlem bitince
-				  kendiliğinden tıklanabilir hâle geliyordu — basan da "geri alınacak
-				  sürüm yok" hatasıyla karşılaşıyordu. Başlangıç hâli saklanıyor.
-				*/
-				const geriAlBastanKapali = dugmeGeriAl.disabled;
-
-				function dugmeleriKilitle(kilitli) {
-					for (const d of [dugmeDerle, dugmeGonder, dugmeGeriAlOnayla]) {
-						if (d) d.disabled = kilitli;
-					}
-					dugmeGeriAl.disabled = kilitli || geriAlBastanKapali;
-				}
-
-				/*
-				  Sunucu NDJSON akıtıyor: her satır bir olay. Yanıtın tamamını
-				  beklemek, derleme bitene kadar ekranda hiçbir şey göstermemek
-				  demekti.
-				*/
-				async function islemCalistir(govde, olay) {
-					dugmeleriKilitle(true);
-					try {
-						const yanit = await fetch('/durum/islem', {
-							method: 'POST',
-							headers: { 'Content-Type': 'application/json' },
-							body: JSON.stringify(govde),
-						});
-						if (!yanit.ok || !yanit.body) {
-							satirYaz('hata', 'Sunucu yanıt vermedi: HTTP ' + yanit.status);
-							return null;
-						}
-
-						const okuyucu = yanit.body.getReader();
-						const cozucu = new TextDecoder();
-						let tampon = '';
-						let sonuc = null;
-
-						while (true) {
-							const { done, value } = await okuyucu.read();
-							if (done) break;
-							tampon += cozucu.decode(value, { stream: true });
-							const parcalar = tampon.split('\n');
-							// Son parça yarım kalmış olabilir; tamponda bekliyor.
-							tampon = parcalar.pop();
-							for (const parca of parcalar) {
-								if (!parca.trim()) continue;
-								const olayVerisi = JSON.parse(parca);
-								if (olayVerisi.tur === 'sonuc') sonuc = olayVerisi;
-								else satirYaz(olayVerisi.tur, olayVerisi.metin);
-							}
-						}
-
-						if (!sonuc) {
-							satirYaz('hata', 'İşlem yarıda kesildi; sonuç bilgisi gelmedi.');
-							return null;
-						}
-						if (!sonuc.basarili) {
-							satirYaz('hata', sonuc.hata || 'Bilinmeyen hata.');
-							return null;
-						}
-						if (olay) olay(sonuc);
-						return sonuc;
-					} catch (hata) {
-						satirYaz('hata', 'İstek başarısız: ' + (hata && hata.message));
+			/*
+			  Sunucu NDJSON akıtıyor: her satır bir olay. Yanıtın tamamını
+			  beklemek, derleme bitene kadar ekranda hiçbir şey göstermemek
+			  demekti.
+			*/
+			async function islemCalistir(govde, olay) {
+				dugmeleriKilitle(true);
+				try {
+					const yanit = await fetch('/durum/islem', {
+						method: 'POST',
+						headers: { 'Content-Type': 'application/json' },
+						body: JSON.stringify(govde),
+					});
+					if (!yanit.ok || !yanit.body) {
+						satirYaz('hata', 'Sunucu yanıt vermedi: HTTP ' + yanit.status);
 						return null;
-					} finally {
-						dugmeleriKilitle(false);
 					}
-				}
 
-				function listeCumlesi(baslik, liste) {
-					if (!liste || liste.length === 0) return null;
-					const gosterilen = liste.slice(0, 8).join(', ');
-					const kalan = liste.length > 8 ? ' … (+' + (liste.length - 8) + ')' : '';
-					return baslik + ': ' + gosterilen + kalan;
-				}
+					const okuyucu = yanit.body.getReader();
+					const cozucu = new TextDecoder();
+					let tampon = '';
+					let sonuc = null;
 
-				function onizlemeyiKur(sonuc) {
-					onizlemeOzet.textContent = '';
-					const cumleler = [sonuc.sayfalar.length + ' sayfa derlendi.'];
-
-					if (!sonuc.karsilastirma) {
-						cumleler.push(
-							'Yayındaki site haritası okunamadı; neyin değişeceği karşılaştırılamadı.',
-						);
-					} else {
-						const yeni = listeCumlesi('Yayına girecek yeni sayfa', sonuc.karsilastirma.yeni);
-						const kaybolan = listeCumlesi(
-							'Yayından kalkacak sayfa',
-							sonuc.karsilastirma.kaybolan,
-						);
-						if (yeni) cumleler.push(yeni);
-						if (kaybolan) cumleler.push(kaybolan);
-						if (!yeni && !kaybolan) {
-							cumleler.push(
-								'Sayfa listesi yayındakiyle aynı; yalnızca sayfaların içeriği değişmiş olabilir.',
-							);
+					while (true) {
+						const { done, value } = await okuyucu.read();
+						if (done) break;
+						tampon += cozucu.decode(value, { stream: true });
+						const parcalar = tampon.split('\n');
+						// Son parça yarım kalmış olabilir; tamponda bekliyor.
+						tampon = parcalar.pop();
+						for (const parca of parcalar) {
+							if (!parca.trim()) continue;
+							const olayVerisi = JSON.parse(parca);
+							if (olayVerisi.tur === 'sonuc') sonuc = olayVerisi;
+							else satirYaz(olayVerisi.tur, olayVerisi.metin);
 						}
 					}
 
-					if (kutuKuru.checked) {
-						cumleler.push('KURU ÇALIŞTIRMA açık: sunucuya hiçbir şey gönderilmeyecek.');
+					if (!sonuc) {
+						satirYaz('hata', 'İşlem yarıda kesildi; sonuç bilgisi gelmedi.');
+						return null;
 					}
+					if (!sonuc.basarili) {
+						satirYaz('hata', sonuc.hata || 'Bilinmeyen hata.');
+						return null;
+					}
+					if (olay) olay(sonuc);
+					return sonuc;
+				} catch (hata) {
+					satirYaz('hata', 'İstek başarısız: ' + (hata && hata.message));
+					return null;
+				} finally {
+					dugmeleriKilitle(false);
+				}
+			}
 
-					for (const cumle of cumleler) {
-						const p = document.createElement('p');
-						p.textContent = cumle;
-						onizlemeOzet.appendChild(p);
+			function listeCumlesi(baslik, liste) {
+				if (!liste || liste.length === 0) return null;
+				const gosterilen = liste.slice(0, 8).join(', ');
+				const kalan = liste.length > 8 ? ' … (+' + (liste.length - 8) + ')' : '';
+				return baslik + ': ' + gosterilen + kalan;
+			}
+
+			function onizlemeyiKur(sonuc) {
+				onizlemeOzet.textContent = '';
+				const cumleler = [sonuc.sayfalar.length + ' sayfa derlendi.'];
+
+				if (!sonuc.karsilastirma) {
+					cumleler.push(
+						'Yayındaki site haritası okunamadı; neyin değişeceği karşılaştırılamadı.',
+					);
+				} else {
+					const yeni = listeCumlesi('Yayına girecek yeni sayfa', sonuc.karsilastirma.yeni);
+					const kaybolan = listeCumlesi(
+						'Yayından kalkacak sayfa',
+						sonuc.karsilastirma.kaybolan,
+					);
+					if (yeni) cumleler.push(yeni);
+					if (kaybolan) cumleler.push(kaybolan);
+					if (!yeni && !kaybolan) {
+						cumleler.push(
+							'Sayfa listesi yayındakiyle aynı; yalnızca sayfaların içeriği değişmiş olabilir.',
+						);
 					}
-					onizleme.hidden = false;
 				}
 
-				dugmeDerle.addEventListener('click', async () => {
-					onizleme.hidden = true;
-					kayitTemizle();
-					await islemCalistir({ islem: 'derle' }, onizlemeyiKur);
-				});
+				if (kutuKuru.checked) {
+					cumleler.push('KURU ÇALIŞTIRMA açık: sunucuya hiçbir şey gönderilmeyecek.');
+				}
 
-				dugmeGonder.addEventListener('click', async () => {
-					const kuru = kutuKuru.checked;
-					onizleme.hidden = true;
-					satirYaz('adim', kuru ? '— kuru çalıştırma başladı —' : '— yayın başladı —');
-					const sonuc = await islemCalistir({ islem: 'gonder', kuru: kuru });
-					// Gerçek yayından sonra durum satırları eskiyor; sayfa kendini
-					// tazeliyor ki "son yayın" ve "yayınlanmamış yazı" doğru olsun.
-					if (sonuc && !kuru) setTimeout(() => location.reload(), 2500);
-				});
+				for (const cumle of cumleler) {
+					const p = document.createElement('p');
+					p.textContent = cumle;
+					onizlemeOzet.appendChild(p);
+				}
+				onizleme.hidden = false;
+			}
 
-				dugmeVazgec.addEventListener('click', () => {
-					onizleme.hidden = true;
-					satirYaz('uyari', 'Vazgeçildi; sunucuya dokunulmadı.');
-				});
+			dugmeDerle.addEventListener('click', async () => {
+				onizleme.hidden = true;
+				kayitTemizle();
+				await islemCalistir({ islem: 'derle' }, onizlemeyiKur);
+			});
 
-				dugmeGeriAl.addEventListener('click', () => {
-					geriAlOnay.hidden = false;
-				});
+			dugmeGonder.addEventListener('click', async () => {
+				const kuru = kutuKuru.checked;
+				onizleme.hidden = true;
+				satirYaz('adim', kuru ? '— kuru çalıştırma başladı —' : '— yayın başladı —');
+				const sonuc = await islemCalistir({ islem: 'gonder', kuru: kuru });
+				// Gerçek yayından sonra durum satırları eskiyor; sayfa kendini
+				// tazeliyor ki "son yayın" ve "yayınlanmamış yazı" doğru olsun.
+				if (sonuc && !kuru) setTimeout(() => location.reload(), 2500);
+			});
 
-				dugmeGeriAlVazgec.addEventListener('click', () => {
-					geriAlOnay.hidden = true;
-				});
+			dugmeVazgec.addEventListener('click', () => {
+				onizleme.hidden = true;
+				satirYaz('uyari', 'Vazgeçildi; sunucuya dokunulmadı.');
+			});
 
-				dugmeGeriAlOnayla.addEventListener('click', async () => {
-					const kuru = kutuKuru.checked;
-					geriAlOnay.hidden = true;
-					kayitTemizle();
-					const sonuc = await islemCalistir({ islem: 'geri-al', kuru: kuru });
-					if (sonuc && !kuru) setTimeout(() => location.reload(), 2500);
-				});
-			})();
-		</script>
-	</body>
-</html>
+			dugmeGeriAl.addEventListener('click', () => {
+				geriAlOnay.hidden = false;
+			});
+
+			dugmeGeriAlVazgec.addEventListener('click', () => {
+				geriAlOnay.hidden = true;
+			});
+
+			dugmeGeriAlOnayla.addEventListener('click', async () => {
+				const kuru = kutuKuru.checked;
+				geriAlOnay.hidden = true;
+				kayitTemizle();
+				const sonuc = await islemCalistir({ islem: 'geri-al', kuru: kuru });
+				if (sonuc && !kuru) setTimeout(() => location.reload(), 2500);
+			});
+		})();
+	</script>
+</Kabuk>

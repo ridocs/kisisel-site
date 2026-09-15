@@ -1,6 +1,6 @@
 ---
 import { denetle, type Bulgu, type Onem } from './denetimler';
-import '../styles/global.css';
+import Kabuk from '../panel/Kabuk.astro';
 
 /*
   YAYIN ÖNCESİ KONTROL
@@ -13,6 +13,9 @@ import '../styles/global.css';
   Denetim her istekte yeniden çalışıyor: dev sunucusu bileşeni her açılışta
   çalıştırdığı için ayrıca bir tazeleme düzeneğine gerek yok — bir dosyayı
   düzeltip sayfayı yenilemek yeniden denetlemeye yetiyor.
+
+  Belgenin kabuğu (üst şerit, tipografi, renk değişkenleri) `src/panel/`
+  altında; üç panel ekranı da aynı kabuktan geçiyor.
 */
 const rapor = await denetle();
 
@@ -62,22 +65,37 @@ const sayilar = {
 };
 
 /*
-  Renkler kovaya göre. Koyu temada zeminler nötr gri kalıyor; renk yalnızca
-  ince bir kenarlıkta ve rozette duruyor, böylece üç kova yan yana okunurken
-  sayfa bir uyarı panosuna dönüşmüyor.
-*/
-const kovaRengi: Record<Onem, string> = {
-	engel: 'border-rose-300 dark:border-rose-900/70',
-	iyilestirme: 'border-amber-300 dark:border-amber-900/70',
-	gozdenGecir: 'border-neutral-300 dark:border-neutral-700',
-};
+  Önem düzeyinin GÖRSEL KARŞILIĞI tek yerde.
 
-const rozetRengi: Record<Onem, string> = {
-	engel: 'bg-rose-100 text-rose-900 dark:bg-rose-950/60 dark:text-rose-200',
-	iyilestirme: 'bg-amber-100 text-amber-900 dark:bg-amber-950/60 dark:text-amber-200',
-	gozdenGecir:
-		'bg-neutral-200 text-neutral-800 dark:bg-neutral-800 dark:text-neutral-200',
-};
+  Renk tek başına taşıyıcı değil: her düzeyin bir simge harfi (✕ ! ?) ve bir
+  sözcüğü var. Renk körü bir kullanıcı da, ekranı gri basan bir çıktı da aynı
+  bilgiyi okuyor. Renk üçüncü işaret, birinci değil.
+
+  Koyu temada kova zeminleri nötr gri kalıyor; renk yalnızca ince kenarlıkta,
+  rozette ve simgede duruyor — yoksa üç kova yan yana bir alarm panosuna
+  dönüşüyordu.
+*/
+const GORUNUS: Record<Onem, { im: string; sozcuk: string; rozet: string; kenar: string }> =
+	{
+		engel: {
+			im: '✕',
+			sozcuk: 'Engel',
+			rozet: 'p-rozet--agir',
+			kenar: 'p-olcu--agir',
+		},
+		iyilestirme: {
+			im: '!',
+			sozcuk: 'İyileştirme',
+			rozet: 'p-rozet--dikkat',
+			kenar: 'p-olcu--dikkat',
+		},
+		gozdenGecir: {
+			im: '?',
+			sozcuk: 'Karar sizin',
+			rozet: 'p-rozet--notr',
+			kenar: 'p-olcu--notr',
+		},
+	};
 
 const cekimAni = new Date().toLocaleString('tr-TR', {
 	dateStyle: 'long',
@@ -85,167 +103,137 @@ const cekimAni = new Date().toLocaleString('tr-TR', {
 });
 ---
 
-<!doctype html>
-<html lang="tr" class="bg-neutral-50 dark:bg-neutral-950">
-	<head>
-		<meta charset="utf-8" />
-		<meta name="viewport" content="width=device-width, initial-scale=1" />
-		<title>Yayın öncesi kontrol</title>
-		{/* Panel yerelde çalışıyor ama yine de: bu sayfa hiçbir dizine girmemeli. */}
-		<meta name="robots" content="noindex, nofollow" />
-		{/* Sitenin kendi tema düzeneği `.dark` sınıfına bakıyor; panelde tema
-		    değiştirici yok, işletim sisteminin tercihi doğrudan uygulanıyor. */}
-		<script is:inline>
-			try {
-				if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-					document.documentElement.classList.add('dark');
-				}
-			} catch {
-				// Eşleştirme desteklenmiyorsa açık tema kullanılır.
-			}
-		</script>
-	</head>
-	<body
-		class="min-h-svh bg-neutral-50 text-neutral-800 antialiased dark:bg-neutral-950 dark:text-neutral-200"
-	>
-		<div class="mx-auto max-w-4xl px-5 py-10">
-			<header class="mb-8">
-				<h1
-					class="text-2xl font-semibold tracking-tight text-neutral-900 dark:text-neutral-50"
-				>
-					Yayın öncesi kontrol
-				</h1>
-				<p class="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
-					{rapor.yaziSayisi} yazı · {rapor.sayfaSayisi} sayfa denetlendi · {cekimAni}
-				</p>
-			</header>
-
-			{/* ÖZET */}
-			<section class="grid grid-cols-3 gap-3">
-				{
-					kovalar.map((kova) => (
-						<div
-							class={`rounded-xl border bg-white p-4 dark:bg-neutral-900 ${kovaRengi[kova.onem]}`}
-						>
-							<div class="text-3xl font-semibold tabular-nums text-neutral-900 dark:text-neutral-50">
-								{sayilar[kova.onem]}
-							</div>
-							<div class="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
-								{kova.baslik}
-							</div>
+<Kabuk
+	baslik="Yayın öncesi kontrol"
+	aktif="kontrol"
+	dar
+	not={`${rapor.yaziSayisi} yazı · ${rapor.sayfaSayisi} sayfa denetlendi · ${cekimAni}`}
+>
+	<div class="p-yigin">
+		{/* ÖZET — üç kova, üç rakam; hangisinin acil olduğu simgeden de okunuyor */}
+		<section class="p-izgara p-izgara--3">
+			{
+				kovalar.map((kova) => (
+					<div class={`p-kart p-kart--sikisik ${GORUNUS[kova.onem].kenar}`}>
+						<div class="p-kart-basi">
+							<span class="p-olcu-sayi">{sayilar[kova.onem]}</span>
+							<span class={`p-rozet ${GORUNUS[kova.onem].rozet}`}>
+								<span class="p-im" aria-hidden="true">
+									{GORUNUS[kova.onem].im}
+								</span>
+								{GORUNUS[kova.onem].sozcuk}
+							</span>
 						</div>
-					))
-				}
-			</section>
-
-			{
-				rapor.bulgular.length === 0 && (
-					<section class="mt-8 rounded-xl border border-neutral-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900">
-						<h2 class="text-base font-semibold text-neutral-900 dark:text-neutral-50">
-							Denetimler temiz
-						</h2>
-						<p class="mt-2 text-sm leading-relaxed text-neutral-600 dark:text-neutral-400">
-							{rapor.yaziSayisi} yazı ve {rapor.sayfaSayisi} sayfa tek tek bakıldı;
-							bu araç hiçbir kusur bulamadı. Bakılan şeyler: gövdedeki ikinci
-							başlık, dil değiştirme adresleri, başlık ve açıklama uzunlukları,
-							taslak kalmış yazılar, görsellerin metin karşılıkları, iç
-							bağlantılar, yinelenen başlık ve açıklamalar, tarihler, etiketler.
-						</p>
-						<p class="mt-3 text-sm leading-relaxed text-neutral-500 dark:text-neutral-500">
-							Aşağıdaki "Bu araç neye bakmıyor" listesi de aynı ölçüde önemli:
-							temiz bir rapor "her şey iyi" demek değil, "ölçülebilen her şey
-							yerinde" demek.
-						</p>
-					</section>
-				)
+						<div class="p-olcu-ad">{kova.baslik}</div>
+					</div>
+				))
 			}
+		</section>
 
-			{/* BULGULAR */}
-			{
-				kovalar.map((kova) => {
-					const bulgular = rapor.bulgular.filter((b) => b.onem === kova.onem);
-					if (bulgular.length === 0) return null;
-					return (
-						<section class="mt-8">
-							<h2 class="text-base font-semibold text-neutral-900 dark:text-neutral-50">
-								{kova.baslik}
-								<span class="ml-2 text-sm font-normal text-neutral-500 dark:text-neutral-400">
+		{
+			rapor.bulgular.length === 0 && (
+				<section class="p-uyari p-uyari--iyi">
+					<h2 class="p-uyari-baslik">
+						<span class="p-im p-metin-iyi" aria-hidden="true">
+							✓
+						</span>
+						Denetimler temiz
+					</h2>
+					<p class="p-not">
+						{rapor.yaziSayisi} yazı ve {rapor.sayfaSayisi} sayfa tek tek bakıldı; bu
+						araç hiçbir kusur bulamadı. Bakılan şeyler: gövdedeki ikinci başlık, dil
+						değiştirme adresleri, başlık ve açıklama uzunlukları, taslak kalmış
+						yazılar, görsellerin metin karşılıkları, iç bağlantılar, yinelenen başlık
+						ve açıklamalar, tarihler, etiketler.
+					</p>
+					<p class="p-not p-not--kisik">
+						Aşağıdaki "Bu araç neye bakmıyor" listesi de aynı ölçüde önemli: temiz bir
+						rapor "her şey iyi" demek değil, "ölçülebilen her şey yerinde" demek.
+					</p>
+				</section>
+			)
+		}
+
+		{/* BULGULAR */}
+		{
+			kovalar.map((kova) => {
+				const bulgular = rapor.bulgular.filter((b) => b.onem === kova.onem);
+				if (bulgular.length === 0) return null;
+				return (
+					<section class="p-yigin">
+						<div>
+							<h2 class="p-kart-basi">
+								<span class="p-kart-baslik">{kova.baslik}</span>
+								<span class={`p-rozet ${GORUNUS[kova.onem].rozet}`}>
+									<span class="p-im" aria-hidden="true">
+										{GORUNUS[kova.onem].im}
+									</span>
 									{bulgular.length}
 								</span>
 							</h2>
-							<p class="mt-0.5 text-xs text-neutral-500 dark:text-neutral-400">
-								{kova.aciklama}
-							</p>
+							<p class="p-not">{kova.aciklama}</p>
+						</div>
 
-							<div class="mt-4 space-y-4">
-								{denetimeGore(bulgular).map((grup) => (
-									<article
-										class={`rounded-xl border bg-white p-5 dark:bg-neutral-900 ${kovaRengi[kova.onem]}`}
-									>
-										<div class="flex items-baseline gap-2">
-											<h3 class="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
-												{grup.ad}
-											</h3>
-											<span
-												class={`rounded-full px-2 py-0.5 text-[11px] font-medium tabular-nums ${rozetRengi[kova.onem]}`}
-											>
-												{grup.liste.length}
-											</span>
-										</div>
+						{denetimeGore(bulgular).map((grup) => (
+							<article class={`p-kart ${GORUNUS[kova.onem].kenar}`}>
+								<div class="p-kart-basi">
+									<h3 class="p-kart-baslik">{grup.ad}</h3>
+									<span class={`p-rozet ${GORUNUS[kova.onem].rozet}`}>
+										{grup.liste.length}
+									</span>
+								</div>
 
-										{/*
-										  "Neden" ve "nasıl" grubun BAŞINDA bir kez yazılıyor,
-										  her satırda değil: aynı denetimin bulgularında ikisi de
-										  aynı ve her satırda tekrar edilseydi liste okunmaz
-										  olurdu. Satırlarda yalnızca dosyaya özgü olan duruyor.
-										*/}
-										<p class="mt-2 text-sm leading-relaxed text-neutral-600 dark:text-neutral-400">
-											{grup.liste[0].neden}
-										</p>
-										<p class="mt-2 text-sm leading-relaxed text-neutral-800 dark:text-neutral-200">
-											<span class="font-medium">Ne yapmalı:</span>{' '}
-											{grup.liste[0].cozum}
-										</p>
+								{/*
+								  "Neden" ve "nasıl" grubun BAŞINDA bir kez yazılıyor, her
+								  satırda değil: aynı denetimin bulgularında ikisi de aynı ve
+								  her satırda tekrar edilseydi liste okunmaz olurdu.
+								  Satırlarda yalnızca dosyaya özgü olan duruyor.
+								*/}
+								<p class="p-not">{grup.liste[0].neden}</p>
+								<p class="p-not" style="color: var(--p-metin)">
+									<strong>Ne yapmalı:</strong> {grup.liste[0].cozum}
+								</p>
 
-										<ul class="mt-4 space-y-2 border-t border-neutral-200 pt-3 dark:border-neutral-800">
-											{grup.liste.map((bulgu) => (
-												<li class="text-sm">
-													<code class="text-xs text-neutral-500 dark:text-neutral-400">
-														{bulgu.dosya}
-														{bulgu.satir ? `  ·  ${bulgu.satir}. satır` : ''}
-													</code>
-													<div class="mt-0.5 text-neutral-800 dark:text-neutral-200">
-														{bulgu.sorun}
-													</div>
-												</li>
-											))}
-										</ul>
-									</article>
-								))}
-							</div>
-						</section>
-					);
-				})
-			}
+								<ul class="p-liste p-ayrac">
+									{grup.liste.map((bulgu) => (
+										<li>
+											<div class="p-kv">
+												<span class="p-kv-ad p-kv-ad--kod">{bulgu.dosya}</span>
+												{bulgu.satir && (
+													<span class="p-kv-deger">{bulgu.satir}. satır</span>
+												)}
+											</div>
+											<div style="margin-top: 2px">{bulgu.sorun}</div>
+										</li>
+									))}
+								</ul>
+							</article>
+						))}
+					</section>
+				);
+			})
+		}
 
-			{/* KAPSAM — "bulgu yok" ile "bakmadım" karışmasın */}
-			<section
-				class="mt-10 rounded-xl border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900"
-			>
-				<h2 class="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
-					Bu araç neye bakmıyor
-				</h2>
-				<ul class="mt-3 space-y-1.5 text-sm text-neutral-600 dark:text-neutral-400">
-					{rapor.kapsamDisi.map((satir) => <li>· {satir}</li>)}
-				</ul>
-			</section>
+		{/* KAPSAM — "bulgu yok" ile "bakmadım" karışmasın */}
+		<section class="p-kart">
+			<h2 class="p-kart-baslik">Bu araç neye bakmıyor</h2>
+			<ul class="p-liste p-kart-govde">
+				{
+					rapor.kapsamDisi.map((satir) => (
+						<li class="p-kv">
+							<span class="p-kv-ad" style="white-space: normal; color: var(--p-metin-2)">
+								· {satir}
+							</span>
+						</li>
+					))
+				}
+			</ul>
+		</section>
 
-			<p class="mt-6 text-xs leading-relaxed text-neutral-500 dark:text-neutral-400">
-				Rapor her sayfa yenilemesinde dosyaların o anki hâlinden yeniden
-				üretiliyor; bir dosyayı düzeltip buraya dönmek yeniden denetlemeye
-				yetiyor. Bu sayfa yalnızca panel kipinde var; yayın derlemesine
-				girmiyor.
-			</p>
-		</div>
-	</body>
-</html>
+		<p class="p-dipnot">
+			Rapor her sayfa yenilemesinde dosyaların o anki hâlinden yeniden üretiliyor;
+			bir dosyayı düzeltip buraya dönmek yeniden denetlemeye yetiyor. Bu sayfa
+			yalnızca panel kipinde var; yayın derlemesine girmiyor.
+		</p>
+	</div>
+</Kabuk>

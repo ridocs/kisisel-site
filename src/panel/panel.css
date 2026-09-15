@@ -1,0 +1,931 @@
+/*
+  YÖNETİM PANELİ GÖRSEL DİLİ
+
+  Üç panel ekranı (istatistik · kontrol · durum) bu tek dosyadan besleniyor.
+  Ayrı ayrı Tailwind sınıflarıyla yazıldıklarında üçü de "yaklaşık aynı"
+  görünüyordu: kart kenarlığı birinde 1px gri, ötekinde başka bir gri; sayı
+  boyutu her sayfada elle seçilmiş. Ortak bir sözlük olunca yeni bir ekran
+  eklemek de "hangi sınıfı kullanmalıyım" sorusuna dönüşüyor.
+
+  Sınıflar Tailwind KATMANI DIŞINDA, düz CSS olarak duruyor. Tailwind v4
+  yardımcı sınıflarını `@layer utilities` içine koyuyor; katmansız kural her
+  zaman katmanlıyı yener. Yani panel sayfalarında bu sınıflar son sözü söyler
+  ve iki sistem birbiriyle çekişmez. Panel sayfalarında Tailwind bilerek
+  kullanılmıyor.
+
+  RENK KURALI — koyu temada zeminler NÖTR GRİ, chroma sıfır.
+  Bütün gri tonlar `#RRGGBB` biçiminde ve R=G=B; böylece "biraz lacivert"
+  kaçamağı matematiksel olarak imkânsız. Renk yalnızca veriye ve duruma
+  ayrılmış: marka mavisi ölçüm çubuklarında, yeşil/amber/kırmızı durumda.
+
+  RENK KÖRLÜĞÜ — durum hiçbir yerde yalnızca renkle anlatılmıyor. Her durum
+  rozetinde bir simge harfi (✓ ! ✕) ve bir sözcük var; renk üçüncü işaret.
+*/
+
+:root {
+	/* Boşluk ölçeği — yoğun panel için 4'ten 32'ye. 32'nin üstüne çıkmak
+	   ekranı seyreltiyor, asıl istenen bilgi yoğunluğu. */
+	--p-b1: 4px;
+	--p-b2: 8px;
+	--p-b3: 12px;
+	--p-b4: 16px;
+	--p-b6: 24px;
+	--p-b8: 32px;
+
+	--p-yuvarlak: 6px;
+	--p-yuvarlak-kucuk: 4px;
+	--p-serit-yukseklik: 48px;
+
+	/*
+	  Yazı yüzleri. HARİCİ FONT YOK — panel internet olmadan da açılmalı.
+	  "Inter Variable" sitenin kendi alt kümesi (src/styles/yazitipi/), geri
+	  kalanı işletim sisteminin yerleşik yüzleri. Fira Code gibi bir yüz ağdan
+	  inecekti, bu yüzden reddedildi; yerine her Windows/macOS/Linux kurulumunda
+	  hazır duran tek aralıklı yığın kullanılıyor.
+
+	  Sayılar ve başlıklar tek aralıklı: bir veri panelinde rakamlar alt alta
+	  hizalanmadığında sütun okunmuyor.
+	*/
+	--p-sans: "Inter Variable", "Inter", ui-sans-serif, system-ui, "Segoe UI",
+		sans-serif;
+	--p-mono: ui-monospace, "Cascadia Mono", "Segoe UI Mono", "SF Mono", Menlo,
+		Consolas, "Liberation Mono", monospace;
+
+	/* AÇIK TEMA — hepsi nötr */
+	--p-zemin: #f2f2f2;
+	--p-serit-zemin: #ffffff;
+	--p-yuzey: #ffffff;
+	--p-yuzey-2: #f4f4f4;
+	--p-yuzey-3: #e9e9e9;
+	--p-cizgi: #dcdcdc;
+	--p-cizgi-guclu: #c2c2c2;
+	/* Ziyaretsiz günün/saatin 2 piksellik izi. Kenarlık grisi burada
+	   ölçülünce 1.8:1 çıkıyordu — WCAG'in metin dışı öğeler için istediği
+	   3:1'in altında, yani iz fiilen görünmüyordu. Kendi tonu var. */
+	--p-cubuk-bos: #949494;
+	--p-metin: #1a1a1a;
+	--p-metin-2: #4d4d4d;
+	--p-metin-3: #666666;
+
+	/* Veri mürekkebi: sitenin marka mavisi. Zemin değil, ölçüm. */
+	--p-vurgu: #1a5fd0;
+	--p-vurgu-dolgu: #2f6fd8;
+	--p-vurgu-soluk: #bcd2f2;
+
+	/* Durum — metin tonları (4.5:1 için koyu), dolgu tonları (grafik için) */
+	--p-iyi: #11703c;
+	--p-iyi-dolgu: #1a8a4c;
+	--p-iyi-zemin: #e6f4ec;
+	--p-iyi-kenar: #a8d8bd;
+
+	--p-dikkat: #8a5200;
+	--p-dikkat-dolgu: #c47a08;
+	--p-dikkat-zemin: #fbf1e0;
+	--p-dikkat-kenar: #e8cb96;
+
+	--p-agir: #b42318;
+	--p-agir-dolgu: #d13c30;
+	--p-agir-zemin: #fceceb;
+	--p-agir-kenar: #f0b6b1;
+
+	--p-odak: #1a5fd0;
+}
+
+.dark {
+	--p-zemin: #141414;
+	--p-serit-zemin: #1a1a1a;
+	--p-yuzey: #1c1c1c;
+	--p-yuzey-2: #242424;
+	--p-yuzey-3: #2c2c2c;
+	--p-cizgi: #303030;
+	--p-cizgi-guclu: #424242;
+	--p-cubuk-bos: #6e6e6e;
+	--p-metin: #f2f2f2;
+	--p-metin-2: #b3b3b3;
+	--p-metin-3: #949494;
+
+	--p-vurgu: #86b4ff;
+	--p-vurgu-dolgu: #4d8ae8;
+	--p-vurgu-soluk: #2b3d57;
+
+	--p-iyi: #5fd18a;
+	--p-iyi-dolgu: #34b269;
+	--p-iyi-zemin: #16251c;
+	--p-iyi-kenar: #2f5540;
+
+	--p-dikkat: #e8b33a;
+	--p-dikkat-dolgu: #c98f16;
+	--p-dikkat-zemin: #262013;
+	--p-dikkat-kenar: #5a4720;
+
+	--p-agir: #ff8f85;
+	--p-agir-dolgu: #d94f43;
+	--p-agir-zemin: #2a1817;
+	--p-agir-kenar: #5e3230;
+
+	--p-odak: #86b4ff;
+}
+
+/* Sabit üst şerit, klavyeyle gelinen ögeyi örtmesin — WCAG 2.2 "Focus Not
+   Obscured (Minimum)". Sitenin global.css'i kendi çubuk yüksekliğine göre
+   değer veriyor; panelde çubuk başka, değer burada eziliyor. */
+html:has(.p-kabuk) {
+	scroll-padding-top: calc(var(--p-serit-yukseklik) + var(--p-b4));
+}
+
+.p-kabuk {
+	min-height: 100svh;
+	margin: 0;
+	background: var(--p-zemin);
+	color: var(--p-metin);
+	font-family: var(--p-sans);
+	/* 13px taban: yoğun panelde 16px satır sayısını üçte bir azaltıyor.
+	   Kontrast yüksek tutulduğu için okunaklılık bundan zarar görmüyor. */
+	font-size: 13px;
+	line-height: 1.5;
+	-webkit-font-smoothing: antialiased;
+}
+
+/*
+  ODAK HALKASI — kaldırılmıyor, güçlendiriliyor.
+  `outline-offset` iki piksel: halka ögenin kenarlığına yapışınca kenarlıkla
+  karışıyor ve odak görünmüyor sanılıyordu.
+*/
+.p-kabuk :where(a, button, input, select, textarea, [tabindex]):focus-visible {
+	outline: 2px solid var(--p-odak);
+	outline-offset: 2px;
+	border-radius: var(--p-yuvarlak-kucuk);
+}
+
+/* Klavyeyle gezenin ilk durağı: gezinti şeridini atlayıp içeriğe inmek.
+   Fareyle kullanana görünmüyor, odak alınca beliriyor. */
+.p-atla {
+	position: absolute;
+	left: var(--p-b2);
+	top: var(--p-b2);
+	z-index: 100;
+	padding: var(--p-b2) var(--p-b3);
+	border-radius: var(--p-yuvarlak-kucuk);
+	background: var(--p-metin);
+	color: var(--p-yuzey);
+	font-weight: 600;
+	text-decoration: none;
+	transform: translateY(-200%);
+}
+
+.p-atla:focus-visible {
+	transform: translateY(0);
+}
+
+/* ————————————————————————— ÜST ŞERİT ————————————————————————— */
+
+.p-serit {
+	position: sticky;
+	top: 0;
+	z-index: 50;
+	height: var(--p-serit-yukseklik);
+	background: var(--p-serit-zemin);
+	border-bottom: 1px solid var(--p-cizgi);
+}
+
+.p-serit-ic {
+	display: flex;
+	align-items: center;
+	gap: var(--p-b4);
+	height: 100%;
+	max-width: 1220px;
+	margin: 0 auto;
+	padding: 0 var(--p-b4);
+}
+
+.p-marka {
+	display: flex;
+	align-items: baseline;
+	gap: var(--p-b2);
+	flex: none;
+	font-family: var(--p-mono);
+	font-size: 12px;
+	font-weight: 700;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: var(--p-metin-2);
+	white-space: nowrap;
+}
+
+/* Dar ekranda şeridin kendisi kaydırılabiliyor; bağlantıları küçültmek
+   ya da menüye saklamak dört öge için fazla düzenek olurdu. */
+.p-gezinti {
+	display: flex;
+	align-items: center;
+	gap: 2px;
+	min-width: 0;
+	overflow-x: auto;
+	scrollbar-width: none;
+}
+
+.p-gezinti::-webkit-scrollbar {
+	display: none;
+}
+
+.p-gezinti a {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	height: 32px;
+	padding: 0 10px;
+	border-radius: var(--p-yuvarlak-kucuk);
+	font-size: 13px;
+	font-weight: 500;
+	color: var(--p-metin-2);
+	text-decoration: none;
+	white-space: nowrap;
+	transition: background-color 120ms ease, color 120ms ease;
+}
+
+.p-gezinti a:hover {
+	background: var(--p-yuzey-2);
+	color: var(--p-metin);
+}
+
+/*
+  Bulunduğun sayfa üç işaretle belli: dolgu, kalın yazı ve altındaki mavi
+  çizgi. `aria-current="page"` ekran okuyucuya aynı şeyi söylüyor.
+*/
+.p-gezinti a[aria-current="page"] {
+	background: var(--p-yuzey-3);
+	color: var(--p-metin);
+	font-weight: 650;
+	box-shadow: inset 0 -2px 0 0 var(--p-vurgu-dolgu);
+}
+
+/* Keystatic bizim sayfamız değil; panelden çıkıldığı ok imiyle söyleniyor. */
+.p-dis-im {
+	font-size: 10px;
+	color: var(--p-metin-3);
+}
+
+/* ————————————————————————— SAYFA GÖVDESİ ————————————————————————— */
+
+.p-govde {
+	max-width: 1220px;
+	margin: 0 auto;
+	padding: var(--p-b6) var(--p-b4) 48px;
+}
+
+.p-govde--dar {
+	max-width: 920px;
+}
+
+.p-basi {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: var(--p-b2) var(--p-b4);
+	margin-bottom: var(--p-b4);
+	padding-bottom: var(--p-b3);
+	border-bottom: 1px solid var(--p-cizgi);
+}
+
+.p-h1 {
+	font-family: var(--p-mono);
+	font-size: 18px;
+	font-weight: 700;
+	letter-spacing: -0.01em;
+	color: var(--p-metin);
+}
+
+.p-basi-not {
+	font-size: 12px;
+	color: var(--p-metin-2);
+}
+
+/* Bölümler arası tek ölçü. Ayrı ayrı `margin-top` verilince ekranlar
+   arasında 20/32/40 gibi üç farklı boşluk oluşuyordu. */
+.p-yigin {
+	display: grid;
+	gap: var(--p-b4);
+}
+
+.p-yigin--seyrek {
+	gap: var(--p-b6);
+}
+
+/* ————————————————————————— IZGARA ————————————————————————— */
+
+.p-izgara {
+	display: grid;
+	gap: var(--p-b3);
+}
+
+.p-izgara--4 {
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.p-izgara--3 {
+	grid-template-columns: repeat(1, minmax(0, 1fr));
+}
+
+.p-izgara--2 {
+	grid-template-columns: repeat(1, minmax(0, 1fr));
+}
+
+@media (min-width: 560px) {
+	.p-izgara--3 {
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+	}
+}
+
+@media (min-width: 760px) {
+	.p-izgara--4 {
+		grid-template-columns: repeat(4, minmax(0, 1fr));
+	}
+
+	.p-izgara--2 {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+}
+
+/* ————————————————————————— KART ————————————————————————— */
+
+.p-kart {
+	min-width: 0;
+	padding: var(--p-b4);
+	background: var(--p-yuzey);
+	border: 1px solid var(--p-cizgi);
+	border-radius: var(--p-yuvarlak);
+}
+
+.p-kart--sikisik {
+	padding: var(--p-b3);
+}
+
+.p-kart--duz {
+	padding: 0;
+	overflow: hidden;
+}
+
+.p-kart-baslik {
+	font-family: var(--p-mono);
+	font-size: 11px;
+	font-weight: 700;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	color: var(--p-metin);
+}
+
+.p-kart-basi {
+	display: flex;
+	align-items: baseline;
+	gap: var(--p-b2);
+}
+
+.p-not {
+	margin-top: var(--p-b1);
+	font-size: 12px;
+	line-height: 1.55;
+	color: var(--p-metin-2);
+}
+
+.p-not--kisik {
+	color: var(--p-metin-3);
+}
+
+/* Kartın gövdesi başlıktan sonra: tek yerden boşluk. */
+.p-kart-govde {
+	margin-top: var(--p-b3);
+}
+
+.p-ayrac {
+	margin-top: var(--p-b3);
+	padding-top: var(--p-b3);
+	border-top: 1px solid var(--p-cizgi);
+}
+
+/* ————————————————————————— ÖLÇÜ KUTUSU ————————————————————————— */
+
+.p-olcu-sayi {
+	font-family: var(--p-mono);
+	font-size: 28px;
+	font-weight: 700;
+	line-height: 1;
+	letter-spacing: -0.02em;
+	font-variant-numeric: tabular-nums;
+	color: var(--p-metin);
+}
+
+.p-olcu-sayi--orta {
+	font-size: 20px;
+}
+
+.p-olcu-sayi--kisik {
+	color: var(--p-metin-2);
+}
+
+.p-olcu-ad {
+	margin-top: 6px;
+	font-size: 11px;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	color: var(--p-metin-2);
+}
+
+/* Ölçü kutusunun sol kenarındaki durum şeridi: rakamın iyi mi kötü mü
+   olduğunu renk tek başına söylemesin diye rozetle birlikte kullanılıyor. */
+.p-olcu--agir {
+	border-left: 3px solid var(--p-agir-dolgu);
+}
+
+.p-olcu--dikkat {
+	border-left: 3px solid var(--p-dikkat-dolgu);
+}
+
+.p-olcu--notr {
+	border-left: 3px solid var(--p-cizgi-guclu);
+}
+
+/* ————————————————————————— DURUM ROZETİ ————————————————————————— */
+
+.p-rozet {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	flex: none;
+	padding: 1px 7px;
+	border: 1px solid transparent;
+	border-radius: 999px;
+	font-family: var(--p-mono);
+	font-size: 11px;
+	font-weight: 700;
+	font-variant-numeric: tabular-nums;
+	white-space: nowrap;
+}
+
+.p-rozet--notr {
+	color: var(--p-metin-2);
+	background: var(--p-yuzey-3);
+	border-color: var(--p-cizgi);
+}
+
+.p-rozet--iyi {
+	color: var(--p-iyi);
+	background: var(--p-iyi-zemin);
+	border-color: var(--p-iyi-kenar);
+}
+
+.p-rozet--dikkat {
+	color: var(--p-dikkat);
+	background: var(--p-dikkat-zemin);
+	border-color: var(--p-dikkat-kenar);
+}
+
+.p-rozet--agir {
+	color: var(--p-agir);
+	background: var(--p-agir-zemin);
+	border-color: var(--p-agir-kenar);
+}
+
+/* Simge harfi rozetin içinde; renk görülemese de ✓ ! ✕ ayırt ediyor. */
+.p-im {
+	font-size: 12px;
+	line-height: 1;
+}
+
+.p-metin-iyi {
+	color: var(--p-iyi);
+}
+
+.p-metin-dikkat {
+	color: var(--p-dikkat);
+}
+
+.p-metin-agir {
+	color: var(--p-agir);
+}
+
+/* ————————————————————————— ANAHTAR/DEĞER LİSTESİ ————————————————————————— */
+
+.p-liste > li + li {
+	margin-top: var(--p-b2);
+}
+
+.p-kv {
+	display: flex;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: var(--p-b3);
+	font-size: 13px;
+}
+
+.p-kv-ad {
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	color: var(--p-metin);
+}
+
+.p-kv-ad--kod {
+	font-family: var(--p-mono);
+	font-size: 12px;
+	color: var(--p-metin-2);
+}
+
+.p-kv-deger {
+	flex: none;
+	font-family: var(--p-mono);
+	font-weight: 600;
+	font-variant-numeric: tabular-nums;
+	color: var(--p-metin);
+}
+
+.p-kv-yuzde {
+	margin-left: 6px;
+	font-weight: 400;
+	color: var(--p-metin-3);
+}
+
+/* ————————————————————————— ORAN ÇUBUĞU ————————————————————————— */
+
+.p-oran {
+	display: flex;
+	height: 4px;
+	margin-top: 5px;
+	border-radius: 999px;
+	background: var(--p-yuzey-3);
+	overflow: hidden;
+}
+
+.p-oran--kalin {
+	height: 8px;
+}
+
+.p-oran-dolgu {
+	height: 100%;
+	background: var(--p-vurgu-dolgu);
+}
+
+.p-oran-dolgu--ikinci {
+	background: var(--p-cizgi-guclu);
+}
+
+/* Yatay çubuklu satır (haftanın günü): ad solda sabit genişlikte, rakam
+   sağda sabit genişlikte; çubuk aradaki boşluğu alıyor. Üç sütun
+   hizalanmazsa göz satır satır zıplıyor. */
+.p-yatay {
+	display: flex;
+	align-items: center;
+	gap: var(--p-b3);
+	font-size: 13px;
+}
+
+.p-yatay-ad {
+	width: 76px;
+	flex: none;
+	color: var(--p-metin-2);
+}
+
+.p-yatay-oran {
+	flex: 1;
+	min-width: 0;
+}
+
+.p-yatay-sayi {
+	width: 34px;
+	flex: none;
+	text-align: right;
+	font-family: var(--p-mono);
+	font-weight: 600;
+	font-variant-numeric: tabular-nums;
+	color: var(--p-metin);
+}
+
+/* ————————————————————————— DİKEY ÇUBUK GRAFİK ————————————————————————— */
+
+.p-grafik {
+	display: flex;
+	align-items: flex-end;
+	gap: 5px;
+}
+
+.p-grafik--sik {
+	gap: 2px;
+}
+
+.p-sutun {
+	display: flex;
+	flex: 1;
+	min-width: 0;
+	flex-direction: column;
+	align-items: center;
+	gap: var(--p-b1);
+}
+
+.p-cubuk {
+	width: 100%;
+	border-radius: 2px 2px 0 0;
+	background: var(--p-vurgu-dolgu);
+}
+
+/* Ziyaretsiz dilimde çubuk gri bir iz: eksenin kesintisiz görünmesi için. */
+.p-cubuk--bos {
+	background: var(--p-cubuk-bos);
+}
+
+.p-sutun-ust {
+	font-family: var(--p-mono);
+	font-size: 10px;
+	font-weight: 600;
+	font-variant-numeric: tabular-nums;
+	color: var(--p-metin-3);
+	min-height: 12px;
+}
+
+.p-sutun-alt {
+	font-family: var(--p-mono);
+	font-size: 10px;
+	font-variant-numeric: tabular-nums;
+	color: var(--p-metin-3);
+	white-space: nowrap;
+}
+
+.p-sutun-sayi {
+	font-family: var(--p-mono);
+	font-size: 11px;
+	font-weight: 700;
+	font-variant-numeric: tabular-nums;
+	color: var(--p-metin);
+}
+
+/* ————————————————————————— DÖKÜM (dl) ————————————————————————— */
+
+.p-dokum {
+	display: grid;
+	grid-template-columns: repeat(1, minmax(0, 1fr));
+	gap: var(--p-b1) var(--p-b6);
+}
+
+@media (min-width: 560px) {
+	.p-dokum {
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+	}
+}
+
+.p-dokum-satir {
+	display: flex;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: var(--p-b3);
+	padding: 5px 0;
+	border-bottom: 1px dashed var(--p-cizgi);
+	font-size: 13px;
+}
+
+.p-dokum-satir dt {
+	color: var(--p-metin-2);
+}
+
+.p-dokum-satir dd {
+	font-family: var(--p-mono);
+	font-weight: 600;
+	font-variant-numeric: tabular-nums;
+	color: var(--p-metin);
+}
+
+.p-dokum-satir--toplam dt {
+	font-weight: 600;
+	color: var(--p-metin);
+}
+
+/* ————————————————————————— DURUM SATIRLARI ————————————————————————— */
+
+.p-durum-satir {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	gap: var(--p-b2) var(--p-b3);
+	padding: var(--p-b3) var(--p-b4);
+	border-top: 1px solid var(--p-cizgi);
+}
+
+.p-durum-satir:first-child {
+	border-top: 0;
+}
+
+.p-durum-ad {
+	width: 150px;
+	flex: none;
+	font-family: var(--p-mono);
+	font-size: 11px;
+	font-weight: 700;
+	letter-spacing: 0.05em;
+	text-transform: uppercase;
+	color: var(--p-metin-2);
+}
+
+.p-durum-govde {
+	flex: 1;
+	min-width: 220px;
+}
+
+.p-durum-metin {
+	font-size: 13px;
+	line-height: 1.5;
+}
+
+/* Ayrıntı maddeleri dosya adı taşıyor; tek aralıklı yüzde yol daha okunaklı. */
+.p-ayrinti {
+	margin-top: var(--p-b2);
+	padding-left: var(--p-b3);
+	border-left: 2px solid var(--p-cizgi);
+}
+
+.p-ayrinti li {
+	font-family: var(--p-mono);
+	font-size: 11px;
+	line-height: 1.7;
+	color: var(--p-metin-2);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+/* ————————————————————————— UYARI KUTUSU ————————————————————————— */
+
+.p-uyari {
+	padding: var(--p-b4);
+	border: 1px solid var(--p-dikkat-kenar);
+	border-left-width: 3px;
+	border-radius: var(--p-yuvarlak);
+	background: var(--p-dikkat-zemin);
+}
+
+.p-uyari--agir {
+	border-color: var(--p-agir-kenar);
+	background: var(--p-agir-zemin);
+}
+
+.p-uyari--iyi {
+	border-color: var(--p-iyi-kenar);
+	background: var(--p-iyi-zemin);
+}
+
+.p-uyari-baslik {
+	display: flex;
+	align-items: center;
+	gap: var(--p-b2);
+	font-family: var(--p-mono);
+	font-size: 13px;
+	font-weight: 700;
+	color: var(--p-metin);
+}
+
+/* ————————————————————————— DÜĞMELER ————————————————————————— */
+
+.p-dugme {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 7px 14px;
+	border: 1px solid var(--p-cizgi-guclu);
+	border-radius: var(--p-yuvarlak-kucuk);
+	background: var(--p-yuzey-2);
+	color: var(--p-metin);
+	font-family: inherit;
+	font-size: 13px;
+	font-weight: 600;
+	cursor: pointer;
+	transition: background-color 120ms ease, border-color 120ms ease;
+}
+
+.p-dugme:hover:not(:disabled) {
+	background: var(--p-yuzey-3);
+	border-color: var(--p-metin-3);
+}
+
+.p-dugme:disabled {
+	opacity: 0.45;
+	cursor: not-allowed;
+}
+
+.p-dugme--birincil {
+	background: var(--p-metin);
+	border-color: var(--p-metin);
+	color: var(--p-yuzey);
+}
+
+.p-dugme--birincil:hover:not(:disabled) {
+	background: var(--p-metin-2);
+	border-color: var(--p-metin-2);
+	color: var(--p-yuzey);
+}
+
+/* Yayınlama ve geri alma düğmeleri: sunucuya dokunan tek iki eylem.
+   Amber zemin + beyaz metin, hem uyarı hem yeterli kontrast. */
+.p-dugme--uyari {
+	background: #9a5b00;
+	border-color: #9a5b00;
+	color: #ffffff;
+}
+
+.p-dugme--uyari:hover:not(:disabled) {
+	background: #7d4a00;
+	border-color: #7d4a00;
+	color: #ffffff;
+}
+
+.p-secim {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--p-b2);
+	font-size: 13px;
+	color: var(--p-metin-2);
+	cursor: pointer;
+}
+
+.p-secim input {
+	width: 15px;
+	height: 15px;
+	accent-color: var(--p-vurgu-dolgu);
+	cursor: pointer;
+}
+
+.p-dugme-sirasi {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--p-b3);
+}
+
+/* ————————————————————————— İŞLEM KAYDI ————————————————————————— */
+
+.p-kayit {
+	max-height: 320px;
+	padding: var(--p-b3);
+	border: 1px solid var(--p-cizgi);
+	border-radius: var(--p-yuvarlak);
+	background: var(--p-yuzey-2);
+	color: var(--p-metin-2);
+	font-family: var(--p-mono);
+	font-size: 12px;
+	line-height: 1.65;
+	white-space: pre-wrap;
+	overflow: auto;
+}
+
+/* Kayıt satırlarının tonları betikten değil buradan geliyor: betiğe gömülü
+   hex değerleri koyu temada okunmuyordu. */
+.p-kayit-adim {
+	font-weight: 700;
+	color: var(--p-metin);
+}
+
+.p-kayit-uyari {
+	color: var(--p-dikkat);
+}
+
+.p-kayit-hata {
+	color: var(--p-agir);
+}
+
+.p-kayit-bitti {
+	font-weight: 700;
+	color: var(--p-iyi);
+}
+
+.p-kayit-kisik {
+	color: var(--p-metin-3);
+}
+
+/* ————————————————————————— DİPNOT ————————————————————————— */
+
+.p-dipnot {
+	margin-top: var(--p-b6);
+	padding-top: var(--p-b3);
+	border-top: 1px solid var(--p-cizgi);
+	font-size: 11px;
+	line-height: 1.7;
+	color: var(--p-metin-3);
+}
+
+.p-kod {
+	font-family: var(--p-mono);
+	font-size: 0.95em;
+	color: var(--p-metin-2);
+}
+
+/*
+  Hareket azaltma tercihi. Paneldeki hareket yalnızca üzerine gelme
+  geçişleri; yine de tercih edilmişse anında bitiyor. Tamamen silmek yerine
+  çok kısaltmak, geçişin bitişine bağlı bir mantık varsa onu kırmıyor.
+*/
+@media (prefers-reduced-motion: reduce) {
+	.p-kabuk *,
+	.p-kabuk *::before,
+	.p-kabuk *::after {
+		animation-duration: 0.01ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: 0.01ms !important;
+		scroll-behavior: auto !important;
+	}
+}

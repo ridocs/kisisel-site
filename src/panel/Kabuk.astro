@@ -1,0 +1,103 @@
+---
+import '../styles/global.css';
+import './panel.css';
+
+/*
+  PANELİN ORTAK KABUĞU
+
+  Üç ekran (istatistik · kontrol · durum) daha önce kendi `<html>` belgesini
+  basıyordu. Aynı `<head>`, aynı tema betiği, aynı gövde sınıfları üç yerde
+  kopyalanmıştı; biri değiştiğinde öteki ikisi geride kalıyordu — tipografi ve
+  kenar boşlukları da öyle ayrıştı. Belgenin tamamı artık burada.
+
+  Yayın derlemesi bu dosyayı da görmüyor: kabuğu yalnızca `src/pages/` dışında
+  duran ve rotaları elle bağlanan üç panel sayfası kullanıyor.
+
+  `global.css` sitenin kendi yazı tipini (yerel Inter alt kümesi) ve `.dark`
+  düzeneğini getiriyor; `panel.css` onun üzerine panelin görsel dilini koyuyor.
+  Sıra önemli, bu yüzden ikisi de burada ve bu sırayla içe aktarılıyor.
+*/
+
+interface Props {
+	/** Sekme başlığı ve sayfanın H1'i. */
+	baslik: string;
+	/** Hangi panelde olduğumuz; üst şeritte işaretlenir. */
+	aktif: 'istatistik' | 'kontrol' | 'durum';
+	/** Başlığın yanındaki bağlam satırı: kaynak, çekim anı, özet. */
+	not?: string;
+	/** Durum ve kontrol ekranları liste ağırlıklı; dar sütun okumayı kolaylaştırıyor. */
+	dar?: boolean;
+}
+
+const { baslik, aktif, not, dar = false } = Astro.props;
+
+/*
+  Dört panel tek listede. "Yazılar" Keystatic'e gidiyor — o sayfa bizim değil,
+  ona stil verilmiyor, yalnızca bağlantı veriliyor. Panelden çıkıldığı ok imiyle
+  belirtiliyor ki kullanıcı üst şeridin orada da duracağını sanmasın.
+*/
+const PANELLER = [
+	{ anahtar: 'yazilar', ad: 'Yazılar', adres: '/keystatic', disari: true },
+	{ anahtar: 'istatistik', ad: 'İstatistik', adres: '/istatistik', disari: false },
+	{ anahtar: 'kontrol', ad: 'Yayın öncesi kontrol', adres: '/kontrol', disari: false },
+	{ anahtar: 'durum', ad: 'Site durumu', adres: '/durum', disari: false },
+] as const;
+---
+
+<!doctype html>
+<html lang="tr">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>{baslik} · Panel</title>
+		{/* Panel yerelde çalışıyor ama yine de: bu sayfalar hiçbir dizine girmemeli. */}
+		<meta name="robots" content="noindex, nofollow" />
+		{/* Sitenin tema düzeneği `.dark` sınıfına bakıyor; panelde tema değiştirici
+		    yok, işletim sisteminin tercihi doğrudan uygulanıyor. Betik `<head>`
+		    içinde ve satır içi: gövde boyanmadan önce çalışmazsa açık temadan koyuya
+		    geçerken bir kare beyaz parlıyor. */}
+		<script is:inline>
+			try {
+				if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+					document.documentElement.classList.add('dark');
+				}
+			} catch {
+				// Eşleştirme desteklenmiyorsa açık tema kullanılır.
+			}
+		</script>
+	</head>
+	<body class="p-kabuk">
+		<a class="p-atla" href="#panel-icerik">İçeriğe geç</a>
+
+		<header class="p-serit">
+			<div class="p-serit-ic">
+				<span class="p-marka">Panel</span>
+				<nav class="p-gezinti" aria-label="Panel bölümleri">
+					{
+						PANELLER.map((panel) => (
+							<a
+								href={panel.adres}
+								aria-current={panel.anahtar === aktif ? 'page' : undefined}
+							>
+								{panel.ad}
+								{panel.disari && (
+									<span class="p-dis-im" aria-hidden="true">
+										↗
+									</span>
+								)}
+							</a>
+						))
+					}
+				</nav>
+			</div>
+		</header>
+
+		<main id="panel-icerik" class={dar ? 'p-govde p-govde--dar' : 'p-govde'}>
+			<div class="p-basi">
+				<h1 class="p-h1">{baslik}</h1>
+				{not && <p class="p-basi-not">{not}</p>}
+			</div>
+			<slot />
+		</main>
+	</body>
+</html>

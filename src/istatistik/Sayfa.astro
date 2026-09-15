@@ -1,6 +1,6 @@
 ---
 import { ozetGetir, GUN_SAYISI } from './kayitlar';
-import '../styles/global.css';
+import Kabuk from '../panel/Kabuk.astro';
 
 /*
   ZİYARETÇİ PANELİ
@@ -12,6 +12,10 @@ import '../styles/global.css';
 
   Veri her istekte yeniden çekiliyor: dev sunucusu bileşeni her açılışta
   çalıştırdığı için ayrıca bir tazeleme düzeneğine gerek yok.
+
+  Belgenin kabuğu (üst şerit, tipografi, renk değişkenleri) `src/panel/`
+  altında; üç panel ekranı da aynı kabuktan geçiyor. Grafikler saf CSS —
+  kütüphane yok, ziyaretçiye de zaten hiçbir şey inmiyor.
 */
 const sonuc = await ozetGetir();
 
@@ -73,568 +77,459 @@ function degisimMetni(deger: number): string {
 	return `${deger > 0 ? '+' : '−'}%${Math.abs(deger)}`;
 }
 
+/*
+  Değişim rozetinin yönü SİMGEYLE de söyleniyor (▲ ▼ =). Renk körü bir
+  kullanıcı yeşil ile griyi ayırt edemeyebilir; ok ve işaret her koşulda
+  okunuyor. Yalnızca artış renkli, düşüş nötr: düşüşü kırmızı boyamak sakin
+  bir haftayı hata gibi gösterirdi.
+*/
+function degisimImi(deger: number): string {
+	if (deger > 0) return '▲';
+	if (deger < 0) return '▼';
+	return '=';
+}
+
 const cekimAni = new Date().toLocaleString('tr-TR', {
 	dateStyle: 'long',
 	timeStyle: 'short',
 });
 ---
 
-<!doctype html>
-<html lang="tr" class="bg-neutral-50 dark:bg-neutral-950">
-	<head>
-		<meta charset="utf-8" />
-		<meta name="viewport" content="width=device-width, initial-scale=1" />
-		<title>Ziyaretçi istatistiği</title>
-		{/* Panel yerelde çalışıyor ama yine de: bu sayfa hiçbir dizine girmemeli. */}
-		<meta name="robots" content="noindex, nofollow" />
-		{/* Sitenin kendi tema düzeneği `.dark` sınıfına bakıyor; panelde tema
-		    değiştirici yok, işletim sisteminin tercihi doğrudan uygulanıyor. */}
-		<script is:inline>
-			try {
-				if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-					document.documentElement.classList.add('dark');
-				}
-			} catch {
-				// Eşleştirme desteklenmiyorsa açık tema kullanılır.
-			}
-		</script>
-	</head>
-	<body class="min-h-svh bg-neutral-50 text-neutral-800 antialiased dark:bg-neutral-950 dark:text-neutral-200">
-		<div class="mx-auto max-w-5xl px-5 py-10">
-			<header class="mb-8">
-				<h1 class="text-2xl font-semibold tracking-tight text-neutral-900 dark:text-neutral-50">
-					Ziyaretçi istatistiği
-				</h1>
-				<p class="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
-					twinshareapp.com/web-sitem · nginx erişim kayıtlarından · {cekimAni}
+<Kabuk
+	baslik="Ziyaretçi istatistiği"
+	aktif="istatistik"
+	not={`twinshareapp.com/web-sitem · nginx erişim kayıtlarından · ${cekimAni}`}
+>
+	{
+		!sonuc.basarili && (
+			<div role="alert" class="p-uyari p-uyari--agir">
+				<h2 class="p-uyari-baslik">
+					<span class="p-im p-metin-agir" aria-hidden="true">
+						✕
+					</span>
+					Kayıtlara ulaşılamadı
+				</h2>
+				<p class="p-not">{sonuc.hata}</p>
+				<p class="p-not p-not--kisik">
+					Sayfayı yenilemek yeniden dener. Kayıtlar sunucuda duruyor, bir şey
+					kaybolmadı.
 				</p>
-			</header>
+			</div>
+		)
+	}
 
-			{
-				!sonuc.basarili && (
-					<div
-						role="alert"
-						class="rounded-xl border border-amber-300 bg-amber-50 p-5 dark:border-amber-900/60 dark:bg-amber-950/30"
-					>
-						<h2 class="text-base font-semibold text-amber-900 dark:text-amber-200">
-							Kayıtlara ulaşılamadı
-						</h2>
-						<p class="mt-2 text-sm text-amber-900/90 dark:text-amber-200/80">
-							{sonuc.hata}
-						</p>
-						<p class="mt-3 text-sm text-amber-900/70 dark:text-amber-200/60">
-							Sayfayı yenilemek yeniden dener. Kayıtlar sunucuda duruyor, bir şey
-							kaybolmadı.
-						</p>
+	{
+		sonuc.basarili && (
+			<div class="p-yigin">
+				{/* ÖZET KUTULARI */}
+				<section class="p-izgara p-izgara--4">
+					<div class="p-kart p-kart--sikisik">
+						<div class="p-olcu-sayi">{sonuc.ozet.toplamZiyaretci}</div>
+						<div class="p-olcu-ad">Tekil ziyaretçi</div>
 					</div>
-				)
-			}
-
-			{
-				sonuc.basarili && (
-					<>
-						{/* ÖZET KUTULARI */}
-						<section class="grid grid-cols-2 gap-3 sm:grid-cols-4">
-							<div class="rounded-xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
-								<div class="text-3xl font-semibold tabular-nums text-neutral-900 dark:text-neutral-50">
-									{sonuc.ozet.toplamZiyaretci}
-								</div>
-								<div class="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
-									Tekil ziyaretçi
-								</div>
-							</div>
-							<div class="rounded-xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
-								<div class="text-3xl font-semibold tabular-nums text-neutral-900 dark:text-neutral-50">
-									{sonuc.ozet.toplamGoruntuleme}
-								</div>
-								<div class="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
-									Sayfa görüntüleme
-								</div>
-							</div>
-							<div class="rounded-xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
-								<div class="text-3xl font-semibold tabular-nums text-neutral-900 dark:text-neutral-50">
-									{sonuc.ozet.toplamZiyaretci
-										? (
-												sonuc.ozet.toplamGoruntuleme / sonuc.ozet.toplamZiyaretci
-											).toFixed(1)
-										: '0'}
-								</div>
-								<div class="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
-									Kişi başına sayfa
-								</div>
-							</div>
-							<div class="rounded-xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
-								<div class="text-3xl font-semibold tabular-nums text-neutral-900 dark:text-neutral-50">
-									{GUN_SAYISI}
-								</div>
-								<div class="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
-									Günlük pencere
-								</div>
-							</div>
-						</section>
-
-						{/* HAFTA KARŞILAŞTIRMASI — arşiv 14 gün, yani tam iki hafta */}
-						<section class="mt-5 rounded-xl border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900">
-							<h2 class="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
-								Bu hafta / geçen hafta
-							</h2>
-							<p class="mt-0.5 text-xs text-neutral-500 dark:text-neutral-400">
-								Son 7 gün, ondan önceki 7 güne karşı. Arşiv {GUN_SAYISI} gün tuttuğu
-								için daha uzun bir dönem yok.
-							</p>
-							<div class="mt-4 grid gap-4 sm:grid-cols-2">
-								{[
-									{
-										baslik: 'Sayfa görüntüleme',
-										simdi: sonuc.ozet.karsilastirma.buHafta.goruntuleme,
-										once: sonuc.ozet.karsilastirma.gecenHafta.goruntuleme,
-									},
-									{
-										baslik: 'Tekil ziyaretçi',
-										simdi: sonuc.ozet.karsilastirma.buHafta.ziyaretci,
-										once: sonuc.ozet.karsilastirma.gecenHafta.ziyaretci,
-									},
-								].map((olcum) => {
-									const fark = degisim(olcum.simdi, olcum.once);
-									return (
-										<div class="rounded-lg border border-neutral-200 p-4 dark:border-neutral-800">
-											<div class="text-xs text-neutral-500 dark:text-neutral-400">
-												{olcum.baslik}
-											</div>
-											<div class="mt-1 flex items-baseline gap-2">
-												<span class="text-2xl font-semibold tabular-nums text-neutral-900 dark:text-neutral-50">
-													{olcum.simdi}
-												</span>
-												{/*
-												  Karşılaştırma yapılamıyorsa rozet hiç basılmıyor:
-												  altındaki satır zaten sebebini söylüyor, ikisi yan
-												  yana aynı şeyi iki kez söylemiş oluyordu.
-
-												  Yalnızca artış renkli; düşüş nötr gri. Düşüşü kırmızı
-												  boyamak sakin bir haftayı hata gibi gösterirdi.
-												*/}
-												{fark !== null && (
-													<span
-														class={
-															fark > 0
-																? 'text-xs font-medium text-emerald-600 dark:text-emerald-400'
-																: 'text-xs font-medium text-neutral-600 dark:text-neutral-400'
-														}
-													>
-														{degisimMetni(fark)}
-													</span>
-												)}
-											</div>
-											<div class="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
-												{olcum.once === 0
-													? 'Geçen hafta kayıt yok'
-													: `Geçen hafta: ${olcum.once}`}
-											</div>
-										</div>
-									);
-								})}
-							</div>
-						</section>
-
-						{/* GÜNLÜK GRAFİK — saf CSS; kütüphane yok, ziyaretçiye de bir şey inmiyor */}
-						<section class="mt-8 rounded-xl border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900">
-							<h2 class="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
-								Son {GUN_SAYISI} gün
-							</h2>
-							<p class="mt-0.5 text-xs text-neutral-500 dark:text-neutral-400">
-								Çubuk: sayfa görüntüleme · Rakam: o günün tekil ziyaretçisi
-							</p>
-							<div class="mt-5 flex items-end gap-1.5 sm:gap-2">
-								{sonuc.ozet.gunler.map((gun) => (
-									<div class="flex flex-1 flex-col items-center gap-1.5">
-										<span class="text-[11px] tabular-nums text-neutral-400 dark:text-neutral-500">
-											{gun.goruntuleme || ''}
-										</span>
-										{/*
-										  Yükseklik satır içi stille veriliyor: değer veriden
-										  geliyor, Tailwind sınıfı derleme anında bilinemez.
-										  Sıfır günlerde 2 piksellik bir iz kalıyor ki eksen
-										  boyunca günün var olduğu görünsün.
-										*/}
-										<div
-											class="w-full rounded-t bg-marka-500 dark:bg-marka-400"
-											style={`height: ${Math.max(2, Math.round((gun.goruntuleme / enYogunGun) * 120))}px`}
-											title={`${gun.etiket}: ${gun.goruntuleme} görüntüleme, ${gun.ziyaretci} ziyaretçi`}
-										/>
-										<span class="text-[10px] whitespace-nowrap text-neutral-500 dark:text-neutral-400">
-											{gun.etiket}
-										</span>
-										<span class="text-[11px] font-medium tabular-nums text-neutral-700 dark:text-neutral-300">
-											{gun.ziyaretci || '·'}
-										</span>
-									</div>
-								))}
-							</div>
-						</section>
-
-						{/* SAAT DAĞILIMI — yazıyı ne zaman paylaşmanın anlamlı olduğu */}
-						<section class="mt-8 rounded-xl border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900">
-							<h2 class="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
-								Günün saatleri
-							</h2>
-							<p class="mt-0.5 text-xs text-neutral-500 dark:text-neutral-400">
-								{dorukSaat
-									? `En yoğun saat ${String(dorukSaat.saat).padStart(2, '0')}.00–${String(
-											(dorukSaat.saat + 1) % 24,
-										).padStart(2, '0')}.00 · ${dorukSaat.goruntuleme} görüntüleme`
-									: 'Henüz saat dağılımı oluşacak kadar ziyaret yok.'}{' '}
-								Saatler Türkiye saatiyle.
-							</p>
-							<div class="mt-5 flex items-end gap-px sm:gap-0.5">
-								{sonuc.ozet.saatler.map((dilim) => (
-									<div class="flex flex-1 flex-col items-center gap-1">
-										{/*
-										  Yükseklik satır içi stille: değer veriden geliyor.
-										  Ziyaretsiz saatte 2 piksellik iz bırakılıyor ki eksen
-										  kesintisiz görünsün — günlük grafikteki kuralın aynısı.
-										*/}
-										<div
-											class={
-												dilim.goruntuleme
-													? 'w-full rounded-t bg-marka-500 dark:bg-marka-400'
-													: 'w-full rounded-t bg-neutral-200 dark:bg-neutral-800'
-											}
-											style={`height: ${Math.max(2, Math.round((dilim.goruntuleme / enYogunSaat) * 90))}px`}
-											title={`${String(dilim.saat).padStart(2, '0')}.00 — ${dilim.goruntuleme} görüntüleme`}
-										/>
-										{/*
-										  Etiketler üçte bir seyreltiliyor: 24 rakam yan yana
-										  telefonda okunmuyor, üst üste biniyordu.
-										*/}
-										<span class="text-[10px] tabular-nums text-neutral-400 dark:text-neutral-500">
-											{dilim.saat % 3 === 0 ? String(dilim.saat).padStart(2, '0') : ''}
-										</span>
-									</div>
-								))}
-							</div>
-						</section>
-
-						<div class="mt-5 grid gap-5 lg:grid-cols-2">
-							{/* HAFTANIN GÜNÜ — yatay çubuk: gün adları dikey eksende okunmuyordu */}
-							<section class="rounded-xl border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900">
-								<h2 class="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
-									Haftanın günü
-								</h2>
-								<p class="mt-0.5 text-xs text-neutral-500 dark:text-neutral-400">
-									{dorukGun
-										? `En yoğun gün ${dorukGun.ad} · ${dorukGun.goruntuleme} görüntüleme`
-										: 'Henüz gün dağılımı oluşacak kadar ziyaret yok.'}
-								</p>
-								<ul class="mt-4 space-y-2">
-									{sonuc.ozet.haftaGunleri.map((gun) => (
-										<li class="flex items-center gap-3 text-sm">
-											<span class="w-20 shrink-0 text-neutral-600 dark:text-neutral-400">
-												{gun.ad}
-											</span>
-											<span class="h-2 min-w-0 flex-1 rounded-full bg-neutral-100 dark:bg-neutral-800">
-												<span
-													class="block h-2 rounded-full bg-marka-500 dark:bg-marka-400"
-													style={`width: ${(gun.goruntuleme / enYogunHaftaGunu) * 100}%`}
-												/>
-											</span>
-											<span class="w-8 shrink-0 text-right tabular-nums text-neutral-900 dark:text-neutral-100">
-												{gun.goruntuleme || '·'}
-											</span>
-										</li>
-									))}
-								</ul>
-								<p class="mt-3 text-xs text-neutral-500 dark:text-neutral-400">
-									{GUN_SAYISI} günlük pencere her günü iki kez kapsıyor; ziyaret almamış
-									günler boş kalıyor.
-								</p>
-							</section>
-
-							{/* YENİ Mİ, DÖNEN Mİ — aynı karma birden fazla günde görüldüyse dönen */}
-							<section class="rounded-xl border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900">
-								<h2 class="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
-									Yeni mi, dönen mi
-								</h2>
-								<p class="mt-0.5 text-xs text-neutral-500 dark:text-neutral-400">
-									Ayrı günlerde yeniden görünen ziyaretçi "dönen" sayılıyor
-								</p>
-								<div class="mt-4 grid grid-cols-2 gap-4">
-									<div>
-										<div class="text-3xl font-semibold tabular-nums text-neutral-900 dark:text-neutral-50">
-											{sonuc.ozet.ziyaretciTuru.donen}
-										</div>
-										<div class="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
-											Dönen ziyaretçi
-										</div>
-									</div>
-									<div>
-										<div class="text-3xl font-semibold tabular-nums text-neutral-600 dark:text-neutral-400">
-											{sonuc.ozet.ziyaretciTuru.yeni}
-										</div>
-										<div class="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
-											Tek gün görünen
-										</div>
-									</div>
-								</div>
-								{/* Tek çubuk iki payı da gösteriyor; iki ayrı çubuk oranı
-								    gizler, asıl soru "kaçta kaçı" olduğu için yığılı duruyor. */}
-								<div class="mt-4 flex h-2 overflow-hidden rounded-full bg-neutral-100 dark:bg-neutral-800">
-									<span
-										class="bg-marka-500 dark:bg-marka-400"
-										style={`width: ${yuzde(sonuc.ozet.ziyaretciTuru.donen, sonuc.ozet.toplamZiyaretci)}%`}
-									/>
-									<span
-										class="bg-neutral-300 dark:bg-neutral-600"
-										style={`width: ${yuzde(sonuc.ozet.ziyaretciTuru.yeni, sonuc.ozet.toplamZiyaretci)}%`}
-									/>
-								</div>
-								<p class="mt-3 text-xs leading-relaxed text-neutral-500 dark:text-neutral-400">
-									{sonuc.ozet.toplamZiyaretci
-										? `${sonuc.ozet.toplamZiyaretci} kişinin %${yuzde(
-												sonuc.ozet.ziyaretciTuru.donen,
-												sonuc.ozet.toplamZiyaretci,
-											)}'i geri geldi.`
-										: 'Henüz ziyaretçi yok.'}{' '}
-									Ölçü {GUN_SAYISI} günlük pencereyle sınırlı: daha önce gelmiş biri
-									pencerede yoksa yeni görünür.
-								</p>
-							</section>
+					<div class="p-kart p-kart--sikisik">
+						<div class="p-olcu-sayi">{sonuc.ozet.toplamGoruntuleme}</div>
+						<div class="p-olcu-ad">Sayfa görüntüleme</div>
+					</div>
+					<div class="p-kart p-kart--sikisik">
+						<div class="p-olcu-sayi">
+							{sonuc.ozet.toplamZiyaretci
+								? (sonuc.ozet.toplamGoruntuleme / sonuc.ozet.toplamZiyaretci).toFixed(1)
+								: '0'}
 						</div>
+						<div class="p-olcu-ad">Kişi başına sayfa</div>
+					</div>
+					<div class="p-kart p-kart--sikisik">
+						<div class="p-olcu-sayi">{GUN_SAYISI}</div>
+						<div class="p-olcu-ad">Günlük pencere</div>
+					</div>
+				</section>
 
-						{/* LİSTELER */}
-						<div class="mt-5 grid gap-5 lg:grid-cols-2">
-							<section class="rounded-xl border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900">
-								<h2 class="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
-									En çok okunan sayfalar
-								</h2>
-								<ul class="mt-3 space-y-2">
-									{sonuc.ozet.sayfalar.map((satir) => (
-										<li>
-											<div class="flex items-baseline justify-between gap-3 text-sm">
-												<span class="truncate text-neutral-700 dark:text-neutral-300">
-													{satir.ad}
+				{/* HAFTA KARŞILAŞTIRMASI — arşiv 14 gün, yani tam iki hafta */}
+				<section class="p-kart">
+					<h2 class="p-kart-baslik">Bu hafta / geçen hafta</h2>
+					<p class="p-not">
+						Son 7 gün, ondan önceki 7 güne karşı. Arşiv {GUN_SAYISI} gün tuttuğu için
+						daha uzun bir dönem yok.
+					</p>
+					<div class="p-izgara p-izgara--2 p-kart-govde">
+						{[
+							{
+								baslik: 'Sayfa görüntüleme',
+								simdi: sonuc.ozet.karsilastirma.buHafta.goruntuleme,
+								once: sonuc.ozet.karsilastirma.gecenHafta.goruntuleme,
+							},
+							{
+								baslik: 'Tekil ziyaretçi',
+								simdi: sonuc.ozet.karsilastirma.buHafta.ziyaretci,
+								once: sonuc.ozet.karsilastirma.gecenHafta.ziyaretci,
+							},
+						].map((olcum) => {
+							const fark = degisim(olcum.simdi, olcum.once);
+							return (
+								<div class="p-kart p-kart--sikisik">
+									<div class="p-olcu-ad" style="margin-top: 0">
+										{olcum.baslik}
+									</div>
+									<div class="p-kart-basi" style="margin-top: 6px">
+										<span class="p-olcu-sayi p-olcu-sayi--orta">{olcum.simdi}</span>
+										{/*
+										  Karşılaştırma yapılamıyorsa rozet hiç basılmıyor:
+										  altındaki satır zaten sebebini söylüyor, ikisi yan yana
+										  aynı şeyi iki kez söylemiş oluyordu.
+										*/}
+										{fark !== null && (
+											<span
+												class={`p-rozet ${fark > 0 ? 'p-rozet--iyi' : 'p-rozet--notr'}`}
+											>
+												<span class="p-im" aria-hidden="true">
+													{degisimImi(fark)}
 												</span>
-												<span class="shrink-0 tabular-nums text-neutral-900 dark:text-neutral-100">
-													{satir.sayi}
-												</span>
-											</div>
-											<div class="mt-1 h-1 rounded-full bg-neutral-100 dark:bg-neutral-800">
-												<div
-													class="h-1 rounded-full bg-marka-500 dark:bg-marka-400"
-													style={`width: ${yuzde(satir.sayi, sonuc.ozet.toplamGoruntuleme)}%`}
-												/>
-											</div>
-										</li>
-									))}
-								</ul>
-							</section>
-
-							{/* YAZI BAŞINA OKUNMA — sayfa listesinden ayrı: asıl merak edilen bu */}
-							<section class="rounded-xl border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900">
-								<h2 class="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
-									Yazı başına okunma
-								</h2>
-								<p class="mt-0.5 text-xs text-neutral-500 dark:text-neutral-400">
-									Blog dizini değil, yazıların kendisi. Adlar dosya adı; başlıklar
-									içerikte duruyor
-								</p>
-								{sonuc.ozet.yazilar.length === 0 ? (
-									<p class="mt-4 text-sm text-neutral-500 dark:text-neutral-400">
-										Bu pencerede hiçbir yazı açılmamış.
-									</p>
-								) : (
-									<ul class="mt-3 space-y-2">
-										{sonuc.ozet.yazilar.map((satir) => (
-											<li>
-												<div class="flex items-baseline justify-between gap-3 text-sm">
-													<span class="truncate text-neutral-700 dark:text-neutral-300">
-														{satir.ad}
-													</span>
-													<span class="shrink-0 tabular-nums text-neutral-900 dark:text-neutral-100">
-														{satir.sayi}
-													</span>
-												</div>
-												{/*
-												  Oran yazılar arasında kuruluyor, toplam görüntülemeye
-												  göre değil: en çok okunan yazı çubuğu doldursun,
-												  yoksa birkaç okumalık bir listede bütün çubuklar
-												  görünmez bir çizgiye iniyordu.
-												*/}
-												<div class="mt-1 h-1 rounded-full bg-neutral-100 dark:bg-neutral-800">
-													<div
-														class="h-1 rounded-full bg-marka-500 dark:bg-marka-400"
-														style={`width: ${yuzde(satir.sayi, sonuc.ozet.yazilar[0].sayi)}%`}
-													/>
-												</div>
-											</li>
-										))}
-									</ul>
-								)}
-							</section>
-
-							<section class="rounded-xl border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900">
-								<h2 class="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
-									Nereden geldiler
-								</h2>
-								<ul class="mt-3 space-y-2">
-									{sonuc.ozet.kaynaklar.map((satir) => (
-										<li>
-											<div class="flex items-baseline justify-between gap-3 text-sm">
-												<span class="truncate text-neutral-700 dark:text-neutral-300">
-													{satir.ad}
-												</span>
-												<span class="shrink-0 tabular-nums text-neutral-900 dark:text-neutral-100">
-													{satir.sayi}
-												</span>
-											</div>
-											<div class="mt-1 h-1 rounded-full bg-neutral-100 dark:bg-neutral-800">
-												<div
-													class="h-1 rounded-full bg-marka-500 dark:bg-marka-400"
-													style={`width: ${yuzde(satir.sayi, sonuc.ozet.toplamGoruntuleme)}%`}
-												/>
-											</div>
-										</li>
-									))}
-								</ul>
-							</section>
-
-							{/* 404 — kırık bağlantılar. Sayfa görüntüleme sayımına girmiyor. */}
-							<section class="rounded-xl border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900">
-								<h2 class="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
-									404 alan adresler
-								</h2>
-								<p class="mt-0.5 text-xs text-neutral-500 dark:text-neutral-400">
-									{sonuc.ozet.bulunamayanToplam} istek karşılık bulamadı. Bu sayılar
-									yukarıdaki görüntülemelere dâhil değil
-								</p>
-								{sonuc.ozet.bulunamayanlar.length === 0 ? (
-									<p class="mt-4 text-sm text-neutral-500 dark:text-neutral-400">
-										Kırık bağlantı yok: bu pencerede hiçbir adres 404 vermedi.
-									</p>
-								) : (
-									<ul class="mt-3 space-y-2.5">
-										{sonuc.ozet.bulunamayanlar.map((satir) => (
-											<li>
-												<div class="flex items-baseline justify-between gap-3 text-sm">
-													<span class="truncate font-mono text-xs text-neutral-700 dark:text-neutral-300">
-														{satir.yol}
-													</span>
-													<span class="shrink-0 tabular-nums text-neutral-900 dark:text-neutral-100">
-														{satir.sayi}
-													</span>
-												</div>
-												{/*
-												  Kaynak burada rakam kadar önemli: "Site içi gezinme"
-												  görünüyorsa kırık bağlantı bizim sayfamızda ve
-												  düzeltilebilir; "Doğrudan" ise adres elle yazılmış.
-												*/}
-												<div class="mt-0.5 text-xs text-neutral-500 dark:text-neutral-400">
-													Nereden: {satir.kaynaklar.join(', ')}
-												</div>
-											</li>
-										))}
-									</ul>
-								)}
-							</section>
-
-							<section class="rounded-xl border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900">
-								<h2 class="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
-									Cihaz
-								</h2>
-								<ul class="mt-3 space-y-2 text-sm">
-									{sonuc.ozet.cihazlar.map((satir) => (
-										<li class="flex items-baseline justify-between gap-3">
-											<span class="text-neutral-700 dark:text-neutral-300">{satir.ad}</span>
-											<span class="tabular-nums text-neutral-900 dark:text-neutral-100">
-												{satir.sayi}
-												<span class="ml-1.5 text-xs text-neutral-500 dark:text-neutral-400">
-													%{yuzde(satir.sayi, sonuc.ozet.toplamGoruntuleme)}
-												</span>
+												{degisimMetni(fark)}
 											</span>
-										</li>
-									))}
-								</ul>
-							</section>
+										)}
+									</div>
+									<p class="p-not p-not--kisik">
+										{olcum.once === 0
+											? 'Geçen hafta kayıt yok'
+											: `Geçen hafta: ${olcum.once}`}
+									</p>
+								</div>
+							);
+						})}
+					</div>
+				</section>
 
-							<section class="rounded-xl border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900">
-								<h2 class="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
-									Tarayıcı
-								</h2>
-								<ul class="mt-3 space-y-2 text-sm">
-									{sonuc.ozet.tarayicilar.map((satir) => (
-										<li class="flex items-baseline justify-between gap-3">
-											<span class="text-neutral-700 dark:text-neutral-300">{satir.ad}</span>
-											<span class="tabular-nums text-neutral-900 dark:text-neutral-100">
-												{satir.sayi}
-												<span class="ml-1.5 text-xs text-neutral-500 dark:text-neutral-400">
-													%{yuzde(satir.sayi, sonuc.ozet.toplamGoruntuleme)}
-												</span>
-											</span>
-										</li>
-									))}
-								</ul>
-							</section>
-						</div>
+				{/* GÜNLÜK GRAFİK — saf CSS; kütüphane yok */}
+				<section class="p-kart">
+					<div class="p-kart-basi">
+						<h2 class="p-kart-baslik">Son {GUN_SAYISI} gün</h2>
+						<span class="p-not" style="margin-top: 0">
+							Çubuk: görüntüleme · Alt rakam: o günün tekil ziyaretçisi
+						</span>
+					</div>
+					<div class="p-grafik p-kart-govde">
+						{sonuc.ozet.gunler.map((gun) => (
+							<div class="p-sutun">
+								<span class="p-sutun-ust">{gun.goruntuleme || ''}</span>
+								{/*
+								  Yükseklik satır içi stille veriliyor: değer veriden geliyor,
+								  Tailwind sınıfı ya da hazır bir CSS sınıfı derleme anında
+								  bilinemez. Sıfır günlerde 2 piksellik bir iz kalıyor ki eksen
+								  boyunca günün var olduğu görünsün.
+								*/}
+								<div
+									class={gun.goruntuleme ? 'p-cubuk' : 'p-cubuk p-cubuk--bos'}
+									style={`height: ${Math.max(2, Math.round((gun.goruntuleme / enYogunGun) * 120))}px`}
+									title={`${gun.etiket}: ${gun.goruntuleme} görüntüleme, ${gun.ziyaretci} ziyaretçi`}
+								/>
+								<span class="p-sutun-alt">{gun.etiket}</span>
+								<span class="p-sutun-sayi">{gun.ziyaretci || '·'}</span>
+							</div>
+						))}
+					</div>
+				</section>
 
-						{/* ELEME DÖKÜMÜ — rakamın neyi saymadığı, rakamın kendisi kadar önemli */}
-						<section class="mt-8 rounded-xl border border-neutral-200 bg-white p-5 text-sm dark:border-neutral-800 dark:bg-neutral-900">
-							<h2 class="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
-								Eleme dökümü
-							</h2>
-							<p class="mt-0.5 text-xs text-neutral-500 dark:text-neutral-400">
-								Sunucudan gelen {sonuc.ozet.eleme.toplamSatir} satırın kaçı neden
-								sayılmadı
-							</p>
-							<dl class="mt-4 grid grid-cols-2 gap-x-6 gap-y-2 sm:grid-cols-3">
-								<div class="flex justify-between gap-3">
-									<dt class="text-neutral-600 dark:text-neutral-400">Robotlar</dt>
-									<dd class="tabular-nums text-neutral-900 dark:text-neutral-100">
-										−{sonuc.ozet.eleme.robot}
-									</dd>
-								</div>
-								<div class="flex justify-between gap-3">
-									<dt class="text-neutral-600 dark:text-neutral-400">Kendi testlerimiz</dt>
-									<dd class="tabular-nums text-neutral-900 dark:text-neutral-100">
-										−{sonuc.ozet.eleme.kendiIstegimiz}
-									</dd>
-								</div>
-								<div class="flex justify-between gap-3">
-									<dt class="text-neutral-600 dark:text-neutral-400">Statik dosyalar</dt>
-									<dd class="tabular-nums text-neutral-900 dark:text-neutral-100">
-										−{sonuc.ozet.eleme.varlik}
-									</dd>
-								</div>
-								<div class="flex justify-between gap-3">
-									{/* 404'ler bu kovanın içinde: yönlendirmeler ve hatalar da
-									    burada sayıldığı için iki rakam birbirini tutmuyor
-									    görünebilir, bu yüzden pay açıkça yazılıyor. */}
-									<dt class="text-neutral-600 dark:text-neutral-400">
-										Diğer durum kodları
-										<span class="ml-1 text-xs text-neutral-500 dark:text-neutral-500">
-											({sonuc.ozet.bulunamayanToplam}'i 404)
-										</span>
-									</dt>
-									<dd class="tabular-nums text-neutral-900 dark:text-neutral-100">
-										−{sonuc.ozet.eleme.durum}
-									</dd>
-								</div>
-								<div class="flex justify-between gap-3 font-medium">
-									<dt class="text-neutral-800 dark:text-neutral-200">Sayılan</dt>
-									<dd class="tabular-nums text-neutral-900 dark:text-neutral-50">
-										{sonuc.ozet.eleme.kalan}
-									</dd>
-								</div>
-							</dl>
-						</section>
+				{/* SAAT DAĞILIMI — yazıyı ne zaman paylaşmanın anlamlı olduğu */}
+				<section class="p-kart">
+					<h2 class="p-kart-baslik">Günün saatleri</h2>
+					<p class="p-not">
+						{dorukSaat
+							? `En yoğun saat ${String(dorukSaat.saat).padStart(2, '0')}.00–${String(
+									(dorukSaat.saat + 1) % 24,
+								).padStart(2, '0')}.00 · ${dorukSaat.goruntuleme} görüntüleme`
+							: 'Henüz saat dağılımı oluşacak kadar ziyaret yok.'}{' '}
+						Saatler Türkiye saatiyle.
+					</p>
+					<div class="p-grafik p-grafik--sik p-kart-govde">
+						{sonuc.ozet.saatler.map((dilim) => (
+							<div class="p-sutun">
+								{/*
+								  Ziyaretsiz saatte 2 piksellik iz bırakılıyor ki eksen
+								  kesintisiz görünsün — günlük grafikteki kuralın aynısı.
+								*/}
+								<div
+									class={dilim.goruntuleme ? 'p-cubuk' : 'p-cubuk p-cubuk--bos'}
+									style={`height: ${Math.max(2, Math.round((dilim.goruntuleme / enYogunSaat) * 90))}px`}
+									title={`${String(dilim.saat).padStart(2, '0')}.00 — ${dilim.goruntuleme} görüntüleme`}
+								/>
+								{/*
+								  Etiketler üçte bir seyreltiliyor: 24 rakam yan yana telefonda
+								  okunmuyor, üst üste biniyordu.
+								*/}
+								<span class="p-sutun-alt">
+									{dilim.saat % 3 === 0 ? String(dilim.saat).padStart(2, '0') : ''}
+								</span>
+							</div>
+						))}
+					</div>
+				</section>
 
-						<p class="mt-6 text-xs leading-relaxed text-neutral-500 dark:text-neutral-400">
-							Tekil ziyaretçi, IP ve tarayıcı kimliğinin karmasıyla sayılıyor; ham IP
-							hiçbir yere yazılmıyor. Kayıt aralığı:{' '}
-							{sonuc.ozet.ilkKayit ?? '—'} → {sonuc.ozet.sonKayit ?? '—'}. Bu sayfa
-							yalnızca panel kipinde var; yayın derlemesine girmiyor.
+				<div class="p-izgara p-izgara--2">
+					{/* HAFTANIN GÜNÜ — yatay çubuk: gün adları dikey eksende okunmuyordu */}
+					<section class="p-kart">
+						<h2 class="p-kart-baslik">Haftanın günü</h2>
+						<p class="p-not">
+							{dorukGun
+								? `En yoğun gün ${dorukGun.ad} · ${dorukGun.goruntuleme} görüntüleme`
+								: 'Henüz gün dağılımı oluşacak kadar ziyaret yok.'}
 						</p>
-					</>
-				)
-			}
-		</div>
-	</body>
-</html>
+						<ul class="p-liste p-kart-govde">
+							{sonuc.ozet.haftaGunleri.map((gun) => (
+								<li class="p-yatay">
+									<span class="p-yatay-ad">{gun.ad}</span>
+									<span class="p-yatay-oran">
+										<span class="p-oran" style="margin-top: 0">
+											<span
+												class="p-oran-dolgu"
+												style={`width: ${(gun.goruntuleme / enYogunHaftaGunu) * 100}%`}
+											/>
+										</span>
+									</span>
+									<span class="p-yatay-sayi">{gun.goruntuleme || '·'}</span>
+								</li>
+							))}
+						</ul>
+						<p class="p-not p-not--kisik p-ayrac">
+							{GUN_SAYISI} günlük pencere her günü iki kez kapsıyor; ziyaret almamış
+							günler boş kalıyor.
+						</p>
+					</section>
+
+					{/* YENİ Mİ, DÖNEN Mİ — aynı karma birden fazla günde görüldüyse dönen */}
+					<section class="p-kart">
+						<h2 class="p-kart-baslik">Yeni mi, dönen mi</h2>
+						<p class="p-not">
+							Ayrı günlerde yeniden görünen ziyaretçi "dönen" sayılıyor
+						</p>
+						<div class="p-izgara p-izgara--2 p-kart-govde">
+							<div>
+								<div class="p-olcu-sayi">{sonuc.ozet.ziyaretciTuru.donen}</div>
+								<div class="p-olcu-ad">Dönen ziyaretçi</div>
+							</div>
+							<div>
+								<div class="p-olcu-sayi p-olcu-sayi--kisik">
+									{sonuc.ozet.ziyaretciTuru.yeni}
+								</div>
+								<div class="p-olcu-ad">Tek gün görünen</div>
+							</div>
+						</div>
+						{/* Tek çubuk iki payı da gösteriyor; iki ayrı çubuk oranı gizler,
+						    asıl soru "kaçta kaçı" olduğu için yığılı duruyor. */}
+						<div class="p-oran p-oran--kalin p-kart-govde">
+							<span
+								class="p-oran-dolgu"
+								style={`width: ${yuzde(sonuc.ozet.ziyaretciTuru.donen, sonuc.ozet.toplamZiyaretci)}%`}
+							/>
+							<span
+								class="p-oran-dolgu p-oran-dolgu--ikinci"
+								style={`width: ${yuzde(sonuc.ozet.ziyaretciTuru.yeni, sonuc.ozet.toplamZiyaretci)}%`}
+							/>
+						</div>
+						<p class="p-not p-not--kisik">
+							{sonuc.ozet.toplamZiyaretci
+								? `${sonuc.ozet.toplamZiyaretci} kişinin %${yuzde(
+										sonuc.ozet.ziyaretciTuru.donen,
+										sonuc.ozet.toplamZiyaretci,
+									)}'i geri geldi.`
+								: 'Henüz ziyaretçi yok.'}{' '}
+							Ölçü {GUN_SAYISI} günlük pencereyle sınırlı: daha önce gelmiş biri
+							pencerede yoksa yeni görünür.
+						</p>
+					</section>
+				</div>
+
+				{/* LİSTELER */}
+				<div class="p-izgara p-izgara--2">
+					<section class="p-kart">
+						<h2 class="p-kart-baslik">En çok okunan sayfalar</h2>
+						<ul class="p-liste p-kart-govde">
+							{sonuc.ozet.sayfalar.map((satir) => (
+								<li>
+									<div class="p-kv">
+										<span class="p-kv-ad">{satir.ad}</span>
+										<span class="p-kv-deger">{satir.sayi}</span>
+									</div>
+									<div class="p-oran">
+										<div
+											class="p-oran-dolgu"
+											style={`width: ${yuzde(satir.sayi, sonuc.ozet.toplamGoruntuleme)}%`}
+										/>
+									</div>
+								</li>
+							))}
+						</ul>
+					</section>
+
+					{/* YAZI BAŞINA OKUNMA — sayfa listesinden ayrı: asıl merak edilen bu */}
+					<section class="p-kart">
+						<h2 class="p-kart-baslik">Yazı başına okunma</h2>
+						<p class="p-not">
+							Blog dizini değil, yazıların kendisi. Adlar dosya adı; başlıklar
+							içerikte duruyor
+						</p>
+						{sonuc.ozet.yazilar.length === 0 ? (
+							<p class="p-not p-not--kisik p-kart-govde">
+								Bu pencerede hiçbir yazı açılmamış.
+							</p>
+						) : (
+							<ul class="p-liste p-kart-govde">
+								{sonuc.ozet.yazilar.map((satir) => (
+									<li>
+										<div class="p-kv">
+											<span class="p-kv-ad">{satir.ad}</span>
+											<span class="p-kv-deger">{satir.sayi}</span>
+										</div>
+										{/*
+										  Oran yazılar arasında kuruluyor, toplam görüntülemeye göre
+										  değil: en çok okunan yazı çubuğu doldursun, yoksa birkaç
+										  okumalık bir listede bütün çubuklar görünmez bir çizgiye
+										  iniyordu.
+										*/}
+										<div class="p-oran">
+											<div
+												class="p-oran-dolgu"
+												style={`width: ${yuzde(satir.sayi, sonuc.ozet.yazilar[0].sayi)}%`}
+											/>
+										</div>
+									</li>
+								))}
+							</ul>
+						)}
+					</section>
+
+					<section class="p-kart">
+						<h2 class="p-kart-baslik">Nereden geldiler</h2>
+						<ul class="p-liste p-kart-govde">
+							{sonuc.ozet.kaynaklar.map((satir) => (
+								<li>
+									<div class="p-kv">
+										<span class="p-kv-ad">{satir.ad}</span>
+										<span class="p-kv-deger">{satir.sayi}</span>
+									</div>
+									<div class="p-oran">
+										<div
+											class="p-oran-dolgu"
+											style={`width: ${yuzde(satir.sayi, sonuc.ozet.toplamGoruntuleme)}%`}
+										/>
+									</div>
+								</li>
+							))}
+						</ul>
+					</section>
+
+					{/* 404 — kırık bağlantılar. Sayfa görüntüleme sayımına girmiyor. */}
+					<section class="p-kart">
+						<h2 class="p-kart-baslik">404 alan adresler</h2>
+						<p class="p-not">
+							{sonuc.ozet.bulunamayanToplam} istek karşılık bulamadı. Bu sayılar
+							yukarıdaki görüntülemelere dâhil değil
+						</p>
+						{sonuc.ozet.bulunamayanlar.length === 0 ? (
+							<p class="p-not p-not--kisik p-kart-govde">
+								Kırık bağlantı yok: bu pencerede hiçbir adres 404 vermedi.
+							</p>
+						) : (
+							<ul class="p-liste p-kart-govde">
+								{sonuc.ozet.bulunamayanlar.map((satir) => (
+									<li>
+										<div class="p-kv">
+											<span class="p-kv-ad p-kv-ad--kod">{satir.yol}</span>
+											<span class="p-kv-deger p-metin-dikkat">{satir.sayi}</span>
+										</div>
+										{/*
+										  Kaynak burada rakam kadar önemli: "Site içi gezinme"
+										  görünüyorsa kırık bağlantı bizim sayfamızda ve
+										  düzeltilebilir; "Doğrudan" ise adres elle yazılmış.
+										*/}
+										<div class="p-not p-not--kisik" style="margin-top: 2px">
+											Nereden: {satir.kaynaklar.join(', ')}
+										</div>
+									</li>
+								))}
+							</ul>
+						)}
+					</section>
+
+					<section class="p-kart">
+						<h2 class="p-kart-baslik">Cihaz</h2>
+						<ul class="p-liste p-kart-govde">
+							{sonuc.ozet.cihazlar.map((satir) => (
+								<li class="p-kv">
+									<span class="p-kv-ad">{satir.ad}</span>
+									<span class="p-kv-deger">
+										{satir.sayi}
+										<span class="p-kv-yuzde">
+											%{yuzde(satir.sayi, sonuc.ozet.toplamGoruntuleme)}
+										</span>
+									</span>
+								</li>
+							))}
+						</ul>
+					</section>
+
+					<section class="p-kart">
+						<h2 class="p-kart-baslik">Tarayıcı</h2>
+						<ul class="p-liste p-kart-govde">
+							{sonuc.ozet.tarayicilar.map((satir) => (
+								<li class="p-kv">
+									<span class="p-kv-ad">{satir.ad}</span>
+									<span class="p-kv-deger">
+										{satir.sayi}
+										<span class="p-kv-yuzde">
+											%{yuzde(satir.sayi, sonuc.ozet.toplamGoruntuleme)}
+										</span>
+									</span>
+								</li>
+							))}
+						</ul>
+					</section>
+				</div>
+
+				{/* ELEME DÖKÜMÜ — rakamın neyi saymadığı, rakamın kendisi kadar önemli */}
+				<section class="p-kart">
+					<h2 class="p-kart-baslik">Eleme dökümü</h2>
+					<p class="p-not">
+						Sunucudan gelen {sonuc.ozet.eleme.toplamSatir} satırın kaçı neden
+						sayılmadı
+					</p>
+					<dl class="p-dokum p-kart-govde">
+						<div class="p-dokum-satir">
+							<dt>Robotlar</dt>
+							<dd>−{sonuc.ozet.eleme.robot}</dd>
+						</div>
+						<div class="p-dokum-satir">
+							<dt>Kendi testlerimiz</dt>
+							<dd>−{sonuc.ozet.eleme.kendiIstegimiz}</dd>
+						</div>
+						<div class="p-dokum-satir">
+							<dt>Statik dosyalar</dt>
+							<dd>−{sonuc.ozet.eleme.varlik}</dd>
+						</div>
+						<div class="p-dokum-satir">
+							{/* 404'ler bu kovanın içinde: yönlendirmeler ve hatalar da burada
+							    sayıldığı için iki rakam birbirini tutmuyor görünebilir, bu
+							    yüzden pay açıkça yazılıyor. */}
+							<dt>
+								Diğer durum kodları
+								<span class="p-kv-yuzde">({sonuc.ozet.bulunamayanToplam}'i 404)</span>
+							</dt>
+							<dd>−{sonuc.ozet.eleme.durum}</dd>
+						</div>
+						<div class="p-dokum-satir p-dokum-satir--toplam">
+							<dt>Sayılan</dt>
+							<dd>{sonuc.ozet.eleme.kalan}</dd>
+						</div>
+					</dl>
+				</section>
+
+				<p class="p-dipnot">
+					Tekil ziyaretçi, IP ve tarayıcı kimliğinin karmasıyla sayılıyor; ham IP
+					hiçbir yere yazılmıyor. Kayıt aralığı: {sonuc.ozet.ilkKayit ?? '—'} →{' '}
+					{sonuc.ozet.sonKayit ?? '—'}. Bu sayfa yalnızca panel kipinde var; yayın
+					derlemesine girmiyor.
+				</p>
+			</div>
+		)
+	}
+</Kabuk>
