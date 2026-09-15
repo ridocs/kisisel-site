@@ -105,40 +105,64 @@ const kanallar = [
 			<h1 class="ad" data-belir-oge style="--sira: 1">Mustafa Eybek</h1>
 
 			{/*
-			  Adın altındaki çizgi elle çekilmiş bir kalem darbesi: düz bir
-			  çubuk değil. Kalınlık yol boyunca değişiyor (uçlar ince, orta
-			  dolgun) ve merkez hattı hafifçe dalgalanıyor — düzgün bir
-			  dikdörtgen bu sayfada tipografinin yanında fazla makine işi
-			  duruyordu.
+			  Adın altındaki iz kurşun kalemle çekilmiş: düz bir çubuk değil.
 
-			  `stroke` yerine kapalı bir şekil + `fill`: `stroke-width` yol
-			  boyunca değişemez, dolayısıyla uçları inceltmenin tek yolu
-			  darbenin iki kenarını ayrı ayrı çizmek. Yol soldan sağa üst
-			  kenarı, sonra sağdan sola alt kenarı takip edip kapanıyor.
+			  Üç şey bir arada "elle çizilmiş" hissini veriyor, hiçbiri tek başına
+			  yetmiyor:
 
-			  Gradyan CSS'ten değil buradan geliyor; `fill` bir CSS gradyanı
-			  kabul etmiyor. Renkler yine aynı marka değişkenleri, yani tema
-			  ile birlikte değişiyor.
+			  1. DÜZENSİZ dalga. Eşit aralıklı bir dalga el değil sinyal gibi
+			     okunuyor, o yüzden dalga boyları ve genlikleri bilerek farklı.
+			     Genlik çizgi kalınlığından büyük olmak zorunda — küçük kalırsa iz
+			     dalgayı yutuyor ve çizgi yine düz görünüyor.
+			  2. İKİ GEÇİŞ. İnsan altını çizerken eli ileri gidip geri geliyor.
+			     İkinci geçiş daha ince, daha soluk ve ters yönde kıvrılıyor;
+			     uçları ilkiyle hizalanmıyor. (Rough Notation gibi elle-çizim
+			     kütüphaneleri de altı çizmeyi varsayılan olarak iki yinelemede
+			     çiziyor.)
+			  3. KOPUK PARÇALAR. Kalem kâğıda her yerde aynı basmıyor; üç kısa,
+			     soluk parça o eksik basıncı temsil ediyor ve ize grafit dokusu
+			     veriyor.
+
+			  Bozulma path verisine YAZILI, çalışma zamanında üretilmiyor.
+			  Aynı görünüm `feTurbulence` + `feDisplacementMap` ile de kurulabilir
+			  ama SVG filtresi her boyama karesinde yeniden rasterleştirme demek;
+			  üstelik bu öge belirirken `transform` animasyonu alıyor, yani filtre
+			  katman önbelleğini de bozardı. iOS'ta bu birleşimin sayfayı
+			  dondurduğu belgelenmiş vakalar var ve bu sitede `backdrop-filter`
+			  yüzünden bir kez yaşandı. Pişmiş path aynı görüntüyü sıfır maliyetle
+			  veriyor.
+
+			  Renk `currentColor` üzerinden geliyor, yani temayla değişiyor:
+			  koyu zeminde açık grafit, açık zeminde koyu. Opaklıklar rengin
+			  kendisinde değil ayrı ayrı izlerde — baskı farkını onlar taşıyor.
 			*/}
 			<svg
 				class="cizgi"
 				data-belir-oge
 				data-belir-cizgi
 				style="--sira: 2"
-				viewBox="0 0 200 18"
+				viewBox="0 0 120 16"
 				aria-hidden="true"
 				focusable="false"
 			>
-				<defs>
-					<linearGradient id="hakkimda-cizgi-gradyan" x1="0" y1="0" x2="1" y2="0">
-						<stop offset="0%" stop-color="var(--color-marka-600)"></stop>
-						<stop offset="100%" stop-color="var(--color-marka-400)"></stop>
-					</linearGradient>
-				</defs>
-				<path
-					d="M5 10.2 C42 6.9, 88 5.2, 128 6.2 C158 7, 178 6.4, 196 7 L196 10.2 C178 9.8, 158 10.6, 128 11.6 C88 12.8, 42 13.5, 5 13.4 Z"
-					fill="url(#hakkimda-cizgi-gradyan)"
-				></path>
+				<g fill="none" stroke="currentColor" stroke-linecap="round">
+					{/* ana iz: soldan sağa */}
+					<path
+						d="M3 9.6 C14 5.2, 24 11.6, 36 8.6 C47 5.4, 57 11.2, 68 8.2 C79 5.6, 89 10.6, 101 7.6 C107 6.2, 112 8.8, 117.5 7.2"
+						stroke-width="2.2"
+						opacity="0.92"
+					></path>
+					{/* dönüş geçişi: ince, soluk, ters yönde */}
+					<path
+						d="M6 7.6 C16 11, 26 6, 38 9.2 C49 11.8, 59 6.4, 70 9 C81 11.2, 91 6.6, 102 8.8 C108 9.6, 112 7.8, 115 8.6"
+						stroke-width="1.4"
+						opacity="0.5"
+					></path>
+					{/* kalemin tam basmadığı yerler */}
+					<path d="M20 9.2 C29 7.6, 36 9.4, 43 8.4" stroke-width="1" opacity="0.42"></path>
+					<path d="M63 8.8 C72 7, 80 9, 87 8" stroke-width="0.9" opacity="0.34"></path>
+					<path d="M99 8 C105 7.2, 110 8.4, 114 7.8" stroke-width="0.8" opacity="0.3"></path>
+				</g>
 			</svg>
 
 			<p class="giris-cumle" data-belir-oge style="--sira: 3">{m('hakkimda.giris')}</p>
@@ -313,20 +337,24 @@ const kanallar = [
 	}
 
 	/*
-	  Yükseklik verilmiyor: viewBox oranı (200/16) genişlikten türetiyor.
-	  Sabit bir yükseklik oranı bozar ve darbeyi dikeyde ezerdi.
+	  Yükseklik verilmiyor: viewBox oranı (120/16) genişlikten türetiyor.
+	  Sabit bir yükseklik oranı bozar ve izi dikeyde ezerdi.
+
+	  `overflow: visible` gerekli: yuvarlatılmış uçlar ve kalın ana iz
+	  viewBox'ın dışına birkaç ondalık taşıyor, kırpılırsa uçlar düzleşir.
 
 	  Eğim küçük ama işi yapan ayrıntı: tam yatay duran bir çizgi cetvelle
-	  çekilmiş gibi okunuyor. Bir derecenin altında kalıyor ki başlıkla
-	  arasındaki hizayı bozmasın.
+	  çekilmiş gibi okunuyor. Bir dereceyi geçmiyor ki başlıkla arasındaki
+	  hizayı bozmasın.
 	*/
 	.cizgi {
 		display: block;
 		margin-top: 1rem;
-		width: 7rem;
+		width: 8rem;
 		height: auto;
 		overflow: visible;
-		rotate: -0.7deg;
+		rotate: -0.8deg;
+		color: var(--foreground);
 	}
 
 	/* Giriş cümlesi gövde metninden bir kademe büyük: sayfanın özeti o. */
