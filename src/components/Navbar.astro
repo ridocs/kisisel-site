@@ -11,15 +11,25 @@ const iletisimCapasi = dil === 'en' ? '#contact' : '#iletisim';
 // Gezinme bağlantıları. Yeni sayfa eklediğinde buraya bir satır eklemen yeterli;
 // hem masaüstü hem mobil menü bu listeden üretilir.
 /*
-  Kullandıklarım bilinçli olarak BURADA DEĞİL, yalnızca altbilgide. Çubukta
-  beş bağlantı olunca dar ekranda taşıyor ve hepsi eşit ağırlıkta görünüp
-  hiçbiri öne çıkmıyor. Hizmetler ticari olarak birincil sayfa, o çubukta.
+  MASAÜSTÜ ve MOBİL listeleri ayrı.
+
+  Masaüstü çubuğu yatay ve dar: beşinci bağlantı orada sıkışıyor ve hepsi eşit
+  ağırlıkta görünüp hiçbiri öne çıkmıyor. Mobil menü ise dikey açılan bir liste,
+  bir satır daha yer sorunu değil — Kullandıklarım orada yerini buluyor.
+
+  Yeni sayfa eklerken hangi listeye gireceğine karar ver: çubuk birincil
+  sayfalar için, mobil menü sitenin tamamı için.
 */
-const baglantilar = [
+const masaustuBaglantilari = [
 	{ ad: m('nav.anasayfa'), yol: yol(dil, '') },
 	{ ad: m('nav.hizmetler'), yol: yol(dil, dil === 'en' ? 'services' : 'hizmetler') },
 	{ ad: m('nav.blog'), yol: yol(dil, 'blog') },
 	{ ad: m('nav.hakkimda'), yol: yol(dil, hakkimdaParcasi) },
+];
+
+const mobilBaglantilar = [
+	...masaustuBaglantilari,
+	{ ad: m('nav.kullandiklarim'), yol: yol(dil, dil === 'en' ? 'uses' : 'kullandiklarim') },
 ];
 
 const suAnkiYol = Astro.url.pathname;
@@ -130,7 +140,7 @@ const eylemDugmesi =
 						class="gosterge pointer-events-none absolute top-0 left-0 h-full rounded-lg bg-slate-900 dark:bg-white"
 						aria-hidden="true"></span>
 					{
-						baglantilar.map((baglanti) => (
+						masaustuBaglantilari.map((baglanti) => (
 							<li class="relative">
 								<a
 									href={baglanti.yol}
@@ -200,7 +210,7 @@ const eylemDugmesi =
 			<div id="mobil-menu" class="hidden border-t border-slate-900/10 md:hidden dark:border-white/10">
 				<ul class="space-y-1 p-2">
 					{
-						baglantilar.map((baglanti) => (
+						mobilBaglantilar.map((baglanti) => (
 							<li>
 								<a
 									href={baglanti.yol}
