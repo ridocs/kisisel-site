@@ -15,6 +15,14 @@ const posts = (await getCollection('blog', ({ data }) => !data.draft && data.dil
 <BaseLayout title={m('blog.sayfaBasligi')} description={m('blog.aciklama')} solaYasli>
 	<h1 class="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">{m('blog.baslik')}</h1>
 
+	{/* Başlık altı çizgisi: Tanıtım bölümündeki ile aynı gradyan. Sayfa
+	    başlığını gövdeden ayırıyor ve iki yüzey aynı dili konuşuyor. */}
+	<div
+		class="mt-4 h-[3px] w-24 rounded-full bg-gradient-to-r from-marka-600 to-marka-400"
+		aria-hidden="true"
+	>
+	</div>
+
 	<ul class="blog-izgara">
 		{posts.map((post) => (
 			<li>
