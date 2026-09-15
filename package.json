@@ -40,7 +40,8 @@
 		"tailwindcss": "^4.3.3"
 	},
 	"allowScripts": {
-		"esbuild": true
+		"esbuild": true,
+		"electron": true
 	},
 	"devDependencies": {
 		"@iconify-json/logos": "^1.2.14",
