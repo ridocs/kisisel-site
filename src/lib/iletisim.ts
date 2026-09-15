@@ -6,21 +6,24 @@
  * güncellenip diğeri unutulduğunda site iki farklı adres gösterirdi; bu
  * yüzden tek kaynak burası.
  *
- * DEĞERLER YER TUTUCU: gerçek bilgi gelene kadar burada duruyorlar. Site
- * yayında olduğu için uydurma bir adres yerine açıkça yer tutucu bırakıldı.
- * Buradaki satırları değiştirdiğinde her iki bölüm de kendiliğinden güncellenir.
+ * Buradaki satırları değiştirdiğinde her iki bölüm ve iletişim QR'ı
+ * kendiliğinden güncellenir.
  */
 
-/** E-posta adresi. Yer tutucu. */
-export const EPOSTA = 'eposta@example.com';
+/** E-posta adresi. */
+export const EPOSTA = 'mstfaeybk@icloud.com';
 
 /**
- * WhatsApp numarası — YER TUTUCU. Uluslararası biçimde, başında + ve boşluk
- * olmadan yazılacak (örn. 905551112233). Boş bırakılırsa düğme ve kanal satırı
- * hiç basılmıyor: çalışmayan bir WhatsApp bağlantısı, düğmenin hiç olmamasından
- * kötü.
+ * WhatsApp numarası. Uluslararası biçimde, başında + ve boşluk olmadan —
+ * wa.me adresi başka biçim kabul etmiyor (+90 533 479 80 49 → 905334798049).
+ *
+ * Boş bırakılırsa düğme ve kanal satırı hiç basılmıyor: çalışmayan bir
+ * WhatsApp bağlantısı, düğmenin hiç olmamasından kötü.
  */
-export const WHATSAPP = '905551112233';
+export const WHATSAPP = '905334798049';
+
+/** İnsan tarafından okunacak biçim; bağlantı yukarıdaki ham numaradan kuruluyor. */
+export const TELEFON_GORUNEN = '+90 533 479 80 49';
 
 /** Konum. Çevrilmiyor ama iki dilde ayrı yazılabilsin diye sözlük. */
 export const KONUM = { tr: 'Kayseri, Türkiye', en: 'Kayseri, Türkiye' } as const;
