@@ -21,11 +21,6 @@ interface Props {
 	 * çubuğu üretiyor.
 	 */
 	altbilgi?: boolean;
-	/*
-	  İçerik sütunu sayfada ortalanmak yerine sola yaslansın mı. Blog ve yazı
-	  sayfalarında okuma sütunu solda duruyor; ana sayfa ve diğerleri ortada.
-	*/
-	solaYasli?: boolean;
 	/**
 	 * Yazı sayfalarında verilir. Verildiğinde og:type "article" olur, makale
 	 * meta etiketleri basılır ve sayfaya BlogPosting yapılandırılmış verisi
@@ -47,7 +42,6 @@ const {
 	title,
 	description = m('site.aciklama'),
 	altbilgi = true,
-	solaYasli = false,
 	makale,
 	dizinDisi = false,
 } = Astro.props;
@@ -279,12 +273,16 @@ const yapilandirilmisVeri = JSON.stringify({
 			icerikVar && (
 				<main
 					id="icerik"
-					class:list={[
-						'max-w-3xl px-4 py-12',
-						// Sola yaslıyken dış pay soldan değil sağdan veriliyor; `mx-auto`
-						// olmadan blok zaten satır başında duruyor.
-						solaYasli ? 'lg:ms-16 xl:ms-24' : 'mx-auto',
-					]}
+					{/*
+					  Okuma sütunu her sayfada ortalanıyor.
+
+					  Blog ve yazı sayfaları bir süre sola yaslıydı; geniş ekranda
+					  sağda büyük bir boşluk bırakıp üst çubuk ve altbilgiyle
+					  hizasız duruyordu — ikisi ortalı olduğu için sayfa kaymış
+					  gibi okunuyordu. Metnin kendi hizası zaten sola dayalı,
+					  değişen yalnızca sütunun sayfadaki yeri.
+					*/}
+					class="mx-auto max-w-3xl px-4 py-12"
 				>
 					<slot />
 				</main>

@@ -12,7 +12,7 @@ const posts = (await getCollection('blog', ({ data }) => !data.draft && data.dil
 );
 ---
 
-<BaseLayout title={m('blog.sayfaBasligi')} description={m('blog.aciklama')} solaYasli>
+<BaseLayout title={m('blog.sayfaBasligi')} description={m('blog.aciklama')}>
 	<h1 class="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">{m('blog.baslik')}</h1>
 
 	{/* Başlık altı çizgisi: Tanıtım bölümündeki ile aynı gradyan. Sayfa

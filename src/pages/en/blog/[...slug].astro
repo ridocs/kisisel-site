@@ -47,7 +47,6 @@ const dakika = Math.max(1, Math.round(kelime / 200));
 		yayin: post.data.pubDate,
 		guncelleme: post.data.updatedDate,
 	}}
-	solaYasli
 >
 	{/*
 	  Kapak tam genişlikte, metin sütununun dışında: referanstaki editoryal
@@ -111,21 +110,14 @@ const dakika = Math.max(1, Math.round(kelime / 200));
 </BaseLayout>
 
 <style>
+	/*
+	  Geniş ekranda buraya sol dolgu veriliyordu: okuma sütunu sola yaslıyken
+	  kapağın da aynı sol kenardan başlaması gerekiyordu. Sütun ortalandığı
+	  için o dolgu kalktı — kalsaydı kapak metinden ayrı düşerdi.
+	*/
 	.yazi-kapak {
 		padding-inline: 1rem;
 		padding-top: 0.5rem;
-	}
-
-	@media (min-width: 1024px) {
-		.yazi-kapak {
-			padding-inline-start: 5rem;
-		}
-	}
-
-	@media (min-width: 1280px) {
-		.yazi-kapak {
-			padding-inline-start: 7rem;
-		}
 	}
 
 	/*
@@ -134,9 +126,14 @@ const dakika = Math.max(1, Math.round(kelime / 200));
 	  köşelerin taşmasına yol açıyordu.
 	*/
 	.kapak-cerceve {
-		/* Okuma sütunuyla aynı hizada: sayfa sola yaslı olduğu için kapak da
-		   ortalanmıyor, aynı sol kenardan başlıyor. */
+		/*
+		  Okuma sütunuyla aynı hizada durması gerekiyor: genişliği metin
+		  sütunuyla aynı (48rem) ve `margin-inline: auto` ile aynı şekilde
+		  ortalanıyor. İkisinden biri ortalanıp diğeri ortalanmazsa kapak
+		  metinden kayıyor.
+		*/
 		max-width: 48rem;
+		margin-inline: auto;
 		border-radius: 1.5rem;
 		overflow: hidden;
 		border: 1px solid var(--border);
