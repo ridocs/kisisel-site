@@ -30,3 +30,32 @@ export const KONUM = { tr: 'Kayseri, Türkiye', en: 'Kayseri, Türkiye' } as con
 
 /** GitHub profili. Ana sayfadaki hero düğmesi de aynı adrese gidiyor. */
 export const GITHUB = 'https://github.com/ridocs';
+
+/*
+  SOSYAL PROFİLLER — arama motorlarına "bu sayfa ile bu hesaplar aynı kişi"
+  bağını kuran liste (`sameAs` şeması). İsim sorgularında en hızlı etki eden
+  sinyallerden biri: Google dağınık profilleri tek kimlikte topluyor.
+
+  Boş bırakılan satır hiçbir yere basılmıyor — ne şemaya ne de sayfaya.
+  YANLIŞ bir adres yazmak boş bırakmaktan KÖTÜ: başka birinin profilini
+  seninmiş gibi bildirir ve kimlik bağını yanlış kişiye kurar. Emin değilsen
+  boş bırak.
+
+  Doldurunca üç yer birden güncellenir: JSON-LD `sameAs`, sosyal ray ve
+  (X için) paylaşım kartındaki `twitter:creator`.
+*/
+export const SOSYAL = {
+	github: GITHUB,
+	linkedin: '',
+	instagram: '',
+	x: '',
+} as const;
+
+/** `sameAs` için yalnızca dolu olanlar. Boş satırlar şemaya girmiyor. */
+export const SOSYAL_ADRESLER: string[] = Object.values(SOSYAL).filter(Boolean);
+
+/**
+ * X kullanıcı adı (başında @ ile). Paylaşım kartındaki `twitter:creator`
+ * bunu istiyor; adres değil kullanıcı adı. Boşsa etiket hiç basılmıyor.
+ */
+export const X_KULLANICI = '';

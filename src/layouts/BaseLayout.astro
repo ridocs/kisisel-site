@@ -5,7 +5,7 @@ import KaydirmaSeridi from '../components/KaydirmaSeridi.astro';
 import Altbilgi from '../components/Altbilgi.astro';
 import SosyalRay from '../components/SosyalRay.astro';
 import { cevirici, digerDilYolu, dilBul, taban } from '@/i18n/ceviriler';
-import { EPOSTA, GITHUB, TELEFON_GORUNEN } from '@/lib/iletisim';
+import { EPOSTA, GITHUB, TELEFON_GORUNEN, SOSYAL_ADRESLER, X_KULLANICI } from '@/lib/iletisim';
 import '../styles/global.css';
 // ?url ile içe aktarıldığında Vite hash'li son adresi veriyor; önyükleme
 // bağlantısı ile CSS'in istediği dosya birebir aynı olsun diye böyle.
@@ -94,8 +94,12 @@ const kisi = {
 		addressLocality: 'Kayseri',
 		addressCountry: 'TR',
 	},
-	// Yalnızca gerçekten var olan hesap. Doğrulanamayan profil eklenmiyor.
-	sameAs: [GITHUB],
+	/*
+	  Kimlik bağı: arama motoru bu sayfayı ve bu hesapları aynı kişiye
+	  bağlıyor. `src/lib/iletisim.ts` içinde boş bırakılan profil buraya hiç
+	  girmiyor — doğrulanamayan bir adres bildirmek, hiç bildirmemekten kötü.
+	*/
+	sameAs: SOSYAL_ADRESLER,
 };
 
 const siteVerisi = {
@@ -197,6 +201,7 @@ const yapilandirilmisVeri = JSON.stringify({
 		{/* Kart görseli geniş biçimde çıksın diye summary_large_image. Kullanıcının
 		    X hesabı bilinmediği için twitter:creator yazılmıyor. */}
 		<meta name="twitter:card" content="summary_large_image" />
+		{X_KULLANICI && <meta name="twitter:creator" content={X_KULLANICI} />}
 		<meta name="twitter:title" content={title} />
 		<meta name="twitter:description" content={description} />
 		<meta name="twitter:image" content={ogGorsel} />
