@@ -1,6 +1,6 @@
 ---
 import { Icon } from 'astro-icon/components';
-import { cevirici, dilBul } from '@/i18n/ceviriler';
+import { cevirici, dilBul, taban } from '@/i18n/ceviriler';
 import { EPOSTA, GITHUB, KONUM, WHATSAPP } from '@/lib/iletisim';
 
 /*
@@ -113,6 +113,25 @@ const kanallar = [
 		</div>
 
 		<aside class="kunye" data-belir-oge style="--sira: 6">
+			{/*
+			  Portre. Ana sayfadaki maskeli hâlinden farklı: burada sade bir
+			  yuvarlatılmış kare. Aynı görsel iki sayfada aynı biçimde durursa
+			  Hakkımda, ana sayfanın tekrarı gibi okunuyor.
+
+			  Özgün ölçü 888×1489; 4:5 kutuda kırpma yukarı kaydırıldı, ortadan
+			  kırpınca kadraj göbekten başlıyor.
+			*/}
+			<img
+				class="portre"
+				src={`${taban}/mustafa-eybek.jpg`}
+				alt={m('hakkimda.portreAlt')}
+				width="888"
+				height="1489"
+				loading="lazy"
+				decoding="async"
+			/>
+
+
 			<p class="kunye-baslik">{m('hakkimda.kunyeBaslik')}</p>
 			<dl class="kunye-liste">
 				<div class="kunye-satir">
@@ -295,6 +314,17 @@ const kanallar = [
 	.kunye {
 		margin-top: 2rem;
 		min-width: 0;
+	}
+
+	.portre {
+		display: block;
+		width: 100%;
+		aspect-ratio: 4 / 5;
+		object-fit: cover;
+		object-position: 50% 30%;
+		border-radius: 1rem;
+		margin-bottom: 1.25rem;
+		background: color-mix(in oklab, var(--foreground) 6%, transparent);
 	}
 
 	.kunye-baslik {

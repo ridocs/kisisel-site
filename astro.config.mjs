@@ -6,7 +6,6 @@ import icon from 'astro-icon';
 import react from '@astrojs/react';
 import tailwindcss from '@tailwindcss/vite';
 import Icons from 'unplugin-icons/vite';
-
 // https://astro.build/config
 export default defineConfig({
 	// Sitemap, RSS ve canonical mutlak URL üretebilmek için buna ihtiyaç duyar.

@@ -1,18 +1,20 @@
 ---
 import { Icon } from 'astro-icon/components';
-import { cevirici, dilBul, yol } from '@/i18n/ceviriler';
+import { cevirici, dilBul, taban, yol } from '@/i18n/ceviriler';
 
 const dil = dilBul(Astro.url);
 const m = cevirici(dil);
 const hakkimdaYolu = yol(dil, dil === 'en' ? 'about' : 'hakkimda');
 
 /*
-  Yer tutucu görsel. Kendi fotoğrafın hazır olduğunda bu satırı değiştirmen
-  yeterli; en iyi sonuç için dikey (4:5) bir kare veya portre kullan.
-  Yerel bir dosya koyacaksan public/ altına atıp "/fotograf.jpg" yazabilirsin.
+  Portre. `public/` altında duruyor ve önekten geçiyor: site alt dizinde
+  yayınlandığı için ("/web-sitem") düz "/mustafa-eybek.jpg" yazmak 404 verirdi.
+
+  Özgün ölçü 888×1489, yani maskenin 4:5 oranından daha dar ve uzun. Kırpma
+  `object-position` ile yukarı kaydırıldı; ortadan kırpınca kadraj göbekten
+  başlıyordu.
 */
-const gorsel =
-	'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=900&q=80&auto=format&fit=crop';
+const gorsel = `${taban}/mustafa-eybek.jpg`;
 ---
 
 {/*
@@ -63,11 +65,11 @@ const gorsel =
 			<img
 				src={gorsel}
 				alt={m('tanitim.gorselAlt')}
-				width="380"
-				height="475"
+				width="888"
+				height="1489"
 				loading="lazy"
 				decoding="async"
-				class="gorsel-maske object-cover"
+				class="gorsel-maske object-cover object-[50%_30%]"
 			/>
 		</div>
 

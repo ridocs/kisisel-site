@@ -76,6 +76,7 @@ export const ceviriler = {
 		'hakkimda.metin2':
 			'İkinci paragrafta yolu anlat: nereden başladın, şu an neyle uğraşıyorsun, sırada ne var.',
 
+		'hakkimda.portreAlt': 'Mustafa Eybek portre fotoğrafı',
 		'hakkimda.kunyeBaslik': 'KÜNYE',
 		'hakkimda.kunyeRol': 'Rol',
 		'hakkimda.kunyeKonum': 'Konum',
@@ -203,6 +204,7 @@ export const ceviriler = {
 		'hakkimda.metin2':
 			'Use the second paragraph for the path: where you started, what you are working on now, what comes next.',
 
+		'hakkimda.portreAlt': 'Portrait photo of Mustafa Eybek',
 		'hakkimda.kunyeBaslik': 'AT A GLANCE',
 		'hakkimda.kunyeRol': 'Role',
 		'hakkimda.kunyeKonum': 'Location',
