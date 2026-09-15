@@ -3,6 +3,8 @@ import { defineConfig } from 'astro/config';
 import keystatic from '@keystatic/astro';
 import temelYapilandirma from './astro.config.mjs';
 import istatistikPaneli from './src/istatistik/eklenti.mjs';
+import { satteri } from '@astrojs/markdown-satteri';
+import gorselTabani from './araclar/gorsel-tabani-eklentisi.mjs';
 
 /*
   YAZI PANELİ İÇİN AYRI YAPILANDIRMA
@@ -31,6 +33,15 @@ import istatistikPaneli from './src/istatistik/eklenti.mjs';
 export default defineConfig({
 	...temelYapilandirma,
 	base: undefined,
+	/*
+	  `base` burada kalktığı için yazı görsellerinin öneki de kalkmalı: ana
+	  yapılandırmadan miras alınan önek "/web-sitem/…" üretirdi ve panelin
+	  sunucusunda her görsel 404 verirdi. Metin karşılığı denetimi duruyor.
+	*/
+	markdown: {
+		...temelYapilandirma.markdown,
+		processor: satteri({ hastPlugins: [gorselTabani({ taban: '' })] }),
+	},
 	/*
 	  PORT SABİT — dolu olduğunda başka porta KAYMIYOR, hata veriyor.
 
