@@ -20,6 +20,23 @@ interface Props {
 
 const { baslik, kapak, kapakAlt, oncelikli = false } = Astro.props;
 
+/*
+  Kapak `public/` altından geliyor ve yolu kökten yazılıyor
+  ("/yazi-gorselleri/…"). Astro `base` ayarını yalnızca kendi ürettiği
+  varlıklara uyguluyor, bu yola uygulamıyor: önek eklenmezse site
+  "/web-sitem" altında yayınlandığında kapak 404 veriyor. Ölçüldü.
+
+  Önek `ceviriler.ts` içindeki `taban` yerine doğrudan ortamdan okunuyor:
+  oradan bir içe aktarma eklemek bu bileşenin modül sırasını değiştiriyor ve
+  derlenen sayfada BaseLayout'un stil bağlantısı ile bu bileşenin kapsamlı
+  stili yer değiştiriyordu. Ölçüldü — aynı değer, farklı sıra, gereksiz risk.
+*/
+const taban = (import.meta.env.BASE_URL || '/').replace(/\/+$/, '');
+const kapakYolu =
+	kapak && kapak.startsWith('/') && !kapak.startsWith('//') && !kapak.startsWith(taban + '/')
+		? taban + kapak
+		: kapak;
+
 // Başlıktan türetilen kararlı sayı.
 let tohum = 2166136261;
 for (let i = 0; i < baslik.length; i++) {
@@ -43,7 +60,7 @@ const cizgiAcisi = sec(2, 29) === 0 ? 0 : 90;
 	kapak ? (
 		<img
 			class="kapak"
-			src={kapak}
+			src={kapakYolu}
 			alt={kapakAlt ?? ''}
 			loading={oncelikli ? 'eager' : 'lazy'}
 			decoding="async"

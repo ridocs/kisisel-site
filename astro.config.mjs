@@ -6,6 +6,13 @@ import icon from 'astro-icon';
 import react from '@astrojs/react';
 import tailwindcss from '@tailwindcss/vite';
 import Icons from 'unplugin-icons/vite';
+import { satteri } from '@astrojs/markdown-satteri';
+import gorselTabani from './araclar/gorsel-tabani-eklentisi.mjs';
+
+// Yayın yolu tek yerde: `base` ile markdown görsellerinin öneki aynı değeri
+// kullanmak zorunda, ikisi ayrışırsa görseller sessizce 404 veriyor.
+const TABAN = '/web-sitem';
+
 // https://astro.build/config
 export default defineConfig({
 	// Sitemap, RSS ve canonical mutlak URL üretebilmek için buna ihtiyaç duyar.
@@ -14,7 +21,18 @@ export default defineConfig({
 	// Astro yalnızca kendi ürettiği varlık yollarını (_astro/…) bu önekle
 	// yazar; elle yazdığımız bağlantılar src/i18n/ceviriler.ts içindeki
 	// `taban` üzerinden aynı öneki alıyor.
-	base: '/web-sitem',
+	base: TABAN,
+	/*
+	  Yazı içindeki görseller: alt dizin öneki ve metin karşılığı denetimi.
+	  Gerekçesi araclar/gorsel-tabani-eklentisi.mjs içinde.
+
+	  `rehypePlugins` DEĞİL: bu sürümde varsayılan markdown işlemcisi Sätteri
+	  ve unified artık kurulu gelmiyor — rehype eklentisi verildiğinde derleme
+	  "@astrojs/markdown-remark kurulu değil" diyerek duruyor. Ölçüldü.
+	*/
+	markdown: {
+		processor: satteri({ hastPlugins: [gorselTabani({ taban: TABAN })] }),
+	},
 	// Türkçe varsayılan ve ön ek almıyor: "/blog". İngilizce "/en/blog".
 	i18n: {
 		defaultLocale: 'tr',
