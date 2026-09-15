@@ -193,25 +193,26 @@ const yil = derlemeZamani.getFullYear();
 	}
 
 	/*
-	  Yan sütun: Sayfalar ve Bağlantılar YAN YANA.
+	  Yan sütun: Sayfalar ve Bağlantılar HER GENİŞLİKTE yan yana.
 	  Alt alta dururken altbilgi gereksiz uzuyor ve iki kısa liste tek bir
-	  sütuna dizilince sağ taraf boş kalıyordu.
+	  sütuna dizilince yan taraf boş kalıyordu.
 
-	  Dar ekranda tek sütuna iniyor — 390 pikselde iki başlık yan yana
-	  sıkışıyor ve bağlantı düğmeleri taşıyordu.
+	  Dar ekranda aralık daralıyor ama sütunlar bölünmüyor: ikisi birlikte
+	  320 pikselde bile satıra sığıyor (ölçüldü). `auto auto` yerine
+	  `max-content auto` kullanılıyor — Sayfalar sütunu kendi metnine göre
+	  daralsın, kalan yeri düğmeler alsın.
 	*/
 	.yan-sutun {
 		display: grid;
-		grid-template-columns: 1fr;
+		grid-template-columns: max-content auto;
 		gap: 1.5rem;
+		align-items: start;
 		flex: none;
 	}
 
 	@media (min-width: 480px) {
 		.yan-sutun {
-			grid-template-columns: auto auto;
 			gap: 2.5rem;
-			align-items: start;
 		}
 	}
 
