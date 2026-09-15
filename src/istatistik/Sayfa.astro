@@ -1,0 +1,314 @@
+---
+import { ozetGetir, GUN_SAYISI } from './kayitlar';
+import '../styles/global.css';
+
+/*
+  ZİYARETÇİ PANELİ
+
+  Bu sayfa `src/pages/` altında DEĞİL; oraya konsaydı `astro build` onu üretir
+  ve ziyaretçi verisi internete açılırdı. Rotayı `astro.config.cms.mjs`
+  içindeki eklenti bağlıyor, o yapılandırmayı da yalnızca `npm run yazi`
+  okuyor. Yayın derlemesi bu dosyayı hiç görmüyor.
+
+  Veri her istekte yeniden çekiliyor: dev sunucusu bileşeni her açılışta
+  çalıştırdığı için ayrıca bir tazeleme düzeneğine gerek yok.
+*/
+const sonuc = await ozetGetir();
+
+// Çubukların yüksekliği en yoğun güne göre oranlanıyor; sabit bir tavan
+// seçilseydi sakin bir haftada bütün çubuklar ezilmiş görünürdü.
+const enYogunGun = sonuc.basarili
+	? Math.max(1, ...sonuc.ozet.gunler.map((g) => g.goruntuleme))
+	: 1;
+
+function yuzde(sayi: number, toplam: number): string {
+	if (!toplam) return '0';
+	return ((sayi / toplam) * 100).toFixed(0);
+}
+
+const cekimAni = new Date().toLocaleString('tr-TR', {
+	dateStyle: 'long',
+	timeStyle: 'short',
+});
+---
+
+<!doctype html>
+<html lang="tr" class="bg-neutral-50 dark:bg-neutral-950">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>Ziyaretçi istatistiği</title>
+		{/* Panel yerelde çalışıyor ama yine de: bu sayfa hiçbir dizine girmemeli. */}
+		<meta name="robots" content="noindex, nofollow" />
+		{/* Sitenin kendi tema düzeneği `.dark` sınıfına bakıyor; panelde tema
+		    değiştirici yok, işletim sisteminin tercihi doğrudan uygulanıyor. */}
+		<script is:inline>
+			try {
+				if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+					document.documentElement.classList.add('dark');
+				}
+			} catch {
+				// Eşleştirme desteklenmiyorsa açık tema kullanılır.
+			}
+		</script>
+	</head>
+	<body class="min-h-svh bg-neutral-50 text-neutral-800 antialiased dark:bg-neutral-950 dark:text-neutral-200">
+		<div class="mx-auto max-w-5xl px-5 py-10">
+			<header class="mb-8">
+				<h1 class="text-2xl font-semibold tracking-tight text-neutral-900 dark:text-neutral-50">
+					Ziyaretçi istatistiği
+				</h1>
+				<p class="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
+					twinshareapp.com/web-sitem · nginx erişim kayıtlarından · {cekimAni}
+				</p>
+			</header>
+
+			{
+				!sonuc.basarili && (
+					<div
+						role="alert"
+						class="rounded-xl border border-amber-300 bg-amber-50 p-5 dark:border-amber-900/60 dark:bg-amber-950/30"
+					>
+						<h2 class="text-base font-semibold text-amber-900 dark:text-amber-200">
+							Kayıtlara ulaşılamadı
+						</h2>
+						<p class="mt-2 text-sm text-amber-900/90 dark:text-amber-200/80">
+							{sonuc.hata}
+						</p>
+						<p class="mt-3 text-sm text-amber-900/70 dark:text-amber-200/60">
+							Sayfayı yenilemek yeniden dener. Kayıtlar sunucuda duruyor, bir şey
+							kaybolmadı.
+						</p>
+					</div>
+				)
+			}
+
+			{
+				sonuc.basarili && (
+					<>
+						{/* ÖZET KUTULARI */}
+						<section class="grid grid-cols-2 gap-3 sm:grid-cols-4">
+							<div class="rounded-xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
+								<div class="text-3xl font-semibold tabular-nums text-neutral-900 dark:text-neutral-50">
+									{sonuc.ozet.toplamZiyaretci}
+								</div>
+								<div class="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+									Tekil ziyaretçi
+								</div>
+							</div>
+							<div class="rounded-xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
+								<div class="text-3xl font-semibold tabular-nums text-neutral-900 dark:text-neutral-50">
+									{sonuc.ozet.toplamGoruntuleme}
+								</div>
+								<div class="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+									Sayfa görüntüleme
+								</div>
+							</div>
+							<div class="rounded-xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
+								<div class="text-3xl font-semibold tabular-nums text-neutral-900 dark:text-neutral-50">
+									{sonuc.ozet.toplamZiyaretci
+										? (
+												sonuc.ozet.toplamGoruntuleme / sonuc.ozet.toplamZiyaretci
+											).toFixed(1)
+										: '0'}
+								</div>
+								<div class="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+									Kişi başına sayfa
+								</div>
+							</div>
+							<div class="rounded-xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
+								<div class="text-3xl font-semibold tabular-nums text-neutral-900 dark:text-neutral-50">
+									{GUN_SAYISI}
+								</div>
+								<div class="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+									Günlük pencere
+								</div>
+							</div>
+						</section>
+
+						{/* GÜNLÜK GRAFİK — saf CSS; kütüphane yok, ziyaretçiye de bir şey inmiyor */}
+						<section class="mt-8 rounded-xl border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900">
+							<h2 class="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+								Son {GUN_SAYISI} gün
+							</h2>
+							<p class="mt-0.5 text-xs text-neutral-500 dark:text-neutral-400">
+								Çubuk: sayfa görüntüleme · Rakam: o günün tekil ziyaretçisi
+							</p>
+							<div class="mt-5 flex items-end gap-1.5 sm:gap-2">
+								{sonuc.ozet.gunler.map((gun) => (
+									<div class="flex flex-1 flex-col items-center gap-1.5">
+										<span class="text-[11px] tabular-nums text-neutral-400 dark:text-neutral-500">
+											{gun.goruntuleme || ''}
+										</span>
+										{/*
+										  Yükseklik satır içi stille veriliyor: değer veriden
+										  geliyor, Tailwind sınıfı derleme anında bilinemez.
+										  Sıfır günlerde 2 piksellik bir iz kalıyor ki eksen
+										  boyunca günün var olduğu görünsün.
+										*/}
+										<div
+											class="w-full rounded-t bg-marka-500 dark:bg-marka-400"
+											style={`height: ${Math.max(2, Math.round((gun.goruntuleme / enYogunGun) * 120))}px`}
+											title={`${gun.etiket}: ${gun.goruntuleme} görüntüleme, ${gun.ziyaretci} ziyaretçi`}
+										/>
+										<span class="text-[10px] whitespace-nowrap text-neutral-500 dark:text-neutral-400">
+											{gun.etiket}
+										</span>
+										<span class="text-[11px] font-medium tabular-nums text-neutral-700 dark:text-neutral-300">
+											{gun.ziyaretci || '·'}
+										</span>
+									</div>
+								))}
+							</div>
+						</section>
+
+						{/* LİSTELER */}
+						<div class="mt-8 grid gap-5 lg:grid-cols-2">
+							<section class="rounded-xl border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900">
+								<h2 class="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+									En çok okunan sayfalar
+								</h2>
+								<ul class="mt-3 space-y-2">
+									{sonuc.ozet.sayfalar.map((satir) => (
+										<li>
+											<div class="flex items-baseline justify-between gap-3 text-sm">
+												<span class="truncate text-neutral-700 dark:text-neutral-300">
+													{satir.ad}
+												</span>
+												<span class="shrink-0 tabular-nums text-neutral-900 dark:text-neutral-100">
+													{satir.sayi}
+												</span>
+											</div>
+											<div class="mt-1 h-1 rounded-full bg-neutral-100 dark:bg-neutral-800">
+												<div
+													class="h-1 rounded-full bg-marka-500 dark:bg-marka-400"
+													style={`width: ${yuzde(satir.sayi, sonuc.ozet.toplamGoruntuleme)}%`}
+												/>
+											</div>
+										</li>
+									))}
+								</ul>
+							</section>
+
+							<section class="rounded-xl border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900">
+								<h2 class="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+									Nereden geldiler
+								</h2>
+								<ul class="mt-3 space-y-2">
+									{sonuc.ozet.kaynaklar.map((satir) => (
+										<li>
+											<div class="flex items-baseline justify-between gap-3 text-sm">
+												<span class="truncate text-neutral-700 dark:text-neutral-300">
+													{satir.ad}
+												</span>
+												<span class="shrink-0 tabular-nums text-neutral-900 dark:text-neutral-100">
+													{satir.sayi}
+												</span>
+											</div>
+											<div class="mt-1 h-1 rounded-full bg-neutral-100 dark:bg-neutral-800">
+												<div
+													class="h-1 rounded-full bg-marka-500 dark:bg-marka-400"
+													style={`width: ${yuzde(satir.sayi, sonuc.ozet.toplamGoruntuleme)}%`}
+												/>
+											</div>
+										</li>
+									))}
+								</ul>
+							</section>
+
+							<section class="rounded-xl border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900">
+								<h2 class="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+									Cihaz
+								</h2>
+								<ul class="mt-3 space-y-2 text-sm">
+									{sonuc.ozet.cihazlar.map((satir) => (
+										<li class="flex items-baseline justify-between gap-3">
+											<span class="text-neutral-700 dark:text-neutral-300">{satir.ad}</span>
+											<span class="tabular-nums text-neutral-900 dark:text-neutral-100">
+												{satir.sayi}
+												<span class="ml-1.5 text-xs text-neutral-500 dark:text-neutral-400">
+													%{yuzde(satir.sayi, sonuc.ozet.toplamGoruntuleme)}
+												</span>
+											</span>
+										</li>
+									))}
+								</ul>
+							</section>
+
+							<section class="rounded-xl border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900">
+								<h2 class="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+									Tarayıcı
+								</h2>
+								<ul class="mt-3 space-y-2 text-sm">
+									{sonuc.ozet.tarayicilar.map((satir) => (
+										<li class="flex items-baseline justify-between gap-3">
+											<span class="text-neutral-700 dark:text-neutral-300">{satir.ad}</span>
+											<span class="tabular-nums text-neutral-900 dark:text-neutral-100">
+												{satir.sayi}
+												<span class="ml-1.5 text-xs text-neutral-500 dark:text-neutral-400">
+													%{yuzde(satir.sayi, sonuc.ozet.toplamGoruntuleme)}
+												</span>
+											</span>
+										</li>
+									))}
+								</ul>
+							</section>
+						</div>
+
+						{/* ELEME DÖKÜMÜ — rakamın neyi saymadığı, rakamın kendisi kadar önemli */}
+						<section class="mt-8 rounded-xl border border-neutral-200 bg-white p-5 text-sm dark:border-neutral-800 dark:bg-neutral-900">
+							<h2 class="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+								Eleme dökümü
+							</h2>
+							<p class="mt-0.5 text-xs text-neutral-500 dark:text-neutral-400">
+								Sunucudan gelen {sonuc.ozet.eleme.toplamSatir} satırın kaçı neden
+								sayılmadı
+							</p>
+							<dl class="mt-4 grid grid-cols-2 gap-x-6 gap-y-2 sm:grid-cols-3">
+								<div class="flex justify-between gap-3">
+									<dt class="text-neutral-600 dark:text-neutral-400">Robotlar</dt>
+									<dd class="tabular-nums text-neutral-900 dark:text-neutral-100">
+										−{sonuc.ozet.eleme.robot}
+									</dd>
+								</div>
+								<div class="flex justify-between gap-3">
+									<dt class="text-neutral-600 dark:text-neutral-400">Kendi testlerimiz</dt>
+									<dd class="tabular-nums text-neutral-900 dark:text-neutral-100">
+										−{sonuc.ozet.eleme.kendiIstegimiz}
+									</dd>
+								</div>
+								<div class="flex justify-between gap-3">
+									<dt class="text-neutral-600 dark:text-neutral-400">Statik dosyalar</dt>
+									<dd class="tabular-nums text-neutral-900 dark:text-neutral-100">
+										−{sonuc.ozet.eleme.varlik}
+									</dd>
+								</div>
+								<div class="flex justify-between gap-3">
+									<dt class="text-neutral-600 dark:text-neutral-400">
+										Diğer durum kodları
+									</dt>
+									<dd class="tabular-nums text-neutral-900 dark:text-neutral-100">
+										−{sonuc.ozet.eleme.durum}
+									</dd>
+								</div>
+								<div class="flex justify-between gap-3 font-medium">
+									<dt class="text-neutral-800 dark:text-neutral-200">Sayılan</dt>
+									<dd class="tabular-nums text-neutral-900 dark:text-neutral-50">
+										{sonuc.ozet.eleme.kalan}
+									</dd>
+								</div>
+							</dl>
+						</section>
+
+						<p class="mt-6 text-xs leading-relaxed text-neutral-500 dark:text-neutral-400">
+							Tekil ziyaretçi, IP ve tarayıcı kimliğinin karmasıyla sayılıyor; ham IP
+							hiçbir yere yazılmıyor. Kayıt aralığı:{' '}
+							{sonuc.ozet.ilkKayit ?? '—'} → {sonuc.ozet.sonKayit ?? '—'}. Bu sayfa
+							yalnızca panel kipinde var; yayın derlemesine girmiyor.
+						</p>
+					</>
+				)
+			}
+		</div>
+	</body>
+</html>

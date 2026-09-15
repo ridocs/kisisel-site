@@ -2,6 +2,7 @@
 import { defineConfig } from 'astro/config';
 import keystatic from '@keystatic/astro';
 import temelYapilandirma from './astro.config.mjs';
+import istatistikPaneli from './src/istatistik/eklenti.mjs';
 
 /*
   YAZI PANELİ İÇİN AYRI YAPILANDIRMA
@@ -22,9 +23,17 @@ import temelYapilandirma from './astro.config.mjs';
 
   Panel `src/content/blog/` altındaki dosyaları doğrudan yazıyor; içerik
   git'te kalıyor, sunucuya hiçbir şey eklenmiyor.
+
+  Ziyaretçi istatistiği sayfası (`/istatistik`) da aynı gerekçeyle buraya
+  bağlandı: ziyaretçi verisi gösteriyor, internete açılamaz. Sayfanın kendisi
+  `src/pages/` dışında duruyor ve rotayı yalnızca bu eklenti açıyor.
 */
 export default defineConfig({
 	...temelYapilandirma,
 	base: undefined,
-	integrations: [...(temelYapilandirma.integrations ?? []), keystatic()],
+	integrations: [
+		...(temelYapilandirma.integrations ?? []),
+		keystatic(),
+		istatistikPaneli(),
+	],
 });
