@@ -103,13 +103,18 @@ const eylemDugmesi =
 		class="mx-auto w-full max-w-[1352px] px-4 transition-all duration-200 ease-out group-data-[kaydirildi=true]:max-w-[1232px] motion-reduce:transition-none sm:px-6 group-data-[kaydirildi=true]:sm:px-4"
 	>
 		{/*
+		  Koyu temada zeminler `neutral` ailesinden, `slate` DEĞİL: slate mavi
+		  içeriyor ve çubuk koyu temada lacivert bir blok gibi duruyordu; mobil
+		  menü açıldığında en belirgin hâliyle. Gövde zemini de `neutral-950`,
+		  ikisi aynı aileden olmalı yoksa çubuk sayfadan kopuk bir renkte kalıyor.
+
 		  Tasarımdaki çerçeve: 1200x80, rgba(255,255,255,0.1) zemin, 1px beyaz kenarlık,
 		  15px köşe. Zemin ve kenarlık yalnızca kaydırıldığında beliriyor; sayfanın
 		  tepesinde çubuk saydam kalıyor. Beyaz değerler koyu zemin içindir, açık temada
 		  aynı ilişkinin koyu karşılığı kullanılır.
 		*/}
 		<div
-			class="overflow-hidden rounded-xl border border-transparent transition-all duration-200 ease-out group-data-[menu-acik=true]:border-slate-900/10 group-data-[menu-acik=true]:bg-white group-data-[menu-acik=true]:shadow-lg md:group-data-[menu-acik=true]:backdrop-blur-xl dark:group-data-[menu-acik=true]:border-white/15 dark:group-data-[menu-acik=true]:bg-slate-950 group-hover:border-slate-900/10 group-hover:bg-white/60 md:group-hover:backdrop-blur-xl group-data-[kaydirildi=true]:mt-3 group-data-[kaydirildi=true]:border-slate-900/10 group-data-[kaydirildi=true]:bg-white/95 md:group-data-[kaydirildi=true]:bg-white/70 group-data-[kaydirildi=true]:shadow-sm group-data-[kaydirildi=true]:shadow-slate-900/5 md:group-data-[kaydirildi=true]:backdrop-blur-xl motion-reduce:transition-none dark:group-hover:border-white/15 dark:group-hover:bg-slate-950/60 dark:group-data-[kaydirildi=true]:border-white/15 dark:group-data-[kaydirildi=true]:bg-slate-950/95 md:dark:group-data-[kaydirildi=true]:bg-slate-950/70"
+			class="overflow-hidden rounded-xl border border-transparent transition-all duration-200 ease-out group-data-[menu-acik=true]:border-slate-900/10 group-data-[menu-acik=true]:bg-white group-data-[menu-acik=true]:shadow-lg md:group-data-[menu-acik=true]:backdrop-blur-xl dark:group-data-[menu-acik=true]:border-white/15 dark:group-data-[menu-acik=true]:bg-neutral-950 group-hover:border-slate-900/10 group-hover:bg-white/60 md:group-hover:backdrop-blur-xl group-data-[kaydirildi=true]:mt-3 group-data-[kaydirildi=true]:border-slate-900/10 group-data-[kaydirildi=true]:bg-white/95 md:group-data-[kaydirildi=true]:bg-white/70 group-data-[kaydirildi=true]:shadow-sm group-data-[kaydirildi=true]:shadow-slate-900/5 md:group-data-[kaydirildi=true]:backdrop-blur-xl motion-reduce:transition-none dark:group-hover:border-white/15 dark:group-hover:bg-neutral-950/60 dark:group-data-[kaydirildi=true]:border-white/15 dark:group-data-[kaydirildi=true]:bg-neutral-950/95 md:dark:group-data-[kaydirildi=true]:bg-neutral-950/70"
 		>
 			<nav
 				aria-label={dil === 'en' ? 'Main navigation' : 'Ana gezinme'}
