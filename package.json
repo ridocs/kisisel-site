@@ -10,7 +10,7 @@
 		"build": "astro build",
 		"preview": "astro preview",
 		"astro": "astro",
-		"yazi": "astro dev --config astro.config.cms.mjs",
+		"yazi": "node masaustu/sunucu-nobetcisi.mjs",
 		"panel": "electron --disable-backgrounding-occluded-windows masaustu/ana.mjs"
 	},
 	"dependencies": {

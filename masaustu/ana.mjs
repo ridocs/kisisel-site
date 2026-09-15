@@ -54,8 +54,9 @@ const BURASI = dirname(fileURLToPath(import.meta.url));
 const PROJE_KOKU = join(BURASI, '..');
 const ASTRO_GIRISI = join(PROJE_KOKU, 'node_modules', 'astro', 'bin', 'astro.mjs');
 
-// Astro'nun ve `npm run yazi`nin varsayılanı. Önce burada çalışan bir panel
-// var mı diye bakılıyor, yoksa boş port araması buradan yukarı çıkıyor.
+// Astro'nun ve `npm run yazi`nin varsayılanı. Panelin kullandığı TEK port bu:
+// dolu ve panel sunmuyorsa başka porta kaçmak yerine hata veriliyor, çünkü
+// aynı klasörde ikinci bir sunucu içerik deposunu bozuyor.
 const VARSAYILAN_PORT = 4321;
 
 // Sunucunun ayağa kalkması için tanınan süre. İlk açılışta Vite bütün
@@ -143,43 +144,62 @@ function portBosMu(port) {
 	});
 }
 
-async function bosPortBul() {
-	for (let port = VARSAYILAN_PORT; port < VARSAYILAN_PORT + 40; port += 1) {
-		if (await portBosMu(port)) return port;
-	}
-	// 40 portun tamamı doluysa kendi portunu seçmek yerine hata vermek doğru;
-	// bu noktada makinede olağandışı bir şey oluyor demektir.
-	throw new Error('4321-4360 aralığında boş port bulunamadı.');
-}
 
 /* ------------------------------------------------------------------ */
 /* Sunucu                                                              */
 /* ------------------------------------------------------------------ */
 
 /**
- * PORT ÇAKIŞMASI STRATEJİSİ — ikisi birden.
+ * PORT ÇAKIŞMASI STRATEJİSİ — tek sunucu, tek port.
  *
  * Önce 4321'de zaten bir panel çalışıyor mu diye bakılıyor; çalışıyorsa ona
  * BAĞLANILIYOR, yeni süreç başlatılmıyor. Sebebi: Keystatic `src/content/`
- * altındaki dosyaları doğrudan yazıyor. Aynı depoyu izleyen iki dev sunucusu
- * aynı dosyalara bakan iki izleyici demek — gereksiz ve karışık. Kullanıcı
- * `npm run yazi`yi elle açtıysa niyeti zaten o sunucuyu kullanmak.
+ * altındaki dosyaları doğrudan yazıyor. Kullanıcı `npm run yazi`yi elle
+ * açtıysa niyeti zaten o sunucuyu kullanmak.
  *
  * Yoklamanın neden kök adresle değil `YOKLAMA_YOLU` ile yapıldığı orada yazılı.
  *
- * Yanlış sunucu varsa ya da hiçbiri yoksa boş bir port bulunup Astro orada
- * başlatılıyor. Port elle veriliyor ki hangi adresi yoklayacağımızı bilelim;
- * Astro dolu portu kendiliğinden artırsa adresi kaybederdik.
+ * Port doluysa ama paneli sunmuyorsa BAŞKA BİR PORTA KAÇMIYORUZ, hata
+ * veriyoruz. Eskiden boş port aranıp Astro orada başlatılıyordu ve bu veri
+ * kaybettiriyordu: aynı proje klasöründe iki dev sunucusu, içerik deposunu
+ * aynı geçici dosya adıyla (`.astro/data-store.json.tmp`) yazıyor. Biri
+ * dosyayı yeniden adlandırıp tükettiğinde diğeri ENOENT alıp düşüyor; panelde
+ * bu "Failed to fetch" olarak görünüyor ve yazılan makale diske hiç
+ * yazılmıyor.
+ *
+ * Aynı sebeple `astro.config.cms.mjs` içinde `strictPort` açık: Astro da
+ * kendiliğinden başka porta kaymıyor. İki taraf birden kapalı olmalı, yoksa
+ * ikinci sunucu bir yolunu bulup başlıyor.
  */
 async function sunucuyuHazirla(durumBildir) {
-	const mevcut = `http://127.0.0.1:${VARSAYILAN_PORT}`;
+	const kok = `http://127.0.0.1:${VARSAYILAN_PORT}`;
 	durumBildir('Çalışan bir panel aranıyor…');
-	if (await yanitVeriyorMu(mevcut + YOKLAMA_YOLU)) {
-		return mevcut;
+	if (await yanitVeriyorMu(kok + YOKLAMA_YOLU)) {
+		return kok;
 	}
 
-	const port = await bosPortBul();
-	const kok = `http://127.0.0.1:${port}`;
+	/*
+	  Panel yanıtı yok ama port da boş değil: orada paneli sunmayan bir şey
+	  oturuyor. Bu, kapatılmamış bir `npm run dev` olabileceği gibi önceki
+	  panel oturumundan kalmış ve artık yanıt vermeyen bir sunucu da olabilir.
+	  İkisinde de doğru davranış durup söylemek — üstüne ikinci sunucu
+	  başlatmak sessizce veri kaybettiriyor.
+	*/
+	if (!(await portBosMu(VARSAYILAN_PORT))) {
+		throw new Error(
+			`${VARSAYILAN_PORT} portu dolu ama paneli sunmuyor.\n\n` +
+				'Orada başka bir sunucu çalışıyor olabilir (ör. kapatılmamış bir ' +
+				'`npm run dev`) ya da önceki panel oturumundan kalmış ve artık ' +
+				'yanıt vermeyen bir sunucu.\n\n' +
+				'Yapılacak: o sunucuyu kapatın, sonra paneli yeniden açın. ' +
+				'Terminalden `npx astro dev stop` işe yarar; görmüyorsa görev ' +
+				'yöneticisinden `node.exe` sürecini kapatın.\n\n' +
+				'Panel bu durumda ikinci bir sunucu BAŞLATMIYOR: aynı klasörde iki ' +
+				'sunucu çalışırsa içerik deposu bozuluyor ve yazdığınız makale ' +
+				'kaydedilmiyor.',
+		);
+	}
+
 	durumBildir('Astro sunucusu başlatılıyor…');
 
 	kendiBaslattik = true;
@@ -201,7 +221,7 @@ async function sunucuyuHazirla(durumBildir) {
 			'--config',
 			'astro.config.cms.mjs',
 			'--port',
-			String(port),
+			String(VARSAYILAN_PORT),
 		],
 		{
 			cwd: PROJE_KOKU,
