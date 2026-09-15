@@ -74,6 +74,23 @@ const KENDI_KALIBI = /(curl|wget|python-requests|HeadlessChrome)/i;
 /** Ziyaret sayılan durum kodları: başarılı ve "değişmemiş". */
 const SAYILAN_DURUMLAR = new Set(['200', '304']);
 
+/*
+  Karşılaştırma penceresi. 14 günlük arşiv tam olarak iki haftaya bölünüyor;
+  daha uzun bir dönem istenemez çünkü sunucuda o veri yok.
+*/
+const HAFTA_UZUNLUGU = GUN_SAYISI / 2;
+
+/** Pazartesi başlangıçlı gün adları; Türkçe takvim böyle okunuyor. */
+const HAFTA_GUNLERI = [
+	{ ad: 'Pazartesi', kisaAd: 'Pzt' },
+	{ ad: 'Salı', kisaAd: 'Sal' },
+	{ ad: 'Çarşamba', kisaAd: 'Çar' },
+	{ ad: 'Perşembe', kisaAd: 'Per' },
+	{ ad: 'Cuma', kisaAd: 'Cum' },
+	{ ad: 'Cumartesi', kisaAd: 'Cmt' },
+	{ ad: 'Pazar', kisaAd: 'Paz' },
+];
+
 export interface Sayim {
 	ad: string;
 	sayi: number;
@@ -97,15 +114,59 @@ export interface Eleme {
 	kalan: number;
 }
 
+export interface SaatlikVeri {
+	/** 0-23; kayıtlardaki yerel saat (sunucu Türkiye saatinde tutuyor). */
+	saat: number;
+	goruntuleme: number;
+}
+
+export interface HaftaGunuVeri {
+	ad: string;
+	kisaAd: string;
+	goruntuleme: number;
+}
+
+export interface BulunamayanAdres {
+	yol: string;
+	sayi: number;
+	/** Bu adrese nereden gelindi; "Site içi gezinme" ise bağlantı bizde kırık. */
+	kaynaklar: string[];
+}
+
+export interface HaftaOzeti {
+	goruntuleme: number;
+	ziyaretci: number;
+}
+
+export interface Karsilastirma {
+	buHafta: HaftaOzeti;
+	gecenHafta: HaftaOzeti;
+}
+
+export interface ZiyaretciTuru {
+	/** Pencerede yalnızca tek bir gün görünen ziyaretçiler. */
+	yeni: number;
+	/** Birden fazla ayrı günde görünenler. */
+	donen: number;
+}
+
 export interface Ozet {
 	eleme: Eleme;
 	toplamGoruntuleme: number;
 	toplamZiyaretci: number;
 	gunler: GunlukVeri[];
+	saatler: SaatlikVeri[];
+	haftaGunleri: HaftaGunuVeri[];
 	sayfalar: Sayim[];
+	yazilar: Sayim[];
 	kaynaklar: Sayim[];
 	cihazlar: Sayim[];
 	tarayicilar: Sayim[];
+	ziyaretciTuru: ZiyaretciTuru;
+	bulunamayanlar: BulunamayanAdres[];
+	/** 404 veren isteklerin toplamı; liste yalnızca ilk sıraları gösteriyor. */
+	bulunamayanToplam: number;
+	karsilastirma: Karsilastirma;
 	/** Penceredeki en erken ve en geç kayıt; verinin gerçekten neyi kapsadığı. */
 	ilkKayit: string | null;
 	sonKayit: string | null;
@@ -165,13 +226,32 @@ async function sunucudanCek(): Promise<string> {
 	return stdout;
 }
 
-/** "15/Sep/2026:00:07:05 +0300" → "2026-09-15" */
-function tariheCevir(zaman: string): string | null {
-	const parca = /^(\d{2})\/([A-Za-z]{3})\/(\d{4}):/.exec(zaman);
+/*
+  "15/Sep/2026:00:07:05 +0300" → { tarih: "2026-09-15", saat: 0 }
+
+  Saat, kayıttaki yerel saatten olduğu gibi alınıyor; UTC'ye çevrilmiyor.
+  Soru "ziyaretçiler günün hangi saatinde geliyor" olduğu için anlamlı olan
+  yerel saat — sunucu da, okuyucu kitlesi de Türkiye saatinde.
+*/
+function zamaniCoz(zaman: string): { tarih: string; saat: number } | null {
+	const parca = /^(\d{2})\/([A-Za-z]{3})\/(\d{4}):(\d{2}):/.exec(zaman);
 	if (!parca) return null;
 	const ay = AYLAR[parca[2]];
 	if (!ay) return null;
-	return `${parca[3]}-${ay}-${parca[1]}`;
+	return { tarih: `${parca[3]}-${ay}-${parca[1]}`, saat: Number(parca[4]) };
+}
+
+/*
+  "2026-09-15" → 1 (Salı). Pazartesi 0, pazar 6.
+
+  Tarih UTC olarak kuruluyor ve `getUTCDay` okunuyor: yerel kuruluşta panelin
+  çalıştığı makinenin saat dilimi tarihi bir gün kaydırabiliyor ve gün adı
+  yanlış çıkardı. Tarih zaten takvim günü, saat dilimi taşımıyor.
+*/
+function haftaGunuSirasi(tarih: string): number {
+	const jsGunu = new Date(`${tarih}T00:00:00Z`).getUTCDay();
+	// JavaScript haftayı pazardan başlatıyor; Türkçe takvim pazartesiden.
+	return (jsGunu + 6) % 7;
 }
 
 const KISA_AYLAR = [
@@ -228,6 +308,30 @@ function sayfaAdi(yol: string): string {
 	if (yazi) return `Yazı: ${yazi[1]}`;
 
 	return ic;
+}
+
+/*
+  Yolun site içi kısmını döndürür: "/web-sitem/blog/dart-dili/" → "/blog/dart-dili".
+  `sayfaAdi` ile aynı normalleştirmeyi kullanan ikinci yer burası; sondaki
+  eğik çizgi ayrı bir satır üretmesin diye aynı kural tekrar uygulanıyor.
+*/
+function icYol(yol: string): string {
+	return yol.slice(SITE_YOLU.length).replace(/\/+$/, '') || '/';
+}
+
+/*
+  Yol bir blog yazısına mı ait? Blog dizininin kendisi ("/blog") yazı değil,
+  bu yüzden ardından en az bir karakter aranıyor.
+
+  Dönen ad slug'ın kendisi: yazının başlığı içerik koleksiyonunda duruyor ve
+  onu burada okumak paneli yavaşlatırdı; uydurulmuş bir başlık ise yanlış
+  olurdu. İngilizce çeviriler ayrı satır olarak işaretleniyor — aynı yazının
+  iki dili ayrı okunma demek.
+*/
+function yaziAdi(ic: string): string | null {
+	const parca = /^(\/en)?\/blog\/(.+)$/.exec(ic);
+	if (!parca) return null;
+	return parca[1] ? `${parca[2]} (İngilizce)` : parca[2];
 }
 
 /** Referer adresini gruplanabilir bir kaynak adına indirger. */
@@ -288,9 +392,23 @@ export function ozetle(hamKayit: string): Ozet {
 	const gunlukZiyaretciler = new Map<string, Set<string>>();
 	const gunlukGoruntuleme = new Map<string, number>();
 	const sayfalar = new Map<string, number>();
+	const yazilar = new Map<string, number>();
 	const kaynaklar = new Map<string, number>();
 	const cihazlar = new Map<string, number>();
 	const tarayicilar = new Map<string, number>();
+	// Sabit uzunlukta: ziyaret almayan saat de eksende yerini korumalı.
+	const saatlikGoruntuleme = new Array<number>(24).fill(0);
+	const haftaGunuGoruntuleme = new Array<number>(7).fill(0);
+	/* Ziyaretçi başına HANGİ günlerde görüldüğü; "dönen ziyaretçi" tanımı bu. */
+	const ziyaretciGunleri = new Map<string, Set<string>>();
+	/*
+	  404'ler ayrı toplanıyor ve sayfa görüntüleme sayımına KARIŞMIYOR: bir
+	  kırık bağlantı okunmuş bir sayfa değil. Bu yüzden `toplamGoruntuleme`
+	  ve tekil ziyaretçi rakamları bu bloktan hiç etkilenmiyor.
+	*/
+	let bulunamayanToplam = 0;
+	const bulunamayanSayilari = new Map<string, number>();
+	const bulunamayanKaynaklari = new Map<string, Set<string>>();
 
 	let ilkKayit: string | null = null;
 	let sonKayit: string | null = null;
@@ -316,10 +434,31 @@ export function ozetle(hamKayit: string): Ozet {
 			eleme.kendiIstegimiz++;
 			continue;
 		}
-		if (VARLIK_UZANTILARI.test(yol.split('?')[0])) {
+		const temizYol = yol.split('?')[0];
+
+		if (VARLIK_UZANTILARI.test(temizYol)) {
 			eleme.varlik++;
 			continue;
 		}
+
+		/*
+		  404 sayımı elemelerin ARDINDAN ama durum süzgecinden ÖNCE yapılıyor:
+		  robotların ve kendi testlerimizin yokladığı adresler kırık bağlantı
+		  değil, onları saymak listeyi çöple doldururdu. Aşağıdaki `continue`
+		  ile satır yine de sayfa görüntülemesi sayılmıyor.
+		*/
+		if (durum === '404') {
+			bulunamayanToplam++;
+			const adres = icYol(temizYol);
+			birArtir(bulunamayanSayilari, adres);
+			let nereden = bulunamayanKaynaklari.get(adres);
+			if (!nereden) {
+				nereden = new Set();
+				bulunamayanKaynaklari.set(adres, nereden);
+			}
+			nereden.add(kaynakAdi(referer));
+		}
+
 		if (!SAYILAN_DURUMLAR.has(durum)) {
 			eleme.durum++;
 			continue;
@@ -327,8 +466,9 @@ export function ozetle(hamKayit: string): Ozet {
 
 		eleme.kalan++;
 
-		const tarih = tariheCevir(zaman);
-		if (!tarih) continue;
+		const zamanParcasi = zamaniCoz(zaman);
+		if (!zamanParcasi) continue;
+		const { tarih, saat } = zamanParcasi;
 
 		if (!ilkKayit || tarih < ilkKayit) ilkKayit = tarih;
 		if (!sonKayit || tarih > sonKayit) sonKayit = tarih;
@@ -343,9 +483,20 @@ export function ozetle(hamKayit: string): Ozet {
 		}
 		gununKisileri.add(kimlik);
 
+		let kisininGunleri = ziyaretciGunleri.get(kimlik);
+		if (!kisininGunleri) {
+			kisininGunleri = new Set();
+			ziyaretciGunleri.set(kimlik, kisininGunleri);
+		}
+		kisininGunleri.add(tarih);
+
 		toplamGoruntuleme++;
 		gunlukGoruntuleme.set(tarih, (gunlukGoruntuleme.get(tarih) ?? 0) + 1);
-		birArtir(sayfalar, sayfaAdi(yol.split('?')[0]));
+		saatlikGoruntuleme[saat]++;
+		haftaGunuGoruntuleme[haftaGunuSirasi(tarih)]++;
+		birArtir(sayfalar, sayfaAdi(temizYol));
+		const yazi = yaziAdi(icYol(temizYol));
+		if (yazi) birArtir(yazilar, yazi);
 		birArtir(kaynaklar, kaynakAdi(referer));
 		birArtir(cihazlar, cihazAdi(tarayiciKimligi));
 		birArtir(tarayicilar, tarayiciAdi(tarayiciKimligi));
@@ -372,15 +523,63 @@ export function ozetle(hamKayit: string): Ozet {
 		});
 	}
 
+	/*
+	  İki haftalık karşılaştırma günlük sayımların üzerinden kuruluyor, ayrı
+	  bir döngüyle değil. Tekil ziyaretçi için günlük kümeler BİRLEŞTİRİLİYOR:
+	  günlük sayıları toplamak aynı kişiyi her gün yeniden sayardı.
+	*/
+	function haftayiTopla(dilim: GunlukVeri[]): HaftaOzeti {
+		const kisiler = new Set<string>();
+		let goruntuleme = 0;
+		for (const gun of dilim) {
+			goruntuleme += gun.goruntuleme;
+			for (const kimlik of gunlukZiyaretciler.get(gun.tarih) ?? []) kisiler.add(kimlik);
+		}
+		return { goruntuleme, ziyaretci: kisiler.size };
+	}
+
+	// `gunler` eskiden yeniye sıralı: ilk yarısı geçen hafta, ikinci yarısı bu hafta.
+	const karsilastirma: Karsilastirma = {
+		gecenHafta: haftayiTopla(gunler.slice(0, HAFTA_UZUNLUGU)),
+		buHafta: haftayiTopla(gunler.slice(HAFTA_UZUNLUGU)),
+	};
+
+	let yeni = 0;
+	let donen = 0;
+	for (const gunleri of ziyaretciGunleri.values()) {
+		if (gunleri.size > 1) donen++;
+		else yeni++;
+	}
+
+	const bulunamayanlar: BulunamayanAdres[] = siralanmisSayim(bulunamayanSayilari, 8).map(
+		({ ad, sayi }) => ({
+			yol: ad,
+			sayi,
+			kaynaklar: [...(bulunamayanKaynaklari.get(ad) ?? [])].sort((a, b) =>
+				a.localeCompare(b, 'tr'),
+			),
+		}),
+	);
+
 	return {
 		eleme,
 		toplamGoruntuleme,
 		toplamZiyaretci: tumZiyaretciler.size,
 		gunler,
+		saatler: saatlikGoruntuleme.map((goruntuleme, saat) => ({ saat, goruntuleme })),
+		haftaGunleri: HAFTA_GUNLERI.map((gun, sira) => ({
+			...gun,
+			goruntuleme: haftaGunuGoruntuleme[sira],
+		})),
 		sayfalar: siralanmisSayim(sayfalar, 10),
+		yazilar: siralanmisSayim(yazilar, 10),
 		kaynaklar: siralanmisSayim(kaynaklar, 8),
 		cihazlar: siralanmisSayim(cihazlar),
 		tarayicilar: siralanmisSayim(tarayicilar),
+		ziyaretciTuru: { yeni, donen },
+		bulunamayanlar,
+		bulunamayanToplam,
+		karsilastirma,
 		ilkKayit,
 		sonKayit,
 	};
