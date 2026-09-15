@@ -9,8 +9,8 @@ import { dirname, join } from 'node:path';
   YÖNETİM PANELİ — MASAÜSTÜ KABUĞU
 
   Bu dosya site kodunun bir parçası değil; sahibinin bilgisayarında çalışan
-  ayrı bir program. İki paneli (`/keystatic` ve `/istatistik`) terminal
-  açmadan kullanabilmek için var. Yaptığı tek şey `astro dev` sunucusunu
+  ayrı bir program. Üç paneli (`/keystatic`, `/istatistik` ve `/kontrol`)
+  terminal açmadan kullanabilmek için var. Yaptığı tek şey `astro dev` sunucusunu
   arka planda çalıştırıp bir pencereyi ona yöneltmek.
 
   Sitenin "tarayıcıya sıfır JavaScript" kuralı burada geçerli değil: o kural
@@ -82,6 +82,7 @@ const YOKLAMA_YOLU = '/keystatic';
 const PANELLER = {
 	yazilar: { yol: '/keystatic', baslik: 'Yazılar' },
 	istatistik: { yol: '/istatistik', baslik: 'İstatistik' },
+	kontrol: { yol: '/kontrol', baslik: 'Yayın öncesi kontrol' },
 };
 
 /** Astro dev sunucusunun alt süreci. Sunucuya bağlanıldıysa null kalır. */
@@ -398,6 +399,11 @@ function menuyuKur() {
 					label: 'İstatistik',
 					accelerator: 'CmdOrCtrl+2',
 					click: () => paneliAc('istatistik'),
+				},
+				{
+					label: 'Yayın öncesi kontrol',
+					accelerator: 'CmdOrCtrl+3',
+					click: () => paneliAc('kontrol'),
 				},
 				{ type: 'separator' },
 				{ label: 'Çıkış', accelerator: 'CmdOrCtrl+Q', role: 'quit' },

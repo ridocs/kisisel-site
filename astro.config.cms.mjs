@@ -3,6 +3,7 @@ import { defineConfig } from 'astro/config';
 import keystatic from '@keystatic/astro';
 import temelYapilandirma from './astro.config.mjs';
 import istatistikPaneli from './src/istatistik/eklenti.mjs';
+import kontrolPaneli from './src/kontrol/eklenti.mjs';
 
 /*
   YAZI PANELİ İÇİN AYRI YAPILANDIRMA
@@ -27,6 +28,10 @@ import istatistikPaneli from './src/istatistik/eklenti.mjs';
   Ziyaretçi istatistiği sayfası (`/istatistik`) da aynı gerekçeyle buraya
   bağlandı: ziyaretçi verisi gösteriyor, internete açılamaz. Sayfanın kendisi
   `src/pages/` dışında duruyor ve rotayı yalnızca bu eklenti açıyor.
+
+  Yayın öncesi kontrol sayfası (`/kontrol`) da öyle: sitenin taslaklarını,
+  kırık bağlantılarını ve eksiklerini sıralıyor, yani yayınlanması en son
+  isteyeceğimiz sayfa.
 */
 export default defineConfig({
 	...temelYapilandirma,
@@ -61,5 +66,6 @@ export default defineConfig({
 		...(temelYapilandirma.integrations ?? []),
 		keystatic(),
 		istatistikPaneli(),
+		kontrolPaneli(),
 	],
 });
