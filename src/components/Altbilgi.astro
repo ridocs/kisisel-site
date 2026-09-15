@@ -1,6 +1,7 @@
 ---
 import { Icon } from 'astro-icon/components';
-import { cevirici, dilBul, digerDilYolu, yol } from '@/i18n/ceviriler';
+import { cevirici, dilBul, digerDilYolu, taban, yol } from '@/i18n/ceviriler';
+import { GITHUB } from '@/lib/iletisim';
 
 const dil = dilBul(Astro.url);
 const m = cevirici(dil);
@@ -18,9 +19,18 @@ const baglantilar = [
 	{ etiket: m('nav.gizlilik'), yol: yol(dil, dil === 'en' ? 'privacy' : 'gizlilik') },
 ];
 
+/*
+  RSS burada `yol()` ile kurulmuyor. O yardımcı SAYFA adresleri için: sonuna
+  eğik çizgi ekliyor ve `/rss.xml/` 404 veriyordu — akış bir sayfa değil, dosya.
+  Üst çubuk ve `<head>` içindeki akış bağlantısı zaten `taban` ile kuruluyor,
+  burası onlardan ayrı düşmüştü.
+
+  GitHub adresi de elle yazılıydı; `iletisim.ts` içindeki tek kaynaktan
+  alınıyor. İki yerde durursa biri güncellenip diğeri unutuluyor.
+*/
 const disBaglantilar = [
-	{ etiket: 'GitHub', adres: 'https://github.com/ridocs', ikon: 'lucide:github' },
-	{ etiket: m('nav.rss'), adres: yol(dil, 'rss.xml'), ikon: 'lucide:rss' },
+	{ etiket: 'GitHub', adres: GITHUB, ikon: 'lucide:github' },
+	{ etiket: m('nav.rss'), adres: `${taban}/rss.xml`, ikon: 'lucide:rss' },
 ];
 
 /*
