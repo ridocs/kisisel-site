@@ -339,7 +339,7 @@ const enYolu = new URL(digerDilYolu(Astro.url, 'en'), Astro.site);
 						var yon = olay.deltaY > 0 ? 1 : -1;
 
 						// Bölüm ekrana sığmıyorsa, kenarına gelene kadar olağan kaydırma.
-						if (yon > 0 && alt > window.innerHeight + 4) return;
+						if (yon > 0 && alt > EKRAN_BOYU + 4) return;
 						if (yon < 0 && ust < -4) return;
 
 						var hedef = i + yon;
@@ -381,6 +381,34 @@ const enYolu = new URL(digerDilYolu(Astro.url, 'en'), Astro.site);
 				*/
 				var kabaIsaretci = window.matchMedia('(pointer: coarse)');
 				var ESIK = 45; // geçişin başlaması için gereken parmak mesafesi
+
+				/*
+				  EN BÜYÜK GÖRÜNÜM YÜKSEKLİĞİ (lvh)
+
+				  iOS Safari sayfayı alt araç çubuğunun ARKASINA da çiziyor.
+				  `svh` çubuk açıkken kalan yeri, `lvh` çubuk çekilince açılan tam
+				  yüksekliği veriyor; ikisi arasındaki ~100 piksellik şerit çubuğun
+				  arkasında kalıyor ve bir sonraki bölümün başı oradan görünüyordu.
+
+				  Tam ekran bölümler bu yüzden `lvh` ile ölçülüyor. "Bu bölüm bir
+				  ekrana sığıyor mu" testinin de aynı ölçüye bakması gerekiyor:
+				  `innerHeight` çubuk açıkken küçük olduğu için tam sığan bir bölümü
+				  bile "taşıyor" sayıp sayfa sayfa geçişi kapatırdı.
+
+				  Değer bir kez ölçülüyor; çubuk açılıp kapandıkça `lvh` değişmiyor.
+				*/
+				function enBuyukGorunum() {
+					var olcer = document.createElement('div');
+					olcer.style.cssText =
+						'position:absolute;top:0;left:0;width:0;visibility:hidden;pointer-events:none;height:100lvh';
+					document.body.appendChild(olcer);
+					var boy = olcer.offsetHeight;
+					olcer.remove();
+					// `lvh` desteklenmiyorsa tarayıcı yüksekliği çözemez ve 0 döner.
+					return boy > 0 ? boy : window.innerHeight;
+				}
+
+				var EKRAN_BOYU = enBuyukGorunum();
 
 				function dokunmatikEtkinMi() {
 					return kabaIsaretci.matches && !azHareket.matches;
@@ -430,7 +458,7 @@ const enYolu = new URL(digerDilYolu(Astro.url, 'en'), Astro.site);
 							kararIndeksi = aktifIndeks();
 							var ust = belgeUstu(bolumler[kararIndeksi]) - window.scrollY;
 							var alt = ust + bolumler[kararIndeksi].offsetHeight;
-							var tasiyor = yon > 0 ? alt > window.innerHeight + 4 : ust < -4;
+							var tasiyor = yon > 0 ? alt > EKRAN_BOYU + 4 : ust < -4;
 							var hedefIndeks = kararIndeksi + yon;
 							eleGecir = !tasiyor && hedefIndeks >= 0 && hedefIndeks < bolumler.length;
 						}
