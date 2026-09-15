@@ -129,7 +129,7 @@ const sirali = [...yetkinlikler].sort((a, b) => b.oran - a.oran);
   (panelde). `oran` alanı yalnızca sıralamayı belirlemek için duruyor.
 */}
 <section
-	class="yetkinlik relative overflow-hidden py-16 sm:py-20 md:flex md:min-h-[100svh] md:items-center md:py-12"
+	class="yetkinlik relative overflow-hidden py-10 sm:py-20 md:flex md:min-h-[100svh] md:items-center md:py-12"
 	data-belir
 	data-parcali
 	data-sayfa
@@ -476,6 +476,34 @@ const sirali = [...yetkinlikler].sort((a, b) => b.oran - a.oran);
 			width: 2rem;
 			height: 2rem;
 			border-radius: 0.625rem;
+		}
+
+		.ipucu {
+			margin-top: 0.625rem;
+		}
+
+		.paneller {
+			margin-top: 0.875rem;
+			padding-top: 1rem;
+		}
+	}
+
+	/*
+	  Dar ekranda dolgular kısılıyor. Bölüm mobilde 100svh'ye kilitli değil ama
+	  ekrandan uzun kaldığı sürece sayfa sayfa geçiş orada devreden çıkıyor —
+	  şartnameye göre ekrandan uzun bir bölümün her noktası geçerli bir durak.
+	  Boyu kısaltmak o serbest kaydırma aralığını daraltıyor.
+
+	  Izgara sütun sayısına dokunulmadı: 3 sütun boyu daha çok kısaltırdı ama
+	  kartları 111 piksele düşürüp onaylanmış mobil düzeni değiştirirdi.
+	*/
+	@media (max-width: 767px) {
+		.alan {
+			margin-top: 1.25rem;
+		}
+
+		.kart {
+			padding: 0.625rem 0.5rem;
 		}
 
 		.ipucu {

@@ -297,17 +297,23 @@ const enYolu = new URL(digerDilYolu(Astro.url, 'en'), Astro.site);
 					return Math.round(Math.min(Math.max(belgeUstu(bolumler[i]), 0), enFazlaKaydirma()));
 				}
 
+				/*
+				  Kaydırma çizgisinin İÇİNDE bulunduğu bölüm.
+
+				  Önce "en yakın üst kenar" seçiliyordu. Ekrandan uzun bir bölümde
+				  (mobilde Yetkinlikler 1043 piksel, görünüm 844) serbest kaydırmaya
+				  izin verildiği anda hiza bozuluyor; o noktada hâlâ o bölümün
+				  içindeyken bir SONRAKİ bölümün üst kenarı daha yakın kalıyordu.
+				  Betik bir sonrakini "şu anki bölüm" sanıp onun taşıp taşmadığına
+				  bakıyor, taşıyor bulunca ele geçirmeyi kapatıyordu — ve bir daha
+				  açılmadığı için sayfa sayfa geçiş mobilde Tanıtım'dan sonra
+				  tamamen kayboluyordu.
+				*/
 				function aktifIndeks() {
-					var enIyi = 0;
-					var enKucuk = Infinity;
-					for (var i = 0; i < bolumler.length; i++) {
-						var uzaklik = Math.abs(belgeUstu(bolumler[i]) - window.scrollY);
-						if (uzaklik < enKucuk) {
-							enKucuk = uzaklik;
-							enIyi = i;
-						}
+					for (var i = bolumler.length - 1; i >= 0; i--) {
+						if (window.scrollY >= belgeUstu(bolumler[i]) - 2) return i;
 					}
-					return enIyi;
+					return 0;
 				}
 
 				window.addEventListener(
@@ -387,6 +393,8 @@ const enYolu = new URL(digerDilYolu(Astro.url, 'en'), Astro.site);
 				var baslangicY = 0;
 				var eleGecir = false; // bu hareket bizim mi, yoksa olağan kaydırma mı
 				var karardiMi = false;
+				// Hareketin başında karar verilen bölüm; hedef de buradan hesaplanıyor.
+				var kararIndeksi = 0;
 
 				window.addEventListener(
 					'touchstart',
@@ -419,11 +427,11 @@ const enYolu = new URL(digerDilYolu(Astro.url, 'en'), Astro.site);
 
 						if (!karardiMi) {
 							karardiMi = true;
-							var i = aktifIndeks();
-							var ust = belgeUstu(bolumler[i]) - window.scrollY;
-							var alt = ust + bolumler[i].offsetHeight;
+							kararIndeksi = aktifIndeks();
+							var ust = belgeUstu(bolumler[kararIndeksi]) - window.scrollY;
+							var alt = ust + bolumler[kararIndeksi].offsetHeight;
 							var tasiyor = yon > 0 ? alt > window.innerHeight + 4 : ust < -4;
-							var hedefIndeks = i + yon;
+							var hedefIndeks = kararIndeksi + yon;
 							eleGecir = !tasiyor && hedefIndeks >= 0 && hedefIndeks < bolumler.length;
 						}
 
@@ -433,8 +441,11 @@ const enYolu = new URL(digerDilYolu(Astro.url, 'en'), Astro.site);
 
 						if (Math.abs(fark) < ESIK) return;
 
-						var j = aktifIndeks();
-						var hedef = konum(Math.min(Math.max(j + yon, 0), bolumler.length - 1));
+						// Hareketin başında karar verilen bölüm yeniden kullanılıyor.
+						// İkinci kez hesaplamak, parmak hareket ettiği için araya
+						// farklı bir bölüm girdiğinde kararla hedefin ayrışmasına
+						// yol açıyordu.
+						var hedef = konum(Math.min(Math.max(kararIndeksi + yon, 0), bolumler.length - 1));
 						if (Math.abs(hedef - window.scrollY) < 2) return;
 
 						// Parmak kalkmadan ikinci bir geçişin hemen tetiklenmemesi
