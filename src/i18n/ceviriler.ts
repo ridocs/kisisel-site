@@ -23,6 +23,7 @@ export const ceviriler = {
 		'nav.hakkimda': 'Hakkımda',
 		'nav.hizmetler': 'Hizmetler',
 		'nav.kullandiklarim': 'Kullandıklarım',
+		'nav.gizlilik': 'Gizlilik',
 		'nav.iletisim': 'İletişim',
 		'nav.rss': 'RSS akışı',
 		'nav.menuAc': 'Menüyü aç',
@@ -243,6 +244,115 @@ export const ceviriler = {
 		'kullandiklarim.sunucuBaslik': 'Sunucu',
 		'kullandiklarim.sunucuMetin': 'Yayına çıkan tarafta çalışanlar.',
 
+		/*
+		  Gizlilik ve Çerez Politikası.
+
+		  Buradaki her cümle sitenin ÖLÇÜLMÜŞ durumunu anlatıyor: çerez yok,
+		  izleme betiği yok, localStorage'da iki tercih var, nginx erişim
+		  kayıtları 14 gün duruyor. Hiçbiri temenni değil — biri değişirse
+		  (ör. bir analitik eklenirse) bu metnin de değişmesi gerekir, yoksa
+		  sayfa yanlış beyan hâline gelir.
+
+		  Hukukçu ağzı bilinçli olarak yok: kişisel bir sitede "işbu politika"
+		  diye başlayan bir metin kimseyi bilgilendirmiyor, yalnızca korkutuyor.
+		*/
+		'gizlilik.sayfaBasligi': 'Gizlilik ve Çerez Politikası — Mustafa Eybek',
+		'gizlilik.aciklama':
+			'Bu site çerez kullanmıyor, izleme betiği çalıştırmıyor. Hangi veri neden işleniyor, ne kadar saklanıyor ve KVKK kapsamındaki haklarını nasıl kullanırsın — sade bir dille.',
+		'gizlilik.ustBaslik': 'GİZLİLİK',
+		'gizlilik.baslik': 'Gizlilik ve Çerez Politikası',
+		'gizlilik.giris':
+			'Bu sayfa, siteyi açtığında hangi verinin nereye gittiğini anlatıyor. Kısa, çünkü anlatılacak çok şey yok.',
+		'gizlilik.metin':
+			'Site tamamen hazır sayfalardan oluşuyor: form yok, üyelik yok, reklam yok. Yine de her web sunucusu gibi bu sunucu da birkaç satır kayıt tutuyor. Aşağıda hepsi tek tek yazılı.',
+
+		'gizlilik.kunyeSorumlu': 'Veri sorumlusu',
+		'gizlilik.kunyeSite': 'Site',
+		'gizlilik.kunyeGuncelleme': 'Son güncelleme',
+		'gizlilik.tarih': '15 Eylül 2026',
+
+		'gizlilik.ozetBaslik': 'KISACA',
+		'gizlilik.ozet1': 'Çerez yok, izleme betiği yok, reklam ağı yok. Onay kutusu da bu yüzden yok.',
+		'gizlilik.ozet2':
+			'Tarayıcında yalnızca iki tercih saklanıyor: tema ve dil. İkisi de cihazından çıkmıyor.',
+		'gizlilik.ozet3':
+			'Sunucu erişim kayıtları 14 gün duruyor, sonra siliniyor. Kimseyle paylaşılmıyor.',
+
+		'gizlilik.cerezUstBaslik': 'ÇEREZLER',
+		'gizlilik.cerezBaslik': 'Bu site çerez kullanmıyor',
+		'gizlilik.cerezMetin':
+			'Hiçbir çerez yazılmıyor — ne bu sitenin kendi çerezi ne de bir başkasınınki. Sayfalarda Google Analytics, reklam ağı ya da üçüncü taraf izleme betiği yok; sayfayı açtığında tarayıcına inen JavaScript de yok.',
+		'gizlilik.cerezMetin2':
+			'Karşına “çerezleri kabul et” kutusu çıkmamasının sebebi bu. Kutunun olmaması bir eksiklik değil: onaylanacak bir çerez yok.',
+
+		'gizlilik.yerelUstBaslik': 'TARAYICIDA SAKLANANLAR',
+		'gizlilik.yerelBaslik': 'İki tercih, senin cihazında',
+		'gizlilik.yerelMetin':
+			'Site, tarayıcının localStorage alanına iki değer yazıyor. İkisi de senin yaptığın seçimin kaydı: sunucuya gönderilmiyor, cihazından hiç çıkmıyor, benim erişimim yok.',
+		'gizlilik.yerelTemaMetin':
+			'Koyu mu açık mı görünüm istediğin. Sayfa boyanmadan önce okunuyor: hem tema düğmesine her seferinde basmak zorunda kalmıyorsun hem de koyu temada bir anlık beyaz parlama olmuyor.',
+		'gizlilik.yerelDilMetin':
+			'Dili kendin seçtin mi. Yalnızca ana sayfada bir kez çalışan otomatik dil yönlendirmesinin senin seçiminin üstüne yazmasını engelliyor.',
+		'gizlilik.yerelDayanak':
+			'İkisi de ziyaretçinin kendi tercihini hatırlayan işlevsel kayıt. KVKK ve GDPR bu tür zorunlu/işlevsel saklama için ayrıca onay aramıyor — onay gereken şey, senin tercihin dışında seni takip eden kayıtlar.',
+		'gizlilik.yerelSilBaslik': 'Nasıl silinir',
+		'gizlilik.yerelSilMetin':
+			'Tarayıcının ayarlarından bu site için site verilerini temizlemen yeter; iki kayıt da gider. Gizli sekmede zaten hiç kalıcı olmuyor. Sildiğinde site varsayılan temaya ve tarayıcı diline döner; başka hiçbir şey kaybolmaz.',
+
+		'gizlilik.kayitUstBaslik': 'SUNUCU KAYITLARI',
+		'gizlilik.kayitBaslik': 'Erişim kayıtları 14 gün duruyor',
+		'gizlilik.kayitMetin':
+			'Siteyi yayınlayan web sunucusu (nginx) her istek için bir satır yazıyor. Bu kayıtlar sunucuyu ayakta tutmak, hataları görmek ve kötüye kullanımı engellemek için gerekli; meşru menfaat kapsamında tutuluyor. Bir satırda şunlar bulunuyor:',
+		'gizlilik.kayitAlan1': 'IP adresi',
+		'gizlilik.kayitAlan2': 'Tarih ve saat',
+		'gizlilik.kayitAlan3': 'İstenen sayfanın adresi',
+		'gizlilik.kayitAlan4': 'HTTP durum kodu',
+		'gizlilik.kayitAlan5': 'Gönderilen veri miktarı',
+		'gizlilik.kayitAlan6': 'Yönlendiren adres (referer)',
+		'gizlilik.kayitAlan7': 'Tarayıcı bilgisi (user-agent)',
+		'gizlilik.kayitSure':
+			'14 gün sonra bu kayıtlar otomatik olarak siliniyor. Ayrıca bir arşiv tutulmuyor, yedeği alınmıyor.',
+		'gizlilik.kayitIstatistikBaslik': 'Ziyaretçi sayısı',
+		'gizlilik.kayitIstatistikMetin':
+			'Aynı kayıtlardan hangi sayfanın ne kadar açıldığına dair basit bir sayım üretiliyor. Sayım üretilirken IP adresi ham hâlde saklanmıyor, karması (hash) alınıyor. Yani elde kalan şey “kaç kişi geldi” bilgisi; “kim geldi” değil.',
+
+		'gizlilik.iletisimUstBaslik': 'BANA YAZDIĞINDA',
+		'gizlilik.iletisimBaslik': 'Sitede form yok, doğrudan yazıyorsun',
+		'gizlilik.iletisimMetin':
+			'Sitede iletişim formu yok; e-posta ya da WhatsApp bağlantısı seni kendi uygulamana götürüyor. Bana yazdığında doğal olarak yazdığın içerik ve ulaştığın adres elimde olur. Bunları yalnızca sana cevap vermek için kullanıyorum: bir listeye eklemiyorum, kimseye aktarmıyorum. Yazışmayı silmemi istersen söyle, silerim.',
+
+		'gizlilik.ucuncuUstBaslik': 'ÜÇÜNCÜ TARAFLAR',
+		'gizlilik.ucuncuBaslik': 'Verini kimseye satmıyorum, aktarmıyorum',
+		'gizlilik.ucuncuMetin':
+			'Yukarıda sayılan hiçbir veri üçüncü kişilere satılmıyor, pazarlama amacıyla paylaşılmıyor. Tek teknik istisna altyapı: site Cloudflare üzerinden yayınlanıyor. Cloudflare sayfaları hızlandırmak ve saldırıları süzmek için trafiği kendi ağından geçiriyor ve bu sırada kendi güvenlik ile önbellek kayıtlarını tutuyor. O kayıtlar Cloudflare’in kendi gizlilik politikasına tabi; benim elimde değiller.',
+
+		'gizlilik.haklarUstBaslik': 'HAKLARIN',
+		'gizlilik.haklarBaslik': 'KVKK 11. madde kapsamında',
+		'gizlilik.haklarMetin':
+			'6698 sayılı Kişisel Verilerin Korunması Kanunu’nun 11. maddesi sana şu hakları veriyor:',
+		'gizlilik.hak1': 'Kişisel verinin işlenip işlenmediğini öğrenme.',
+		'gizlilik.hak2': 'İşlenmişse buna ilişkin bilgi isteme.',
+		'gizlilik.hak3':
+			'İşlenme amacını ve verinin amacına uygun kullanılıp kullanılmadığını öğrenme.',
+		'gizlilik.hak4': 'Yurt içinde veya yurt dışında verinin aktarıldığı üçüncü kişileri bilme.',
+		'gizlilik.hak5': 'Eksik ya da yanlış işlenmişse düzeltilmesini isteme.',
+		'gizlilik.hak6': 'Silinmesini veya yok edilmesini isteme.',
+		'gizlilik.hak7':
+			'Düzeltme ve silme işlemlerinin, verinin aktarıldığı üçüncü kişilere bildirilmesini isteme.',
+		'gizlilik.hak8':
+			'Yalnızca otomatik sistemlerle yapılan analiz sonucu aleyhine bir sonuç çıkmasına itiraz etme.',
+		'gizlilik.hak9':
+			'Kanuna aykırı işleme yüzünden zarara uğrarsan zararın giderilmesini talep etme.',
+		'gizlilik.haklarNasilBaslik': 'Nasıl kullanılır',
+		'gizlilik.haklarNasilMetin':
+			'Aşağıdaki adrese yaz; ne istediğini bir iki cümleyle söylemen yeterli. En geç otuz gün içinde dönüyorum, pratikte çok daha erken. Elimde yalnızca yukarıda sayılan veriler olduğu için çoğu talebin cevabı kısa oluyor.',
+
+		'gizlilik.kapanisUstBaslik': 'SORULAR',
+		'gizlilik.kapanisBaslik': 'Bir şey sormak istersen',
+		'gizlilik.kapanisMetin':
+			'Bu sayfada yazan bir şey sana eksik ya da yanlış geldiyse yaz, düzeltirim. Sitede veri açısından bir şey değişirse bu sayfa ve üstteki tarih de değişir.',
+		'gizlilik.kapanisEposta': 'E-posta gönder',
+
 		// 404 sayfası
 		'404.sayfaBasligi': 'Sayfa bulunamadı — Mustafa Eybek',
 		'404.baslik': 'Hop! Sayfa kayıp.',
@@ -261,6 +371,7 @@ export const ceviriler = {
 		'nav.hakkimda': 'About',
 		'nav.hizmetler': 'Services',
 		'nav.kullandiklarim': 'Uses',
+		'nav.gizlilik': 'Privacy',
 		'nav.iletisim': 'Contact',
 		'nav.rss': 'RSS feed',
 		'nav.menuAc': 'Open menu',
@@ -452,6 +563,106 @@ export const ceviriler = {
 		'kullandiklarim.sunucuBaslik': 'Server',
 		'kullandiklarim.sunucuMetin': 'What runs on the published side.',
 
+		// Privacy and cookies
+		'gizlilik.sayfaBasligi': 'Privacy and Cookie Policy — Mustafa Eybek',
+		'gizlilik.aciklama':
+			'This site sets no cookies and runs no tracking scripts. What data is processed and why, how long it is kept, and how to exercise your rights — in plain language.',
+		'gizlilik.ustBaslik': 'PRIVACY',
+		'gizlilik.baslik': 'Privacy and Cookie Policy',
+		'gizlilik.giris':
+			'This page explains where your data goes when you open the site. It is short because there is not much to tell.',
+		'gizlilik.metin':
+			'The site is made of pre-built pages: no forms, no accounts, no ads. Even so, like every web server, this one writes a few lines of log. All of them are listed below.',
+
+		'gizlilik.kunyeSorumlu': 'Data controller',
+		'gizlilik.kunyeSite': 'Site',
+		'gizlilik.kunyeGuncelleme': 'Last updated',
+		'gizlilik.tarih': '15 September 2026',
+
+		'gizlilik.ozetBaslik': 'THE SHORT VERSION',
+		'gizlilik.ozet1':
+			'No cookies, no tracking scripts, no ad networks. That is why there is no consent banner.',
+		'gizlilik.ozet2':
+			'Two preferences are stored in your browser: theme and language. Neither ever leaves your device.',
+		'gizlilik.ozet3':
+			'Server access logs are kept for 14 days, then deleted. They are shared with no one.',
+
+		'gizlilik.cerezUstBaslik': 'COOKIES',
+		'gizlilik.cerezBaslik': 'This site sets no cookies',
+		'gizlilik.cerezMetin':
+			'Not one cookie is written — neither this site’s own nor anyone else’s. There is no Google Analytics, no ad network and no third-party tracking script on these pages; no JavaScript is shipped to your browser when you open them.',
+		'gizlilik.cerezMetin2':
+			'That is why you never saw an “accept cookies” banner. Its absence is not an oversight: there is no cookie to consent to.',
+
+		'gizlilik.yerelUstBaslik': 'STORED IN YOUR BROWSER',
+		'gizlilik.yerelBaslik': 'Two preferences, on your device',
+		'gizlilik.yerelMetin':
+			'The site writes two values into your browser’s localStorage. Both are simply a record of a choice you made: they are never sent to the server, never leave your device, and I cannot read them.',
+		'gizlilik.yerelTemaMetin':
+			'Whether you want the dark or the light appearance. It is read before the page paints, so you do not have to press the theme button on every visit and the dark theme never flashes white.',
+		'gizlilik.yerelDilMetin':
+			'Whether you picked the language yourself. It stops the one-time automatic language redirect — which only runs on the home page — from overriding your choice.',
+		'gizlilik.yerelDayanak':
+			'Both are functional entries that remember your own preference. Under GDPR and Turkey’s KVKK, storage of this kind is strictly necessary and needs no separate consent — consent is for records that follow you around, not for the switch you flipped yourself.',
+		'gizlilik.yerelSilBaslik': 'How to delete them',
+		'gizlilik.yerelSilMetin':
+			'Clear site data for this site in your browser settings and both entries are gone. In a private window nothing persists in the first place. Afterwards the site falls back to the default theme and your browser language; nothing else is lost.',
+
+		'gizlilik.kayitUstBaslik': 'SERVER LOGS',
+		'gizlilik.kayitBaslik': 'Access logs are kept for 14 days',
+		'gizlilik.kayitMetin':
+			'The web server that publishes the site (nginx) writes one line per request. These logs are what keep the server running, make errors visible and hold abuse off; they rest on legitimate interest. One line holds:',
+		'gizlilik.kayitAlan1': 'IP address',
+		'gizlilik.kayitAlan2': 'Date and time',
+		'gizlilik.kayitAlan3': 'The page requested',
+		'gizlilik.kayitAlan4': 'HTTP status code',
+		'gizlilik.kayitAlan5': 'Bytes sent',
+		'gizlilik.kayitAlan6': 'Referring address (referer)',
+		'gizlilik.kayitAlan7': 'Browser details (user-agent)',
+		'gizlilik.kayitSure':
+			'After 14 days these logs are deleted automatically. No separate archive is kept and no backup is taken.',
+		'gizlilik.kayitIstatistikBaslik': 'Visitor counts',
+		'gizlilik.kayitIstatistikMetin':
+			'The same logs feed a simple count of how often each page was opened. While that count is produced, the IP address is not stored in raw form — it is hashed. What remains is “how many people came”, not “who came”.',
+
+		'gizlilik.iletisimUstBaslik': 'WHEN YOU WRITE TO ME',
+		'gizlilik.iletisimBaslik': 'No form here — you write to me directly',
+		'gizlilik.iletisimMetin':
+			'There is no contact form on the site; the email and WhatsApp links simply hand you over to your own app. When you write, I naturally end up holding what you wrote and the address you wrote from. I use it only to reply to you: it goes on no mailing list and to no one else. Ask me to delete the conversation and I will.',
+
+		'gizlilik.ucuncuUstBaslik': 'THIRD PARTIES',
+		'gizlilik.ucuncuBaslik': 'Nothing is sold, nothing is handed on',
+		'gizlilik.ucuncuMetin':
+			'None of the data above is sold to third parties or shared for marketing. The one technical exception is infrastructure: the site is served through Cloudflare, which routes traffic over its own network to speed pages up and filter attacks, and keeps its own security and cache logs while doing so. Those logs fall under Cloudflare’s own privacy policy and are not in my hands.',
+
+		'gizlilik.haklarUstBaslik': 'YOUR RIGHTS',
+		'gizlilik.haklarBaslik': 'Under article 11 of the KVKK',
+		'gizlilik.haklarMetin':
+			'Turkey’s Personal Data Protection Law no. 6698 gives you these rights in its article 11:',
+		'gizlilik.hak1': 'To learn whether your personal data is being processed.',
+		'gizlilik.hak2': 'To request information about it if it has been processed.',
+		'gizlilik.hak3':
+			'To learn the purpose of processing and whether the data is used in line with that purpose.',
+		'gizlilik.hak4':
+			'To know the third parties the data is transferred to, at home or abroad.',
+		'gizlilik.hak5': 'To have it corrected if it is incomplete or wrong.',
+		'gizlilik.hak6': 'To ask for it to be erased or destroyed.',
+		'gizlilik.hak7':
+			'To ask that corrections and erasures be reported to any third parties the data went to.',
+		'gizlilik.hak8':
+			'To object to an adverse outcome reached purely by automated analysis.',
+		'gizlilik.hak9':
+			'To claim compensation if unlawful processing has caused you harm.',
+		'gizlilik.haklarNasilBaslik': 'How to use them',
+		'gizlilik.haklarNasilMetin':
+			'Write to the address below; a sentence or two saying what you want is enough. I answer within thirty days at the latest, and in practice much sooner. Since all I hold is what is listed above, most answers turn out short.',
+
+		'gizlilik.kapanisUstBaslik': 'QUESTIONS',
+		'gizlilik.kapanisBaslik': 'If you want to ask something',
+		'gizlilik.kapanisMetin':
+			'If anything on this page reads as incomplete or wrong to you, write and I will fix it. If anything changes on the data side of the site, this page and the date above change with it.',
+		'gizlilik.kapanisEposta': 'Send an email',
+
 		// 404 page
 		'404.sayfaBasligi': 'Page not found — Mustafa Eybek',
 		'404.baslik': 'Boo! Page missing.',
@@ -511,7 +722,14 @@ export function yol(dil: Dil, parca = ''): string {
 export function digerDilYolu(url: URL, hedef: Dil): string {
 	const parcalar = tabansizParcalar(url);
 	if ((diller as readonly string[]).includes(parcalar[0])) parcalar.shift();
-	// Yol adları dile göre değişiyor: hakkımda <-> about
+	/*
+	  Yol adları dile göre değişiyor: hakkımda <-> about.
+
+	  Adı çevrilen HER yeni sayfa buraya iki satır olarak eklenmeli (hem Türkçe
+	  hem İngilizce ad, çünkü arama iki yönde de yapılıyor). Eklenmezse dil
+	  değiştirici o sayfadayken adı olduğu gibi bırakıyor ve ziyaretçi
+	  /en/gizlilik gibi var olmayan bir adrese, yani 404'e düşüyor.
+	*/
 	const esleme: Record<string, Record<Dil, string>> = {
 		hakkimda: { tr: 'hakkimda', en: 'about' },
 		about: { tr: 'hakkimda', en: 'about' },
@@ -519,6 +737,8 @@ export function digerDilYolu(url: URL, hedef: Dil): string {
 		services: { tr: 'hizmetler', en: 'services' },
 		kullandiklarim: { tr: 'kullandiklarim', en: 'uses' },
 		uses: { tr: 'kullandiklarim', en: 'uses' },
+		gizlilik: { tr: 'gizlilik', en: 'privacy' },
+		privacy: { tr: 'gizlilik', en: 'privacy' },
 	};
 	if (parcalar[0] && esleme[parcalar[0]]) parcalar[0] = esleme[parcalar[0]][hedef];
 	return yol(hedef, parcalar.join('/'));

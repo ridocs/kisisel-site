@@ -13,6 +13,9 @@ const baglantilar = [
 	{ etiket: m('nav.blog'), yol: yol(dil, 'blog') },
 	{ etiket: m('nav.hakkimda'), yol: yol(dil, dil === 'en' ? 'about' : 'hakkimda') },
 	{ etiket: m('nav.kullandiklarim'), yol: yol(dil, dil === 'en' ? 'uses' : 'kullandiklarim') },
+	// Gizlilik listenin sonunda: üst gezinmede hiç yer almıyor, tek girişi
+	// burası. Sıra "önce okunacak sayfalar, sonra künye niteliğindekiler".
+	{ etiket: m('nav.gizlilik'), yol: yol(dil, dil === 'en' ? 'privacy' : 'gizlilik') },
 ];
 
 const disBaglantilar = [

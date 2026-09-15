@@ -1,0 +1,575 @@
+---
+import { Icon } from 'astro-icon/components';
+import { cevirici, dilBul, taban } from '@/i18n/ceviriler';
+import { EPOSTA } from '@/lib/iletisim';
+
+/*
+  GİZLİLİK VE ÇEREZ POLİTİKASININ GÖVDESİ — iki dil de bu bileşeni kullanıyor.
+
+  Hizmetler ve Hakkımda ile aynı gerekçe: iki sayfanın düzeni birebir aynı,
+  yalnızca dil değişiyor. Ayrı yazmak, zamanla iki metnin birbirinden ayrı
+  düşmesini garanti ederdi — bir gizlilik metninde bu yalnızca çirkin değil,
+  iki dilde iki farklı beyan demek.
+
+  Sayfa ekrana kilitlenmiyor: `data-sayfa` ve `min-height: 100svh` yok. Bu bir
+  okuma sayfası; hamle başına bir bölüm ilerlemek okumayı böler.
+*/
+
+const dil = dilBul(Astro.url);
+const m = cevirici(dil);
+
+/*
+  Sayfanın kendi adresi. Elle yazılsaydı site başka bir yere taşındığında
+  gizlilik metni yanlış adresi beyan etmeye devam ederdi; burada yayın
+  ayarlarından (astro.config + `taban`) türetiliyor.
+*/
+const kokAdresi = new URL(taban + '/', Astro.site);
+const siteAdresi = kokAdresi.host + kokAdresi.pathname;
+
+/*
+  Tarayıcıda saklanan iki kayıt. Anahtar adları ÇEVRİLMİYOR: ziyaretçi bunları
+  tarayıcısının geliştirici araçlarında birebir bu hâlde görecek, çevrilmiş bir
+  ad orada hiçbir şeye karşılık gelmezdi.
+*/
+const yerelKayitlar = [
+	{ anahtar: 'tema', metin: m('gizlilik.yerelTemaMetin') },
+	{ anahtar: 'dil-secildi', metin: m('gizlilik.yerelDilMetin') },
+];
+
+// Bir nginx erişim kaydı satırında ne varsa o. Eksiksiz liste olması önemli:
+// "vb." ile biten bir sayım, saymamakla aynı kapıya çıkıyor.
+const kayitAlanlari = [
+	m('gizlilik.kayitAlan1'),
+	m('gizlilik.kayitAlan2'),
+	m('gizlilik.kayitAlan3'),
+	m('gizlilik.kayitAlan4'),
+	m('gizlilik.kayitAlan5'),
+	m('gizlilik.kayitAlan6'),
+	m('gizlilik.kayitAlan7'),
+];
+
+// KVKK 11. maddenin dokuz bendi. Sıra kanundaki sırayla aynı.
+const haklar = [
+	m('gizlilik.hak1'),
+	m('gizlilik.hak2'),
+	m('gizlilik.hak3'),
+	m('gizlilik.hak4'),
+	m('gizlilik.hak5'),
+	m('gizlilik.hak6'),
+	m('gizlilik.hak7'),
+	m('gizlilik.hak8'),
+	m('gizlilik.hak9'),
+];
+
+const ozetler = [m('gizlilik.ozet1'), m('gizlilik.ozet2'), m('gizlilik.ozet3')];
+
+const epostaBaglantisi = `mailto:${EPOSTA}`;
+---
+
+{/*
+  1) Giriş.
+
+  Sayfanın tek <h1>'i burada; açılış Hizmetler ve Hakkımda ile aynı ölçüde
+  (üst başlık, ad, marka renginde kısa çizgi). Künye satırı bilinçli olarak
+  başlıkla özetin arasında: "bu metni kim yazdı, hangi site için, ne zaman"
+  sorusu gizlilik metninde ilk sorulan soru.
+*/}
+<section class="bolum giris-bolum" data-belir data-parcali>
+	<p class="ust-baslik" data-belir-oge style="--sira: 0">{m('gizlilik.ustBaslik')}</p>
+
+	<h1 class="ana-baslik" data-belir-oge style="--sira: 1">{m('gizlilik.baslik')}</h1>
+
+	<div class="cizgi" data-belir-oge data-belir-cizgi style="--sira: 2" aria-hidden="true"></div>
+
+	<p class="giris-cumle" data-belir-oge style="--sira: 3">{m('gizlilik.giris')}</p>
+	<p class="paragraf" data-belir-oge style="--sira: 4">{m('gizlilik.metin')}</p>
+
+	<dl class="kunye" data-belir-oge style="--sira: 5">
+		<div class="kunye-satir">
+			<dt>{m('gizlilik.kunyeSorumlu')}</dt>
+			<dd>Mustafa Eybek</dd>
+		</div>
+		<div class="kunye-satir">
+			<dt>{m('gizlilik.kunyeSite')}</dt>
+			<dd class="tek-aralik">{siteAdresi}</dd>
+		</div>
+		<div class="kunye-satir">
+			<dt>{m('gizlilik.kunyeGuncelleme')}</dt>
+			<dd>{m('gizlilik.tarih')}</dd>
+		</div>
+	</dl>
+
+	{/*
+	  Özet kutusu. Ziyaretçilerin çoğu bu sayfayı tek bir soruyla açıyor:
+	  "beni takip ediyor musun?" Cevabı aşağıya, sekiz paragrafın altına
+	  saklamak dürüst bir düzen olmazdı.
+	*/}
+	<div class="ozet" data-belir-oge style="--sira: 6">
+		<p class="ozet-baslik">{m('gizlilik.ozetBaslik')}</p>
+		<ul class="ozet-liste">
+			{
+				ozetler.map((satir) => (
+					<li>
+						<Icon name="lucide:check" class="size-4 ozet-simge" aria-hidden="true" />
+						<span>{satir}</span>
+					</li>
+				))
+			}
+		</ul>
+	</div>
+</section>
+
+{/* 2) Çerezler. Sayfanın en çok aranan cevabı; kendi bölümü olmayı hak ediyor. */}
+<section class="bolum" data-belir data-parcali>
+	<p class="ust-baslik" data-belir-oge style="--sira: 0">{m('gizlilik.cerezUstBaslik')}</p>
+	<h2 class="baslik" data-belir-oge style="--sira: 1">{m('gizlilik.cerezBaslik')}</h2>
+	<p class="bolum-metin" data-belir-oge style="--sira: 2">{m('gizlilik.cerezMetin')}</p>
+	<p class="bolum-metin" data-belir-oge style="--sira: 3">{m('gizlilik.cerezMetin2')}</p>
+</section>
+
+{/*
+  3) Tarayıcıda saklananlar.
+
+  Kalemler Hizmetler sayfasındaki kart diliyle aynı, ama simge yerine anahtar
+  adı var: ziyaretçi bu adları kendi tarayıcısında arayıp doğrulayabilsin diye.
+*/}
+<section class="bolum" data-belir data-parcali>
+	<p class="ust-baslik" data-belir-oge style="--sira: 0">{m('gizlilik.yerelUstBaslik')}</p>
+	<h2 class="baslik" data-belir-oge style="--sira: 1">{m('gizlilik.yerelBaslik')}</h2>
+	<p class="bolum-metin" data-belir-oge style="--sira: 2">{m('gizlilik.yerelMetin')}</p>
+
+	<ul class="kalemler">
+		{
+			yerelKayitlar.map((kayit, sira) => (
+				<li class="kalem" data-belir-oge style={`--sira: ${3 + sira}`}>
+					<p class="kalem-anahtar">{kayit.anahtar}</p>
+					<p class="kalem-metin">{kayit.metin}</p>
+				</li>
+			))
+		}
+	</ul>
+
+	<p class="bolum-metin" data-belir-oge style="--sira: 5">{m('gizlilik.yerelDayanak')}</p>
+
+	<h3 class="alt-baslik" data-belir-oge style="--sira: 6">{m('gizlilik.yerelSilBaslik')}</h3>
+	<p class="bolum-metin" data-belir-oge style="--sira: 7">{m('gizlilik.yerelSilMetin')}</p>
+</section>
+
+{/* 4) Sunucu kayıtları. */}
+<section class="bolum" data-belir data-parcali>
+	<p class="ust-baslik" data-belir-oge style="--sira: 0">{m('gizlilik.kayitUstBaslik')}</p>
+	<h2 class="baslik" data-belir-oge style="--sira: 1">{m('gizlilik.kayitBaslik')}</h2>
+	<p class="bolum-metin" data-belir-oge style="--sira: 2">{m('gizlilik.kayitMetin')}</p>
+
+	{/* Etiketler kutu değil ince çerçeve — sitenin "çizgiyle anlatma" diliyle
+	    dolgulu rozetten daha uyumlu. */}
+	<ul class="etiketler" data-belir-oge style="--sira: 3">
+		{kayitAlanlari.map((alan) => <li class="etiket">{alan}</li>)}
+	</ul>
+
+	<p class="bolum-metin" data-belir-oge style="--sira: 4">{m('gizlilik.kayitSure')}</p>
+
+	<h3 class="alt-baslik" data-belir-oge style="--sira: 5">
+		{m('gizlilik.kayitIstatistikBaslik')}
+	</h3>
+	<p class="bolum-metin" data-belir-oge style="--sira: 6">{m('gizlilik.kayitIstatistikMetin')}</p>
+</section>
+
+{/* 5) İletişim. */}
+<section class="bolum" data-belir data-parcali>
+	<p class="ust-baslik" data-belir-oge style="--sira: 0">{m('gizlilik.iletisimUstBaslik')}</p>
+	<h2 class="baslik" data-belir-oge style="--sira: 1">{m('gizlilik.iletisimBaslik')}</h2>
+	<p class="bolum-metin" data-belir-oge style="--sira: 2">{m('gizlilik.iletisimMetin')}</p>
+</section>
+
+{/* 6) Üçüncü taraflar. */}
+<section class="bolum" data-belir data-parcali>
+	<p class="ust-baslik" data-belir-oge style="--sira: 0">{m('gizlilik.ucuncuUstBaslik')}</p>
+	<h2 class="baslik" data-belir-oge style="--sira: 1">{m('gizlilik.ucuncuBaslik')}</h2>
+	<p class="bolum-metin" data-belir-oge style="--sira: 2">{m('gizlilik.ucuncuMetin')}</p>
+</section>
+
+{/*
+  7) Haklar.
+
+  Numaralı liste, Hizmetler sayfasındaki süreç adımlarıyla aynı ayıraç dilinde.
+  Dokuz bendin hepsi yazılı: kanunun verdiği hakkı özetlemek, okuyanın
+  bilmediği bir hakkı sessizce kesmek demek.
+*/}
+<section class="bolum" data-belir data-parcali>
+	<p class="ust-baslik" data-belir-oge style="--sira: 0">{m('gizlilik.haklarUstBaslik')}</p>
+	<h2 class="baslik" data-belir-oge style="--sira: 1">{m('gizlilik.haklarBaslik')}</h2>
+	<p class="bolum-metin" data-belir-oge style="--sira: 2">{m('gizlilik.haklarMetin')}</p>
+
+	<ol class="haklar" data-belir-oge style="--sira: 3">
+		{
+			haklar.map((hak, sira) => (
+				<li class="hak">
+					<span class="hak-sira" aria-hidden="true">
+						{String(sira + 1).padStart(2, '0')}
+					</span>
+					<span class="hak-metin">{hak}</span>
+				</li>
+			))
+		}
+	</ol>
+
+	<h3 class="alt-baslik" data-belir-oge style="--sira: 4">{m('gizlilik.haklarNasilBaslik')}</h3>
+	<p class="bolum-metin" data-belir-oge style="--sira: 5">{m('gizlilik.haklarNasilMetin')}</p>
+</section>
+
+{/* 8) Kapanış. Hizmetler sayfasındaki kapanışla aynı kalıp: bir başlık, bir
+    cümle, bir düğme ve adresin yazılı hâli. */}
+<section class="bolum kapanis" data-belir data-parcali>
+	<p class="ust-baslik" data-belir-oge style="--sira: 0">{m('gizlilik.kapanisUstBaslik')}</p>
+	<h2 class="baslik" data-belir-oge style="--sira: 1">{m('gizlilik.kapanisBaslik')}</h2>
+	<p class="bolum-metin" data-belir-oge style="--sira: 2">{m('gizlilik.kapanisMetin')}</p>
+
+	<div class="dugmeler" data-belir-oge style="--sira: 3">
+		<a class="dugme birincil" href={epostaBaglantisi}>
+			<Icon name="lucide:mail" class="size-4" aria-hidden="true" />
+			<span>{m('gizlilik.kapanisEposta')}</span>
+		</a>
+	</div>
+
+	{/* Adres yazılı da duruyor: düğmeye basamayan ya da başka bir posta
+	    istemcisi kullanan biri kopyalayabilmeli. Hak talebinin gideceği yer
+	    burası, çalışmayan tek bir bağlantıya bırakılamaz. */}
+	<p class="adres" data-belir-oge style="--sira: 4">{EPOSTA}</p>
+</section>
+
+<style>
+	/* Bölümler ince bir çizgiyle ayrılıyor; ilki hariç. Hizmetler sayfasıyla
+	   aynı ölçü — iki sayfa aynı ailede. */
+	.bolum {
+		padding-block: 2.5rem;
+	}
+
+	.bolum + .bolum {
+		border-top: 1px solid var(--border);
+	}
+
+	.giris-bolum {
+		padding-top: 0;
+	}
+
+	.ust-baslik {
+		font-size: 0.75rem;
+		font-weight: 600;
+		letter-spacing: 0.22em;
+		color: var(--muted-foreground);
+	}
+
+	/* clamp içindeki rem bileşeni bilinçli: salt vw ile kurulan bir ölçek
+	   kullanıcı yakınlaştırdığında büyümüyor ve WCAG 1.4.4'ü karşılamıyor. */
+	.ana-baslik {
+		margin-top: 0.75rem;
+		font-size: clamp(1.875rem, 1.4rem + 2.4vw, 2.75rem);
+		font-weight: 700;
+		line-height: 1.1;
+		letter-spacing: -0.02em;
+		color: var(--foreground);
+	}
+
+	.cizgi {
+		margin-top: 1rem;
+		width: 5rem;
+		height: 3px;
+		border-radius: 9999px;
+		background: linear-gradient(to right, var(--color-marka-600), var(--color-marka-400));
+	}
+
+	.giris-cumle {
+		margin-top: 1.5rem;
+		font-size: 1.125rem;
+		line-height: 1.6;
+		color: var(--foreground);
+	}
+
+	.paragraf {
+		margin-top: 1rem;
+		max-width: 36rem;
+		line-height: 1.7;
+		color: var(--muted-foreground);
+	}
+
+	.baslik {
+		margin-top: 0.75rem;
+		font-size: clamp(1.375rem, 1.1rem + 1.2vw, 1.75rem);
+		font-weight: 700;
+		line-height: 1.25;
+		letter-spacing: -0.01em;
+		color: var(--foreground);
+	}
+
+	/* Bölüm içi ara başlık: gövde metninden ayrılsın ama <h2> ile yarışmasın. */
+	.alt-baslik {
+		margin-top: 1.75rem;
+		font-size: 1rem;
+		font-weight: 600;
+		line-height: 1.35;
+		color: var(--foreground);
+	}
+
+	.bolum-metin {
+		margin-top: 0.75rem;
+		max-width: 38rem;
+		line-height: 1.7;
+		color: var(--muted-foreground);
+	}
+
+	/* Uzun bir adres ya da kesilmemiş bir sözcük dar ekranda satırı taşırıp
+	   sayfayı yatay kaydırılır hâle getiriyor. */
+	.giris-cumle,
+	.paragraf,
+	.bolum-metin,
+	.kalem-metin,
+	.hak-metin,
+	.ozet-liste li,
+	.kunye dd,
+	.adres {
+		overflow-wrap: break-word;
+	}
+
+	/* --- Künye --- */
+	.kunye {
+		margin: 1.75rem 0 0;
+		display: grid;
+		gap: 0.5rem;
+		font-size: 0.875rem;
+	}
+
+	/*
+	  Etiket sabit genişlikte, değer kalan yeri alıyor. `minmax(0, 1fr)` şart:
+	  `1fr` tek başına içeriğin en az genişliğini taban alıyor ve uzun bir adres
+	  ızgarayı dar ekranda taşırıyordu.
+	*/
+	.kunye-satir {
+		display: grid;
+		grid-template-columns: 8.5rem minmax(0, 1fr);
+		gap: 0.75rem;
+		padding-block: 0.5rem;
+		border-top: 1px solid var(--border);
+	}
+
+	.kunye-satir:last-child {
+		border-bottom: 1px solid var(--border);
+	}
+
+	.kunye dt {
+		font-size: 0.6875rem;
+		font-weight: 700;
+		letter-spacing: 0.14em;
+		text-transform: uppercase;
+		color: var(--muted-foreground);
+		padding-top: 0.2rem;
+	}
+
+	.kunye dd {
+		margin: 0;
+		color: var(--foreground);
+	}
+
+	.tek-aralik {
+		font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+		font-size: 0.8125rem;
+	}
+
+	/* --- Özet kutusu --- */
+	/* Zemin nötr: koyu temada marka tonundan bir dolgu, sayfanın en üstündeki
+	   kutuyu renkli bir uyarı kutusuna çeviriyor. Renk yalnızca işarette. */
+	.ozet {
+		margin-top: 2rem;
+		padding: 1.25rem;
+		border: 1px solid var(--border);
+		border-radius: 1rem;
+		background: color-mix(in oklab, var(--foreground) 2%, transparent);
+	}
+
+	.ozet-baslik {
+		font-size: 0.625rem;
+		font-weight: 700;
+		letter-spacing: 0.18em;
+		color: var(--muted-foreground);
+	}
+
+	.ozet-liste {
+		list-style: none;
+		padding: 0;
+		margin: 0.875rem 0 0;
+		display: grid;
+		gap: 0.625rem;
+	}
+
+	.ozet-liste li {
+		display: grid;
+		grid-template-columns: auto minmax(0, 1fr);
+		gap: 0.625rem;
+		align-items: start;
+		font-size: 0.9375rem;
+		line-height: 1.6;
+		color: var(--foreground);
+	}
+
+	.ozet-simge {
+		margin-top: 0.25rem;
+		color: var(--color-marka-500);
+		flex: none;
+	}
+
+	/* --- Tarayıcıda saklanan kayıtlar --- */
+	.kalemler {
+		list-style: none;
+		padding: 0;
+		margin: 1.75rem 0 0;
+		display: grid;
+		gap: 0.75rem;
+	}
+
+	.kalem {
+		min-width: 0;
+		padding: 1.25rem;
+		border: 1px solid var(--border);
+		border-radius: 1rem;
+		background: color-mix(in oklab, var(--foreground) 2%, transparent);
+	}
+
+	/* Anahtar adı tek aralıklı: ziyaretçi bunu tarayıcısının depolama
+	   panelinde birebir bu hâlde görecek, kod gibi görünmesi doğru. */
+	.kalem-anahtar {
+		font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+		font-size: 0.875rem;
+		font-weight: 600;
+		color: var(--color-marka-500);
+		overflow-wrap: anywhere;
+	}
+
+	.kalem-metin {
+		margin-top: 0.625rem;
+		font-size: 0.9375rem;
+		line-height: 1.65;
+		color: var(--muted-foreground);
+	}
+
+	/* --- Kayıt alanları --- */
+	.etiketler {
+		list-style: none;
+		padding: 0;
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.375rem;
+		margin-top: 1.25rem;
+	}
+
+	.etiket {
+		font-size: 0.6875rem;
+		letter-spacing: 0.04em;
+		padding: 0.15rem 0.5rem;
+		border: 1px solid var(--border);
+		border-radius: 9999px;
+		color: var(--muted-foreground);
+	}
+
+	/* --- Haklar --- */
+	.haklar {
+		list-style: none;
+		padding: 0;
+		margin: 1.5rem 0 0;
+	}
+
+	.hak {
+		display: grid;
+		grid-template-columns: 2rem minmax(0, 1fr);
+		gap: 0.75rem;
+		align-items: baseline;
+		border-top: 1px solid var(--border);
+		padding-block: 0.75rem;
+	}
+
+	.hak:last-child {
+		border-bottom: 1px solid var(--border);
+	}
+
+	.hak-sira {
+		font-size: 0.6875rem;
+		font-weight: 700;
+		letter-spacing: 0.12em;
+		font-variant-numeric: tabular-nums;
+		color: var(--color-marka-500);
+	}
+
+	.hak-metin {
+		font-size: 0.9375rem;
+		line-height: 1.65;
+		color: var(--muted-foreground);
+	}
+
+	/* --- Kapanış --- */
+	.dugmeler {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.625rem;
+		margin-top: 1.5rem;
+	}
+
+	.dugme {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 0.625rem 1.125rem;
+		border-radius: 9999px;
+		font-size: 0.9375rem;
+		font-weight: 600;
+		text-decoration: none;
+		border: 1px solid transparent;
+		transition:
+			background-color 220ms ease-out,
+			translate 260ms cubic-bezier(0.22, 1, 0.36, 1);
+	}
+
+	.dugme:focus-visible {
+		outline: 2px solid var(--ring);
+		outline-offset: 2px;
+	}
+
+	.dugme:hover {
+		translate: 0 -2px;
+	}
+
+	.birincil {
+		background: var(--color-marka-600);
+		color: #fff;
+	}
+
+	.birincil:hover {
+		background: var(--color-marka-500);
+	}
+
+	.adres {
+		margin-top: 1rem;
+		font-size: 0.8125rem;
+		color: var(--muted-foreground);
+	}
+
+	@media (min-width: 640px) {
+		.kalemler {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+		}
+	}
+
+	@media (min-width: 768px) {
+		.bolum {
+			padding-block: 3.5rem;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.dugme {
+			transition: none;
+		}
+
+		.dugme:hover {
+			translate: none;
+		}
+	}
+</style>

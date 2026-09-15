@@ -1,0 +1,18 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import GizlilikIcerik from '../../components/GizlilikIcerik.astro';
+import { cevirici, dilBul } from '@/i18n/ceviriler';
+
+/*
+  Türkçe /gizlilik sayfasının eşi. Gövde aynı bileşenden geliyor; dil yol
+  adından (/en/...) çıkarılıyor, bu yüzden bileşene ayrıca bir şey
+  geçirilmiyor.
+*/
+
+const dil = dilBul(Astro.url);
+const m = cevirici(dil);
+---
+
+<BaseLayout title={m('gizlilik.sayfaBasligi')} description={m('gizlilik.aciklama')}>
+	<GizlilikIcerik />
+</BaseLayout>

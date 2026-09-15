@@ -1,0 +1,21 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import GizlilikIcerik from '../components/GizlilikIcerik.astro';
+import { cevirici, dilBul } from '@/i18n/ceviriler';
+
+/*
+  Sayfanın gövdesi GizlilikIcerik bileşeninde; İngilizce eşi (/en/privacy) de
+  aynı bileşeni kullanıyor. Metinler `src/i18n/ceviriler.ts` içinde, iletişim
+  adresi `src/lib/iletisim.ts` içinde.
+
+  Yol adı çevrildiği için `ceviriler.ts` içindeki `esleme` sözlüğüne de
+  eklenmiş durumda; eklenmeseydi dil değiştirici buradan 404'e götürürdü.
+*/
+
+const dil = dilBul(Astro.url);
+const m = cevirici(dil);
+---
+
+<BaseLayout title={m('gizlilik.sayfaBasligi')} description={m('gizlilik.aciklama')}>
+	<GizlilikIcerik />
+</BaseLayout>
