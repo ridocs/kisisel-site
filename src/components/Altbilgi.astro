@@ -97,7 +97,7 @@ const yil = derlemeZamani.getFullYear();
 
 		<div class="alt">
 			<p><span class="kod">&copy; {yil}</span> Mustafa Eybek</p>
-			<p class="kod">{m('altbilgi.lisans')}</p>
+			<p class="kod lisans">{m('altbilgi.lisans')}</p>
 		</div>
 	</div>
 </footer>
@@ -296,6 +296,27 @@ const yil = derlemeZamani.getFullYear();
 		padding-top: 1.25rem;
 		border-top: 1px solid var(--border);
 		font-size: 0.8125rem;
+	}
+
+	/*
+	  Dar ekran: tek sütun ve ortalı. Sarmalanan iki metin sola yaslı durunca
+	  altbilgi eğri bitiyordu.
+
+	  Lisans cümlesi mobilde hiç basılmıyor. `display: none` yerine bileşeni
+	  koşullu render etmek gerekmiyor — metin zaten süs değil ama telefonda
+	  ekranın son satırını dolduracak kadar önemli de değil; masaüstünde
+	  yerinde duruyor.
+	*/
+	@media (max-width: 767px) {
+		.alt {
+			flex-direction: column;
+			align-items: center;
+			text-align: center;
+		}
+
+		.lisans {
+			display: none;
+		}
 	}
 
 	.kod {
