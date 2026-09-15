@@ -5,6 +5,7 @@ import KaydirmaSeridi from '../components/KaydirmaSeridi.astro';
 import Altbilgi from '../components/Altbilgi.astro';
 import SosyalRay from '../components/SosyalRay.astro';
 import { cevirici, digerDilYolu, dilBul, taban } from '@/i18n/ceviriler';
+import { EPOSTA, GITHUB, TELEFON_GORUNEN } from '@/lib/iletisim';
 import '../styles/global.css';
 // ?url ile içe aktarıldığında Vite hash'li son adresi veriyor; önyükleme
 // bağlantısı ile CSS'in istediği dosya birebir aynı olsun diye böyle.
@@ -25,6 +26,19 @@ interface Props {
 	  sayfalarında okuma sütunu solda duruyor; ana sayfa ve diğerleri ortada.
 	*/
 	solaYasli?: boolean;
+	/**
+	 * Yazı sayfalarında verilir. Verildiğinde og:type "article" olur, makale
+	 * meta etiketleri basılır ve sayfaya BlogPosting yapılandırılmış verisi
+	 * eklenir. Diğer sayfalarda boş kalır, onların çıktısı değişmez.
+	 */
+	makale?: {
+		/** Yazının kendi başlığı — sayfa <title>'ı site adını da içerdiği için ayrı. */
+		baslik: string;
+		yayin: Date;
+		guncelleme?: Date;
+	};
+	/** Arama motoru dizinine girmemesi gereken sayfalar (404) için. */
+	dizinDisi?: boolean;
 }
 
 const dil = dilBul(Astro.url);
@@ -34,6 +48,8 @@ const {
 	description = m('site.aciklama'),
 	altbilgi = true,
 	solaYasli = false,
+	makale,
+	dizinDisi = false,
 } = Astro.props;
 
 // Varsayılan yuvada içerik yoksa <main> hiç çizilmiyor; boş bir main yalnızca
@@ -44,6 +60,77 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
 // Arama motorlarına aynı sayfanın diğer dildeki karşılığını bildiriyoruz.
 const trYolu = new URL(digerDilYolu(Astro.url, 'tr'), Astro.site);
 const enYolu = new URL(digerDilYolu(Astro.url, 'en'), Astro.site);
+
+const SITE_ADI = 'Mustafa Eybek';
+
+/*
+  Paylaşım kartı görseli. Tek ve sabit bir görsel kullanılıyor: sayfa başına
+  görsel üretmek ek paket ve derleme adımı demek, kazancı ise bu boyuttaki bir
+  sitede yok. 1200×630, mevcut portreden kırpıldı (public/og.jpg).
+
+  Mutlak adres zorunlu: paylaşım kazıyıcıları göreli yolu çözmüyor. Alt dizinde
+  yayınlandığı için `taban` öneki elle ekleniyor — `Astro.site` yalnızca alan adı.
+*/
+const ogGorsel = new URL(`${taban}/og.jpg`, Astro.site);
+const ogYerel = dil === 'tr' ? 'tr_TR' : 'en_US';
+const ogDigerYerel = dil === 'tr' ? 'en_US' : 'tr_TR';
+
+// Yapılandırılmış verideki kimlikler dilden bağımsız tek bir kişiye ve tek bir
+// siteye işaret etsin diye hep Türkçe köke bağlanıyor.
+const kok = new URL(`${taban}/`, Astro.site).href;
+const dilEtiketi = dil === 'tr' ? 'tr-TR' : 'en-US';
+
+const kisi = {
+	'@type': 'Person',
+	'@id': `${kok}#kisi`,
+	name: SITE_ADI,
+	url: kok,
+	image: new URL(`${taban}/mustafa-eybek.jpg`, Astro.site).href,
+	jobTitle: m('iletisim.rol'),
+	email: `mailto:${EPOSTA}`,
+	telephone: TELEFON_GORUNEN,
+	address: {
+		'@type': 'PostalAddress',
+		addressLocality: 'Kayseri',
+		addressCountry: 'TR',
+	},
+	// Yalnızca gerçekten var olan hesap. Doğrulanamayan profil eklenmiyor.
+	sameAs: [GITHUB],
+};
+
+const siteVerisi = {
+	'@type': 'WebSite',
+	'@id': `${kok}#site`,
+	url: kok,
+	name: SITE_ADI,
+	description: m('site.aciklama'),
+	inLanguage: dilEtiketi,
+	publisher: { '@id': `${kok}#kisi` },
+};
+
+const yaziVerisi = makale && {
+	'@type': 'BlogPosting',
+	'@id': `${canonical.href}#yazi`,
+	headline: makale.baslik,
+	description,
+	datePublished: makale.yayin.toISOString(),
+	dateModified: (makale.guncelleme ?? makale.yayin).toISOString(),
+	author: { '@id': `${kok}#kisi` },
+	publisher: { '@id': `${kok}#kisi` },
+	image: ogGorsel.href,
+	inLanguage: dilEtiketi,
+	mainEntityOfPage: { '@type': 'WebPage', '@id': canonical.href },
+};
+
+/*
+  JSON-LD veri bloğu; çalıştırılabilir betik değil, tarayıcı içeriğini
+  yürütmüyor. "<" kaçırılıyor: veride bir "</script>" geçerse blok erkenden
+  kapanır ve sayfanın kalanı bozulurdu.
+*/
+const yapilandirilmisVeri = JSON.stringify({
+	'@context': 'https://schema.org',
+	'@graph': [kisi, siteVerisi, ...(yaziVerisi ? [yaziVerisi] : [])],
+}).replace(/</g, '\\u003c');
 ---
 
 <!doctype html>
@@ -75,10 +162,47 @@ const enYolu = new URL(digerDilYolu(Astro.url, 'en'), Astro.site);
 		<meta name="generator" content={Astro.generator} />
 		<title>{title}</title>
 		<meta name="description" content={description} />
+		{dizinDisi && <meta name="robots" content="noindex, follow" />}
+
 		<meta property="og:title" content={title} />
 		<meta property="og:description" content={description} />
-		<meta property="og:type" content="website" />
+		<meta property="og:type" content={makale ? 'article' : 'website'} />
 		<meta property="og:url" content={canonical} />
+		<meta property="og:site_name" content={SITE_ADI} />
+		<meta property="og:locale" content={ogYerel} />
+		<meta property="og:locale:alternate" content={ogDigerYerel} />
+		<meta property="og:image" content={ogGorsel} />
+		<meta property="og:image:width" content="1200" />
+		<meta property="og:image:height" content="630" />
+		<meta property="og:image:alt" content={m('tanitim.gorselAlt')} />
+
+		{
+			makale && (
+				<>
+					<meta property="article:author" content={SITE_ADI} />
+					<meta
+						property="article:published_time"
+						content={makale.yayin.toISOString()}
+					/>
+					{makale.guncelleme && (
+						<meta
+							property="article:modified_time"
+							content={makale.guncelleme.toISOString()}
+						/>
+					)}
+				</>
+			)
+		}
+
+		{/* Kart görseli geniş biçimde çıksın diye summary_large_image. Kullanıcının
+		    X hesabı bilinmediği için twitter:creator yazılmıyor. */}
+		<meta name="twitter:card" content="summary_large_image" />
+		<meta name="twitter:title" content={title} />
+		<meta name="twitter:description" content={description} />
+		<meta name="twitter:image" content={ogGorsel} />
+		<meta name="twitter:image:alt" content={m('tanitim.gorselAlt')} />
+
+		<script type="application/ld+json" set:html={yapilandirilmisVeri} is:inline />
 
 		{/* Sayfa boyanmadan önce temayı uygular; böylece koyu temada beyaz ekran parlaması olmaz. */}
 		<script is:inline>

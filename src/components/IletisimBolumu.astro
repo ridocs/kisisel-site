@@ -1,7 +1,7 @@
 ---
 import { Icon } from 'astro-icon/components';
 import QRCode from 'qrcode';
-import { cevirici, dilBul } from '@/i18n/ceviriler';
+import { cevirici, dilBul, taban } from '@/i18n/ceviriler';
 /*
   İletişim bilgisi artık burada değil, `@/lib/iletisim` içinde: aynı bilgiyi
   Hakkımda sayfasındaki kanal listesi de kullanıyor ve iki kopya kaçınılmaz
@@ -15,13 +15,17 @@ const m = cevirici(dil);
 /*
   QR'ın ne işe yaradığı.
 
-  Bir kartvizit (vCard) kodlamak için gerçek telefon ve e-posta gerekiyor;
-  ikisi de henüz yok. Onun yerine sitenin kendi adresi kodlandı — masaüstünde
-  siteyi gösterirken karşıdaki telefonuyla okutup açabiliyor. Gerçek iletişim
-  bilgisi geldiğinde `QR_ICERIK` bir vCard dizesine çevrilebilir, gerisi aynı
-  kalır.
+  Sitenin kendi adresi kodlanıyor: masaüstünde siteyi gösterirken karşıdaki
+  telefonuyla okutup açabiliyor.
+
+  Adres ELLE YAZILMIYOR, `Astro.site` + `base` üzerinden türetiliyor. Elle
+  yazılmış hâli site başka bir alan adına taşındığında sessizce eski adrese
+  işaret etmeye devam ederdi — kod okunur, doğru görünür, yanlış yere gider.
+
+  Gerçek bir kartvizit (vCard) istenirse `QR_ICERIK` bir vCard dizesine
+  çevrilebilir; gerisi aynı kalır.
 */
-const QR_ICERIK = 'https://twinshareapp.com/web-sitem/';
+const QR_ICERIK = new URL(`${taban}/`, Astro.site).href;
 
 /*
   Matris derleme sırasında üretiliyor: tarayıcıya ne kütüphane ne de görsel

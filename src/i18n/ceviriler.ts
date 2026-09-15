@@ -9,8 +9,14 @@ export const varsayilanDil: Dil = 'tr';
 
 export const ceviriler = {
 	tr: {
-		'site.baslik': 'Mustafa Eybek — Kişisel Site',
-		'site.aciklama': 'Kişisel tanıtım ve blog sitesi.',
+		/*
+		  Ana sayfanın <title>'ı ve sitenin varsayılan açıklaması. İkisi de arama
+		  sonucunda görünen metin: başlık ~60, açıklama ~155 karakteri aşmamalı,
+		  ama "Kişisel site" gibi bir satır da neyin ne olduğunu söylemiyor.
+		*/
+		'site.baslik': 'Mustafa Eybek — Yazılım geliştirici, Kayseri',
+		'site.aciklama':
+			'Kayseri’de çalışan yazılım geliştirici. Web uygulamaları, altyapı ve otomasyon üzerine işler; öğrendiklerimi anlattığım yazılar burada.',
 
 		'nav.anasayfa': 'Ana Sayfa',
 		'nav.blog': 'Blog',
@@ -55,8 +61,11 @@ export const ceviriler = {
 			'Araçlardan çok sonuç anlatan birkaç iş. Hepsini değil, anlatmaya değer olanları koyuyorum.',
 
 		'blog.baslik': 'Blog',
-		'blog.sayfaBasligi': 'Blog — Mustafa Eybek',
-		'blog.aciklama': 'Yazılar.',
+		// Başlık iki dilde birebir aynıydı; arama motoru için iki ayrı sayfa
+		// aynı başlıkla yarışıyordu.
+		'blog.sayfaBasligi': 'Blog: yazılım ve altyapı notları — Mustafa Eybek',
+		'blog.aciklama':
+			'Karşılaştığım sorunların ve çözümlerinin kaydı: web geliştirme, CSS, altyapı ve otomasyon üzerine ölçerek yazılmış kısa notlar.',
 
 		/*
 		  Hakkımda sayfası.
@@ -69,7 +78,8 @@ export const ceviriler = {
 		*/
 		'hakkimda.baslik': 'Hakkımda',
 		'hakkimda.sayfaBasligi': 'Hakkımda — Mustafa Eybek',
-		'hakkimda.aciklama': 'Mustafa Eybek kimdir, neler yapar.',
+		'hakkimda.aciklama':
+			'Mustafa Eybek kimdir, neler yapar: nasıl çalıştığı, kullandığı araçlar ve ulaşma yolları. Kayseri’de yazılım geliştirici.',
 		'hakkimda.ustBaslik': 'HAKKIMDA',
 		'hakkimda.giris':
 			'Buraya tek cümlelik güçlü bir giriş yaz: ne yaptığın ve neyi iyi yaptığın. Sayfada ilk okunan satır bu olacak.',
@@ -151,9 +161,9 @@ export const ceviriler = {
 		  anlatıyor. Bilinçli olarak yok olanlar: fiyat, teslim süresi, müşteri
 		  sayısı ve referans. Hiçbiri doğrulanabilir değil, hepsi bakım yükü.
 		*/
-		'hizmet.sayfaBasligi': 'Hizmetler — Mustafa Eybek',
+		'hizmet.sayfaBasligi': 'Hizmetler: web geliştirme ve altyapı — Mustafa Eybek',
 		'hizmet.aciklama':
-			'Aldığım işler: web uygulaması geliştirme, arayüz uygulaması, altyapı ve dağıtım, otomasyon.',
+			'Aldığım işler: web uygulaması geliştirme, arayüz uygulaması, altyapı ve dağıtım, otomasyon. Kapsamı net çizilmiş, yazılı teslim edilen işler.',
 		'hizmet.ustBaslik': 'HİZMETLER',
 		'hizmet.baslik': 'Ne tür işler alıyorum',
 		'hizmet.giris':
@@ -210,9 +220,9 @@ export const ceviriler = {
 		  çalışmalar ve Yetkinlikler bölümlerindeki kalıbın aynısı: içerik
 		  düzenlenecek tek bir yerde toplu dursun diye.
 		*/
-		'kullandiklarim.sayfaBasligi': 'Kullandıklarım — Mustafa Eybek',
+		'kullandiklarim.sayfaBasligi': 'Kullandıklarım: donanım, program ve araçlar — Mustafa Eybek',
 		'kullandiklarim.aciklama':
-			'Günlük işimde kullandığım donanım, program ve araçlar; her biri için kısa bir gerekçeyle.',
+			'Günlük işimde kullandığım donanım, program ve araçlar; editörden dillere, bu sitenin yığınından sunucuya, her biri için kısa bir gerekçeyle.',
 		'kullandiklarim.ustBaslik': 'KULLANDIKLARIM',
 		'kullandiklarim.baslik': 'Kullandıklarım',
 		'kullandiklarim.giris':
@@ -234,7 +244,7 @@ export const ceviriler = {
 		'kullandiklarim.sunucuMetin': 'Yayına çıkan tarafta çalışanlar.',
 
 		// 404 sayfası
-		'404.sayfaBasligi': 'Sayfa bulunamadı',
+		'404.sayfaBasligi': 'Sayfa bulunamadı — Mustafa Eybek',
 		'404.baslik': 'Hop! Sayfa kayıp.',
 		'404.metin': 'Aradığın sayfa buralarda değil — galiba hayalet olmuş.',
 		'404.dugme': 'Ana sayfaya dön',
@@ -242,8 +252,9 @@ export const ceviriler = {
 		'404.hayaletAlt': 'Şaşkın bir hayalet çizimi',
 	},
 	en: {
-		'site.baslik': 'Mustafa Eybek — Personal Site',
-		'site.aciklama': 'Personal site and blog.',
+		'site.baslik': 'Mustafa Eybek — Software Developer, Kayseri',
+		'site.aciklama':
+			'Software developer based in Kayseri, Türkiye. Web applications, infrastructure and automation — plus notes on what I learn along the way.',
 
 		'nav.anasayfa': 'Home',
 		'nav.blog': 'Blog',
@@ -284,12 +295,14 @@ export const ceviriler = {
 			'A few pieces of work that speak to outcomes rather than tools. Not everything — only what is worth telling.',
 
 		'blog.baslik': 'Blog',
-		'blog.sayfaBasligi': 'Blog — Mustafa Eybek',
-		'blog.aciklama': 'Writing.',
+		'blog.sayfaBasligi': 'Blog: notes on software and infrastructure — Mustafa Eybek',
+		'blog.aciklama':
+			'A record of problems I ran into and how I solved them: short, measured notes on web development, CSS, infrastructure and automation.',
 
 		'hakkimda.baslik': 'About',
 		'hakkimda.sayfaBasligi': 'About — Mustafa Eybek',
-		'hakkimda.aciklama': 'Who Mustafa Eybek is and what he does.',
+		'hakkimda.aciklama':
+			'Who Mustafa Eybek is and what he does: how he works, the tools he uses and how to reach him. Software developer based in Kayseri.',
 		'hakkimda.ustBaslik': 'ABOUT',
 		'hakkimda.giris':
 			'Write one strong opening sentence here: what you do and what you are good at. It is the first line anyone reads on this page.',
@@ -364,9 +377,9 @@ export const ceviriler = {
 		'yetkinlik.ilerlemeBaslik': 'WHERE I USED IT',
 
 		// Services
-		'hizmet.sayfaBasligi': 'Services — Mustafa Eybek',
+		'hizmet.sayfaBasligi': 'Services: web development and infrastructure — Mustafa Eybek',
 		'hizmet.aciklama':
-			'The work I take on: web application development, interface implementation, infrastructure and deployment, automation.',
+			'The work I take on: web application development, interface implementation, infrastructure and deployment, automation — clearly scoped work.',
 		'hizmet.ustBaslik': 'SERVICES',
 		'hizmet.baslik': 'The kind of work I take on',
 		'hizmet.giris':
@@ -416,9 +429,9 @@ export const ceviriler = {
 		'hizmet.kapanisWhatsapp': 'Message on WhatsApp',
 
 		// Uses
-		'kullandiklarim.sayfaBasligi': 'Uses — Mustafa Eybek',
+		'kullandiklarim.sayfaBasligi': 'Uses: hardware, software and tools — Mustafa Eybek',
 		'kullandiklarim.aciklama':
-			'The hardware, software and tools I use day to day, each with a short reason.',
+			'The hardware, software and tools I use day to day — editor, languages, this site’s own stack and the server side — each with a short reason.',
 		'kullandiklarim.ustBaslik': 'USES',
 		'kullandiklarim.baslik': 'What I use',
 		'kullandiklarim.giris':
@@ -440,7 +453,7 @@ export const ceviriler = {
 		'kullandiklarim.sunucuMetin': 'What runs on the published side.',
 
 		// 404 page
-		'404.sayfaBasligi': 'Page not found',
+		'404.sayfaBasligi': 'Page not found — Mustafa Eybek',
 		'404.baslik': 'Boo! Page missing.',
 		'404.metin': "The page you are looking for isn't here — it must be a ghost.",
 		'404.dugme': 'Back to home',

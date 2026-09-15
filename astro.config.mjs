@@ -23,7 +23,15 @@ export default defineConfig({
 	},
 	// React yalnızca hero gibi etkileşimli adacıklar için; sayfaların geri kalanı
 	// istemciye JavaScript göndermemeye devam ediyor.
-	integrations: [mdx(), sitemap(), icon(), react()],
+	integrations: [
+		mdx(),
+		// Hata sayfaları site haritasına girmiyor: ikisi de `noindex` işaretli,
+		// haritada durmaları çelişki olurdu. Eklenti yalnızca kökteki /404'ü
+		// kendiliğinden atıyor, /en/404 elle süzülüyor.
+		sitemap({ filter: (sayfa) => !sayfa.includes('/404') }),
+		icon(),
+		react(),
+	],
 	vite: {
 		// Vite, bilinmeyen host başlıklarını güvenlik gereği reddediyor. Siteyi
 		// geçici bir Cloudflare tüneliyle paylaşırken önizleme sunucusuna bu alan

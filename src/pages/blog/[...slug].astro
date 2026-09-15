@@ -39,7 +39,16 @@ const kelime = (post.body ?? '').trim().split(/\s+/).filter(Boolean).length;
 const dakika = Math.max(1, Math.round(kelime / 200));
 ---
 
-<BaseLayout title={post.data.title} description={post.data.description} solaYasli>
+<BaseLayout
+	title={`${post.data.title} — Mustafa Eybek`}
+	description={post.data.description}
+	makale={{
+		baslik: post.data.title,
+		yayin: post.data.pubDate,
+		guncelleme: post.data.updatedDate,
+	}}
+	solaYasli
+>
 	{/*
 	  Kapak tam genişlikte, metin sütununun dışında: referanstaki editoryal
 	  düzenin ağırlık merkezi görsel. Başlık ve künye kapağın üstüne binmiyor —
