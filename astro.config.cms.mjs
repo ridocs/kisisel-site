@@ -4,6 +4,7 @@ import keystatic from '@keystatic/astro';
 import temelYapilandirma from './astro.config.mjs';
 import istatistikPaneli from './src/istatistik/eklenti.mjs';
 import kontrolPaneli from './src/kontrol/eklenti.mjs';
+import yayinPaneli from './src/yayin/eklenti.mjs';
 import { satteri } from '@astrojs/markdown-satteri';
 import gorselTabani from './araclar/gorsel-tabani-eklentisi.mjs';
 
@@ -34,6 +35,10 @@ import gorselTabani from './araclar/gorsel-tabani-eklentisi.mjs';
   Yayın öncesi kontrol sayfası (`/kontrol`) da öyle: sitenin taslaklarını,
   kırık bağlantılarını ve eksiklerini sıralıyor, yani yayınlanması en son
   isteyeceğimiz sayfa.
+
+  Site durumu ve yayınlama sayfası (`/durum`) da öyle. O sayfa sunucu adresini,
+  git durumunu ve taslak başlıklarını gösteriyor; üstelik bir düğmesi canlı
+  siteyi değiştiriyor. İnternete açık bir kopyası düşünülemez.
 */
 export default defineConfig({
 	...temelYapilandirma,
@@ -78,5 +83,6 @@ export default defineConfig({
 		keystatic(),
 		istatistikPaneli(),
 		kontrolPaneli(),
+		yayinPaneli(),
 	],
 });
