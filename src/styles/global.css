@@ -197,9 +197,9 @@ html.menu-acik .logo-yuva {
 }
 
 /*
-  Bölüm ekrana geldiğinde içerik yumuşakça yerine oturuyor. Kaydırma sayfa
-  sayfa ilerlediği için varış aksi hâlde sert hissediliyor; bu animasyon
-  geçişi yumuşatıyor.
+  Bölüm ekrana geldiğinde içerik yumuşakça yerine oturuyor. Masaüstünde
+  kaydırma sayfa sayfa ilerliyor ve varış aksi hâlde sert hissediliyor;
+  mobilde ise sayfanın karakterini taşıyan tek hareket bu.
 
   Varsayılan durum GÖRÜNÜR olmak zorunda. Önceki sürümde başlangıç durumu
   gizlilikti (`opacity: 0`) ve görünürlük tamamen gözlemcinin tetiklenmesine
@@ -277,33 +277,35 @@ html.menu-acik .logo-yuva {
 }
 
 /*
-  Dokunmatikte belirme daha yavaş.
+  Dokunmatikte belirme belirgin biçimde daha yavaş.
 
-  Sebep: mobilde kaydırma yerel scroll-snap ile ilerliyor ve bölüm ekrana
-  çok hızlı oturuyor; masaüstündeki 950 ms'lik yumuşak geçiş yok. Aynı
-  süreler burada aceleci hissediliyordu, dizinin büyük kısmı kullanıcı
-  bakmadan bitiyordu.
+  Mobilde sayfa sayfa geçiş kaldırıldı; kaydırma artık olağan. Sayfanın
+  karakterini taşıyan tek hareket bu belirme, dolayısıyla masaüstündeki
+  ölçüden ağır: içerik ekrana girerken oturduğu görülmeli, göz kaçırmamalı.
+
+  Mesafe DEĞİL süre uzatıldı. Uzun bir yol kat eden öge "kayıyor" gibi
+  okunup okumayı geciktiriyor; yavaş ama kısa bir yol sakin duruyor.
 
   Sıra önemli: genel süre önce, görsel ve çizginin kendi süreleri sonra
   geliyor — ikisi de [data-belir-oge] ile eşleştiği için sonra gelen kazanır.
 */
 @media (pointer: coarse) {
 	[data-parcali][data-gorunur] [data-belir-oge] {
-		animation-duration: 780ms;
-		animation-delay: calc(var(--sira, 0) * 130ms);
+		animation-duration: 1100ms;
+		animation-delay: calc(var(--sira, 0) * 150ms);
 	}
 
 	[data-parcali][data-gorunur] [data-belir-gorsel] {
-		animation-duration: 1000ms;
+		animation-duration: 1400ms;
 	}
 
 	[data-parcali][data-gorunur] [data-belir-cizgi] {
-		animation-duration: 880ms;
+		animation-duration: 1200ms;
 	}
 
 	/* Bütün olarak beliren bölümler (ör. Son yazılar) da aynı ölçüde. */
 	[data-belir][data-gorunur]:not([data-parcali]) {
-		animation-duration: 1000ms;
+		animation-duration: 1300ms;
 	}
 }
 
@@ -338,40 +340,19 @@ html {
 }
 
 /*
-  Dokunmatik cihazlarda sayfa sayfa ilerleme.
+  Dokunmatikte sayfa sayfa ilerleme YOK.
 
-  Masaüstündeki tekerlek betiği yerine yerel `scroll-snap` kullanılıyor:
-  iOS'ta parmak hareketini JavaScript ile ele geçirmek ivmeli kaydırmayla
-  çakışıyor ve takılma üretiyor. Snap ise tarayıcının kendi kaydırma
-  işleyicisinde çalıştığı için akıcı.
+  Bir süre denendi: önce yerel `scroll-snap`, sonra parmak hareketini ele
+  geçiren bir betik. İkisi de aynı duvara çarptı — telefonda bölümler
+  içerikleri kadar uzun ve çoğu ekrana sığmıyor. Ekrandan uzun bir bölümde
+  sayfa sayfa geçiş yapılamıyor (yoksa görülemeyen içerik kalır), dolayısıyla
+  özellik sayfanın yarısında kendiliğinden devre dışı kalıyor ve kullanıcıya
+  bozuk görünüyordu.
 
-  Ekrandan uzun bölümler (mobilde Hakkımda) tuzak oluşturmuyor: şartnameye
-  göre bir bölüm görünüm alanından büyükse içindeki her konum geçerli bir
-  durak sayılıyor, yani serbestçe kaydırılabiliyor.
-
-  `pointer: coarse` bilinçli: ayrım ekran genişliği değil, giriş aracı.
-  Dokunmatik dizüstü de dokunmatiktir ama fare kullanan dar pencerede
-  snap istenmez.
+  Mobilde artık olağan kaydırma var; bölümler görünür alana girdikçe
+  beliriyor. Masaüstünde tekerlek betiği aynen duruyor.
 */
-@media (pointer: coarse) and (prefers-reduced-motion: no-preference) {
-	html {
-		scroll-snap-type: y mandatory;
-		/* Durak hizasını bozmasın diye burada sıfır; bağlantı hedeflerinin
-		   sabit çubuk altında kalmaması aşağıda scroll-margin ile çözülüyor. */
-		scroll-padding-top: 0;
-	}
-
-	[data-sayfa] {
-		scroll-snap-align: start;
-	}
-
-	/* Betik kurulduysa geçişi kendisi kayarak yapıyor; yerel snap devre dışı.
-	   Sınıf yalnızca betik çalıştığında ekleniyor, dolayısıyla JavaScript
-	   olmayan durumda snap yedek olarak kalıyor. */
-	html.kayar-gecis {
-		scroll-snap-type: none;
-	}
-
+@media (pointer: coarse) {
 	/* Sayfa içi bağlantıyla gelinen öğe sabit çubuğun altında kalmasın
 	   (WCAG 2.2 "Focus Not Obscured"). */
 	[id] {

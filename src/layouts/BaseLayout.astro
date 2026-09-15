@@ -358,29 +358,6 @@ const enYolu = new URL(digerDilYolu(Astro.url, 'en'), Astro.site);
 					{ passive: false },
 				);
 
-				/*
-				  Dokunmatikte kayar geçiş.
-
-				  Önce yerel `scroll-snap` kullanılıyordu; akıcıydı ama bölüm bir
-				  anda oturuyordu ve snap süresi CSS'ten ayarlanamıyor. Geçişin
-				  kayarak olması için parmak hareketi burada yönetiliyor; süre
-				  masaüstüyle aynı (GECIS_SURESI).
-
-				  Sınırlar:
-				  - Karar ilk touchmove'da veriliyor. iOS'ta ilk hareket
-				    engellenmezse kaydırma başlıyor ve sonraki preventDefault
-				    çağrıları yok sayılıyor; bu yüzden "karışayım mı" sorusu
-				    hareketin başında bir kez yanıtlanıyor.
-				  - Bölüm o yönde ekrandan taşıyorsa karışılmıyor; olağan kaydırma
-				    çalışıyor, yoksa görülemeyen içerik kalırdı.
-				  - Mobil menü açıkken devre dışı.
-				  - Hareketi azaltılmış tercihte tamamen kapalı.
-				  - JavaScript çalışmazsa CSS'teki scroll-snap devrede kalır:
-				    `kayar-gecis` sınıfı yalnızca betik kurulduğunda ekleniyor ve
-				    snap'i o sınıf kapatıyor.
-				*/
-				var kabaIsaretci = window.matchMedia('(pointer: coarse)');
-				var ESIK = 45; // geçişin başlaması için gereken parmak mesafesi
 
 				/*
 				  EN BÜYÜK GÖRÜNÜM YÜKSEKLİĞİ (lvh)
@@ -392,8 +369,8 @@ const enYolu = new URL(digerDilYolu(Astro.url, 'en'), Astro.site);
 
 				  Tam ekran bölümler bu yüzden `lvh` ile ölçülüyor. "Bu bölüm bir
 				  ekrana sığıyor mu" testinin de aynı ölçüye bakması gerekiyor:
-				  `innerHeight` çubuk açıkken küçük olduğu için tam sığan bir bölümü
-				  bile "taşıyor" sayıp sayfa sayfa geçişi kapatırdı.
+				  `innerHeight` tarayıcı çubuğu yüzünden küçük kaldığında tam sığan
+				  bir bölümü bile "taşıyor" sayıp sayfa sayfa geçişi kapatırdı.
 
 				  Değer bir kez ölçülüyor; çubuk açılıp kapandıkça `lvh` değişmiyor.
 				*/
@@ -410,82 +387,6 @@ const enYolu = new URL(digerDilYolu(Astro.url, 'en'), Astro.site);
 
 				var EKRAN_BOYU = enBuyukGorunum();
 
-				function dokunmatikEtkinMi() {
-					return kabaIsaretci.matches && !azHareket.matches;
-				}
-
-				if (dokunmatikEtkinMi()) {
-					document.documentElement.classList.add('kayar-gecis');
-				}
-
-				var baslangicY = 0;
-				var eleGecir = false; // bu hareket bizim mi, yoksa olağan kaydırma mı
-				var karardiMi = false;
-				// Hareketin başında karar verilen bölüm; hedef de buradan hesaplanıyor.
-				var kararIndeksi = 0;
-
-				window.addEventListener(
-					'touchstart',
-					function (olay) {
-						if (!dokunmatikEtkinMi()) return;
-						baslangicY = olay.touches[0].clientY;
-						eleGecir = false;
-						karardiMi = false;
-					},
-					{ passive: true },
-				);
-
-				window.addEventListener(
-					'touchmove',
-					function (olay) {
-						if (!dokunmatikEtkinMi()) return;
-						if (document.documentElement.classList.contains('menu-acik')) return;
-
-						var simdi = performance.now();
-
-						// Geçiş sürerken parmak hareketi yutuluyor; yoksa canlandırma
-						// ile olağan kaydırma birbiriyle yarışıyor.
-						if (simdi < kilitBitis) {
-							olay.preventDefault();
-							return;
-						}
-
-						var fark = baslangicY - olay.touches[0].clientY;
-						var yon = fark > 0 ? 1 : -1;
-
-						if (!karardiMi) {
-							karardiMi = true;
-							kararIndeksi = aktifIndeks();
-							var ust = belgeUstu(bolumler[kararIndeksi]) - window.scrollY;
-							var alt = ust + bolumler[kararIndeksi].offsetHeight;
-							var tasiyor = yon > 0 ? alt > EKRAN_BOYU + 4 : ust < -4;
-							var hedefIndeks = kararIndeksi + yon;
-							eleGecir = !tasiyor && hedefIndeks >= 0 && hedefIndeks < bolumler.length;
-						}
-
-						if (!eleGecir) return;
-
-						olay.preventDefault();
-
-						if (Math.abs(fark) < ESIK) return;
-
-						// Hareketin başında karar verilen bölüm yeniden kullanılıyor.
-						// İkinci kez hesaplamak, parmak hareket ettiği için araya
-						// farklı bir bölüm girdiğinde kararla hedefin ayrışmasına
-						// yol açıyordu.
-						var hedef = konum(Math.min(Math.max(kararIndeksi + yon, 0), bolumler.length - 1));
-						if (Math.abs(hedef - window.scrollY) < 2) return;
-
-						// Parmak kalkmadan ikinci bir geçişin hemen tetiklenmemesi
-						// için başlangıç noktası buraya alınıyor: kullanıcı bir
-						// bölüm daha ilerlemek isterse yeniden ESIK kadar kaydırmalı.
-						baslangicY = olay.touches[0].clientY;
-						sicramaAni = simdi;
-						kilitBitis = simdi + GECIS_SURESI + 150;
-						yumusakGit(hedef);
-					},
-					{ passive: false },
-				);
 			})();
 		</script>
 
