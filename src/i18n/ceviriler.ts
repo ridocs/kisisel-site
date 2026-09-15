@@ -56,14 +56,56 @@ export const ceviriler = {
 		'blog.sayfaBasligi': 'Blog — Mustafa Eybek',
 		'blog.aciklama': 'Yazılar.',
 
+		/*
+		  Hakkımda sayfası.
+
+		  Tanıtım metinleri (giris, metin, metin2) YER TUTUCU ve bunu okuyana da
+		  söylüyorlar — sitedeki diğer yer tutucularla (proje adları, portre)
+		  aynı kalıp. Uydurma bir özgeçmiş yazmak yerine ne yazılacağı yazıldı.
+		  İlke metinleri yer tutucu değil: üçü de bu deponun kendi çalışma
+		  biçimini anlatıyor, doğrulanabilir. Kullanıcı isterse değiştirebilir.
+		*/
 		'hakkimda.baslik': 'Hakkımda',
 		'hakkimda.sayfaBasligi': 'Hakkımda — Mustafa Eybek',
 		'hakkimda.aciklama': 'Mustafa Eybek kimdir, neler yapar.',
+		'hakkimda.ustBaslik': 'HAKKIMDA',
+		'hakkimda.giris':
+			'Buraya tek cümlelik güçlü bir giriş yaz: ne yaptığın ve neyi iyi yaptığın. Sayfada ilk okunan satır bu olacak.',
 		'hakkimda.metin':
 			'Buraya kendini anlatan metni yaz: ne yaptığın, hangi konularla ilgilendiğin, nerede çalıştığın.',
-		'hakkimda.iletisimBaslik': 'İletişim',
+		'hakkimda.metin2':
+			'İkinci paragrafta yolu anlat: nereden başladın, şu an neyle uğraşıyorsun, sırada ne var.',
+
+		'hakkimda.kunyeBaslik': 'KÜNYE',
+		'hakkimda.kunyeRol': 'Rol',
+		'hakkimda.kunyeKonum': 'Konum',
+		'hakkimda.kunyeDurum': 'Durum',
+		'hakkimda.kunyeKod': 'Kod',
+
+		'hakkimda.ilkeUstBaslik': 'NASIL ÇALIŞIYORUM',
+		'hakkimda.ilkeBaslik': 'Çalışırken tuttuğum üç şey',
+		'hakkimda.ilkeMetin':
+			'İddia değil, alışkanlık. Bu sitenin kendisi de aynı üç kurala göre kuruldu.',
+		'hakkimda.ilke1Baslik': 'Önce en basit çözüm',
+		'hakkimda.ilke1Metin':
+			'İşi çözen en az kodu yazıyorum. Bir kütüphane gerçekten gerekmiyorsa eklemiyorum — bu sayfada tarayıcıya inen çerçeve kodu yok.',
+		'hakkimda.ilke2Baslik': 'Erişilebilirlik sonradan eklenmez',
+		'hakkimda.ilke2Metin':
+			'Klavyeyle gezinme, kontrast ve hareket tercihleri tasarımın parçası. Sonradan yamanan bir arayüz hiçbir zaman tam oturmuyor.',
+		'hakkimda.ilke3Baslik': 'Ölçmeden “oldu” demiyorum',
+		'hakkimda.ilke3Metin':
+			'Her değişikliği gerçek cihazda açıp bakıyorum. Yerelde iyi görünenin telefonda da iyi olduğunu varsaymak en pahalı hata.',
+
+		'hakkimda.iletisimUstBaslik': 'İLETİŞİM',
+		'hakkimda.iletisimBaslik': 'Bana nasıl ulaşırsın',
 		'hakkimda.iletisimMetin':
-			'Ulaşılmak istediğin kanalları (e-posta, sosyal hesaplar) buraya ekle.',
+			'Yeni bir iş, ortak bir proje ya da sadece sohbet için yazabilirsin. En hızlı yol e-posta.',
+		'hakkimda.kanalEposta': 'E-posta',
+		'hakkimda.kanalEpostaNot': 'En güvenilir yol; genelde aynı gün dönüyorum.',
+		'hakkimda.kanalWhatsappNot': 'Kısa sorular ve hızlı geri dönüşler için.',
+		'hakkimda.kanalGithubNot': 'Kodun durduğu yer.',
+		'hakkimda.kanalKonum': 'Konum',
+		'hakkimda.kanalKonumNot': 'Saat dilimi UTC+3.',
 
 		'yazi.ustBaslik': 'YAZILAR',
 		'yazi.bos': 'Henüz yayımlanmış bir yazı yok. Yakında burada olacak.',
@@ -153,10 +195,44 @@ export const ceviriler = {
 		'hakkimda.baslik': 'About',
 		'hakkimda.sayfaBasligi': 'About — Mustafa Eybek',
 		'hakkimda.aciklama': 'Who Mustafa Eybek is and what he does.',
+		'hakkimda.ustBaslik': 'ABOUT',
+		'hakkimda.giris':
+			'Write one strong opening sentence here: what you do and what you are good at. It is the first line anyone reads on this page.',
 		'hakkimda.metin':
 			'Write your introduction here: what you do, which topics you care about, where you work.',
-		'hakkimda.iletisimBaslik': 'Contact',
-		'hakkimda.iletisimMetin': 'Add the channels you want to be reached on (email, social accounts).',
+		'hakkimda.metin2':
+			'Use the second paragraph for the path: where you started, what you are working on now, what comes next.',
+
+		'hakkimda.kunyeBaslik': 'AT A GLANCE',
+		'hakkimda.kunyeRol': 'Role',
+		'hakkimda.kunyeKonum': 'Location',
+		'hakkimda.kunyeDurum': 'Status',
+		'hakkimda.kunyeKod': 'Code',
+
+		'hakkimda.ilkeUstBaslik': 'HOW I WORK',
+		'hakkimda.ilkeBaslik': 'Three things I hold on to',
+		'hakkimda.ilkeMetin':
+			'Habits, not claims. This site was built on the same three rules.',
+		'hakkimda.ilke1Baslik': 'The simplest solution first',
+		'hakkimda.ilke1Metin':
+			'I write the least code that solves the problem. If a library is not genuinely needed, it does not go in — no framework code is shipped to the browser on this page.',
+		'hakkimda.ilke2Baslik': 'Accessibility is not bolted on',
+		'hakkimda.ilke2Metin':
+			'Keyboard navigation, contrast and motion preferences are part of the design. An interface patched afterwards never quite settles.',
+		'hakkimda.ilke3Baslik': 'No “it works” without measuring',
+		'hakkimda.ilke3Metin':
+			'I open every change on a real device. Assuming what looks right locally looks right on a phone is the most expensive mistake there is.',
+
+		'hakkimda.iletisimUstBaslik': 'CONTACT',
+		'hakkimda.iletisimBaslik': 'How to reach me',
+		'hakkimda.iletisimMetin':
+			'Write to me for a new role, a shared project, or just a conversation. Email is the quickest route.',
+		'hakkimda.kanalEposta': 'Email',
+		'hakkimda.kanalEpostaNot': 'The most reliable route; I usually reply the same day.',
+		'hakkimda.kanalWhatsappNot': 'For short questions and quick replies.',
+		'hakkimda.kanalGithubNot': 'Where the code lives.',
+		'hakkimda.kanalKonum': 'Location',
+		'hakkimda.kanalKonumNot': 'Time zone UTC+3.',
 
 		'yazi.ustBaslik': 'WRITING',
 		'yazi.bos': 'No posts published yet. They will show up here.',

@@ -2,27 +2,15 @@
 import { Icon } from 'astro-icon/components';
 import QRCode from 'qrcode';
 import { cevirici, dilBul } from '@/i18n/ceviriler';
+/*
+  İletişim bilgisi artık burada değil, `@/lib/iletisim` içinde: aynı bilgiyi
+  Hakkımda sayfasındaki kanal listesi de kullanıyor ve iki kopya kaçınılmaz
+  olarak birbirinden ayrı düşerdi. Yer tutucuların açıklaması o dosyada.
+*/
+import { EPOSTA, KONUM, WHATSAPP } from '@/lib/iletisim';
 
 const dil = dilBul(Astro.url);
 const m = cevirici(dil);
-
-/*
-  İLETİŞİM BİLGİSİ — düzenlenecek tek yer burası.
-
-  E-posta YER TUTUCU. Kendi adresini yazana kadar burada duruyor; site
-  yayında olduğu için uydurma bir adres koymak yerine açıkça yer tutucu
-  bırakıldı. Değiştirdiğinde hem düğmeler hem QR kendiliğinden güncellenir.
-*/
-const EPOSTA = 'eposta@example.com';
-
-/*
-  WhatsApp numarası — YER TUTUCU. Uluslararası biçimde, başında + ve boşluk
-  olmadan yazılacak (örn. 905551112233). Boş bırakılırsa düğme hiç
-  basılmıyor: çalışmayan bir WhatsApp bağlantısı, düğmenin hiç olmamasından
-  kötü.
-*/
-const WHATSAPP = '905551112233';
-const KONUM = { tr: 'Kayseri, Türkiye', en: 'Kayseri, Türkiye' };
 
 /*
   QR'ın ne işe yaradığı.

@@ -192,12 +192,27 @@ const yil = derlemeZamani.getFullYear();
 		color: var(--foreground);
 	}
 
-	/* --- Yan sütun --- */
+	/*
+	  Yan sütun: Sayfalar ve Bağlantılar YAN YANA.
+	  Alt alta dururken altbilgi gereksiz uzuyor ve iki kısa liste tek bir
+	  sütuna dizilince sağ taraf boş kalıyordu.
+
+	  Dar ekranda tek sütuna iniyor — 390 pikselde iki başlık yan yana
+	  sıkışıyor ve bağlantı düğmeleri taşıyordu.
+	*/
 	.yan-sutun {
-		display: flex;
-		flex-direction: column;
+		display: grid;
+		grid-template-columns: 1fr;
 		gap: 1.5rem;
 		flex: none;
+	}
+
+	@media (min-width: 480px) {
+		.yan-sutun {
+			grid-template-columns: auto auto;
+			gap: 2.5rem;
+			align-items: start;
+		}
 	}
 
 	.baslik {
@@ -332,7 +347,8 @@ const yil = derlemeZamani.getFullYear();
 		}
 
 		.yan-sutun {
-			min-width: 11rem;
+			/* İki sütun yan yana; uçbirim bloğu kalan alanı alıyor. */
+			min-width: 17rem;
 		}
 	}
 

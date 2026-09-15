@@ -1,0 +1,73 @@
+---
+title: 'Never approve a QR code by eye'
+description: 'A QR code that looked fine but would not scan had two defects, both found by decoding it with jsQR.'
+pubDate: 2026-09-15
+tags: ['qr', 'svg', 'verification']
+dil: 'en'
+---
+
+I put a QR code on the site, generated at build time and drawn as SVG: a dotted
+look with a slight "3D" embossed relief. On screen it looked perfectly fine.
+Then I measured whether it decoded at all: it did not.
+
+## Measure it, don't look at it
+
+You cannot decide whether a QR code works by looking at it. You draw the SVG onto a
+`<canvas>` and decode it with `jsQR`:
+
+```js
+const img = new Image();
+img.src = 'data:image/svg+xml;base64,' + btoa(svgSource);
+await img.decode();
+
+const c = document.createElement('canvas');
+c.width = c.height = scale;
+c.getContext('2d').drawImage(img, 0, 0, scale, scale);
+
+const px = c.getContext('2d').getImageData(0, 0, scale, scale);
+const result = jsQR(px.data, px.width, px.height);
+console.log(result?.data);   // null means it does not decode
+```
+
+It returned `null`. Measuring turned up two separate defects.
+
+## Defect one: too much error correction
+
+The error correction level was set to 'H'. The highest level looks like the most
+robust choice. What it actually does is grow the matrix from 29×29 to 37×37. Since
+the box size stayed the same, each module dropped from 4.3 pixels to 3.6 pixels and
+the edges blurred. The redundancy gained did not pay for the resolution lost. I
+moved it down to 'M'.
+
+## Defect two: hand-drawn finder patterns
+
+The finder patterns in the corners were drawn by a separate code path, and their
+centre square was rendered 2×2 instead of 3×3 — a deviation from the matrix the
+library produced. The fix was not to correct that one square but to delete the
+separate path entirely: every module of the matrix is now drawn with the same
+geometry, with no special case for the finders. That removes this whole class of bug.
+
+## The quiet zone does not belong in CSS padding
+
+There was also the quiet zone. I had left it to the padding of the surrounding box.
+Padding scales with the layout, so at smaller sizes it fell below the four modules
+the spec requires. I folded the quiet zone into the `viewBox` instead, so it cannot
+be separated from the code and its ratio holds at any size.
+
+## Verification
+
+I checked two things separately. First, that the grid being drawn matched the
+library's matrix exactly — the two hashed identically. Second, that the code really
+decodes: at 148, 185, 222, 259, 296, 333 and 370 pixels, all seven scales returned
+the correct address.
+
+The result I did not expect is that the embossed version turned out more robust than
+the flat one. The relief slightly widens the dark area, and the decoder benefits from
+that rather than suffering.
+
+## The lesson
+
+A QR code does not count as working because it "looks like a QR code". A transposed
+matrix, or one with a shifted module, looks perfectly normal to a human — we are not
+the ones reading that pattern. Wire the verification into the build so every code you
+generate goes through a decoder.

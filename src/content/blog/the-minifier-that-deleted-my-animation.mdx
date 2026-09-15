@@ -1,0 +1,101 @@
+---
+title: 'The minifier that deleted my animation'
+description: 'A scroll-driven animation never ran because the build step folded three declarations into an invalid animation shorthand.'
+pubDate: 2026-09-15
+tags: ['css', 'animation', 'debugging']
+dil: 'en'
+---
+
+I wanted a band on the page to appear as you scroll past it. The source said:
+
+```css
+.bant {
+  animation: bant-gir linear both;
+  animation-timeline: view();
+  animation-range: entry 0% cover 35%;
+}
+```
+
+Nothing happened in the browser. The band just sat there.
+
+## Ruling out the usual suspects
+
+Support was there: `CSS.supports('animation-timeline', 'view()')` returned **true**.
+The `@keyframes bant-gir` block was present in the compiled CSS, not tree-shaken away.
+`prefers-reduced-motion` was off, so nothing was cancelling the animation on purpose.
+
+And yet, on the element the rule applied to,
+`getComputedStyle(el).animationName` came back as `"none"`. The animation name had
+never been assigned at all.
+
+## Looking at the compiled output
+
+The answer was not in the source but in the build output. The Tailwind v4 /
+lightningcss chain had helpfully collapsed three declarations into one shorthand:
+
+```css
+.bant {
+  animation: linear both bant-gir view();
+}
+```
+
+That line looks plausible and is invalid. The `animation` shorthand does not accept a
+timeline — the CSSWG removed `animation-timeline` from it. In CSS, if any part of a
+declaration is invalid, the **entire** declaration is dropped. So `animation-name`
+was never set either. No console error, no build warning; the only symptom is an
+animation that does not run.
+
+The test that settled it:
+
+```js
+const d = document.createElement('div');
+d.style.cssText = 'animation: linear both bant-gir view()';
+d.style.animationName;        // "" → the whole shorthand was rejected
+```
+
+An empty string leaves nothing to argue about.
+
+## The fix
+
+In any rule that uses `animation-timeline`, never write the `animation` shorthand.
+Spell every part out in longhand, so the minifier has no shorthand to fold things
+back into:
+
+```css
+.bant {
+  animation-name: bant-gir;
+  animation-timing-function: linear;
+  animation-fill-mode: both;
+  animation-timeline: view();
+  animation-range: entry 0% cover 35%;
+}
+```
+
+Writing it is not the end of the job, because the problem was never in the source.
+Open the compiled CSS and confirm that it did not turn back into a shorthand:
+
+```bash
+grep -o "animation:[^;}]*" dist/_astro/*.css
+```
+
+For scroll-driven rules, that search should return nothing.
+
+## And the support question
+
+As of September 2026, scroll-driven animations ship in Chrome/Edge 115+ and Safari 26+.
+Firefox still keeps them behind the `layout.css.scroll-driven-animations.enabled`
+flag. So the rule belongs inside a guard:
+
+```css
+@supports (animation-timeline: view()) {
+  /* the longhand declarations go here */
+}
+```
+
+Where it is unsupported the element stays still but visible, which is exactly what
+you want anyway.
+
+What I took from this is that I had been debugging the wrong layer. I reread the
+source over and over, while the file the browser actually loaded was a different
+file. When a rule "does not work", reading the text the browser really receives
+should be step one.

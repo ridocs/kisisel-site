@@ -1,0 +1,588 @@
+---
+import { Icon } from 'astro-icon/components';
+import { cevirici, dilBul } from '@/i18n/ceviriler';
+import { EPOSTA, GITHUB, KONUM, WHATSAPP } from '@/lib/iletisim';
+
+/*
+  HAKKIMDA SAYFASININ GÖVDESİ — iki dil de bu bileşeni kullanıyor.
+
+  Tek bileşen olmasının sebebi: iki sayfa arasındaki tek gerçek fark iletişim
+  bölümünün çapası (`#iletisim` / `#contact`). Sayfaları ayrı ayrı yazmak o
+  farkı korumak yerine iki düzenin zamanla birbirinden ayrı düşmesini
+  garantilerdi.
+
+  TANITIM METİNLERİ YER TUTUCU: giriş cümlesi ve iki paragraf ne yazılacağını
+  söylüyor, kullanıcı dolduracak. E-posta, WhatsApp ve konum da yer tutucu —
+  hepsi `@/lib/iletisim` içinde, açıklamaları orada.
+
+  Sayfa bilinçli olarak ekrana kilitlenmiyor: ana sayfadaki bölümlerin aksine
+  burada `data-sayfa` ve `min-height: 100svh` yok. Bu bir okuma sayfası,
+  hamle başına bir bölüm ilerlemek okumayı böler.
+*/
+
+const dil = dilBul(Astro.url);
+const m = cevirici(dil);
+
+/*
+  Navbar'daki İletişim düğmesi bu çapaya geliyor ve İngilizce'de adı farklı.
+  Değer Navbar.astro ile birebir aynı olmak zorunda; değişirse düğme boşluğa
+  gider.
+*/
+const iletisimCapasi = dil === 'en' ? 'contact' : 'iletisim';
+
+// Adres çubuğu gürültüsü olmadan okunsun diye şema atılıyor; bağlantı yine tam adres.
+const githubEtiketi = GITHUB.replace(/^https?:\/\//, '').replace(/\/+$/, '');
+
+const ilkeler = [
+	{ baslik: m('hakkimda.ilke1Baslik'), metin: m('hakkimda.ilke1Metin') },
+	{ baslik: m('hakkimda.ilke2Baslik'), metin: m('hakkimda.ilke2Metin') },
+	{ baslik: m('hakkimda.ilke3Baslik'), metin: m('hakkimda.ilke3Metin') },
+];
+
+/*
+  İletişim kanalları.
+
+  `baglanti` yoksa satır bağlantı olarak değil düz bir öge olarak basılıyor ve
+  ok işareti çıkmıyor — Seçilmiş çalışmalar bölümündeki kuralın aynısı.
+  WhatsApp numarası boşaltılırsa o satır listeden tamamen düşüyor.
+*/
+const kanallar = [
+	{
+		ad: m('hakkimda.kanalEposta'),
+		deger: EPOSTA,
+		not: m('hakkimda.kanalEpostaNot'),
+		ikon: 'lucide:mail',
+		baglanti: `mailto:${EPOSTA}`,
+		disBaglanti: false,
+	},
+	...(WHATSAPP
+		? [
+				{
+					ad: 'WhatsApp',
+					deger: `+${WHATSAPP}`,
+					not: m('hakkimda.kanalWhatsappNot'),
+					ikon: 'lucide:message-circle',
+					baglanti: `https://wa.me/${WHATSAPP}`,
+					disBaglanti: true,
+				},
+			]
+		: []),
+	{
+		ad: 'GitHub',
+		deger: githubEtiketi,
+		not: m('hakkimda.kanalGithubNot'),
+		ikon: 'lucide:github',
+		baglanti: GITHUB,
+		disBaglanti: true,
+	},
+	{
+		ad: m('hakkimda.kanalKonum'),
+		deger: KONUM[dil],
+		not: m('hakkimda.kanalKonumNot'),
+		ikon: 'lucide:map-pin',
+		baglanti: undefined as string | undefined,
+		disBaglanti: false,
+	},
+];
+---
+
+{/*
+  1) Giriş.
+
+  Portre kullanılmadı: sitedeki tek fotoğraf hâlâ yer tutucu ve aynı yer
+  tutucuyu ikinci bir sayfada tekrar göstermek onu iki kat görünür yapıyor.
+  Ağırlık merkezi bu yüzden tipografide: küçük bir üst başlık, büyük bir ad,
+  altında marka renginde kısa bir çizgi.
+
+  Sağdaki künye, uydurulmadan yazılabilen tek bilgi kümesi: rol, konum, durum
+  ve kod deposu. Hepsi zaten sitede duran gerçek değerler.
+*/}
+<section class="bolum giris-bolum" data-belir data-parcali>
+	<div class="giris">
+		<div class="giris-metin">
+			<p class="ust-baslik" data-belir-oge style="--sira: 0">{m('hakkimda.ustBaslik')}</p>
+
+			<h1 class="ad" data-belir-oge style="--sira: 1">Mustafa Eybek</h1>
+
+			<div class="cizgi" data-belir-oge data-belir-cizgi style="--sira: 2" aria-hidden="true">
+			</div>
+
+			<p class="giris-cumle" data-belir-oge style="--sira: 3">{m('hakkimda.giris')}</p>
+			<p class="paragraf" data-belir-oge style="--sira: 4">{m('hakkimda.metin')}</p>
+			<p class="paragraf" data-belir-oge style="--sira: 5">{m('hakkimda.metin2')}</p>
+		</div>
+
+		<aside class="kunye" data-belir-oge style="--sira: 6">
+			<p class="kunye-baslik">{m('hakkimda.kunyeBaslik')}</p>
+			<dl class="kunye-liste">
+				<div class="kunye-satir">
+					<dt>{m('hakkimda.kunyeRol')}</dt>
+					<dd>{m('iletisim.rol')}</dd>
+				</div>
+				<div class="kunye-satir">
+					<dt>{m('hakkimda.kunyeKonum')}</dt>
+					<dd>{KONUM[dil]}</dd>
+				</div>
+				<div class="kunye-satir">
+					<dt>{m('hakkimda.kunyeDurum')}</dt>
+					<dd class="durum">
+						<span class="nokta" aria-hidden="true"></span>
+						<span>{m('iletisim.durum')}</span>
+					</dd>
+				</div>
+				<div class="kunye-satir">
+					<dt>{m('hakkimda.kunyeKod')}</dt>
+					<dd>
+						<a class="kunye-bag" href={GITHUB} rel="noopener" target="_blank">
+							{githubEtiketi}
+						</a>
+					</dd>
+				</div>
+			</dl>
+		</aside>
+	</div>
+</section>
+
+{/*
+  2) Nasıl çalışıyorum.
+
+  Üç madde; yüzde, yıl ya da müşteri sayısı gibi doğrulanamayan hiçbir sayı
+  yok. Üçü de bu deponun kendi kararlarını anlatıyor (sıfır JavaScript,
+  erişilebilirlik, gerçek cihazda ölçme), yani sayfanın kendisiyle sınanabilir.
+*/}
+<section class="bolum ilke-bolum" data-belir data-parcali>
+	<p class="ust-baslik" data-belir-oge style="--sira: 0">{m('hakkimda.ilkeUstBaslik')}</p>
+	<h2 class="baslik" data-belir-oge style="--sira: 1">{m('hakkimda.ilkeBaslik')}</h2>
+	<p class="bolum-metin" data-belir-oge style="--sira: 2">{m('hakkimda.ilkeMetin')}</p>
+
+	<ol class="ilkeler">
+		{
+			ilkeler.map((ilke, sira) => (
+				<li class="ilke" data-belir-oge style={`--sira: ${3 + sira}`}>
+					<span class="ilke-sira" aria-hidden="true">
+						{String(sira + 1).padStart(2, '0')}
+					</span>
+					<h3 class="ilke-ad">{ilke.baslik}</h3>
+					<p class="ilke-metin">{ilke.metin}</p>
+				</li>
+			))
+		}
+	</ol>
+</section>
+
+{/*
+  3) İletişim.
+
+  Çapa (`id`) korunmak zorunda: Navbar'daki İletişim düğmesi buraya geliyor.
+
+  Düzen ana sayfadaki koyu karttan bilinçli olarak farklı: orada tek bir eylem
+  kartı var, burada kanalların yan yana karşılaştırıldığı bir liste. Aynı
+  bölümü iki sayfada birebir tekrarlamak Hakkımda'yı ana sayfanın devamı gibi
+  gösteriyordu.
+*/}
+<section class="bolum iletisim-bolum" id={iletisimCapasi} data-belir data-parcali>
+	<p class="ust-baslik" data-belir-oge style="--sira: 0">{m('hakkimda.iletisimUstBaslik')}</p>
+	<h2 class="baslik" data-belir-oge style="--sira: 1">{m('hakkimda.iletisimBaslik')}</h2>
+	<p class="bolum-metin" data-belir-oge style="--sira: 2">{m('hakkimda.iletisimMetin')}</p>
+
+	<ul class="kanallar">
+		{
+			kanallar.map((kanal, sira) => {
+				const Etiket = kanal.baglanti ? 'a' : 'div';
+				return (
+					<li data-belir-oge style={`--sira: ${3 + sira}`}>
+						<Etiket
+							class="kanal"
+							href={kanal.baglanti}
+							{...(kanal.disBaglanti ? { rel: 'noopener', target: '_blank' } : {})}
+						>
+							<span class="kanal-simge" aria-hidden="true">
+								<Icon name={kanal.ikon} class="size-5" />
+							</span>
+
+							<span class="kanal-govde">
+								<span class="kanal-ust">
+									<span class="kanal-ad">{kanal.ad}</span>
+									<span class="kanal-deger">{kanal.deger}</span>
+								</span>
+								<span class="kanal-not">{kanal.not}</span>
+							</span>
+
+							{kanal.baglanti && (
+								<span class="ok" aria-hidden="true">
+									<Icon name="lucide:arrow-up-right" class="size-5" />
+								</span>
+							)}
+						</Etiket>
+					</li>
+				);
+			})
+		}
+	</ul>
+</section>
+
+<style>
+	/*
+	  Bölümler ince bir çizgiyle ayrılıyor; ilki hariç. Kutu yerine çizgi,
+	  Seçilmiş çalışmalar bölümünün diliyle aynı.
+	*/
+	.bolum {
+		padding-block: 2.5rem;
+	}
+
+	.bolum + .bolum {
+		border-top: 1px solid var(--border);
+	}
+
+	.giris-bolum {
+		padding-top: 0;
+	}
+
+	.ust-baslik {
+		font-size: 0.75rem;
+		font-weight: 600;
+		letter-spacing: 0.22em;
+		color: var(--muted-foreground);
+	}
+
+	/*
+	  Ad ekran genişliğine göre ölçekleniyor. clamp içindeki rem bileşeni
+	  bilinçli: salt vw ile kurulan bir ölçek kullanıcı yakınlaştırdığında
+	  büyümüyor ve WCAG 1.4.4'ü karşılamıyor.
+	*/
+	.ad {
+		margin-top: 0.75rem;
+		font-size: clamp(2rem, 1.45rem + 2.8vw, 3rem);
+		font-weight: 700;
+		line-height: 1.05;
+		letter-spacing: -0.02em;
+		color: var(--foreground);
+	}
+
+	.cizgi {
+		margin-top: 1rem;
+		width: 5rem;
+		height: 3px;
+		border-radius: 9999px;
+		background: linear-gradient(to right, var(--color-marka-600), var(--color-marka-400));
+	}
+
+	/* Giriş cümlesi gövde metninden bir kademe büyük: sayfanın özeti o. */
+	.giris-cumle {
+		margin-top: 1.5rem;
+		font-size: 1.125rem;
+		line-height: 1.6;
+		color: var(--foreground);
+	}
+
+	.paragraf {
+		margin-top: 1rem;
+		line-height: 1.7;
+		color: var(--muted-foreground);
+	}
+
+	/* Uzun bir adres ya da kesilmemiş bir sözcük dar ekranda satırı taşırıp
+	   sayfayı yatay kaydırılır hâle getiriyordu. */
+	.giris-cumle,
+	.paragraf,
+	.bolum-metin,
+	.ilke-metin,
+	.kanal-deger {
+		overflow-wrap: break-word;
+	}
+
+	/* --- Künye --- */
+	.kunye {
+		margin-top: 2rem;
+		min-width: 0;
+	}
+
+	.kunye-baslik {
+		font-size: 0.6875rem;
+		font-weight: 600;
+		letter-spacing: 0.18em;
+		color: var(--muted-foreground);
+	}
+
+	.kunye-liste {
+		margin-top: 0.75rem;
+	}
+
+	.kunye-satir {
+		display: flex;
+		align-items: baseline;
+		justify-content: space-between;
+		gap: 1rem;
+		padding-block: 0.625rem;
+		border-top: 1px solid var(--border);
+		font-size: 0.8125rem;
+	}
+
+	.kunye-satir:last-child {
+		border-bottom: 1px solid var(--border);
+	}
+
+	.kunye-satir dt {
+		color: var(--muted-foreground);
+		flex: none;
+	}
+
+	.kunye-satir dd {
+		color: var(--foreground);
+		text-align: end;
+		min-width: 0;
+		overflow-wrap: break-word;
+	}
+
+	.durum {
+		display: flex;
+		align-items: center;
+		gap: 0.4rem;
+	}
+
+	.nokta {
+		width: 0.5rem;
+		height: 0.5rem;
+		border-radius: 9999px;
+		background: oklch(0.72 0.17 152);
+		flex: none;
+	}
+
+	.kunye-bag {
+		color: inherit;
+		text-decoration: none;
+		border-bottom: 1px solid var(--border);
+	}
+
+	.kunye-bag:hover {
+		border-bottom-color: color-mix(in oklab, var(--foreground) 45%, transparent);
+	}
+
+	.kunye-bag:focus-visible {
+		outline: 2px solid var(--ring);
+		outline-offset: 2px;
+		border-radius: 2px;
+	}
+
+	/* --- Bölüm başlıkları --- */
+	.baslik {
+		margin-top: 0.75rem;
+		font-size: clamp(1.375rem, 1.1rem + 1.2vw, 1.75rem);
+		font-weight: 700;
+		line-height: 1.25;
+		letter-spacing: -0.01em;
+		color: var(--foreground);
+	}
+
+	.bolum-metin {
+		margin-top: 0.75rem;
+		max-width: 34rem;
+		line-height: 1.7;
+		color: var(--muted-foreground);
+	}
+
+	/* --- İlkeler --- */
+	.ilkeler {
+		list-style: none;
+		padding: 0;
+		margin: 1.75rem 0 0;
+		display: grid;
+		gap: 0;
+	}
+
+	/*
+	  Numara üstte duruyor, madde başlığı onun altında. Çizgi her maddenin
+	  üstünde: kutulanmış kartlar yerine ayıraç, sayfanın geri kalanıyla aynı
+	  ölçüde sakin.
+	*/
+	.ilke {
+		border-top: 1px solid var(--border);
+		padding-block: 1.125rem;
+		min-width: 0;
+	}
+
+	.ilke:last-child {
+		border-bottom: 1px solid var(--border);
+	}
+
+	.ilke-sira {
+		display: block;
+		font-size: 0.6875rem;
+		font-weight: 700;
+		letter-spacing: 0.12em;
+		font-variant-numeric: tabular-nums;
+		color: var(--color-marka-500);
+	}
+
+	.ilke-ad {
+		margin-top: 0.5rem;
+		font-size: 1rem;
+		font-weight: 600;
+		line-height: 1.35;
+		color: var(--foreground);
+	}
+
+	.ilke-metin {
+		margin-top: 0.5rem;
+		font-size: 0.9375rem;
+		line-height: 1.65;
+		color: var(--muted-foreground);
+	}
+
+	/* --- İletişim kanalları --- */
+	.kanallar {
+		list-style: none;
+		padding: 0;
+		margin: 1.75rem 0 0;
+	}
+
+	/* Ayıraç satırın kendisinde değil `li`'de: satır üzerine gelince zemin
+	   alıyor ve zemin çizginin üstüne binip onu siliyor. */
+	.kanallar li {
+		border-top: 1px solid var(--border);
+	}
+
+	.kanallar li:last-child {
+		border-bottom: 1px solid var(--border);
+	}
+
+	.kanal {
+		display: grid;
+		grid-template-columns: auto minmax(0, 1fr);
+		align-items: center;
+		gap: 0.875rem;
+		padding: 1rem 0.75rem;
+		color: inherit;
+		text-decoration: none;
+		transition:
+			background-color 220ms ease-out,
+			padding-inline-start 260ms cubic-bezier(0.22, 1, 0.36, 1);
+	}
+
+	.kanal:has(.ok) {
+		grid-template-columns: auto minmax(0, 1fr) auto;
+	}
+
+	/* Yalnızca bağlantı olan satır tepki veriyor; tıklanamayan bir satırın
+	   imleç altında canlanması yanlış söz verir. */
+	a.kanal {
+		cursor: pointer;
+	}
+
+	a.kanal:hover {
+		background: color-mix(in oklab, var(--foreground) 4%, transparent);
+		padding-inline-start: 1.25rem;
+	}
+
+	a.kanal:focus-visible {
+		outline: 2px solid var(--ring);
+		outline-offset: -2px;
+	}
+
+	.kanal-simge {
+		display: grid;
+		place-items: center;
+		width: 2.5rem;
+		height: 2.5rem;
+		border-radius: 0.75rem;
+		border: 1px solid var(--border);
+		background: color-mix(in oklab, var(--foreground) 3%, transparent);
+		color: var(--muted-foreground);
+		flex: none;
+		transition: color 220ms ease-out;
+	}
+
+	a.kanal:hover .kanal-simge {
+		color: var(--foreground);
+	}
+
+	.kanal-govde {
+		display: block;
+		min-width: 0;
+	}
+
+	.kanal-ust {
+		display: flex;
+		align-items: baseline;
+		flex-wrap: wrap;
+		gap: 0.25rem 0.625rem;
+	}
+
+	.kanal-ad {
+		font-size: 0.9375rem;
+		font-weight: 600;
+		color: var(--foreground);
+	}
+
+	.kanal-deger {
+		font-size: 0.8125rem;
+		color: var(--muted-foreground);
+		min-width: 0;
+	}
+
+	.kanal-not {
+		display: block;
+		margin-top: 0.25rem;
+		font-size: 0.8125rem;
+		line-height: 1.5;
+		color: var(--muted-foreground);
+	}
+
+	.ok {
+		display: grid;
+		place-items: center;
+		color: var(--muted-foreground);
+		transition: translate 260ms cubic-bezier(0.22, 1, 0.36, 1);
+	}
+
+	a.kanal:hover .ok {
+		translate: 3px -3px;
+		color: var(--foreground);
+	}
+
+	@media (min-width: 768px) {
+		.bolum {
+			padding-block: 3.5rem;
+		}
+
+		/* Metin sütunu ile künye yan yana. Künye sabit genişlikte: değişken
+		   genişlikte etiket-değer hizası satırdan satıra kayıyordu. */
+		.giris {
+			display: grid;
+			grid-template-columns: minmax(0, 1fr) 13rem;
+			gap: 3rem;
+			align-items: start;
+		}
+
+		.kunye {
+			margin-top: 0.5rem;
+		}
+
+		.ilkeler {
+			grid-template-columns: repeat(3, minmax(0, 1fr));
+			gap: 0 2rem;
+		}
+
+		/* Üç sütuna geçince alt çizgi son maddede değil hepsinde: satır
+		   tek olduğu için üst ve alt çizgi bandı kapatıyor. */
+		.ilke {
+			border-bottom: 1px solid var(--border);
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.kanal,
+		.kanal-simge,
+		.ok {
+			transition: none;
+		}
+
+		a.kanal:hover {
+			padding-inline-start: 0.75rem;
+		}
+
+		a.kanal:hover .ok {
+			translate: none;
+		}
+	}
+</style>

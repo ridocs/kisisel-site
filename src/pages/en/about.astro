@@ -1,25 +1,18 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import HakkimdaIcerik from '../../components/HakkimdaIcerik.astro';
 import { cevirici, dilBul } from '@/i18n/ceviriler';
+
+/*
+  Türkçe /hakkimda sayfasının eşi. Gövde aynı bileşenden geliyor; iletişim
+  çapası bileşen içinde dile göre `contact` oluyor — Navbar'daki İletişim
+  düğmesi İngilizce'de oraya bakıyor.
+*/
 
 const dil = dilBul(Astro.url);
 const m = cevirici(dil);
 ---
 
 <BaseLayout title={m('hakkimda.sayfaBasligi')} description={m('hakkimda.aciklama')}>
-	<section class="py-10" data-belir>
-		<h1 class="text-4xl font-bold tracking-tight text-slate-900 sm:text-5xl dark:text-white">
-			{m('hakkimda.baslik')}
-		</h1>
-		<div class="prose prose-slate mt-8 max-w-none dark:prose-invert">
-			<p>{m('hakkimda.metin')}</p>
-		</div>
-	</section>
-
-	<section id="contact" data-belir class="border-t border-slate-200 py-14 dark:border-neutral-800">
-		<h2 class="text-2xl font-semibold text-slate-900 dark:text-white">
-			{m('hakkimda.iletisimBaslik')}
-		</h2>
-		<p class="mt-4 text-slate-600 dark:text-neutral-400">{m('hakkimda.iletisimMetin')}</p>
-	</section>
+	<HakkimdaIcerik />
 </BaseLayout>

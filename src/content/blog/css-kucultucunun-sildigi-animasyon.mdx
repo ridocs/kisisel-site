@@ -1,0 +1,103 @@
+---
+title: 'CSS küçültücünün sessizce sildiği animasyon'
+description: 'Kaydırmaya bağlı bir animasyonun neden hiç çalışmadığını ararken küçültücünün geçersiz bir animation kısayolu ürettiğini buldum.'
+pubDate: 2026-09-15
+tags: ['css', 'animasyon', 'hata ayıklama']
+dil: 'tr'
+---
+
+Sitedeki bir bandın kaydırmayla belirmesini istiyordum. Kaynakta şu vardı:
+
+```css
+.bant {
+  animation: bant-gir linear both;
+  animation-timeline: view();
+  animation-range: entry 0% cover 35%;
+}
+```
+
+Tarayıcıda hiçbir şey olmadı. Bant olduğu gibi duruyordu.
+
+## Elenen şüpheliler
+
+Önce akla gelen her şeyi tek tek eledim. Tarayıcı desteği vardı:
+`CSS.supports('animation-timeline', 'view()')` **true** dönüyordu. `@keyframes bant-gir`
+derlenmiş CSS'in içinde duruyordu, silinmemişti. `prefers-reduced-motion` kapalıydı,
+yani animasyonu kimse bilerek iptal etmiyordu.
+
+Yine de kuralın uygulandığı elemanda `getComputedStyle(el).animationName` sonucu
+`"none"` idi. Animasyon adı hiç atanmamıştı.
+
+## Derlenmiş çıktı
+
+Cevap kaynakta değil, derleme sonrasındaydı. Tailwind v4 / lightningcss zinciri üç
+ayrı bildirimi "iyileştirip" tek kısayola indirmişti:
+
+```css
+.bant {
+  animation: linear both bant-gir view();
+}
+```
+
+Bu satır göze makul görünüyor ama geçersiz. `animation` kısayolu zaman çizelgesi
+kabul etmiyor — CSSWG `animation-timeline`'ı kısayoldan çıkardı. CSS'te bir
+bildirimin herhangi bir parçası geçersizse bildirimin **tamamı** düşer. Yani
+`animation-name` de hiç yazılmamış oluyor. Konsolda hata yok, derlemede uyarı yok,
+görünürde tek belirti animasyonun olmaması.
+
+Tanıyı kesinleştiren test şu:
+
+```js
+const d = document.createElement('div');
+d.style.cssText = 'animation: linear both bant-gir view()';
+d.style.animationName;        // "" → kısayol tamamen reddedildi
+```
+
+Boş dize dönüyorsa tartışacak bir şey kalmıyor. Kısayolun içindeki `bant-gir`
+geçerli bir animasyon adı, `linear` ve `both` da geçerli değerler; tek başına
+geçersiz olan `view()`. Ama CSS burada kısmi kabul yapmıyor, bildirimi bütün olarak
+ya alıyor ya atıyor. Bu yüzden belirti, hatanın olduğu yerden bambaşka görünüyor:
+zaman çizelgesi yok sayılmış gibi değil, animasyon hiç tanımlanmamış gibi.
+
+## Çözüm
+
+`animation-timeline` kullanan bir kuralda `animation` kısayolunu hiç yazmamak
+gerekiyor. Hepsini uzun yazımda vermek, küçültücünün birleştirecek bir kısayolu
+bulamaması demek:
+
+```css
+.bant {
+  animation-name: bant-gir;
+  animation-timing-function: linear;
+  animation-fill-mode: both;
+  animation-timeline: view();
+  animation-range: entry 0% cover 35%;
+}
+```
+
+Bunu yazdıktan sonra iş bitmiyor, çünkü sorun zaten kaynakta değildi. Derlenmiş
+CSS'i açıp kısayola geri dönmediğini doğrulamak gerekiyor:
+
+```bash
+grep -o "animation:[^;}]*" dist/_astro/*.css
+```
+
+Kaydırmaya bağlı animasyon kurallarında bu aramanın hiçbir şey döndürmemesi lazım.
+
+## Bir de destek meselesi
+
+Kaydırmaya bağlı animasyon desteği 2026 Eylül itibarıyla Chrome/Edge 115+ ve
+Safari 26+ tarafında. Firefox'ta hâlâ `layout.css.scroll-driven-animations.enabled`
+bayrağının arkasında. Bu yüzden kuralı bir koşulun içine almak şart:
+
+```css
+@supports (animation-timeline: view()) {
+  /* uzun yazımlı bildirimler buraya */
+}
+```
+
+Desteklemeyen tarayıcıda eleman hareketsiz ama görünür kalıyor — zaten istenen de bu.
+
+Çıkardığım ders, hata ayıklarken yanlış katmana baktığımdı. Kaynağı defalarca
+okudum, oysa tarayıcıya giden dosya başka bir dosyaydı. Bir kural "çalışmıyor"
+diyorsa, tarayıcının gerçekten aldığı metni okumak ilk adım olmalı.
