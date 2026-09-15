@@ -10,7 +10,8 @@
 		"build": "astro build",
 		"preview": "astro preview",
 		"astro": "astro",
-		"yazi": "astro dev --config astro.config.cms.mjs"
+		"yazi": "astro dev --config astro.config.cms.mjs",
+		"panel": "electron --disable-backgrounding-occluded-windows masaustu/ana.mjs"
 	},
 	"dependencies": {
 		"@astrojs/markdown-satteri": "^0.4.1",
@@ -47,6 +48,7 @@
 		"@keystatic/core": "^0.6.9",
 		"@svgr/core": "^8.1.0",
 		"@svgr/plugin-jsx": "^8.1.0",
+		"electron": "^44.3.0",
 		"qrcode": "^1.5.4",
 		"unplugin-icons": "^24.0.0"
 	}

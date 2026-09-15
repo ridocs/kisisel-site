@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="tr">
+	<head>
+		<meta charset="utf-8" />
+		<title>Panel başlatılıyor</title>
+		<!--
+			BEKLEME EKRANI
+
+			Sunucu ayağa kalkarken pencere boş kalmasın diye var. Astro'nun ilk
+			açılışı birkaç saniye sürüyor; o sırada Chromium'un İngilizce
+			"bağlanılamadı" ekranını göstermek kullanıcıya sorun varmış gibi
+			geliyor, oysa her şey yolunda.
+
+			Durum metni `location.hash` üzerinden geliyor: ana süreç
+			`loadFile(..., { hash })` ile yolluyor. Böylece bu ekran için ayrı
+			bir preload köprüsüne gerek kalmıyor.
+		-->
+		<style>
+			/* Koyu tema nötr gri; sitenin panelleriyle aynı ölçek (neutral-950 /
+			   neutral-50). Renk hiçbir yerde maviye kaçmıyor. */
+			:root {
+				color-scheme: light dark;
+				--zemin: #fafafa;
+				--metin: #262626;
+				--soluk: #737373;
+				--cizgi: #e5e5e5;
+			}
+			@media (prefers-color-scheme: dark) {
+				:root {
+					--zemin: #0a0a0a;
+					--metin: #e5e5e5;
+					--soluk: #a3a3a3;
+					--cizgi: #262626;
+				}
+			}
+			html,
+			body {
+				height: 100%;
+			}
+			body {
+				margin: 0;
+				display: grid;
+				place-items: center;
+				background: var(--zemin);
+				color: var(--metin);
+				font:
+					15px/1.6 system-ui,
+					"Segoe UI",
+					sans-serif;
+				/* Bekleme ekranı bir belge değil; metin seçilebilir olması
+				   uygulama hissini bozuyor. */
+				user-select: none;
+			}
+			.kutu {
+				text-align: center;
+				padding: 0 2rem;
+			}
+			h1 {
+				margin: 0 0 0.5rem;
+				font-size: 1.05rem;
+				font-weight: 600;
+				letter-spacing: -0.01em;
+			}
+			p {
+				margin: 0;
+				color: var(--soluk);
+				font-size: 0.9rem;
+			}
+			.halka {
+				width: 34px;
+				height: 34px;
+				margin: 0 auto 1.4rem;
+				border: 2px solid var(--cizgi);
+				border-top-color: var(--soluk);
+				border-radius: 50%;
+				animation: don 0.9s linear infinite;
+			}
+			@keyframes don {
+				to {
+					transform: rotate(360deg);
+				}
+			}
+			/* Hareketi kapatmış kullanıcıda dönen halka yerine sabit bir
+			   göstergeyle yetiniliyor. */
+			@media (prefers-reduced-motion: reduce) {
+				.halka {
+					animation: none;
+				}
+			}
+		</style>
+	</head>
+	<body>
+		<div class="kutu">
+			<div class="halka"></div>
+			<h1>Panel başlatılıyor</h1>
+			<p id="durum">Hazırlanıyor…</p>
+		</div>
+		<script>
+			// Adres çubuğundan gelen metin hiçbir zaman HTML olarak
+			// yorumlanmamalı; bu yüzden `textContent`.
+			const gelen = decodeURIComponent(location.hash.slice(1));
+			if (gelen) document.getElementById('durum').textContent = gelen;
+		</script>
+	</body>
+</html>

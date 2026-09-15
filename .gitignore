@@ -22,3 +22,10 @@ pnpm-debug.log*
 
 # jetbrains setting folder
 .idea/
+
+# masaüstü paneli
+# Electron'un kendisi node_modules/ altında, o zaten yok sayılıyor. Buradakiler
+# ileride .exe paketlenirse oluşacak çıktılar: yüzlerce megabayt ve her
+# derlemede baştan üretiliyorlar, depoda işleri yok.
+masaustu/cikti/
+release/
