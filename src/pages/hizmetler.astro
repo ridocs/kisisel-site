@@ -1,0 +1,18 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import HizmetIcerik from '../components/HizmetIcerik.astro';
+import { cevirici, dilBul } from '@/i18n/ceviriler';
+
+/*
+  Sayfanın gövdesi HizmetIcerik bileşeninde; İngilizce eşi (/en/services) da
+  aynı bileşeni kullanıyor. Metinler `src/i18n/ceviriler.ts` içinde, iletişim
+  adresleri `src/lib/iletisim.ts` içinde.
+*/
+
+const dil = dilBul(Astro.url);
+const m = cevirici(dil);
+---
+
+<BaseLayout title={m('hizmet.sayfaBasligi')} description={m('hizmet.aciklama')}>
+	<HizmetIcerik />
+</BaseLayout>

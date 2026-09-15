@@ -1,0 +1,24 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import KullandiklarimIcerik from '../components/KullandiklarimIcerik.astro';
+import { cevirici, dilBul } from '@/i18n/ceviriler';
+
+/*
+  Sayfanın gövdesi KullandiklarimIcerik bileşeninde; İngilizce eşi (/en/uses)
+  da aynı bileşeni kullanıyor — Hakkımda ile aynı kalıp.
+
+  Donanım kalemleri YER TUTUCU: kullanıcının bilgisayarını, monitörünü,
+  klavyesini bilmiyoruz ve uydurulmadı. Hangi satırın boş olduğu sayfada
+  "yer tutucu" rozetiyle açıkça yazıyor.
+*/
+
+const dil = dilBul(Astro.url);
+const m = cevirici(dil);
+---
+
+<BaseLayout
+	title={m('kullandiklarim.sayfaBasligi')}
+	description={m('kullandiklarim.aciklama')}
+>
+	<KullandiklarimIcerik />
+</BaseLayout>

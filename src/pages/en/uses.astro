@@ -1,0 +1,20 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import KullandiklarimIcerik from '../../components/KullandiklarimIcerik.astro';
+import { cevirici, dilBul } from '@/i18n/ceviriler';
+
+/*
+  Türkçe /kullandiklarim sayfasının eşi. Gövde aynı bileşenden geliyor; dil
+  `Astro.url` üzerinden çözülüyor, bileşene ayrıca verilmiyor.
+*/
+
+const dil = dilBul(Astro.url);
+const m = cevirici(dil);
+---
+
+<BaseLayout
+	title={m('kullandiklarim.sayfaBasligi')}
+	description={m('kullandiklarim.aciklama')}
+>
+	<KullandiklarimIcerik />
+</BaseLayout>

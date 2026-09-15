@@ -10,8 +10,14 @@ const iletisimCapasi = dil === 'en' ? '#contact' : '#iletisim';
 
 // Gezinme bağlantıları. Yeni sayfa eklediğinde buraya bir satır eklemen yeterli;
 // hem masaüstü hem mobil menü bu listeden üretilir.
+/*
+  Kullandıklarım bilinçli olarak BURADA DEĞİL, yalnızca altbilgide. Çubukta
+  beş bağlantı olunca dar ekranda taşıyor ve hepsi eşit ağırlıkta görünüp
+  hiçbiri öne çıkmıyor. Hizmetler ticari olarak birincil sayfa, o çubukta.
+*/
 const baglantilar = [
 	{ ad: m('nav.anasayfa'), yol: yol(dil, '') },
+	{ ad: m('nav.hizmetler'), yol: yol(dil, dil === 'en' ? 'services' : 'hizmetler') },
 	{ ad: m('nav.blog'), yol: yol(dil, 'blog') },
 	{ ad: m('nav.hakkimda'), yol: yol(dil, hakkimdaParcasi) },
 ];

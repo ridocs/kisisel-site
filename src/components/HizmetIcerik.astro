@@ -1,0 +1,484 @@
+---
+import { Icon } from 'astro-icon/components';
+import { cevirici, dilBul } from '@/i18n/ceviriler';
+import { EPOSTA, WHATSAPP } from '@/lib/iletisim';
+
+/*
+  HİZMETLER SAYFASININ GÖVDESİ — iki dil de bu bileşeni kullanıyor.
+
+  Tek bileşen olmasının sebebi Hakkımda ile aynı: iki sayfanın içeriği birebir
+  aynı, yalnızca dil değişiyor. Ayrı yazmak, zamanla iki düzenin birbirinden
+  ayrı düşmesini garanti ederdi.
+
+  Metinler yer tutucu DEĞİL. Dört kalem de sitenin başka yerlerinde zaten
+  yazılı olan işleri anlatıyor (hero alt başlığı, Tanıtım, Yetkinlikler,
+  DAGITIM.md). Fiyat, teslim süresi, müşteri sayısı ve referans bilinçli
+  olarak yok: hiçbiri doğrulanabilir değil ve hepsi bakım yükü.
+
+  Sayfa ekrana kilitlenmiyor: `data-sayfa` ve `min-height: 100svh` yok. Bu bir
+  okuma sayfası, hamle başına bir bölüm ilerlemek okumayı böler.
+*/
+
+const dil = dilBul(Astro.url);
+const m = cevirici(dil);
+
+/*
+  Hizmet kalemleri.
+
+  `etiketler` çevrilmiyor: hepsi özel ad. Listeler kısa tutuldu — bir kalemin
+  altına on teknoloji dizmek "her şeyi yaparım" demekle aynı şey, yani hiçbir
+  şey söylememek.
+*/
+const kalemler = [
+	{
+		ad: m('hizmet.kalem1Ad'),
+		metin: m('hizmet.kalem1Metin'),
+		ikon: 'lucide:app-window',
+		etiketler: ['Astro', 'TypeScript', 'PostgreSQL', 'Python'],
+	},
+	{
+		ad: m('hizmet.kalem2Ad'),
+		metin: m('hizmet.kalem2Metin'),
+		ikon: 'lucide:paintbrush',
+		etiketler: ['HTML', 'CSS', 'Tailwind CSS', 'Flutter'],
+	},
+	{
+		ad: m('hizmet.kalem3Ad'),
+		metin: m('hizmet.kalem3Metin'),
+		ikon: 'lucide:server',
+		etiketler: ['Docker', 'Nginx', 'Linux', 'Git'],
+	},
+	{
+		ad: m('hizmet.kalem4Ad'),
+		metin: m('hizmet.kalem4Metin'),
+		ikon: 'lucide:workflow',
+		etiketler: ['Python', 'Node.js', 'Docker'],
+	},
+];
+
+const adimlar = [
+	{ ad: m('hizmet.adim1Ad'), metin: m('hizmet.adim1Metin') },
+	{ ad: m('hizmet.adim2Ad'), metin: m('hizmet.adim2Metin') },
+	{ ad: m('hizmet.adim3Ad'), metin: m('hizmet.adim3Metin') },
+	{ ad: m('hizmet.adim4Ad'), metin: m('hizmet.adim4Metin') },
+];
+
+/*
+  İletişim adresleri tek kaynaktan (`@/lib/iletisim`) geliyor. Elle yazılsaydı
+  numara değiştiğinde site iki farklı yer gösterirdi.
+
+  WhatsApp numarası boşaltılırsa düğme hiç basılmıyor: çalışmayan bir bağlantı,
+  düğmenin hiç olmamasından kötü.
+*/
+const epostaBaglantisi = `mailto:${EPOSTA}`;
+const whatsappBaglantisi = WHATSAPP ? `https://wa.me/${WHATSAPP}` : undefined;
+---
+
+{/*
+  1) Giriş.
+
+  Sayfanın tek <h1>'i burada. Üst başlık, ad ve marka renginde kısa çizgi
+  Hakkımda sayfasındaki giriş bloğuyla aynı ölçüde: iki sayfa aynı ailedeyse
+  aynı açılışı kullanmalı.
+*/}
+<section class="bolum giris-bolum" data-belir data-parcali>
+	<p class="ust-baslik" data-belir-oge style="--sira: 0">{m('hizmet.ustBaslik')}</p>
+
+	<h1 class="ana-baslik" data-belir-oge style="--sira: 1">{m('hizmet.baslik')}</h1>
+
+	<div class="cizgi" data-belir-oge data-belir-cizgi style="--sira: 2" aria-hidden="true"></div>
+
+	<p class="giris-cumle" data-belir-oge style="--sira: 3">{m('hizmet.giris')}</p>
+	<p class="paragraf" data-belir-oge style="--sira: 4">{m('hizmet.metin')}</p>
+</section>
+
+{/*
+  2) Hizmet kalemleri.
+
+  Kart ızgarası — Yetkinlikler bölümündeki kart diliyle aynı, ama sekme yok:
+  dört kalemin dördü de okunmalı, biri seçilip diğerleri gizlenmemeli. Kapsam
+  etiketleri Seçilmiş çalışmalar'daki ince çerçeveli rozetin aynısı.
+*/}
+<section class="bolum" data-belir data-parcali>
+	<p class="ust-baslik" data-belir-oge style="--sira: 0">{m('hizmet.kalemUstBaslik')}</p>
+	<h2 class="baslik" data-belir-oge style="--sira: 1">{m('hizmet.kalemBaslik')}</h2>
+
+	<ul class="kalemler">
+		{
+			kalemler.map((kalem, sira) => (
+				<li class="kalem" data-belir-oge style={`--sira: ${2 + sira}`}>
+					<span class="kalem-simge" aria-hidden="true">
+						<Icon name={kalem.ikon} class="size-5" />
+					</span>
+					<h3 class="kalem-ad">{kalem.ad}</h3>
+					<p class="kalem-metin">{kalem.metin}</p>
+
+					<p class="kapsam-etiketi">{m('hizmet.kapsam')}</p>
+					<ul class="etiketler">
+						{kalem.etiketler.map((e) => (
+							<li class="etiket">{e}</li>
+						))}
+					</ul>
+				</li>
+			))
+		}
+	</ul>
+</section>
+
+{/*
+  3) Nasıl ilerliyoruz.
+
+  Numaralı liste; her adımın üstünde ince bir ayıraç. Süre ya da fiyat
+  taahhüdü bilinçli olarak yok — "iki haftada teslim" tutulamadığı anda
+  sayfanın geri kalanını da şüpheli yapıyor.
+*/}
+<section class="bolum" data-belir data-parcali>
+	<p class="ust-baslik" data-belir-oge style="--sira: 0">{m('hizmet.surecUstBaslik')}</p>
+	<h2 class="baslik" data-belir-oge style="--sira: 1">{m('hizmet.surecBaslik')}</h2>
+	<p class="bolum-metin" data-belir-oge style="--sira: 2">{m('hizmet.surecMetin')}</p>
+
+	<ol class="adimlar">
+		{
+			adimlar.map((adim, sira) => (
+				<li class="adim" data-belir-oge style={`--sira: ${3 + sira}`}>
+					<span class="adim-sira" aria-hidden="true">
+						{String(sira + 1).padStart(2, '0')}
+					</span>
+					<h3 class="adim-ad">{adim.ad}</h3>
+					<p class="adim-metin">{adim.metin}</p>
+				</li>
+			))
+		}
+	</ol>
+</section>
+
+{/*
+  4) Kapanış.
+
+  Ana sayfadaki koyu iletişim kartı bilinçli olarak kopyalanmadı: aynı blok
+  üçüncü kez göründüğünde sayfa kendini tekrar ediyor. Burada yalnızca bir
+  başlık, bir cümle ve iki düğme var.
+*/}
+<section class="bolum kapanis" data-belir data-parcali>
+	<p class="ust-baslik" data-belir-oge style="--sira: 0">{m('hizmet.kapanisUstBaslik')}</p>
+	<h2 class="baslik" data-belir-oge style="--sira: 1">{m('hizmet.kapanisBaslik')}</h2>
+	<p class="bolum-metin" data-belir-oge style="--sira: 2">{m('hizmet.kapanisMetin')}</p>
+
+	<div class="dugmeler" data-belir-oge style="--sira: 3">
+		<a class="dugme birincil" href={epostaBaglantisi}>
+			<Icon name="lucide:mail" class="size-4" aria-hidden="true" />
+			<span>{m('hizmet.kapanisEposta')}</span>
+		</a>
+
+		{
+			whatsappBaglantisi && (
+				<a class="dugme ikincil" href={whatsappBaglantisi} rel="noopener" target="_blank">
+					<Icon name="lucide:message-circle" class="size-4" aria-hidden="true" />
+					<span>{m('hizmet.kapanisWhatsapp')}</span>
+				</a>
+			)
+		}
+	</div>
+
+	{/* Adresin kendisi de yazılı duruyor: düğmeye basamayan ya da başka bir
+	    posta istemcisi kullanan biri adresi kopyalayabilmeli. */}
+	<p class="adres" data-belir-oge style="--sira: 4">{EPOSTA}</p>
+</section>
+
+<style>
+	/* Bölümler ince bir çizgiyle ayrılıyor; ilki hariç. Kutu yerine çizgi —
+	   Hakkımda ve Seçilmiş çalışmalar bölümleriyle aynı dil. */
+	.bolum {
+		padding-block: 2.5rem;
+	}
+
+	.bolum + .bolum {
+		border-top: 1px solid var(--border);
+	}
+
+	.giris-bolum {
+		padding-top: 0;
+	}
+
+	.ust-baslik {
+		font-size: 0.75rem;
+		font-weight: 600;
+		letter-spacing: 0.22em;
+		color: var(--muted-foreground);
+	}
+
+	/*
+	  Başlık ekran genişliğine göre ölçekleniyor. clamp içindeki rem bileşeni
+	  bilinçli: salt vw ile kurulan bir ölçek kullanıcı yakınlaştırdığında
+	  büyümüyor ve WCAG 1.4.4'ü karşılamıyor.
+	*/
+	.ana-baslik {
+		margin-top: 0.75rem;
+		font-size: clamp(1.875rem, 1.4rem + 2.4vw, 2.75rem);
+		font-weight: 700;
+		line-height: 1.1;
+		letter-spacing: -0.02em;
+		color: var(--foreground);
+	}
+
+	.cizgi {
+		margin-top: 1rem;
+		width: 5rem;
+		height: 3px;
+		border-radius: 9999px;
+		background: linear-gradient(to right, var(--color-marka-600), var(--color-marka-400));
+	}
+
+	/* Giriş cümlesi gövde metninden bir kademe büyük: sayfanın özeti o. */
+	.giris-cumle {
+		margin-top: 1.5rem;
+		font-size: 1.125rem;
+		line-height: 1.6;
+		color: var(--foreground);
+	}
+
+	.paragraf {
+		margin-top: 1rem;
+		max-width: 36rem;
+		line-height: 1.7;
+		color: var(--muted-foreground);
+	}
+
+	.baslik {
+		margin-top: 0.75rem;
+		font-size: clamp(1.375rem, 1.1rem + 1.2vw, 1.75rem);
+		font-weight: 700;
+		line-height: 1.25;
+		letter-spacing: -0.01em;
+		color: var(--foreground);
+	}
+
+	.bolum-metin {
+		margin-top: 0.75rem;
+		max-width: 34rem;
+		line-height: 1.7;
+		color: var(--muted-foreground);
+	}
+
+	/* Uzun bir teknoloji adı ya da kesilmemiş bir sözcük dar ekranda satırı
+	   taşırıp sayfayı yatay kaydırılır hâle getiriyordu. */
+	.giris-cumle,
+	.paragraf,
+	.bolum-metin,
+	.kalem-metin,
+	.adim-metin,
+	.adres {
+		overflow-wrap: break-word;
+	}
+
+	/* --- Hizmet kalemleri --- */
+	.kalemler {
+		list-style: none;
+		padding: 0;
+		margin: 1.75rem 0 0;
+		display: grid;
+		gap: 0.75rem;
+	}
+
+	/*
+	  Zemin nötr: koyu temada marka tonundan bir dolgu kartı renkli bir kutuya
+	  çeviriyordu. Renk yalnızca simgede ve kapsam etiketinde.
+	*/
+	.kalem {
+		min-width: 0;
+		padding: 1.25rem;
+		border: 1px solid var(--border);
+		border-radius: 1rem;
+		background: color-mix(in oklab, var(--foreground) 2%, transparent);
+	}
+
+	.kalem-simge {
+		display: grid;
+		place-items: center;
+		width: 2.5rem;
+		height: 2.5rem;
+		border-radius: 0.75rem;
+		border: 1px solid var(--border);
+		background: color-mix(in oklab, var(--foreground) 4%, transparent);
+		color: var(--color-marka-500);
+	}
+
+	.kalem-ad {
+		margin-top: 0.875rem;
+		font-size: 1.0625rem;
+		font-weight: 600;
+		line-height: 1.35;
+		color: var(--foreground);
+	}
+
+	.kalem-metin {
+		margin-top: 0.5rem;
+		font-size: 0.9375rem;
+		line-height: 1.65;
+		color: var(--muted-foreground);
+	}
+
+	.kapsam-etiketi {
+		margin-top: 1.125rem;
+		font-size: 0.625rem;
+		font-weight: 700;
+		letter-spacing: 0.18em;
+		color: var(--muted-foreground);
+	}
+
+	.etiketler {
+		list-style: none;
+		padding: 0;
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.375rem;
+		margin-top: 0.5rem;
+	}
+
+	/* Etiketler kutu değil ince çerçeve: sayfanın "çizgiyle anlatma" diline
+	   dolgulu rozetten daha yakın. */
+	.etiket {
+		font-size: 0.6875rem;
+		letter-spacing: 0.04em;
+		padding: 0.15rem 0.5rem;
+		border: 1px solid var(--border);
+		border-radius: 9999px;
+		color: var(--muted-foreground);
+		white-space: nowrap;
+	}
+
+	/* --- Süreç adımları --- */
+	.adimlar {
+		list-style: none;
+		padding: 0;
+		margin: 1.75rem 0 0;
+	}
+
+	.adim {
+		border-top: 1px solid var(--border);
+		padding-block: 1.125rem;
+		min-width: 0;
+	}
+
+	.adim:last-child {
+		border-bottom: 1px solid var(--border);
+	}
+
+	.adim-sira {
+		display: block;
+		font-size: 0.6875rem;
+		font-weight: 700;
+		letter-spacing: 0.12em;
+		font-variant-numeric: tabular-nums;
+		color: var(--color-marka-500);
+	}
+
+	.adim-ad {
+		margin-top: 0.5rem;
+		font-size: 1rem;
+		font-weight: 600;
+		line-height: 1.35;
+		color: var(--foreground);
+	}
+
+	.adim-metin {
+		margin-top: 0.5rem;
+		font-size: 0.9375rem;
+		line-height: 1.65;
+		color: var(--muted-foreground);
+	}
+
+	/* --- Kapanış --- */
+	.dugmeler {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.625rem;
+		margin-top: 1.5rem;
+	}
+
+	.dugme {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 0.625rem 1.125rem;
+		border-radius: 9999px;
+		font-size: 0.9375rem;
+		font-weight: 600;
+		text-decoration: none;
+		border: 1px solid transparent;
+		transition:
+			background-color 220ms ease-out,
+			border-color 220ms ease-out,
+			translate 260ms cubic-bezier(0.22, 1, 0.36, 1);
+	}
+
+	.dugme:focus-visible {
+		outline: 2px solid var(--ring);
+		outline-offset: 2px;
+	}
+
+	.dugme:hover {
+		translate: 0 -2px;
+	}
+
+	.birincil {
+		background: var(--color-marka-600);
+		color: #fff;
+	}
+
+	.birincil:hover {
+		background: var(--color-marka-500);
+	}
+
+	/* İkincil düğme çerçeveli: iki dolu düğme yan yana durunca hangisinin
+	   asıl eylem olduğu okunmuyordu. */
+	.ikincil {
+		border-color: var(--border);
+		color: var(--foreground);
+	}
+
+	.ikincil:hover {
+		border-color: color-mix(in oklab, var(--foreground) 35%, transparent);
+		background: color-mix(in oklab, var(--foreground) 4%, transparent);
+	}
+
+	.adres {
+		margin-top: 1rem;
+		font-size: 0.8125rem;
+		color: var(--muted-foreground);
+	}
+
+	@media (min-width: 640px) {
+		.kalemler {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+		}
+	}
+
+	@media (min-width: 768px) {
+		.bolum {
+			padding-block: 3.5rem;
+		}
+
+		.adimlar {
+			display: grid;
+			grid-template-columns: repeat(4, minmax(0, 1fr));
+			gap: 0 1.5rem;
+		}
+
+		/* Dört sütuna geçince alt çizgi son adımda değil hepsinde: satır tek
+		   olduğu için üst ve alt çizgi bandı kapatıyor. */
+		.adim {
+			border-bottom: 1px solid var(--border);
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.dugme {
+			transition: none;
+		}
+
+		.dugme:hover {
+			translate: none;
+		}
+	}
+</style>
