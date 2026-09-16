@@ -29,3 +29,4 @@ pnpm-debug.log*
 # derlemede baştan üretiliyorlar, depoda işleri yok.
 masaustu/cikti/
 release/
+dist-panel

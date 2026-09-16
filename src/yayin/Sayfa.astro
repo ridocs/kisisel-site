@@ -192,6 +192,22 @@ const cekimAni = new Date().toLocaleString('tr-TR', {
 	dateStyle: 'long',
 	timeStyle: 'short',
 });
+
+/*
+  SALT OKUR KİP — panelin internete açık kopyası için.
+
+  Yayınla ve Geri al düğmeleri bu kipte hiç BASILMIYOR. Sebebi güvenlik değil,
+  DOĞRULUK: yayın yordamı çalıştığı makinedeki kaynaktan derliyor. Sunucudaki
+  kopyada düğmeye basılsaydı, kullanıcının bilgisayarında yazdıkları değil
+  sunucudaki kaynak yayınlanırdı — sessizce yanlış içerik canlıya çıkardı.
+
+  Yazma ve yayınlama bu yüzden masaüstü panelinde kalıyor. Bu sayfanın genel
+  kopyası durumu GÖSTERİYOR, değiştirmiyor.
+
+  Düğmeler yalnızca gizlenmiyor, HTML'e hiç girmiyor; onları süren betik de
+  basılmıyor. Gizlemek yetmezdi — geliştirici araçlarıyla geri getirilebilirdi.
+*/
+const saltOkur = process.env.PANEL_SALT_OKUR === '1';
 ---
 
 <Kabuk
@@ -233,7 +249,8 @@ const cekimAni = new Date().toLocaleString('tr-TR', {
 			}
 		</section>
 
-		{/* YAYINLAMA */}
+		{!saltOkur && (
+		<>
 		<section class="p-kart">
 			<h2 class="p-kart-baslik">Yayınla</h2>
 			<p class="p-not">
@@ -305,6 +322,21 @@ const cekimAni = new Date().toLocaleString('tr-TR', {
 				</div>
 			</div>
 		</section>
+		</>
+		)}
+
+		{saltOkur && (
+			<section class="p-kart">
+				<h2 class="p-kart-baslik">Yayınlama bu panelde yok</h2>
+				<p class="p-not">
+					Yayınla ve Geri al düğmeleri yalnızca masaüstü panelinde. Sebep
+					güvenlik değil, doğruluk: yayın yordamı çalıştığı makinedeki
+					kaynaktan derliyor, bu kopya da sunucudaki kaynağı derlerdi — yani
+					bilgisayarınızda yazdıklarınız değil. Bu sayfa durumu gösteriyor,
+					değiştirmiyor.
+				</p>
+			</section>
+		)}
 
 		<p class="p-dipnot">
 			Bu sayfa yalnızca panel kipinde var; yayın derlemesine girmiyor. Sayfayı
@@ -322,6 +354,7 @@ const cekimAni = new Date().toLocaleString('tr-TR', {
 	  `is:inline`: Astro'nun paketleyicisinden geçmesin, kaynakta ne yazıyorsa
 	  o çalışsın.
 	*/}
+	{!saltOkur && (
 	<script is:inline>
 		(() => {
 			const dugmeDerle = document.getElementById('dugme-derle');
@@ -519,4 +552,5 @@ const cekimAni = new Date().toLocaleString('tr-TR', {
 			});
 		})();
 	</script>
+	)}
 </Kabuk>

@@ -195,14 +195,41 @@ function ziyaretciKimligi(ip: string, tarayiciKimligi: string): string {
   `~` kabuk genişletmesi burada yok — komut kabuksuz çalıştırılıyor, ev dizini
   elle kuruluyor.
 */
-async function sunucudanCek(): Promise<string> {
-	const anahtar = join(homedir(), '.ssh', 'twinshare_server');
+/*
+  Kayıtları toplayan kabuk komutu. İki yerde de aynı: uzaktan SSH ile, yerelde
+  doğrudan. Tek yerde yazılı olması, birinin güncellenip diğerinin unutulmasını
+  engelliyor.
+*/
+const KAYIT_KOMUTU =
+	'{ cat /var/log/nginx/access.log /var/log/nginx/access.log.1; ' +
+	'zcat -f /var/log/nginx/access.log.*.gz; } 2>/dev/null | ' +
+	`grep -F '${SITE_YOLU}'`;
 
-	// Dönen kayıt sırası önemsiz; sayım tarihe göre yapılıyor.
-	const uzakKomut =
-		'{ cat /var/log/nginx/access.log /var/log/nginx/access.log.1; ' +
-		'zcat -f /var/log/nginx/access.log.*.gz; } 2>/dev/null | ' +
-		`grep -F '${SITE_YOLU}'`;
+/*
+  PANEL SUNUCUNUN KENDİSİNDE Mİ ÇALIŞIYOR?
+
+  Panelin internete açık kopyası sunucunun üzerinde çalışıyor ve kayıtlar orada
+  zaten yerel dosya. SSH'a ihtiyaç yok — ve OLMAMALI: SSH anahtarı sitenin
+  dağıtım anahtarı, internete bakan bir makinede durmamalı. Anahtar olmayınca
+  o makine ele geçse bile sunucuya yazma yetkisi kazanılmıyor.
+
+  Masaüstü panelinde bu değişken tanımsız; oradan kayıtlara yalnızca SSH ile
+  ulaşılabiliyor, davranış eskisi gibi.
+*/
+const YEREL_KAYIT = process.env.PANEL_YEREL_KAYIT === '1';
+
+async function sunucudanCek(): Promise<string> {
+	if (YEREL_KAYIT) {
+		const { stdout } = await calistir('sh', ['-c', KAYIT_KOMUTU], {
+			timeout: 30_000,
+			maxBuffer: 32 * 1024 * 1024,
+			encoding: 'utf8',
+		});
+		return stdout;
+	}
+
+	const anahtar = join(homedir(), '.ssh', 'twinshare_server');
+	const uzakKomut = KAYIT_KOMUTU;
 
 	const { stdout } = await calistir(
 		'ssh',
