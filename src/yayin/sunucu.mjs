@@ -69,7 +69,33 @@ export function sshBayraklari() {
 }
 
 /** Uzak uçta tek bir komut çalıştırır ve stdout'u döndürür. */
+/*
+  PANEL SUNUCUNUN KENDİSİNDE Mİ ÇALIŞIYOR?
+
+  Panelin internete açık kopyası sunucunun üzerinde duruyor ve SSH anahtarı
+  ORAYA BİLEREK KONULMADI: o anahtar sitenin dağıtım anahtarı, internete bakan
+  bir makinede bulunmamalı. Ama sorulan şeyler (son yayın ne zaman, kaç dosya,
+  geri alınabilir sürüm var mı) zaten o makinenin kendi diskinde.
+
+  Bu değişken açıkken komut SSH'a değil doğrudan kabuğa gidiyor. Masaüstü
+  panelinde tanımsız; oradan sunucuya yalnızca SSH ile ulaşılıyor, davranış
+  eskisi gibi.
+
+  Belirti şuydu: genel panelde "Son yayın" satırı "SSH anahtarı bulunamadı"
+  diyordu — doğru bir hata mesajıydı ama yanlış soruya cevap veriyordu.
+*/
+const YEREL_SUNUCU = process.env.PANEL_YEREL_SUNUCU === '1';
+
 export async function ssh(uzakKomut, { zamanAsimiMs = 60_000 } = {}) {
+	if (YEREL_SUNUCU) {
+		const { stdout } = await calistir('sh', ['-c', uzakKomut], {
+			timeout: zamanAsimiMs,
+			maxBuffer: 8 * 1024 * 1024,
+			encoding: 'utf8',
+		});
+		return stdout;
+	}
+
 	const { stdout } = await calistir('ssh', [...sshBayraklari(), SUNUCU, uzakKomut], {
 		timeout: zamanAsimiMs,
 		maxBuffer: 8 * 1024 * 1024,

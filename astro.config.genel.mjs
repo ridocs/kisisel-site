@@ -56,6 +56,21 @@ export default defineConfig({
 	*/
 	outDir: './dist-panel',
 	output: 'server',
+	/*
+	  ROTA ELEMESİ BURADA DEĞİL, NGINX'TE.
+
+	  Bu yapılandırma `astro.config.mjs`'i miras aldığı için sitenin bütün
+	  sayfaları da derleniyor; uygulama `/blog`, `/hakkimda` gibi adresleri de
+	  sunuyor. Kullanıcı bunu gördü: parolayı girip panel yerine siteyi açtı.
+
+	  `astro:routes:resolved` kancasıyla rotaları elemek DENENDİ ve işe
+	  yaramadı: kanca 23 rotadan 6'sının kaldığını bildiriyor ama derlenmiş
+	  sunucu site sayfalarını yine servis ediyor. Ölçüldü.
+
+	  Bu yüzden hangi adreslerin dışarı açılacağına nginx karar veriyor —
+	  zaten parola kapısı da orada. Sunulmayan bir adres yanlışlıkla
+	  açılamıyor. Ayrıntı: /etc/nginx/sites-enabled/twinshareapp
+	*/
 	adapter: node({ mode: 'standalone' }),
 	integrations: [
 		...(temelYapilandirma.integrations ?? []),
