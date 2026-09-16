@@ -41,21 +41,23 @@ export const GITHUB = 'https://github.com/ridocs';
   seninmiş gibi bildirir ve kimlik bağını yanlış kişiye kurar. Emin değilsen
   boş bırak.
 
-  Doldurunca üç yer birden güncellenir: JSON-LD `sameAs`, sosyal ray ve
-  (X için) paylaşım kartındaki `twitter:creator`.
+  Doldurunca üç yer birden güncellenir: JSON-LD `sameAs`, sağ kenardaki
+  sosyal ray ve altbilginin bağlantılar sütunu.
+
+  X/Twitter listede YOK — hesap kullanılmıyor. Boş bir satır bırakmak yerine
+  kalemi tamamen çıkarmak gerekiyordu: boş satır rayda soluk ama duran bir
+  ikon basıyor ve ziyaretçiye "yakında gelecek" diye okunuyordu.
+
+  Adresler arama sonucu bağlantısından değil profilin kendisinden alınmalı.
+  LinkedIn adresindeki `?trk=...` parametresi hangi aramadan gelindiğini
+  taşıyan bir izleme kuyruğu; `tr.` da yalnızca o an açık olan arayüz dili.
+  İkisi de kimliğin parçası değil, bu yüzden kırpıldı.
 */
 export const SOSYAL = {
 	github: GITHUB,
-	linkedin: '',
-	instagram: '',
-	x: '',
+	linkedin: 'https://www.linkedin.com/in/mehmet-mustafa-eybek-0387192a4',
+	instagram: 'https://www.instagram.com/mustafa.root/',
 } as const;
 
 /** `sameAs` için yalnızca dolu olanlar. Boş satırlar şemaya girmiyor. */
 export const SOSYAL_ADRESLER: string[] = Object.values(SOSYAL).filter(Boolean);
-
-/**
- * X kullanıcı adı (başında @ ile). Paylaşım kartındaki `twitter:creator`
- * bunu istiyor; adres değil kullanıcı adı. Boşsa etiket hiç basılmıyor.
- */
-export const X_KULLANICI = '';

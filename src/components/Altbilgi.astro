@@ -1,7 +1,7 @@
 ---
 import { Icon } from 'astro-icon/components';
 import { cevirici, dilBul, digerDilYolu, taban, yol } from '@/i18n/ceviriler';
-import { GITHUB } from '@/lib/iletisim';
+import { SOSYAL } from '@/lib/iletisim';
 import { surumBul } from '@/lib/surum';
 
 const dil = dilBul(Astro.url);
@@ -52,10 +52,22 @@ const baglantilar = [
   GitHub adresi de elle yazılıydı; `iletisim.ts` içindeki tek kaynaktan
   alınıyor. İki yerde durursa biri güncellenip diğeri unutuluyor.
 */
+/*
+  Sosyal profiller de burada olmak ZORUNDA. Sağ kenardaki ray 1024 pikselin
+  altında hiç basılmıyor (dar ekranda içeriğin üstüne biniyordu), dolayısıyla
+  telefonda tek erişim yolu altbilgi. Ray yalnızca GitHub'ı yinelediği sürece
+  LinkedIn ve Instagram mobilde hiçbir yerden ulaşılamıyordu.
+
+  Adresler yine `SOSYAL` nesnesinden; boş olan satır basılmıyor.
+
+  RSS en sonda: o bir profil değil, akış aboneliği.
+*/
 const disBaglantilar = [
-	{ etiket: 'GitHub', adres: GITHUB, ikon: 'lucide:github' },
+	{ etiket: 'GitHub', adres: SOSYAL.github, ikon: 'lucide:github' },
+	{ etiket: 'LinkedIn', adres: SOSYAL.linkedin, ikon: 'lucide:linkedin' },
+	{ etiket: 'Instagram', adres: SOSYAL.instagram, ikon: 'lucide:instagram' },
 	{ etiket: m('nav.rss'), adres: `${taban}/rss.xml`, ikon: 'lucide:rss' },
-];
+].filter((b) => b.adres);
 
 /*
   Derleme zamanı. Site statik olduğu için bu değer sayfanın üretildiği andır —

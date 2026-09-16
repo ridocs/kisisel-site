@@ -5,7 +5,7 @@ import KaydirmaSeridi from '../components/KaydirmaSeridi.astro';
 import Altbilgi from '../components/Altbilgi.astro';
 import SosyalRay from '../components/SosyalRay.astro';
 import { cevirici, digerDilYolu, dilBul, taban } from '@/i18n/ceviriler';
-import { EPOSTA, GITHUB, TELEFON_GORUNEN, SOSYAL_ADRESLER, X_KULLANICI } from '@/lib/iletisim';
+import { EPOSTA, GITHUB, TELEFON_GORUNEN, SOSYAL_ADRESLER } from '@/lib/iletisim';
 import '../styles/global.css';
 // ?url ile içe aktarıldığında Vite hash'li son adresi veriyor; önyükleme
 // bağlantısı ile CSS'in istediği dosya birebir aynı olsun diye böyle.
@@ -233,10 +233,14 @@ const yapilandirilmisVeri = JSON.stringify({
 			)
 		}
 
-		{/* Kart görseli geniş biçimde çıksın diye summary_large_image. Kullanıcının
-		    X hesabı bilinmediği için twitter:creator yazılmıyor. */}
+		{/*
+		  Bu `twitter:*` etiketleri ADI YANILTICI: X'e özel değiller. WhatsApp,
+		  Slack, Discord ve LinkedIn bağlantı önizlemesini kurarken aynı
+		  etiketlere bakıyor. X hesabı olmadığı için `twitter:creator`
+		  yazılmıyor ama kartın kendisi duruyor — silinseydi önizleme her yerde
+		  bozulurdu.
+		*/}
 		<meta name="twitter:card" content="summary_large_image" />
-		{X_KULLANICI && <meta name="twitter:creator" content={X_KULLANICI} />}
 		<meta name="twitter:title" content={title} />
 		<meta name="twitter:description" content={description} />
 		<meta name="twitter:image" content={ogGorsel} />
