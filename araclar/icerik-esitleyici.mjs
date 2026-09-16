@@ -37,8 +37,18 @@ const calistir = promisify(execFile);
 const BURASI = dirname(fileURLToPath(import.meta.url));
 const DEPO = join(BURASI, '..');
 
-/** İzlenen klasörler: yazılar ve panelden düzenlenen site metinleri. */
-const IZLENEN = ['src/content', 'src/icerik', 'public/yazi-gorselleri'];
+/** İzlenebilecek klasörler: yazılar, site metinleri ve yazı görselleri. */
+const ADAYLAR = ['src/content', 'src/icerik', 'public/yazi-gorselleri'];
+
+/*
+  Yalnızca GERÇEKTEN VAR OLANLAR kullanılıyor.
+
+  Görsel klasörü ilk görsel eklenene kadar oluşmuyor. İlk sürümde yalnızca
+  izleyici bu duruma karşı korunmuştu, komutlar korunmamıştı: olmayan bir yol
+  verilince "pathspec did not match any files" ile düşülüyor ve o turda hiçbir
+  şey gönderilemiyordu. Ölçüldü ve düzeltildi.
+*/
+const IZLENEN = ADAYLAR.filter((klasor) => existsSync(join(DEPO, klasor)));
 
 /*
   Son değişiklikten sonra beklenen süre. Kısa tutulursa tek bir kaydetme
@@ -134,13 +144,12 @@ function planla() {
 	zamanlayici = setTimeout(esitle, BEKLEME_MS);
 }
 
-for (const klasor of IZLENEN) {
-	const yol = join(DEPO, klasor);
-	if (!existsSync(yol)) {
-		gunluk(`izlenmiyor (klasör yok): ${klasor}`);
+for (const klasor of ADAYLAR) {
+	if (!IZLENEN.includes(klasor)) {
+		gunluk(`izlenmiyor (klasör henüz yok): ${klasor}`);
 		continue;
 	}
-	watch(yol, { recursive: true }, planla);
+	watch(join(DEPO, klasor), { recursive: true }, planla);
 	gunluk(`izleniyor: ${klasor}`);
 }
 
