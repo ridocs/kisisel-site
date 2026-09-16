@@ -1,4 +1,5 @@
-import { derle, geriAl, gonder, kokuAyarla } from './yayinla.mjs';
+import { kokuAyarla } from './yayinla.mjs';
+import { islemiYurut, islemSuruyorMu, islemiKilitle, kilidiAc } from './islem-yurut.mjs';
 
 /**
  * Site durumu ve yayınlama ekranını `/durum` rotasına bağlayan eklenti.
@@ -27,7 +28,26 @@ export default function yayinPaneli() {
 					entrypoint: './src/yayin/Sayfa.astro',
 				});
 
-				updateConfig({ vite: { plugins: [islemAraKatmani()] } });
+				/*
+				  İŞLEM UÇ NOKTASI İKİ FARKLI YOLDAN GELİYOR.
+
+				  Masaüstü panelinde proje adaptörsüz ve statik: POST alan bir Astro
+				  rotası kurulamıyor, iş Vite ara katmanına düşüyor. İnternete açık
+				  panelde Node adaptörü var ve gerçek bir rota POST'a cevap
+				  verebiliyor — ara katman orada zaten çalışmazdı, çünkü yalnızca dev
+				  sunucusunda var (`apply: 'serve'`).
+
+				  Mantık ikisinde de aynı çekirdekten geliyor; yalnızca taşıyıcı
+				  farklı.
+				*/
+				if (process.env.PANEL_YEREL_YAYIN === '1') {
+					injectRoute({
+						pattern: '/durum/islem',
+						entrypoint: './src/yayin/islem.ts',
+					});
+				} else {
+					updateConfig({ vite: { plugins: [islemAraKatmani()] } });
+				}
 			},
 		},
 	};
@@ -57,21 +77,6 @@ function fileYolu(kokUrl) {
 */
 const ISLEM_YOLU = '/durum/islem';
 
-/*
-  Aynı anda tek işlem. İki derleme aynı kopya dizinini silip yazardı; iki
-  gönderme ise sunucuda yarı yarıya karışmış bir yayın bırakırdı. İkinci istek
-  reddediliyor — kuyruğa almak, kullanıcının iptal edemeyeceği bir yayını
-  sıraya koymak olurdu.
-*/
-let islemSuruyor = false;
-
-/*
-  Son başarılı derleme. `gonder` yalnızca bunun dolu olduğu durumda çalışıyor:
-  "önce derle, gördüğünü onayla, sonra gönder" akışının sunucu tarafındaki
-  karşılığı bu. Panel yenilenirse değer duruyor ama zaten ekranda önizleme
-  kalmadığı için kullanıcı da yeniden derliyor.
-*/
-let sonDerleme = null;
 
 function islemAraKatmani() {
 	return {
@@ -94,7 +99,7 @@ function islemAraKatmani() {
 					return;
 				}
 
-				if (islemSuruyor) {
+				if (islemSuruyorMu()) {
 					yanit.statusCode = 409;
 					yanit.end('Başka bir işlem sürüyor.');
 					return;
@@ -117,7 +122,7 @@ function islemAraKatmani() {
 					yanit.write(`${JSON.stringify({ tur, metin })}\n`);
 				};
 
-				islemSuruyor = true;
+				islemiKilitle();
 				try {
 					const sonuc = await islemiYurut(istem, bildir);
 					yanit.write(`${JSON.stringify({ tur: 'sonuc', ...sonuc })}\n`);
@@ -133,7 +138,7 @@ function islemAraKatmani() {
 						})}\n`,
 					);
 				} finally {
-					islemSuruyor = false;
+					kilidiAc();
 					yanit.end();
 				}
 			});
@@ -141,31 +146,6 @@ function islemAraKatmani() {
 	};
 }
 
-async function islemiYurut(istem, bildir) {
-	const kuru = istem?.kuru === true;
-
-	if (istem?.islem === 'derle') {
-		const sonuc = await derle(bildir);
-		sonDerleme = sonuc.basarili ? { zaman: Date.now(), sayfalar: sonuc.sayfalar } : null;
-		return sonuc;
-	}
-
-	if (istem?.islem === 'gonder') {
-		if (!sonDerleme) {
-			return {
-				basarili: false,
-				hata: 'Önce derleyin. Gönderilecek bir derleme çıktısı yok.',
-			};
-		}
-		return await gonder(bildir, { kuru });
-	}
-
-	if (istem?.islem === 'geri-al') {
-		return await geriAl(bildir, { kuru });
-	}
-
-	return { basarili: false, hata: `Bilinmeyen işlem: ${String(istem?.islem)}` };
-}
 
 function govdeyiOku(istek) {
 	return new Promise((cozumle, reddet) => {

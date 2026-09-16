@@ -40,6 +40,24 @@ export function kokuAyarla(kok) {
 	projeKoku = kok;
 }
 
+/*
+  PANEL SUNUCUNUN KENDİSİNDE Mİ ÇALIŞIYOR?
+
+  Açıkken yayınlama iki noktada değişiyor:
+
+  1. Dosyalar `scp` ile GÖNDERİLMİYOR, aynı makinede kopyalanıyor. Hedef
+     dizin zaten orada; ağdan geçirmenin anlamı yok ve daha önemlisi SSH
+     anahtarı o makineye bilerek konulmadı.
+
+  2. Derlemeden ÖNCE depo çekiliyor. Sunucudaki kopya kullanıcının
+     bilgisayarından gönderilmiş bir yazının gerisinde kalmış olabilir;
+     çekmeden derlemek eski içeriği yayınlamak olurdu.
+
+  Masaüstü panelinde tanımsız; oradan yayın eskisi gibi ssh + scp ile
+  yapılıyor.
+*/
+const YEREL_YAYIN = process.env.PANEL_YEREL_YAYIN === '1';
+
 function kokuIste() {
 	if (!projeKoku) {
 		throw new Error(
@@ -135,6 +153,23 @@ export default {
  */
 export async function derle(bildir) {
 	const dizin = derlemeDizini();
+
+	/*
+	  Sunucuda çalışıyorsak önce depo çekiliyor: panelden yazılanlar zaten
+	  buradaki kopyada ama kullanıcı kendi bilgisayarından da yazmış olabilir.
+	  Çekmeden derlemek onun yazısını yayına almamak demekti.
+
+	  Çekme başarısız olursa yayın DURDURULMUYOR, uyarı verilip devam ediliyor:
+	  ağ sorunu yüzünden yayınlayamamak, bir tık eski içerik yayınlamaktan daha
+	  kötü. Uyarı kayıt panelinde görünüyor.
+	*/
+	if (YEREL_YAYIN) {
+		bildir('adim', 'Depo güncelleniyor (git pull)…');
+		const cekme = await komutCalistir('git', ['pull', '--rebase', 'origin', 'main'], kokuIste(), bildir);
+		if (cekme.kod !== 0) {
+			bildir('uyari', 'Depo çekilemedi; elde olan sürümle devam ediliyor.');
+		}
+	}
 
 	bildir('adim', 'Kaynaklar derleme kopyasına alınıyor…');
 	try {
@@ -303,8 +338,13 @@ export async function gonder(bildir, { kuru = false } = {}) {
 
 	if (kuru) {
 		bildir('uyari', 'KURU ÇALIŞTIRMA — sunucuda hiçbir şey değişmeyecek.');
-		bildir('komut', `ssh … "${hazirlaKomutu}"`);
-		bildir('komut', `scp -r cikti/. ${SUNUCU}:${HEDEF_KOK}/${YAYIN_DIZINI}.yeni/`);
+		bildir('komut', hazirlaKomutu);
+		bildir(
+			'komut',
+			YEREL_YAYIN
+				? `cp -r cikti/. ${HEDEF_KOK}/${YAYIN_DIZINI}.yeni/`
+				: `scp -r cikti/. ${SUNUCU}:${HEDEF_KOK}/${YAYIN_DIZINI}.yeni/`,
+		);
 		bildir('komut', `ssh … "${devreyeAlmaKomutu()}"`);
 		bildir('adim', 'Sunucuya salt okunur bir yoklama yapılıyor…');
 		try {
@@ -322,7 +362,18 @@ export async function gonder(bildir, { kuru = false } = {}) {
 		await ssh(hazirlaKomutu, { zamanAsimiMs: 60_000 });
 
 		bildir('adim', 'Dosyalar kopyalanıyor (adımların en uzunu)…');
-		const kopyalama = await komutCalistir('scp', scpArgumanlari, derlemeDizini(), bildir);
+		/*
+		  Yerelde `cp`, uzakta `scp`. İkisi de "dizinin içindekileri" kopyalıyor:
+		  `cikti/.` sondaki nokta bunun için.
+		*/
+		const kopyalama = YEREL_YAYIN
+			? await komutCalistir(
+					'cp',
+					['-r', 'cikti/.', `${HEDEF_KOK}/${YAYIN_DIZINI}.yeni/`],
+					derlemeDizini(),
+					bildir,
+				)
+			: await komutCalistir('scp', scpArgumanlari, derlemeDizini(), bildir);
 		if (kopyalama.kod !== 0) {
 			// Yarım kalan kopya sunucuda durmasın. Yayın dizinine henüz
 			// dokunulmadığı için site eski hâlinde; temizlenecek tek şey `.yeni`.
