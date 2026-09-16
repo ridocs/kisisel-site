@@ -39,13 +39,15 @@ import yayinPaneli from './src/yayin/eklenti.mjs';
     internete bakan makinede HİÇ BULUNMUYOR — makine ele geçse bile sunucuya
     yazma yetkisi kazanılmıyor.
 
-  `base` burada da kaldırılıyor: panel nginx tarafından `/web-sitem/panel-root`
-  altına yerleştiriliyor ve önek orada ekleniyor. Uygulamanın kendisi kökten
-  servis edildiğini varsayıyor.
+  `base` BURADA GEREKLİ ve masaüstü yapılandırmasının tersi. Orada kaldırılmış,
+  çünkü Keystatic'in istemci yönlendiricisi öneki bilmiyor. Burada Keystatic
+  yok ve panel `/web-sitem/panel-root/` altında duruyor: önek verilmezse üst
+  şeritteki bağlantılar `/istatistik` gibi kök adreslere çıkar ve nginx onları
+  siteye yönlendirip 404 verir.
 */
 export default defineConfig({
 	...temelYapilandirma,
-	base: undefined,
+	base: '/web-sitem/panel-root',
 	/*
 	  Çıktı AYRI bir dizine. Varsayılan `dist/` yayın sitesinin çıktısı;
 	  buraya yazsaydı iki farklı derleme aynı klasörü paylaşır ve hangisinin
