@@ -1,0 +1,397 @@
+---
+import { getCollection } from 'astro:content';
+import { Icon } from 'astro-icon/components';
+import { cevirici, dilBul, yol } from '@/i18n/ceviriler';
+import { siteGunlugu, surumBul } from '@/lib/surum';
+
+/*
+  SÜRÜM GÜNLÜĞÜNÜN GÖVDESİ — iki dil de bu bileşeni kullanıyor.
+
+  Gizlilik sayfasıyla aynı gerekçe: iki sayfanın düzeni birebir aynı, yalnızca
+  çerçeve metinleri değişiyor. Ayrı yazmak, zamanla iki listenin birbirinden
+  ayrı düşmesini garanti ederdi.
+
+  Sayfa ekrana kilitlenmiyor (`data-sayfa` yok): bu bir okuma sayfası, hamle
+  başına bir bölüm ilerlemek uzun bir listeyi okunmaz yapardı.
+*/
+
+const dil = dilBul(Astro.url);
+const m = cevirici(dil);
+const yerel = dil === 'en' ? 'en-GB' : 'tr-TR';
+
+const surum = surumBul();
+const gunler = siteGunlugu();
+const toplamKayit = gunler.reduce((toplam, gun) => toplam + gun.kayitlar.length, 0);
+
+/*
+  Eklenen yazının adını göstermek için yazının KENDİSİ gerekiyor; commit'te
+  yalnızca dosya adı var. Koleksiyondan kurulan bu sözlük iki işi birden
+  görüyor:
+
+  1. Yazının gerçek başlığını ve adresini veriyor.
+  2. Sonradan silinmiş bir yazıyı kendiliğinden eliyor — koleksiyonda yoksa
+     sözlükte de yok, günlükte de görünmüyor. Silinmiş bir yazıyı "yeni yazı"
+     diye listeleyip 404'e bağlamak, listenin kendisine olan güveni bitirirdi.
+
+  Süzgeç sayfanın diline göre: İngilizce sayfada Türkçe bir yazı başlığı
+  göstermek, ziyaretçiyi okuyamayacağı bir metne yollamak olurdu.
+*/
+const yazilar = new Map(
+	(await getCollection('blog', ({ data }) => !data.draft && data.dil === dil)).map((yazi) => [
+		yazi.id,
+		{ baslik: yazi.data.title, adres: yol(dil, `blog/${yazi.id}/`) },
+	]),
+);
+
+/*
+  Tarih ISO metninden okunuyor ve saat bilerek eklenmiyor: "2026-09-14" tek
+  başına verildiğinde UTC gece yarısı sayılıyor ve doğu saat dilimlerinde
+  tarih bir gün kayabiliyor. Yerel gece yarısı bu kaymayı kapatıyor.
+*/
+function gunAdi(tarih: string): string {
+	return new Date(`${tarih}T00:00:00`).toLocaleDateString(yerel, { weekday: 'long' });
+}
+
+function uzunTarih(tarih: string): string {
+	return new Date(`${tarih}T00:00:00`).toLocaleDateString(yerel, {
+		day: 'numeric',
+		month: 'long',
+		year: 'numeric',
+	});
+}
+---
+
+{/*
+  1) Giriş. Gizlilik sayfasıyla aynı açılış ölçüsü: üst başlık, ad, marka
+  renginde kısa çizgi, sonra künye. Künye burada "hangi sürüm yayında"
+  sorusunun cevabı — altbilgideki kısa kimliğin uzun hâli.
+*/}
+<section class="bolum giris-bolum" data-belir data-parcali>
+	<p class="ust-baslik" data-belir-oge style="--sira: 0">{m('degisiklik.ustBaslik')}</p>
+
+	<h1 class="ana-baslik" data-belir-oge style="--sira: 1">{m('degisiklik.baslik')}</h1>
+
+	<div class="cizgi" data-belir-oge data-belir-cizgi style="--sira: 2" aria-hidden="true"></div>
+
+	<p class="giris-cumle" data-belir-oge style="--sira: 3">{m('degisiklik.giris')}</p>
+	<p class="paragraf" data-belir-oge style="--sira: 4">{m('degisiklik.metin')}</p>
+
+	<dl class="kunye" data-belir-oge style="--sira: 5">
+		{
+			/* Sürüm satırı yalnızca okunabildiyse basılıyor. Boş bir "—" koymak,
+			   bilgi yokken bilgi varmış gibi bir satır bırakmak olurdu. */
+			surum && (
+				<div class="kunye-satir">
+					<dt>{m('degisiklik.kunyeSurum')}</dt>
+					<dd class="tek-aralik">{surum.kimlik}</dd>
+				</div>
+			)
+		}
+		{
+			gunler.length > 0 && (
+				<div class="kunye-satir">
+					<dt>{m('degisiklik.kunyeTarih')}</dt>
+					<dd>{uzunTarih(gunler[0].tarih)}</dd>
+				</div>
+			)
+		}
+		{
+			toplamKayit > 0 && (
+				<div class="kunye-satir">
+					<dt>{m('degisiklik.kunyeKayit')}</dt>
+					<dd class="tek-aralik">{toplamKayit}</dd>
+				</div>
+			)
+		}
+	</dl>
+
+	<p class="not" data-belir-oge style="--sira: 6">{m('degisiklik.dilNotu')}</p>
+</section>
+
+{
+	/*
+	  2) Günler. git okunamadıysa liste boş kalıyor ve sayfa bunu kendi
+	  söylüyor. Sessizce boş bir sayfa göstermek, ziyaretçiye "hiç değişiklik
+	  olmadı" demekle aynı kapıya çıkardı — oysa olan şey başka.
+	*/
+	gunler.length === 0 ? (
+		<section class="bolum" data-belir data-parcali>
+			<h2 class="baslik" data-belir-oge style="--sira: 0">
+				{m('degisiklik.bosBaslik')}
+			</h2>
+			<p class="bolum-metin" data-belir-oge style="--sira: 1">
+				{m('degisiklik.bosMetin')}
+			</p>
+		</section>
+	) : (
+		gunler.map((gun) => (
+			<section class="bolum" data-belir data-parcali>
+				<p class="ust-baslik" data-belir-oge style="--sira: 0">
+					{gunAdi(gun.tarih)}
+				</p>
+				<h2 class="baslik" data-belir-oge style="--sira: 1">
+					<time datetime={gun.tarih}>{uzunTarih(gun.tarih)}</time>
+				</h2>
+
+				{/*
+				  Basamaklı belirme listenin TAMAMINA bir kez uygulanıyor, kaleme
+				  kalem değil: kalabalık bir günde yirmi kalem × 70 ms, son satırı
+				  bir buçuk saniye geciktirirdi.
+				*/}
+				<ul class="kayitlar" data-belir-oge style="--sira: 2">
+					{gun.kayitlar.map((kayit) => (
+						<li class="kayit">
+							<span class="im" aria-hidden="true" />
+							<div class="kayit-govde">
+								<p class="kayit-baslik">{kayit.baslik}</p>
+								{kayit.yeniYazilar
+									.map((adres) => yazilar.get(adres))
+									.filter((yazi) => yazi !== undefined)
+									.map((yazi) => (
+										<a class="yazi" href={yazi.adres}>
+											<Icon name="lucide:file-text" class="size-4 yazi-simge" aria-hidden="true" />
+											<span class="yazi-etiket">{m('degisiklik.yeniYazi')}</span>
+											<span class="yazi-baslik">{yazi.baslik}</span>
+										</a>
+									))}
+							</div>
+						</li>
+					))}
+				</ul>
+			</section>
+		))
+	)
+}
+
+<style>
+	/* Bölüm ölçüleri Gizlilik ve Hizmetler sayfalarıyla aynı: üç sayfa aynı
+	   ailede, farklı bir dikey ritim sayfayı yabancılaştırırdı. */
+	.bolum {
+		padding-block: 2.5rem;
+	}
+
+	.bolum + .bolum {
+		border-top: 1px solid var(--border);
+	}
+
+	.giris-bolum {
+		padding-top: 0;
+	}
+
+	.ust-baslik {
+		font-size: 0.75rem;
+		font-weight: 600;
+		letter-spacing: 0.22em;
+		color: var(--muted-foreground);
+		/* Gün adı verinin kendisinden geliyor ("Pazartesi"); üst başlıkların geri
+		   kalanı gibi büyük harfle dursun diye burada çevriliyor. */
+		text-transform: uppercase;
+	}
+
+	/* clamp içindeki rem bileşeni bilinçli: salt vw ile kurulan bir ölçek
+	   kullanıcı yakınlaştırdığında büyümüyor ve WCAG 1.4.4'ü karşılamıyor. */
+	.ana-baslik {
+		margin-top: 0.75rem;
+		font-size: clamp(1.875rem, 1.4rem + 2.4vw, 2.75rem);
+		font-weight: 700;
+		line-height: 1.1;
+		letter-spacing: -0.02em;
+		color: var(--foreground);
+	}
+
+	.cizgi {
+		margin-top: 1rem;
+		width: 5rem;
+		height: 3px;
+		border-radius: 9999px;
+		background: linear-gradient(to right, var(--color-marka-600), var(--color-marka-400));
+	}
+
+	.giris-cumle {
+		margin-top: 1.5rem;
+		font-size: 1.125rem;
+		line-height: 1.6;
+		color: var(--foreground);
+	}
+
+	.paragraf {
+		margin-top: 1rem;
+		max-width: 38rem;
+		line-height: 1.7;
+		color: var(--muted-foreground);
+	}
+
+	.baslik {
+		margin-top: 0.75rem;
+		font-size: clamp(1.375rem, 1.1rem + 1.2vw, 1.75rem);
+		font-weight: 700;
+		line-height: 1.25;
+		letter-spacing: -0.01em;
+		color: var(--foreground);
+	}
+
+	.bolum-metin {
+		margin-top: 0.75rem;
+		max-width: 38rem;
+		line-height: 1.7;
+		color: var(--muted-foreground);
+	}
+
+	.not {
+		margin-top: 1.25rem;
+		font-size: 0.8125rem;
+		line-height: 1.6;
+		color: var(--muted-foreground);
+	}
+
+	/* Uzun bir sözcük ya da kesilmemiş bir adres dar ekranda satırı taşırıp
+	   sayfayı yatay kaydırılır hâle getiriyor. */
+	.giris-cumle,
+	.paragraf,
+	.bolum-metin,
+	.not,
+	.kayit-baslik,
+	.yazi-baslik,
+	.kunye dd {
+		overflow-wrap: break-word;
+	}
+
+	/* --- Künye --- */
+	.kunye {
+		margin: 1.75rem 0 0;
+		display: grid;
+		gap: 0.5rem;
+		font-size: 0.875rem;
+	}
+
+	/* Etiket sabit genişlikte, değer kalan yeri alıyor. `minmax(0, 1fr)` şart:
+	   `1fr` tek başına içeriğin en az genişliğini taban alıyor ve uzun bir
+	   değer ızgarayı dar ekranda taşırıyordu. */
+	.kunye-satir {
+		display: grid;
+		grid-template-columns: 8.5rem minmax(0, 1fr);
+		gap: 0.75rem;
+		padding-block: 0.5rem;
+		border-top: 1px solid var(--border);
+	}
+
+	.kunye-satir:last-child {
+		border-bottom: 1px solid var(--border);
+	}
+
+	.kunye dt {
+		font-size: 0.6875rem;
+		font-weight: 700;
+		letter-spacing: 0.14em;
+		text-transform: uppercase;
+		color: var(--muted-foreground);
+		padding-top: 0.2rem;
+	}
+
+	.kunye dd {
+		margin: 0;
+		color: var(--foreground);
+	}
+
+	.tek-aralik {
+		font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+		font-size: 0.8125rem;
+	}
+
+	/* --- Kayıtlar --- */
+	.kayitlar {
+		list-style: none;
+		padding: 0;
+		margin: 1.5rem 0 0;
+	}
+
+	/*
+	  Kalemler numaralanmıyor, ince bir çizgiyle ayrılıyor. Numara "1. sürüm,
+	  2. sürüm" gibi bir sıralama vaat ederdi; bunlar sıra değil, aynı günün
+	  birbirine eş kalemleri. İşaret olarak küçük bir marka rengi nokta var.
+	*/
+	.kayit {
+		display: grid;
+		grid-template-columns: 0.5rem minmax(0, 1fr);
+		gap: 0.875rem;
+		align-items: start;
+		border-top: 1px solid var(--border);
+		padding-block: 0.75rem;
+	}
+
+	.kayit:last-child {
+		border-bottom: 1px solid var(--border);
+	}
+
+	.im {
+		width: 0.5rem;
+		height: 0.5rem;
+		margin-top: 0.5rem;
+		border-radius: 9999px;
+		background: var(--color-marka-500);
+	}
+
+	.kayit-baslik {
+		font-size: 0.9375rem;
+		line-height: 1.6;
+		color: var(--foreground);
+	}
+
+	/* --- Eklenen yazı --- */
+	.yazi {
+		display: inline-flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0.5rem;
+		margin-top: 0.625rem;
+		padding: 0.375rem 0.75rem 0.375rem 0.625rem;
+		border: 1px solid var(--border);
+		border-radius: 9999px;
+		text-decoration: none;
+		color: var(--muted-foreground);
+		transition:
+			background-color 200ms ease-out,
+			color 200ms ease-out;
+	}
+
+	.yazi:hover {
+		background: color-mix(in oklab, var(--foreground) 5%, transparent);
+		color: var(--foreground);
+	}
+
+	.yazi:focus-visible {
+		outline: 2px solid var(--ring);
+		outline-offset: 2px;
+	}
+
+	.yazi-simge {
+		color: var(--color-marka-500);
+		flex: none;
+	}
+
+	.yazi-etiket {
+		font-size: 0.625rem;
+		font-weight: 700;
+		letter-spacing: 0.14em;
+		text-transform: uppercase;
+		color: var(--muted-foreground);
+	}
+
+	.yazi-baslik {
+		font-size: 0.875rem;
+		font-weight: 600;
+		color: var(--foreground);
+	}
+
+	@media (min-width: 768px) {
+		.bolum {
+			padding-block: 3.5rem;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.yazi {
+			transition: none;
+		}
+	}
+</style>

@@ -2,6 +2,7 @@
 import { Icon } from 'astro-icon/components';
 import { cevirici, dilBul, digerDilYolu, taban, yol } from '@/i18n/ceviriler';
 import { GITHUB } from '@/lib/iletisim';
+import { surumBul } from '@/lib/surum';
 
 const dil = dilBul(Astro.url);
 const m = cevirici(dil);
@@ -41,6 +42,23 @@ const disBaglantilar = [
 const derlemeZamani = new Date();
 const derlemeEtiketi = derlemeZamani.toISOString().slice(0, 10);
 const yil = derlemeZamani.getFullYear();
+
+/*
+  Yayındaki sürüm. Derleme tarihi "ne zaman" sorusunu, kısa commit kimliği
+  "hangi kaynaktan" sorusunu cevaplıyor; ikisi bir arada "şu an yayında olan
+  sürüm hangisi" sorusunu kapatıyor.
+
+  `null` olabilir: git bulunamayan bir derlemede (yayın yordamının kopyası gibi)
+  satır eskisi gibi, kimliksiz basılıyor. Sürüm bilgisi olmadığı için altbilgi
+  bozulmuyor — bkz. `src/lib/surum.ts`.
+
+  Kimlik aynı zamanda sürüm günlüğünün bağlantısı: "hangi sürüm" ile "o sürümde
+  ne değişti" birbirinin devamı, ayrı iki yere konmaları gerekmiyor. Altbilgi
+  gezinme listesine yeni bir satır eklenmedi; oradaki hizalama uzun uğraşla
+  ayarlandı ve tek satır bile sütun yüksekliğini kaydırıyor.
+*/
+const surum = surumBul();
+const gunlukYolu = yol(dil, dil === 'en' ? 'whats-changed' : 'neler-degisti');
 ---
 
 <footer class="altbilgi">
@@ -65,7 +83,7 @@ const yil = derlemeZamani.getFullYear();
 <span class="cikti">astro · typescript · tailwind · postgres · docker</span>
 
 <span class="istem">$</span> cat build.txt
-<span class="cikti">{derlemeEtiketi} · {m('altbilgi.sifirJs')}</span></code></pre>
+<span class="cikti">{derlemeEtiketi} · {surum && <><a class="surum" href={gunlukYolu} aria-label={`${surum.kimlik} — ${m('nav.nelerDegisti')}`}>{surum.kimlik}</a>{' · '}</>}{m('altbilgi.sifirJs')}</span></code></pre>
 			</div>
 
 			<div class="yan-sutun">
@@ -205,6 +223,29 @@ const yil = derlemeZamani.getFullYear();
 
 	.cikti {
 		color: var(--foreground);
+	}
+
+	/*
+	  Sürüm kimliği bir bağlantı ama uçbirim çıktısının parçası gibi duruyor:
+	  alt çizgisi noktalı ve soluk. Düz mavi bir bağlantı, komut çıktısını taklit
+	  eden bu bloğun içinde yamalı görünüyordu.
+	*/
+	.surum {
+		color: inherit;
+		text-decoration: none;
+		border-bottom: 1px dotted color-mix(in oklab, var(--foreground) 35%, transparent);
+		transition: color 200ms ease-out;
+	}
+
+	.surum:hover {
+		color: color-mix(in oklab, var(--color-marka-500) 85%, var(--foreground));
+		border-bottom-color: currentColor;
+	}
+
+	.surum:focus-visible {
+		outline: 2px solid var(--ring);
+		outline-offset: 2px;
+		border-radius: 2px;
 	}
 
 	/*
@@ -389,7 +430,8 @@ const yil = derlemeZamani.getFullYear();
 		.baglantilar a,
 		.ok,
 		.simge,
-		.dil {
+		.dil,
+		.surum {
 			transition: none;
 		}
 

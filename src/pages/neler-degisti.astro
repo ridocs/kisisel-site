@@ -1,0 +1,21 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import DegisiklikIcerik from '../components/DegisiklikIcerik.astro';
+import { cevirici, dilBul } from '@/i18n/ceviriler';
+
+/*
+  Sayfanın gövdesi DegisiklikIcerik bileşeninde; İngilizce eşi
+  (/en/whats-changed) de aynı bileşeni kullanıyor. Liste derleme anında
+  git geçmişinden üretiliyor — bkz. `src/lib/surum.ts`.
+
+  Yol adı çevrildiği için `ceviriler.ts` içindeki `esleme` sözlüğüne de
+  eklenmiş durumda; eklenmeseydi dil değiştirici buradan 404'e götürürdü.
+*/
+
+const dil = dilBul(Astro.url);
+const m = cevirici(dil);
+---
+
+<BaseLayout title={m('degisiklik.sayfaBasligi')} description={m('degisiklik.aciklama')}>
+	<DegisiklikIcerik />
+</BaseLayout>

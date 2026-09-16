@@ -25,7 +25,8 @@
     "koyuTema": "Switch to dark theme",
     "acikTema": "Switch to light theme",
     "dilDegistir": "Türkçeye geç",
-    "icerigeGec": "Skip to content"
+    "icerigeGec": "Skip to content",
+    "nelerDegisti": "What's changed"
   },
   "hero": {
     "altBaslik": "Software developer. I work on web applications, infrastructure and automation — and write about what I learn.",
@@ -241,5 +242,20 @@
     "kapanisBaslik": "If you want to ask something",
     "kapanisMetin": "If anything on this page reads as incomplete or wrong to you, write and I will fix it. If anything changes on the data side of the site, this page and the date above change with it.",
     "kapanisEposta": "Send an email"
+  },
+  "degisiklik": {
+    "sayfaBasligi": "What's Changed — Mustafa Eybek",
+    "aciklama": "What changed on this site, what was added, what was fixed. Day by day, newest first.",
+    "ustBaslik": "RELEASE LOG",
+    "baslik": "What's changed",
+    "giris": "This site has been changing since day one. Below you can see what was added, what was fixed and what was rewritten, day by day.",
+    "metin": "The list is not written by hand; it is generated from the site's own history on every release. Only the work that changes what you see is here — pages, posts, wording, looks. Panel, tooling and server work stays out of it.",
+    "kunyeSurum": "Live version",
+    "kunyeTarih": "Last change",
+    "kunyeKayit": "Entries",
+    "yeniYazi": "New post",
+    "dilNotu": "Notes come straight from the site's own history, in the author's own words — so they are written in Turkish.",
+    "bosBaslik": "The log could not be read for this build",
+    "bosMetin": "The list is generated from the site's history, and that history was not reachable during this build. The rest of the page is intact; the list comes back with the next release."
   }
 }

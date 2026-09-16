@@ -25,7 +25,8 @@
     "koyuTema": "Koyu temaya geç",
     "acikTema": "Açık temaya geç",
     "dilDegistir": "Switch to English",
-    "icerigeGec": "İçeriğe geç"
+    "icerigeGec": "İçeriğe geç",
+    "nelerDegisti": "Neler değişti"
   },
   "hero": {
     "altBaslik": "Yazılım geliştirici. Web uygulamaları, altyapı ve otomasyon üzerine çalışıyorum; öğrendiklerimi burada yazıyorum.",
@@ -241,5 +242,20 @@
     "kapanisBaslik": "Bir şey sormak istersen",
     "kapanisMetin": "Bu sayfada yazan bir şey sana eksik ya da yanlış geldiyse yaz, düzeltirim. Sitede veri açısından bir şey değişirse bu sayfa ve üstteki tarih de değişir.",
     "kapanisEposta": "E-posta gönder"
+  },
+  "degisiklik": {
+    "sayfaBasligi": "Neler Değişti — Mustafa Eybek",
+    "aciklama": "Bu sitede ne değişti, ne eklendi, ne düzeltildi. Gün gün, en yeniden en eskiye.",
+    "ustBaslik": "SÜRÜM GÜNLÜĞÜ",
+    "baslik": "Neler değişti",
+    "giris": "Bu site ilk günden beri durmadan değişiyor. Aşağıda ne eklendiğini, ne düzeltildiğini ve neyin baştan yazıldığını gün gün görebilirsin.",
+    "metin": "Liste elle tutulmuyor; her yayında sitenin kendi geçmişinden üretiliyor. Yalnızca senin gördüğün yüzü değiştiren çalışmalar burada — sayfalar, yazılar, metinler, görünüm. Perde arkasındaki panel, araç ve sunucu işleri listeye girmiyor.",
+    "kunyeSurum": "Yayındaki sürüm",
+    "kunyeTarih": "Son değişiklik",
+    "kunyeKayit": "Kayıt sayısı",
+    "yeniYazi": "Yeni yazı",
+    "dilNotu": "Notlar sitenin kendi geçmişinden, yazıldıkları hâliyle alınıyor.",
+    "bosBaslik": "Günlük bu derlemede okunamadı",
+    "bosMetin": "Değişiklik listesi sitenin geçmişinden üretiliyor ve bu derlemede o geçmişe ulaşılamadı. Sayfanın geri kalanı yerinde; liste bir sonraki yayında geri gelir."
   }
 }
