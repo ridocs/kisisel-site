@@ -7,7 +7,24 @@ import { surumBul } from '@/lib/surum';
 const dil = dilBul(Astro.url);
 const m = cevirici(dil);
 const digerDil = dil === 'tr' ? 'en' : 'tr';
-const digerDilBaglantisi = digerDilYolu(Astro.url, digerDil);
+/*
+  Dil bağlantısı düzenden geliyor; `digerDilYolu` yalnızca yedek.
+
+  O yardımcı adresi öteki dile çevirerek buluyor ve durağan sayfalarda doğru
+  çalışıyor, ama yazılarda çalışmıyor: çeviri adları farklı ve bazı yazının
+  çevirisi hiç yok. Dart yazısında altbilgideki EN bağlantısı var olmayan bir
+  adrese gidiyordu — üst çubuktakiyle aynı kusur.
+
+  `null` gelirse bağlantı hiç basılmıyor.
+*/
+interface Props {
+	/** Düzen veriyor: yazılarda gerçek çeviri adresi, çevirisi yoksa null. */
+	dilBagi?: string | null;
+}
+
+const { dilBagi } = Astro.props;
+const digerDilBaglantisi =
+	dilBagi !== undefined ? dilBagi : digerDilYolu(Astro.url, digerDil);
 
 const baglantilar = [
 	{ etiket: m('nav.anasayfa'), yol: yol(dil, '') },
@@ -120,9 +137,13 @@ const gunlukYolu = yol(dil, dil === 'en' ? 'whats-changed' : 'neler-degisti');
 								</a>
 							))
 						}
-						<a class="dil" href={digerDilBaglantisi} hreflang={digerDil}>
-							{digerDil.toUpperCase()}
-						</a>
+						{/* Çevirisi olmayan yazıda hiç basılmıyor: 404'e giden bir
+						    bağlantı, olmayan bağlantıdan kötü. */}
+						{digerDilBaglantisi && (
+							<a class="dil" href={digerDilBaglantisi} hreflang={digerDil}>
+								{digerDil.toUpperCase()}
+							</a>
+						)}
 					</div>
 				</div>
 			</div>

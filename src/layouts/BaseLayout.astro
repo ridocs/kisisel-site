@@ -26,6 +26,23 @@ interface Props {
 	 * meta etiketleri basılır ve sayfaya BlogPosting yapılandırılmış verisi
 	 * eklenir. Diğer sayfalarda boş kalır, onların çıktısı değişmez.
 	 */
+	/*
+	  Dil bağları (`hreflang`) için öteki dilin adresi.
+
+	  Durağan sayfalarda adres çevrilerek bulunabiliyor (`/hakkimda` ↔
+	  `/en/about`), ama YAZILARDA bulunamıyor: çeviri adları farklı
+	  (`merhaba-dunya` ↔ `hello-world`) ve bazı yazının çevirisi hiç yok.
+	  Önce adres tahmin ediliyordu ve var olmayan sayfalar gösteriliyordu;
+	  arama motoru iki dili birbirinin kopyası sayabiliyor. SEO paneli yedi
+	  sayfada bunu ölçtü.
+
+	  `null` verilirse dil bağı HİÇ BASILMIYOR. Yanlış bir adres göstermektense
+	  hiç göstermemek doğru: arama motoru eksik bilgiyi yok sayar, yanlış
+	  bilgiyi kullanır.
+
+	  Verilmezse eski davranış sürüyor — durağan sayfalar için doğru olan o.
+	*/
+	dilBagi?: string | null;
 	makale?: {
 		/** Yazının kendi başlığı — sayfa <title>'ı site adını da içerdiği için ayrı. */
 		baslik: string;
@@ -42,6 +59,7 @@ const {
 	title,
 	description = m('site.aciklama'),
 	altbilgi = true,
+	dilBagi,
 	makale,
 	dizinDisi = false,
 } = Astro.props;
@@ -52,8 +70,27 @@ const icerikVar = Astro.slots.has('default');
 const canonical = new URL(Astro.url.pathname, Astro.site);
 
 // Arama motorlarına aynı sayfanın diğer dildeki karşılığını bildiriyoruz.
-const trYolu = new URL(digerDilYolu(Astro.url, 'tr'), Astro.site);
-const enYolu = new URL(digerDilYolu(Astro.url, 'en'), Astro.site);
+/*
+  Dil bağları üç durumda farklı kuruluyor:
+
+  - `dilBagi` verilmemişse (durağan sayfalar): adres çevrilerek bulunuyor.
+  - `dilBagi` bir adresse (çevirisi olan yazı): o adres kullanılıyor.
+  - `dilBagi` null ise (çevirisi olmayan yazı): bağ hiç basılmıyor.
+*/
+const dilBagiVerildi = dilBagi !== undefined;
+const oteki = dilBagi ? new URL(dilBagi, Astro.site) : null;
+
+const trYolu = dilBagiVerildi
+	? dil === 'tr'
+		? canonical
+		: oteki
+	: new URL(digerDilYolu(Astro.url, 'tr'), Astro.site);
+
+const enYolu = dilBagiVerildi
+	? dil === 'en'
+		? canonical
+		: oteki
+	: new URL(digerDilYolu(Astro.url, 'en'), Astro.site);
 
 const SITE_ADI = 'Mustafa Eybek';
 
@@ -153,9 +190,13 @@ const yapilandirilmisVeri = JSON.stringify({
 			<link rel="preload" href={yaziTipiEk} as="font" type="font/woff2" crossorigin />
 		)}
 		<link rel="canonical" href={canonical} />
-		<link rel="alternate" hreflang="tr" href={trYolu} />
-		<link rel="alternate" hreflang="en" href={enYolu} />
-		<link rel="alternate" hreflang="x-default" href={trYolu} />
+		{trYolu && enYolu && (
+			<>
+				<link rel="alternate" hreflang="tr" href={trYolu} />
+				<link rel="alternate" hreflang="en" href={enYolu} />
+				<link rel="alternate" hreflang="x-default" href={trYolu} />
+			</>
+		)}
 		<link rel="alternate" type="application/rss+xml" title={title} href={`${taban}/rss.xml`} />
 		<meta name="generator" content={Astro.generator} />
 		<title>{title}</title>
@@ -263,7 +304,7 @@ const yapilandirilmisVeri = JSON.stringify({
 			{m('nav.icerigeGec')}
 		</a>
 
-		<Navbar />
+		<Navbar dilBagi={dilBagi === undefined ? undefined : (oteki ? oteki.pathname : null)} />
 
 		{/* Kenardan kenara uzanması gereken bölümler (ör. hero) için: metin sütunu
 		    genişliğiyle sınırlanmadan, main'in dışında render edilir. */}
@@ -290,7 +331,7 @@ const yapilandirilmisVeri = JSON.stringify({
 		}
 
 		{
-			altbilgi && <Altbilgi />
+			altbilgi && <Altbilgi dilBagi={dilBagi === undefined ? undefined : (oteki ? oteki.pathname : null)} />
 		}
 
 		{/* Bölümler görünür alana girdikçe belirir. Bir kez göründükten sonra

@@ -34,7 +34,25 @@ const mobilBaglantilar = [
 
 const suAnkiYol = Astro.url.pathname;
 const digerDil = dil === 'tr' ? 'en' : 'tr';
-const digerDilBaglantisi = digerDilYolu(Astro.url, digerDil);
+/*
+  Dil düğmesinin gideceği adres.
+
+  `digerDilYolu` adresi öteki dile çevirerek buluyor ve durağan sayfalarda
+  doğru çalışıyor. YAZILARDA çalışmıyor: çeviri adları farklı
+  (`merhaba-dunya` ↔ `hello-world`) ve bazı yazının çevirisi hiç yok. Dart
+  yazısında EN'e basan ziyaretçi var olmayan bir adrese gidip 404 alıyordu.
+
+  Düzen bu yüzden gerçek adresi `dilBagi` ile geçiriyor. `null` gelirse
+  düğme hiç basılmıyor: çalışmayan bir düğme, olmayan düğmeden kötü.
+*/
+interface Props {
+	/** Düzen veriyor: yazılarda gerçek çeviri adresi, çevirisi yoksa null. */
+	dilBagi?: string | null;
+}
+
+const { dilBagi } = Astro.props;
+const digerDilBaglantisi =
+	dilBagi !== undefined ? dilBagi : digerDilYolu(Astro.url, digerDil);
 
 const sadelestir = (s: string) => s.replace(/\/+$/, '') || '/';
 
@@ -175,7 +193,9 @@ const eylemDugmesi =
 					</button>
 
 					{/* Dil değiştirici: karşı dilin kodunu gösterir, aynı sayfanın
-					    o dildeki karşılığına gider. */}
+					    o dildeki karşılığına gider. Karşılığı olmayan yazıda hiç
+					    basılmıyor — 404'e giden bir düğme olmaz. */}
+					{digerDilBaglantisi && (
 					<a
 						href={digerDilBaglantisi}
 						hreflang={digerDil}
@@ -185,6 +205,7 @@ const eylemDugmesi =
 					>
 						{digerDil.toUpperCase()}
 					</a>
+					)}
 
 					{/* Sıvı metal düğme; dar ekranda gizlenip yerini mobil menüdeki
 					    düz bağlantıya bırakıyor. */}

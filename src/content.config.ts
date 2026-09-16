@@ -15,6 +15,21 @@ const blog = defineCollection({
 			// Yazının dili. Belirtilmezse Türkçe sayılır; listeler buna göre süzülür.
 			dil: z.enum(['tr', 'en']).default('tr'),
 			/*
+			  Bu yazının öteki dildeki karşılığının adresi (dosya adı).
+
+			  Dil bağı (`hreflang`) bundan kuruluyor. Önce adres öteki dile
+			  ÇEVRİLEREK tahmin ediliyordu ve çeviri adları farklı olduğu için
+			  var olmayan sayfalar gösteriliyordu — arama motoru iki dili
+			  birbirinin kopyası sayabiliyor. SEO paneli yedi sayfada bunu ölçtü.
+
+			  Boş bırakılabilir: çevirisi olmayan yazıda dil bağı hiç basılmıyor.
+			  Yanlış bir adres göstermektense hiç göstermemek doğru.
+
+			  Bağ İKİ TARAFLI yazılmalı; arama motoru karşılıklı olmayan bağı
+			  yok sayıyor.
+			*/
+			ceviri: z.string().optional(),
+			/*
 			  Kapak görseli. İsteğe bağlı: verilmezse başlıktan türetilen soyut bir
 			  kapak çiziliyor, yani kapaksız yazı da ızgarada boşluk bırakmıyor.
 

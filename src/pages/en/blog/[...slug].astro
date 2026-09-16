@@ -1,6 +1,7 @@
 ---
 import { getCollection, render } from 'astro:content';
 import type { GetStaticPaths } from 'astro';
+import { taban } from '@/i18n/ceviriler';
 import BaseLayout from '../../../layouts/BaseLayout.astro';
 import YaziKapagi from '../../../components/YaziKapagi.astro';
 import { cevirici, yol } from '@/i18n/ceviriler';
@@ -42,6 +43,7 @@ const dakika = Math.max(1, Math.round(kelime / 200));
 <BaseLayout
 	title={`${post.data.title} — Mustafa Eybek`}
 	description={post.data.description}
+	dilBagi={post.data.ceviri ? `${taban}/blog/${post.data.ceviri}/` : null}
 	makale={{
 		baslik: post.data.title,
 		yayin: post.data.pubDate,
