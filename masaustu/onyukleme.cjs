@@ -601,7 +601,200 @@ const gozlemci = new MutationObserver((kayitlar) => {
 	}
 });
 
+/* ------------------------------------------------------------------ */
+/* 3) Panel şeridi                                                     */
+/* ------------------------------------------------------------------ */
+
+/*
+  NEDEN BURAYA ŞERİT BASILIYOR
+
+  Panelin öbür dört ekranı ortak bir kabuktan geçiyor (src/panel/Kabuk.astro)
+  ve o kabuk tepeye beş sekmelik bir şerit basıyor. Keystatic o kabuğa
+  giremiyor: bizim yazdığımız bir sayfa değil, `node_modules` içindeki
+  derlenmiş bir React uygulaması ve rotasını eklenti açıyor.
+
+  Sonuç şuydu: uygulama açılışta `/keystatic` yüklüyor, orada hiçbir sekme
+  görünmüyor ve panelin öbür ekranlarına ulaşmanın tek yolu uygulama menüsü
+  kalıyordu. Kullanıcı "masaüstü panelde bütün sekmeler yok, sadece yazı
+  kısmı var" dedi — kusur tam olarak buydu. Ekranlar çalışıyordu, yalnızca
+  ulaşılamıyorlardı.
+
+  Şerit burada kuruluyor çünkü sayfanın kendi kodu bize kapalı; pencereyi
+  kuran taraftan girmek tek yol. Gerekçenin uzunu dosyanın başında.
+
+  YERLEŞİM RİSKİ ÖLÇÜLDÜ
+
+  Keystatic'in DOM'unda `position: fixed` ya da `sticky` HİÇBİR öğe yok;
+  gövdenin tek çocuğu bir `<astro-island>` ve o da `display: contents`.
+  Yani normal akışta gövdenin başına eklenen bir şerit uygulamayı aşağı
+  itiyor, üstüne binmiyor. Ölçüldü.
+
+  Tek gerçek ayar kökün yüksekliği: Keystatic kendini tam görüntü alanı
+  yüksekliğinde kuruyor, şerit eklenince 54 piksel taşıp gereksiz bir
+  kaydırma çubuğu açardı. Aşağıdaki kural o yüksekliği şerit kadar kısıyor.
+*/
+
+const SERIT_YUKSEKLIK = 54;
+
+/*
+  Sıra ve adlar `src/panel/Kabuk.astro` ile AYNI. İki dosya birbirini
+  bilmiyor; ayrışırlarsa kullanıcı aynı panelde iki farklı sekme sırası
+  görür.
+*/
+const SERIT_PANELLERI = [
+	{ ad: 'Yazılar', adres: '/keystatic', etkin: true },
+	{ ad: 'İstatistik', adres: '/istatistik', etkin: false },
+	{ ad: 'Yayın öncesi kontrol', adres: '/kontrol', etkin: false },
+	{ ad: 'SEO', adres: '/seo', etkin: false },
+	{ ad: 'Site durumu', adres: '/durum', etkin: false },
+];
+
+/*
+  Renkler `src/panel/panel.css` içindeki değişkenlerin birebir kopyası.
+  Oradan `import` edilemiyor: bu dosya preload, yani sayfanın stil
+  katmanına değil pencereye bağlı. Değer değişirse iki yerde değişmeli.
+*/
+const SERIT_RENKLER = {
+	koyu: { zemin: '#1a1a1a', cizgi: '#303030', metin: '#f2f2f2', kisik: '#a0a0a0', vurgu: '#4d8ae8' },
+	acik: { zemin: '#ffffff', cizgi: '#dcdcdc', metin: '#1a1a1a', kisik: '#5c5c5c', vurgu: '#2f6fd8' },
+};
+
+/** Keystatic seçilen temayı kök `div`'e `kui-scheme--light|dark` olarak yazıyor. */
+/*
+  Keystatic tema sınıfını İKİ yere birden yazıyor: `<html>` ve uygulamanın
+  kök `div`'i. `querySelector('.kui-theme')` ikisinden hangisinin önce
+  geldiğine bağlı kalırdı; burada açıkça `<html>` okunuyor çünkü o React
+  çizmeden önce de yerinde oluyor.
+*/
+function temaOku() {
+	const kok = document.documentElement;
+	return kok.classList.contains('kui-scheme--light') ? 'acik' : 'koyu';
+}
+
+function seridiBoya() {
+	const r = SERIT_RENKLER[temaOku()];
+	const stil = document.getElementById('panel-serit-stil');
+	if (!stil) return;
+	stil.textContent = `
+		#panel-serit {
+			height: ${SERIT_YUKSEKLIK}px;
+			display: flex;
+			align-items: center;
+			gap: 24px;
+			padding: 0 16px;
+			box-sizing: border-box;
+			background: ${r.zemin};
+			border-bottom: 1px solid ${r.cizgi};
+			font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+			font-size: 13px;
+			user-select: none;
+		}
+		#panel-serit .marka {
+			font-weight: 700;
+			letter-spacing: 0.02em;
+			color: ${r.metin};
+		}
+		#panel-serit nav { display: flex; gap: 2px; }
+		#panel-serit a {
+			display: flex;
+			align-items: center;
+			height: 34px;
+			padding: 0 12px;
+			border-radius: 6px;
+			color: ${r.kisik};
+			text-decoration: none;
+			white-space: nowrap;
+		}
+		#panel-serit a:hover { color: ${r.metin}; background: ${r.cizgi}66; }
+		/* Etkin sekme: alt çizgi + tam kontrast. Kabuktaki görünümün eşi. */
+		#panel-serit a[aria-current="page"] {
+			color: ${r.metin};
+			box-shadow: inset 0 -2px 0 0 ${r.vurgu};
+		}
+		/*
+		  Keystatic kendini tam görüntü alanı yüksekliğinde kuruyor. Şerit
+		  eklenince toplam tam şerit kadar taşıyor ve gereksiz bir kaydırma
+		  çubuğu çıkıyordu.
+
+		  Çözüm gövdeyi esnek sütun yapmak: şerit kendi boyunu alıyor,
+		  Keystatic kalanı dolduruyor. calc(100vh - 54px) de işe yarıyordu
+		  ama 54 sayısını iki ayrı yerde tekrar ettiriyordu; biri değişip
+		  öbürü unutulduğunda kusur sessizce geri geliyor.
+
+		  min-height: 0 şart: esnek çocuk varsayılan olarak içeriğinden
+		  küçülemiyor ve Keystatic'in kendi kaydırma alanları taşardı.
+		*/
+		body {
+			display: flex;
+			flex-direction: column;
+			height: 100vh;
+			overflow: hidden;
+		}
+		#panel-serit { flex: 0 0 auto; }
+		body > astro-island > .kui-theme {
+			flex: 1 1 auto;
+			height: auto !important;
+			min-height: 0;
+		}
+	`;
+}
+
+function seridiKur() {
+	if (document.getElementById('panel-serit')) return;
+
+	const stil = document.createElement('style');
+	stil.id = 'panel-serit-stil';
+	document.head.appendChild(stil);
+
+	const serit = document.createElement('header');
+	serit.id = 'panel-serit';
+	/*
+	  Türkçeleştirme gezgini bu ağacın içinden de geçiyor. Zarar vermiyor:
+	  sözlük İngilizce anahtarlardan Türkçeye çeviriyor, buradaki metinler
+	  zaten Türkçe ve sözlükte karşılığı yok.
+	*/
+	const marka = document.createElement('span');
+	marka.className = 'marka';
+	marka.textContent = 'Panel';
+	serit.appendChild(marka);
+
+	const gezinme = document.createElement('nav');
+	for (const panel of SERIT_PANELLERI) {
+		const bag = document.createElement('a');
+		bag.href = panel.adres;
+		bag.textContent = panel.ad;
+		if (panel.etkin) bag.setAttribute('aria-current', 'page');
+		gezinme.appendChild(bag);
+	}
+	serit.appendChild(gezinme);
+
+	document.body.insertBefore(serit, document.body.firstChild);
+	seridiBoya();
+
+	/*
+	  Kullanıcı Keystatic'in kenar çubuğundan temayı değiştirebiliyor; şerit
+	  de onunla birlikte dönmeli, yoksa aynı pencerede biri koyu biri açık
+	  kalıyor. Kök `div` React çizdikten SONRA geliyor, bu yüzden gövde
+	  gözleniyor.
+	*/
+	new MutationObserver(seridiBoya).observe(document.body, {
+		subtree: true,
+		attributes: true,
+		attributeFilter: ['class'],
+	});
+}
+
 function baslat() {
+	/*
+	  Şerit ÖNCE kuruluyor: çeviri gezgini gövdeyi baştan sona yürüyor ve
+	  şerit ondan sonra eklenseydi bir kez daha yürünmesi gerekirdi.
+	*/
+	try {
+		seridiKur();
+	} catch (hata) {
+		// Şeridin kurulamaması editörü çalışmaz hâle getirmemeli.
+		console.error('[panel şeridi]', hata);
+	}
 	agaciCevir(document.body);
 	gozlemci.observe(document.body, {
 		childList: true,

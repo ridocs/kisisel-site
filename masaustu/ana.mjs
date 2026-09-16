@@ -79,10 +79,16 @@ const YOKLAMA_ARALIGI_MS = 400;
 */
 const YOKLAMA_YOLU = '/keystatic';
 
+/*
+  Sıra, panel kabuğundaki sekme sırasıyla AYNI (src/panel/Kabuk.astro).
+  İkisi ayrı dosyada durduğu için kolayca ayrışıyorlar; nitekim SEO ekranı
+  kabuğa eklenip buraya eklenmediği için menüden aylarca açılamadı.
+*/
 const PANELLER = {
 	yazilar: { yol: '/keystatic', baslik: 'Yazılar' },
 	istatistik: { yol: '/istatistik', baslik: 'İstatistik' },
 	kontrol: { yol: '/kontrol', baslik: 'Yayın öncesi kontrol' },
+	seo: { yol: '/seo', baslik: 'SEO' },
 	durum: { yol: '/durum', baslik: 'Site durumu' },
 };
 
@@ -407,8 +413,13 @@ function menuyuKur() {
 					click: () => paneliAc('kontrol'),
 				},
 				{
-					label: 'Site durumu',
+					label: 'SEO',
 					accelerator: 'CmdOrCtrl+4',
+					click: () => paneliAc('seo'),
+				},
+				{
+					label: 'Site durumu',
+					accelerator: 'CmdOrCtrl+5',
 					click: () => paneliAc('durum'),
 				},
 				{ type: 'separator' },
