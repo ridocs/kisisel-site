@@ -34,7 +34,16 @@
 
 	--p-yuvarlak: 6px;
 	--p-yuvarlak-kucuk: 4px;
-	--p-serit-yukseklik: 48px;
+	/*
+	  Şerit 48'den 54'e çıktı. Sebep dolgu sevgisi değil: 48 pikselde marka,
+	  dört bağlantı ve etkin sekmenin dolgusu birbirine değiyordu; bağlantının
+	  kendi yüksekliği 32 kalınca üstte ve altta 8'er piksel kalıyor ve şerit
+	  "sıkışmış" okunuyordu. 54'te bağlantı 34, boşluk 10'ar piksel.
+	*/
+	--p-serit-yukseklik: 54px;
+	/* Sayfa geçişi çubuğunun kalınlığı; şeridin altına ekleniyor ve
+	   `scroll-padding-top` hesabına da giriyor. */
+	--p-ilerleme-yukseklik: 2px;
 
 	/*
 	  Yazı yüzleri. HARİCİ FONT YOK — panel internet olmadan da açılmalı.
@@ -59,6 +68,20 @@
 	--p-yuzey-3: #e9e9e9;
 	--p-cizgi: #dcdcdc;
 	--p-cizgi-guclu: #c2c2c2;
+	/*
+	  DENETİM SINIRI — 3:1'i geçmek ZORUNDA olan tek çizgi tonu.
+
+	  İkincil düğmenin ("Vazgeç", "Önceki sürüme dön") zemini yüzey-2, üstünde
+	  durduğu kart ise yüzey; ikisinin farkı ölçüldüğünde 1,10:1 çıkıyor, yani
+	  dolgu fiilen görünmüyor. Düğmeyi düğme yapan tek şey kenarlığı. O kenarlık
+	  `--p-cizgi-guclu` iken 1,78:1 idi — WCAG 1.4.11'in arayüz bileşenleri için
+	  istediği 3:1'in çok altında: düğmenin nerede bittiği görünmüyordu.
+
+	  Bu ton onun için var: 3,45:1 (açık) ve 3,97:1 (koyu). `--p-cizgi-guclu`
+	  olduğu gibi duruyor — o, bilgi taşımayan ayraçlarda kullanılıyor ve
+	  koyulaştırılsaydı ekran çizgi kafesine dönerdi.
+	*/
+	--p-cizgi-kontrol: #8a8a8a;
 	/* Ziyaretsiz günün/saatin 2 piksellik izi. Kenarlık grisi burada
 	   ölçülünce 1.8:1 çıkıyordu — WCAG'in metin dışı öğeler için istediği
 	   3:1'in altında, yani iz fiilen görünmüyordu. Kendi tonu var. */
@@ -99,6 +122,7 @@
 	--p-yuzey-3: #2c2c2c;
 	--p-cizgi: #303030;
 	--p-cizgi-guclu: #424242;
+	--p-cizgi-kontrol: #7a7a7a;
 	--p-cubuk-bos: #6e6e6e;
 	--p-metin: #f2f2f2;
 	--p-metin-2: #b3b3b3;
@@ -130,7 +154,9 @@
    Obscured (Minimum)". Sitenin global.css'i kendi çubuk yüksekliğine göre
    değer veriyor; panelde çubuk başka, değer burada eziliyor. */
 html:has(.p-kabuk) {
-	scroll-padding-top: calc(var(--p-serit-yukseklik) + var(--p-b4));
+	scroll-padding-top: calc(
+		var(--p-serit-yukseklik) + var(--p-ilerleme-yukseklik) + var(--p-b4)
+	);
 }
 
 .p-kabuk {
@@ -173,7 +199,15 @@ html:has(.p-kabuk) {
 	transform: translateY(-200%);
 }
 
-.p-atla:focus-visible {
+/*
+  `:focus-visible` DEĞİL, `:focus`.
+
+  Bağlantıya odak betikle verildiğinde (ör. sayfa `#panel-icerik` ile açıldıktan
+  sonra geri gelindiğinde) tarayıcı `:focus-visible` saymayabiliyor ve atlama
+  bağlantısı odaklıyken ekran dışında kalıyordu: klavye kullanıcısı odağın
+  nerede olduğunu göremiyordu. Bu öge zaten yalnızca odak alınca var.
+*/
+.p-atla:focus {
 	transform: translateY(0);
 }
 
@@ -191,7 +225,10 @@ html:has(.p-kabuk) {
 .p-serit-ic {
 	display: flex;
 	align-items: center;
-	gap: var(--p-b4);
+	/* 16 → 24: marka ile ilk sekme arasındaki boşluk, sekmelerin kendi
+	   aralarındaki 2 pikselden açıkça büyük olmalı; yoksa "Panel" beşinci bir
+	   sekme gibi okunuyor. */
+	gap: var(--p-b6);
 	height: 100%;
 	max-width: 1220px;
 	margin: 0 auto;
@@ -200,7 +237,7 @@ html:has(.p-kabuk) {
 
 .p-marka {
 	display: flex;
-	align-items: baseline;
+	align-items: center;
 	gap: var(--p-b2);
 	flex: none;
 	font-family: var(--p-mono);
@@ -210,6 +247,20 @@ html:has(.p-kabuk) {
 	text-transform: uppercase;
 	color: var(--p-metin-2);
 	white-space: nowrap;
+}
+
+/*
+  Marka ile sekmeler arasındaki ince çizgi. Boşluk tek başına yetmiyordu:
+  "PANEL" de sekmeler de aynı şeritte, aynı hizada duran kısa sözcükler ve
+  aradaki 24 piksel göz için "biraz daha geniş bir sekme arası"ndan ibaretti.
+  Çizgi ikisini iki ayrı şey olarak ayırıyor — biri kimlik, öteki gezinti.
+*/
+.p-marka::after {
+	content: "";
+	width: 1px;
+	height: 18px;
+	margin-left: var(--p-b1);
+	background: var(--p-cizgi-guclu);
 }
 
 /* Dar ekranda şeridin kendisi kaydırılabiliyor; bağlantıları küçültmek
@@ -231,14 +282,18 @@ html:has(.p-kabuk) {
 	display: inline-flex;
 	align-items: center;
 	gap: 6px;
-	height: 32px;
-	padding: 0 10px;
+	height: 34px;
+	padding: 0 12px;
 	border-radius: var(--p-yuvarlak-kucuk);
 	font-size: 13px;
 	font-weight: 500;
 	color: var(--p-metin-2);
 	text-decoration: none;
 	white-space: nowrap;
+	/* Şerit dar ekranda yatay kayıyor. Klavyeyle gelen bağlantı kendini
+	   görünüre çekerken kenara yapışmasın; odak halkasının dışarıda kalan
+	   yarısı "bağlantı kesik" gibi görünüyordu. */
+	scroll-margin-inline: var(--p-b3);
 	transition: background-color 120ms ease, color 120ms ease;
 }
 
@@ -255,13 +310,92 @@ html:has(.p-kabuk) {
 	background: var(--p-yuzey-3);
 	color: var(--p-metin);
 	font-weight: 650;
-	box-shadow: inset 0 -2px 0 0 var(--p-vurgu-dolgu);
+	/* İki katman: ince bir çerçeve dolguyu şeritten ayırıyor, alttaki kalın
+	   mavi çizgi hangi sekmede olduğumuzu söylüyor. Yalnızca dolgu varken
+	   etkin sekme, üzerine gelinmiş sekmeden ayırt edilemiyordu. */
+	box-shadow:
+		inset 0 0 0 1px var(--p-cizgi),
+		inset 0 -2px 0 0 var(--p-vurgu-dolgu);
 }
 
 /* Keystatic bizim sayfamız değil; panelden çıkıldığı ok imiyle söyleniyor. */
 .p-dis-im {
 	font-size: 10px;
 	color: var(--p-metin-3);
+}
+
+/*
+  DAR EKRANDA KAYDIRMA İPUCU
+
+  Şeridin sağ kenarında zeminden gelen bir solma. Telefonda dördüncü sekme
+  ("Site durumu") ekranın dışında kalıyor ve kaydırma çubuğu gizli olduğu için
+  orada başka bir şey olduğuna dair HİÇBİR iz yoktu — ölçüldü, dört sekmenin
+  sığması için gereken genişlik 520 piksel.
+
+  Sınır bu ölçüme bağlı: şeride beşinci bir panel eklenirse burası da yeniden
+  ölçülmeli, yoksa solma sığan bir şeritte de görünür ve yalan söyler.
+
+  Solma tıklamayı engellememeli — altındaki bağlantı erişilebilir kalıyor.
+*/
+@media (max-width: 520px) {
+	.p-serit-ic {
+		position: relative;
+	}
+
+	.p-serit-ic::after {
+		content: "";
+		position: absolute;
+		top: 0;
+		right: 0;
+		width: 28px;
+		height: 100%;
+		pointer-events: none;
+		background: linear-gradient(to right, transparent, var(--p-serit-zemin));
+	}
+}
+
+/* ————————————————————————— SAYFA GEÇİŞİ ÇUBUĞU ————————————————————————— */
+
+/*
+  NEDEN VAR
+
+  Panelin üç ekranı da sunucuda ÜRETİLİYOR ve üçü de hazırlanırken iş yapıyor:
+  istatistik nginx kayıtlarını ayrıştırıyor, kontrol bütün yazıları tek tek
+  denetliyor, durum ise canlı siteye gerçek bir HTTP isteği atıyor — bu sonuncu
+  tek başına ölçülen 1,6 saniye. Tarayıcı bu süre boyunca ESKİ sayfayı
+  göstermeye devam ediyor: kullanıcı sekmeye basıyor, hiçbir şey olmuyor ve
+  ikinci kez basıyor.
+
+  Çubuk bu boşluğu dolduruyor. Betiği kabukta; yalnızca bağlantıya basılınca
+  beliriyor, yeni sayfa geldiğinde zaten yok oluyor (belge değişiyor).
+
+  İlerleme SAHTE olamaz — sunucunun ne kadar ilerlediği bilinmiyor. Bu yüzden
+  belirsiz (indeterminate) bir çubuk: "çalışıyor" diyor, "%60 bitti" demiyor.
+*/
+.p-ilerleme {
+	position: sticky;
+	top: var(--p-serit-yukseklik);
+	z-index: 49;
+	height: var(--p-ilerleme-yukseklik);
+	overflow: hidden;
+	background: var(--p-yuzey-3);
+}
+
+.p-ilerleme-cubuk {
+	display: block;
+	width: 35%;
+	height: 100%;
+	background: var(--p-vurgu-dolgu);
+	animation: p-ilerleme-kay 1100ms ease-in-out infinite;
+}
+
+@keyframes p-ilerleme-kay {
+	from {
+		transform: translateX(-100%);
+	}
+	to {
+		transform: translateX(340%);
+	}
 }
 
 /* ————————————————————————— SAYFA GÖVDESİ ————————————————————————— */
@@ -365,6 +499,23 @@ html:has(.p-kabuk) {
 	overflow: hidden;
 }
 
+/*
+  KART İÇİNDEKİ KART GERİ ÇEKİLİYOR
+
+  İstatistikteki "Bu hafta / geçen hafta" bölümünde iki ölçüm kartı, onları
+  taşıyan kartın içinde duruyor. İkisi de aynı zemini ve aynı kenarlığı
+  kullandığı için iç içe oldukları görünmüyordu: ekranda üç eşit ağırlıkta
+  kutu vardı ve hangisinin ötekini kapsadığı ancak boşluklara bakarak
+  anlaşılıyordu.
+
+  İçteki kart artık yüzey-2'ye oturuyor. Açık temada bu, beyazdan daha KOYU
+  bir gri; koyu temada siyahtan daha AÇIK. İki temada da yön farklı ama sonuç
+  aynı: içteki kutu kabarmıyor, çukurda duruyor — yani kapsanan o.
+*/
+.p-kart .p-kart {
+	background: var(--p-yuzey-2);
+}
+
 .p-kart-baslik {
 	font-family: var(--p-mono);
 	font-size: 11px;
@@ -374,10 +525,34 @@ html:has(.p-kabuk) {
 	color: var(--p-metin);
 }
 
+/*
+  BÖLÜM BAŞLIĞI, KART BAŞLIĞINDAN BÜYÜK
+
+  Seçici yalnızca kart DIŞINDA kalan başlığı yakalıyor: kontrol ekranında
+  bulgu kovalarının başlığı `<h2 class="p-kart-basi">` ve başlık metni onun
+  doğrudan çocuğu; kartların içindeki başlıklarda ise sınıf `<h2>`/`<h3>`
+  ögesinin kendi üzerinde. Yani bu kural kart başlıklarına değmiyor.
+
+  Gerekçe: "İyileştirmeler" bir bölüm adı, "Başlık uzunluğu" ise o bölümdeki
+  bir kartın adı. İkisi de 11 piksel büyük harfken ekranda üç düzey (sayfa
+  başlığı · bölüm · kart) iki düzey gibi okunuyordu.
+*/
+h2.p-kart-basi > .p-kart-baslik {
+	font-size: 14px;
+	letter-spacing: 0.03em;
+}
+
 .p-kart-basi {
 	display: flex;
 	align-items: baseline;
-	gap: var(--p-b2);
+	/*
+	  Sarma AÇIK. Başlığın yanında bir açıklama duran kartlarda (istatistikte
+	  "Son 14 gün · Çubuk: görüntüleme…") telefonda ikisi aynı satıra sığmıyor
+	  ve sığmayan sarmayınca BAŞLIĞIN KENDİSİ kırılıyordu: "SON 14 / GÜN".
+	  Kırılması gereken başlık değil, satır — açıklama alta iniyor.
+	*/
+	flex-wrap: wrap;
+	gap: var(--p-b1) var(--p-b2);
 }
 
 .p-not {
@@ -402,15 +577,57 @@ html:has(.p-kabuk) {
 	border-top: 1px solid var(--p-cizgi);
 }
 
+/* ————————————————————————— BOŞ DURUM ————————————————————————— */
+
+/*
+  "VERİ YOK" BİR KUSUR DEĞİL
+
+  Önceki hâlde boş durum, kartın içinde asılı duran soluk gri bir cümleydi
+  ("Bu pencerede hiçbir yazı açılmamış."). İki sorunu vardı: en kısık metin
+  tonunu kullandığı için okunması en zor cümle oluyordu, ve kartın gövdesi
+  boşaldığı için kart yarım kalmış gibi görünüyordu.
+
+  Şimdi kesikli çerçeveli bir alan: çerçeve "burada bir yer var ve şu an boş"
+  diyor, kesikli olması da "kalıcı bir sınır değil, dolacak" diyor. Metin bir
+  ton yukarı çıkıyor (metin-3 → metin-2) — boş olmak metni okunmaz yapmamalı.
+
+  İKİ SEÇİCİ, TEK KURAL. `.p-bos` sözlüğün asıl adı; yeni işaretleme bunu
+  kullanmalı. İkinci seçici bugün ekranda duran boş durumları yakalıyor:
+  panel sayfalarında `--kisik` ile `p-kart-govde` YALNIZCA boş durum
+  paragraflarında birlikte kullanılıyor (istatistikte iki yer). Sayfaların
+  işaretlemesi bu görevde bana kapalı olduğu için köprü böyle kuruldu;
+  sayfalar `.p-bos`a geçtiğinde ikinci seçici silinebilir.
+*/
+.p-bos,
+.p-kart > .p-not--kisik.p-kart-govde {
+	padding: var(--p-b4) var(--p-b3);
+	/* Kesikli çerçeve boş durumun taşıyıcı işareti; görünmezse geriye yalnızca
+	   ortalanmış bir cümle kalıyor. Bu yüzden ayraç tonu değil, 3:1'i geçen
+	   denetim tonu kullanılıyor. */
+	border: 1px dashed var(--p-cizgi-kontrol);
+	border-radius: var(--p-yuvarlak);
+	color: var(--p-metin-2);
+	text-align: center;
+}
+
 /* ————————————————————————— ÖLÇÜ KUTUSU ————————————————————————— */
 
 .p-olcu-sayi {
 	font-family: var(--p-mono);
-	font-size: 28px;
+	/*
+	  28 → 30. Asıl ölçüm ile ikincil ölçüm (`--orta`, 20px) arasındaki oran
+	  1,4 katken 1,5 kata çıkıyor. Küçük bir fark ama ekranda yan yana duran iki
+	  rakamdan hangisinin başlık olduğunu söyleyen tek şey bu oran; 1,4'te ikisi
+	  "iki büyük rakam" olarak okunuyordu.
+	*/
+	font-size: 30px;
 	font-weight: 700;
 	line-height: 1;
 	letter-spacing: -0.02em;
-	font-variant-numeric: tabular-nums;
+	/* `slashed-zero`: tek aralıklı yüzlerin bir kısmında sıfır ile büyük O
+	   neredeyse aynı; yol ve dosya adlarının yanında duran rakamlarda bu
+	   ayrım okumayı hızlandırıyor. Yüz desteklemiyorsa etkisiz. */
+	font-variant-numeric: tabular-nums slashed-zero;
 	color: var(--p-metin);
 }
 
@@ -712,6 +929,12 @@ html:has(.p-kabuk) {
 	border-top: 0;
 }
 
+/* Altı satır alt alta ve hepsi aynı zeminde; fareyle okurken satır atlamak
+   kolaydı. Vurgunun kendisi bilgi taşımıyor, yalnızca "şu an buradasın" diyor. */
+.p-durum-satir:hover {
+	background: var(--p-yuzey-2);
+}
+
 .p-durum-ad {
 	width: 150px;
 	flex: none;
@@ -787,7 +1010,9 @@ html:has(.p-kabuk) {
 	align-items: center;
 	gap: 6px;
 	padding: 7px 14px;
-	border: 1px solid var(--p-cizgi-guclu);
+	/* Düğmeyi düğme yapan tek sınır bu; tonun gerekçesi `--p-cizgi-kontrol`
+	   tanımında. */
+	border: 1px solid var(--p-cizgi-kontrol);
 	border-radius: var(--p-yuvarlak-kucuk);
 	background: var(--p-yuzey-2);
 	color: var(--p-metin);
@@ -803,8 +1028,16 @@ html:has(.p-kabuk) {
 	border-color: var(--p-metin-3);
 }
 
+/*
+  0,45 → 0,55. Kapalı düğmenin yazısı koyu temada ölçüldüğünde 4,1:1 çıkıyordu;
+  0,55'te 5,2:1. WCAG kapalı denetimleri kontrast şartından muaf tutuyor ama
+  buradaki kapalı düğme ("Önceki sürüme dön") sürekli kapalı duran bir düğme:
+  kullanıcının NEDEN kapalı olduğunu anlamak için yanındaki açıklamayla
+  birlikte okuması gerekiyor, yani okunabilir kalmalı. Hâlâ açık düğmeden
+  bariz biçimde soluk.
+*/
 .p-dugme:disabled {
-	opacity: 0.45;
+	opacity: 0.55;
 	cursor: not-allowed;
 }
 
@@ -838,14 +1071,19 @@ html:has(.p-kabuk) {
 	display: inline-flex;
 	align-items: center;
 	gap: var(--p-b2);
+	/* Tıklanabilir alan etiketin tamamı ve yüksekliği satır boyuyla (≈20px)
+	   belirleniyordu. WCAG 2.2 "Target Size (Minimum)" en az 24×24 istiyor;
+	   dokunmatik ekranda kutucuğu ıskalamak da bundandı. */
+	min-height: 24px;
 	font-size: 13px;
 	color: var(--p-metin-2);
 	cursor: pointer;
 }
 
 .p-secim input {
-	width: 15px;
-	height: 15px;
+	width: 16px;
+	height: 16px;
+	flex: none;
 	accent-color: var(--p-vurgu-dolgu);
 	cursor: pointer;
 }
@@ -914,6 +1152,65 @@ html:has(.p-kabuk) {
 	color: var(--p-metin-2);
 }
 
+/* ————————————————————————— TELEFON GENİŞLİĞİ ————————————————————————— */
+
+/*
+  Panel telefondan da açılıyor. Bu blok 390 pikselde ölçülerek yazıldı.
+*/
+@media (max-width: 560px) {
+	/*
+	  DURUM SATIRI YENİDEN DİZİLİYOR
+
+	  Geniş ekranda satır üç sütun: ad · metin · rozet. Telefonda üçü alt alta
+	  düşüyordu ve satırın adı ile o adın durumu (rozet) arasında bir paragraf
+	  metin kalıyordu — "Canlı site" yazısını okuyup durumunu görmek için
+	  aradaki cümleyi atlamak gerekiyordu.
+
+	  Şimdi ad ile rozet aynı satırda, metin altlarında. Telefonda göz tek bir
+	  sütun tarayarak hangi başlığın dikkat istediğini görüyor; işaretleme
+	  değişmedi, yalnızca `order` ve genişlikler değişti.
+	*/
+	.p-durum-satir {
+		align-items: center;
+	}
+
+	.p-durum-ad {
+		order: 1;
+		width: auto;
+		flex: 1 1 auto;
+	}
+
+	.p-durum-satir > .p-rozet {
+		order: 2;
+	}
+
+	.p-durum-govde {
+		order: 3;
+		flex-basis: 100%;
+		min-width: 0;
+	}
+
+	/*
+	  GÜNLÜK GRAFİKTE ETİKETLER SEYRELİYOR
+
+	  14 gün, telefonda sütun başına ≈24 piksel; "16 Eyl" etiketi ise ≈38
+	  piksel istiyor. Etiketler üst üste biniyor ve hiçbiri okunmuyordu — yani
+	  ekranda okunmayan bir gri şerit vardı.
+
+	  Bir atlayarak gizleniyor: kalan yedi etiket rahat okunuyor ve eksenin
+	  hangi tarihte olduğu yine belli. `visibility` kullanılıyor, `display`
+	  değil — sütunun yüksekliği korunuyor, yoksa etiketli ve etiketsiz
+	  sütunların çubukları farklı hizada başlıyordu.
+
+	  Saat grafiği (`--sik`) bu kuralın dışında: oradaki seyreltmeyi sayfa
+	  kendisi yapıyor (üçte bir) ve iki seyreltme üst üste binerse eksende
+	  neredeyse hiç etiket kalmıyor.
+	*/
+	.p-grafik:not(.p-grafik--sik) .p-sutun:nth-child(even) .p-sutun-alt {
+		visibility: hidden;
+	}
+}
+
 /*
   Hareket azaltma tercihi. Paneldeki hareket yalnızca üzerine gelme
   geçişleri; yine de tercih edilmişse anında bitiyor. Tamamen silmek yerine
@@ -927,5 +1224,18 @@ html:has(.p-kabuk) {
 		animation-iteration-count: 1 !important;
 		transition-duration: 0.01ms !important;
 		scroll-behavior: auto !important;
+	}
+
+	/*
+	  Yukarıdaki blanket kural ilerleme çubuğunu da durduruyor ve çubuk
+	  başlangıç karesinde, yani ekranın SOLUNDA ve görünmez kalıyordu: hareketi
+	  kapatmak geri bildirimi de kapatmış oluyordu.
+
+	  Burada hareketsiz ama görünür bir hâl veriliyor — çubuk yerinde duruyor,
+	  "bir şey oluyor" bilgisi kayboluyor değil, yalnızca kıpırdamıyor.
+	*/
+	.p-ilerleme-cubuk {
+		width: 100%;
+		transform: none !important;
 	}
 }

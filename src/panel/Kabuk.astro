@@ -127,6 +127,22 @@ const PANELLER = [
 			</div>
 		</header>
 
+		{/*
+			SAYFA GEÇİŞİ ÇUBUĞU
+
+			Üç ekran da sunucuda üretiliyor ve hazırlanması zaman alıyor (durum
+			ekranı canlı siteye istek attığı için ölçülen 1,6 saniye). Tarayıcı bu
+			süre boyunca eski sayfayı gösterdiğinden sekmeye basmak hiçbir şey
+			yapmamış gibi görünüyor ve ikinci kez basılıyordu.
+
+			`aria-hidden`: ekran okuyucu için değer taşımıyor. Ekran okuyucu yeni
+			sayfanın yüklendiğini zaten kendi söylüyor; burada ikinci bir duyuru
+			gürültü olurdu. Bu tamamen görsel bir işaret.
+		*/}
+		<div id="panel-ilerleme" class="p-ilerleme" hidden aria-hidden="true">
+			<span class="p-ilerleme-cubuk"></span>
+		</div>
+
 		<main id="panel-icerik" class="p-govde">
 			<div class="p-basi">
 				<h1 class="p-h1">{baslik}</h1>
@@ -134,5 +150,55 @@ const PANELLER = [
 			</div>
 			<slot />
 		</main>
+
+		{/*
+			ÇUBUĞU AÇIP KAPATAN BETİK
+
+			`is:inline`: Astro'nun paketleyicisinden geçmesin, kaynakta ne yazıyorsa
+			o çalışsın. Panelde betik serbest — "ziyaretçiye sıfır JavaScript" kuralı
+			yayın çıktısı için, bu sayfalar ise hiç yayınlanmıyor.
+
+			TETİKLEYİCİ TIKLAMA, `beforeunload` DEĞİL. İkincisi bfcache'i bozuyor:
+			geri tuşuyla dönüldüğünde sayfa yeniden üretilirdi ve istatistik ekranı
+			bütün nginx kayıtlarını yeniden ayrıştırırdı.
+
+			`pageshow` ile temizleniyor: geri tuşuyla bfcache'ten dönüldüğünde belge
+			bıraktığımız hâliyle geliyor, yani çubuk hâlâ açık olurdu ve sayfa
+			sonsuza kadar "yükleniyor" görünürdü.
+		*/}
+		<script is:inline>
+			(() => {
+				const cubuk = document.getElementById('panel-ilerleme');
+				if (!cubuk) return;
+
+				document.addEventListener('click', (olay) => {
+					/*
+					  Yeni sekmede açılan, indirilen ya da sayfa içi çapa olan
+					  bağlantılar belgeyi DEĞİŞTİRMİYOR; onlarda çubuk açılsaydı bir
+					  daha kapanmazdı. Değiştirici tuşla yapılan tıklama da (Ctrl, ⌘,
+					  orta tuş) yeni sekme açıyor.
+					*/
+					const bag = olay.target.closest && olay.target.closest('a[href]');
+					if (!bag) return;
+					if (olay.defaultPrevented || olay.button !== 0) return;
+					if (olay.metaKey || olay.ctrlKey || olay.shiftKey || olay.altKey) return;
+					if (bag.target && bag.target !== '_self') return;
+					if (bag.hasAttribute('download')) return;
+
+					const adres = new URL(bag.href, location.href);
+					if (adres.origin !== location.origin) return;
+					// Yalnızca çapa değişiyorsa yeni belge yüklenmiyor.
+					if (adres.pathname === location.pathname && adres.search === location.search) {
+						return;
+					}
+
+					cubuk.hidden = false;
+				});
+
+				window.addEventListener('pageshow', () => {
+					cubuk.hidden = true;
+				});
+			})();
+		</script>
 	</body>
 </html>
