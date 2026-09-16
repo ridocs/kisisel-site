@@ -32,8 +32,14 @@ const baglantilar = [
 	{ etiket: m('nav.blog'), yol: yol(dil, 'blog') },
 	{ etiket: m('nav.hakkimda'), yol: yol(dil, dil === 'en' ? 'about' : 'hakkimda') },
 	{ etiket: m('nav.kullandiklarim'), yol: yol(dil, dil === 'en' ? 'uses' : 'kullandiklarim') },
-	// Gizlilik listenin sonunda: üst gezinmede hiç yer almıyor, tek girişi
-	// burası. Sıra "önce okunacak sayfalar, sonra künye niteliğindekiler".
+	/*
+	  Son iki kalem künye niteliğinde: üst gezinmede yer almıyorlar, tek girişleri
+	  burası. Sıra "önce okunacak sayfalar, sonra sitenin kendisi hakkındakiler".
+	*/
+	{
+		etiket: m('nav.nelerDegisti'),
+		yol: yol(dil, dil === 'en' ? 'whats-changed' : 'neler-degisti'),
+	},
 	{ etiket: m('nav.gizlilik'), yol: yol(dil, dil === 'en' ? 'privacy' : 'gizlilik') },
 ];
 
@@ -151,6 +157,22 @@ const gunlukYolu = yol(dil, dil === 'en' ? 'whats-changed' : 'neler-degisti');
 
 		<div class="alt">
 			<p><span class="kod">&copy; {yil}</span> Mustafa Eybek</p>
+			{/*
+			  Sürüm burada İKİNCİ kez görünüyor; terminal bloğundaki satırda da
+			  var. Orası sitenin künyesi gibi okunuyor ve göz oraya her zaman
+			  gitmiyor; alt şerit ise altbilginin en çok bakılan yeri. Tekrar
+			  bilinçli.
+
+			  Sürüm yoksa (derleme deposuz bir yerde yapıldıysa) satır hiç
+			  basılmıyor — boş bir ayraç bırakmaktansa yokluğu belli olsun.
+			*/}
+			{surum && (
+				<p class="kod surum-alt">
+					<a href={gunlukYolu}>{m('altbilgi.surum')} {surum.kimlik}</a>
+					<span class="ayrac" aria-hidden="true">·</span>
+					{surum.tarih}
+				</p>
+			)}
 			<p class="kod lisans">{m('altbilgi.lisans')}</p>
 		</div>
 	</div>
@@ -431,6 +453,39 @@ const gunlukYolu = yol(dil, dil === 'en' ? 'whats-changed' : 'neler-degisti');
 
 	.kod {
 		font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+	}
+
+	/*
+	  Sürüm kimliği ile tarih iki ayrı bilgi. Ayracın yanına boşluk
+	  verilmezse "7178aab·2026-09-16" tek bir kod parçası gibi okunuyor —
+	  uçbirim bloğundaki aynı ayraç zaten boşluklu duruyor, alt şerit de ona
+	  uysun.
+	*/
+	.surum-alt {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.5rem;
+	}
+
+	/* Altbilginin öteki bağlantılarıyla aynı davranış: alt çizgisiz, imleç
+	   gelince metin rengi açılıyor. */
+	.surum-alt a {
+		color: inherit;
+		text-decoration: none;
+		transition: color 200ms ease-out;
+	}
+
+	.surum-alt a:hover {
+		color: var(--foreground);
+	}
+
+	.surum-alt a:focus-visible {
+		outline: 2px solid var(--ring);
+		outline-offset: 2px;
+	}
+
+	.ayrac {
+		opacity: 0.55;
 	}
 
 	@media (min-width: 768px) {
