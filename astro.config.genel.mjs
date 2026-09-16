@@ -1,7 +1,6 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
 import node from '@astrojs/node';
-import keystatic from '@keystatic/astro';
 import temelYapilandirma from './astro.config.mjs';
 import istatistikPaneli from './src/istatistik/eklenti.mjs';
 import kontrolPaneli from './src/kontrol/eklenti.mjs';
@@ -16,15 +15,19 @@ import yayinPaneli from './src/yayin/eklenti.mjs';
 
   NEDEN AYRI BİR YAPILANDIRMA
 
-  1. KEYSTATIC VAR ama tek başına değil. Keystatic dosyaları diske yazıyor;
-     bu kopya sunucuda çalıştığı için yazılan yazı sunucudaki dosyaya
-     düşüyor ve kullanıcının deposuna kendiliğinden ulaşmıyor. İki kopya
-     çatallanırdı.
+  1. KEYSTATIC BURADA YOK — teknik bir kısıt yüzünden.
 
-     Bunu `araclar/icerik-esitleyici.mjs` çözüyor: içerik klasörlerini
-     izliyor, değişiklikleri toplayıp işliyor ve GitHub'a gönderiyor. Yani
-     tek gerçek kaynak yine depo. Eşitleyici çalışmıyorsa yazılar sunucuda
-     birikir — kayıtlarında sebebi yazıyor.
+     Keystatic'in Astro entegrasyonu hiçbir seçenek almıyor; imzası
+     `keystatic(): AstroIntegration`. Yani ona bir önek verilemiyor ve kendi
+     adreslerini her zaman kökten kuruyor (`/keystatic`, `/api/keystatic`).
+     Bu panel `/web-sitem/panel-root/` altında durduğu için o istekler siteye
+     düşüyor ve uygulama açılmıyor: sayfa kabuğu geliyor, içi boş kalıyor.
+
+     Denendi ve ölçüldü. Aynı kısıt `astro.config.cms.mjs` içinde de yazılı;
+     orada önek bu yüzden hiç verilmemiş.
+
+     Yazma bu yüzden masaüstü panelinde kalıyor. Önek gerektirmeyen bir yer
+     (kendi alt alan adı) kurulursa editör buraya da alınabilir.
 
   2. SUNUCU KİPİ. Panel sayfaları çalışma anında ölçüm yapıyor: kayıt
      okuyor, git durumuna bakıyor, dosya deniyor. Statik derlemede bu
@@ -80,7 +83,6 @@ export default defineConfig({
 	adapter: node({ mode: 'standalone' }),
 	integrations: [
 		...(temelYapilandirma.integrations ?? []),
-		keystatic(),
 		istatistikPaneli(),
 		kontrolPaneli(),
 		yayinPaneli(),

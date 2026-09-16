@@ -59,8 +59,20 @@ const { baslik, aktif, not } = Astro.props;
 const onek = import.meta.env.BASE_URL.replace(/\/$/, '');
 const yol = (adres: string) => `${onek}${adres}`;
 
+/*
+  Yazı editörü yalnızca masaüstü panelinde var.
+
+  Keystatic'e önek verilemiyor (entegrasyonu seçenek almıyor) ve internete
+  açık panel bir önek altında duruyor; orada editör açılmıyor. Sekmeyi yine de
+  bassaydık kullanıcı tıklar, boş bir sayfa görür ve sebebini anlamazdı —
+  nitekim öyle oldu, kusur böyle bulundu.
+*/
+const yaziEditoruVar = process.env.PANEL_EDITOR_YOK !== '1';
+
 const PANELLER = [
-	{ anahtar: 'yazilar', ad: 'Yazılar', adres: yol('/keystatic'), disari: true },
+	...(yaziEditoruVar
+		? [{ anahtar: 'yazilar', ad: 'Yazılar', adres: yol('/keystatic'), disari: true } as const]
+		: []),
 	{ anahtar: 'istatistik', ad: 'İstatistik', adres: yol('/istatistik'), disari: false },
 	{ anahtar: 'kontrol', ad: 'Yayın öncesi kontrol', adres: yol('/kontrol'), disari: false },
 	{ anahtar: 'durum', ad: 'Site durumu', adres: yol('/durum'), disari: false },
