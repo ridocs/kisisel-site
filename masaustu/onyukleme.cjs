@@ -784,6 +784,152 @@ function seridiKur() {
 	});
 }
 
+/* ------------------------------------------------------------------ */
+/* 4) Keystatic'in kendi yüzeylerine panel girdileri                   */
+/* ------------------------------------------------------------------ */
+
+/*
+  Üstteki şerit panele geçişi görünür kıldı ama Keystatic'in KENDİ gezinme
+  yüzeyleri — sol menü ve gösterge paneli — panelden habersiz kalıyordu.
+  Kullanıcı ikisine de eklenmesini istedi: aradığı yere baktığında orada
+  olsun.
+
+  KLONLUYORUZ, ELLE STİL YAZMIYORUZ
+
+  Keystatic'in sınıf adları üretilmiş karmalar (`kui-1o33hyo` gibi) ve bir
+  sonraki sürümde değişirler. Elle kopyalanan bir stil o gün sessizce
+  bozulur. Bunun yerine sayfadaki gerçek bir bölüm klonlanıp içeriği
+  değiştiriliyor: görünüm ne olursa olsun birebir uyuyor.
+
+  Öğeler de sınıfla değil İLİŞKİYLE bulunuyor — sol menü bağlantısı bir
+  `li` içinde, gösterge paneli kartı bir `h3` içinde duruyor. Bu ilişkiler
+  sınıf adlarından çok daha uzun ömürlü.
+
+  NEDEN SÜREKLİ TAZELENİYOR
+
+  Keystatic tek sayfa uygulaması. İçinde gezinince React ana bölgeyi
+  yeniden çiziyor ve eklediğimiz düğümler siliniyor. Gözlemci bu yüzden
+  duruyor; `tazele` boşuna çalışmıyor, eksik olan neyse yalnızca onu
+  ekliyor.
+*/
+
+const PANEL_EKRANLARI = [
+	{ ad: 'İstatistik', adres: '/istatistik' },
+	{ ad: 'Yayın öncesi kontrol', adres: '/kontrol' },
+	{ ad: 'SEO', adres: '/seo' },
+	{ ad: 'Site durumu', adres: '/durum' },
+];
+
+/*
+  Bağlantı Keystatic'in kendi yönlendiricisine YAKALANMAMALI: `/istatistik`
+  onun rotası değil, SPA içinde açmaya çalışırsa boş ekran çıkar. Tıklama
+  durduruluyor ve tam sayfa yükleme yapılıyor.
+
+  `data-react-aria-pressable` de siliniyor; klonlanan düğümde kalırsa
+  Keystatic'in basma davranışı bağlanmaya çalışıyor.
+*/
+function panelBagiKur(bag, ekran) {
+	bag.setAttribute('href', ekran.adres);
+	bag.removeAttribute('data-react-aria-pressable');
+	// Sol menüde metin `title`'lı iç span'de, gösterge panelinde bağlantının kendisinde.
+	const baslikli = bag.querySelector('[title]');
+	if (baslikli) {
+		baslikli.setAttribute('title', ekran.ad);
+		baslikli.textContent = ekran.ad;
+	} else {
+		bag.textContent = ekran.ad;
+	}
+	bag.addEventListener('click', (olay) => {
+		olay.preventDefault();
+		olay.stopPropagation();
+		location.assign(ekran.adres);
+	});
+}
+
+/*
+  Sol menü şöyle kurulu: nav > ul > (li = ya düz bağlantı ya da bölüm).
+  Bölüm olan li'nin içinde bir h3 başlık ve bir iç ul var. Sonuncusu
+  kalıp olarak alınıyor.
+*/
+function yanMenuyuEkle() {
+	if (document.getElementById('panel-yan-bolum')) return;
+	const nav = document.querySelector('nav');
+	if (!nav) return;
+	const disListe = nav.querySelector('ul');
+	if (!disListe) return;
+
+	const bolumler = [...disListe.children].filter(
+		(li) => li.querySelector(':scope > h3') && li.querySelector(':scope > ul'),
+	);
+	if (!bolumler.length) return;
+
+	const bolum = bolumler[bolumler.length - 1].cloneNode(true);
+	bolum.id = 'panel-yan-bolum';
+	bolum.querySelector(':scope > h3').textContent = 'Panel';
+
+	const icListe = bolum.querySelector(':scope > ul');
+	const liKalibi = icListe.firstElementChild.cloneNode(true);
+	icListe.replaceChildren();
+
+	for (const ekran of PANEL_EKRANLARI) {
+		const li = liKalibi.cloneNode(true);
+		panelBagiKur(li.querySelector('a'), ekran);
+		icListe.appendChild(li);
+	}
+	disListe.appendChild(bolum);
+}
+
+/*
+  Gösterge paneli yalnızca `/keystatic` kökünde. Alt sayfalarda da
+  eklenseydi kartlar alakasız ekranlarda belirirdi.
+
+  Kart kalıbı olarak TEK bağlantılı olan seçiliyor: koleksiyon kartında bir
+  de "yeni ekle" düğmesi var ve panel ekranlarına bir şey eklenemiyor.
+*/
+function gostergePaneliniEkle() {
+	if (!/^\/keystatic\/?$/.test(location.pathname)) return;
+	if (document.getElementById('panel-gosterge-bolum')) return;
+
+	const bolumler = [...document.querySelectorAll('section')].filter(
+		(b) => b.querySelector(':scope > h2') && b.children.length === 2 && b.children[1].children.length,
+	);
+	if (!bolumler.length) return;
+
+	const kalip = bolumler[bolumler.length - 1];
+	const bolum = kalip.cloneNode(true);
+	bolum.id = 'panel-gosterge-bolum';
+	bolum.querySelector(':scope > h2').textContent = 'Panel';
+
+	const izgara = bolum.children[1];
+	const kartlar = [...izgara.children];
+	const kartKalibi = (kartlar.find((k) => k.querySelectorAll('a').length === 1) || kartlar[0]).cloneNode(
+		true,
+	);
+	izgara.replaceChildren();
+
+	for (const ekran of PANEL_EKRANLARI) {
+		const kart = kartKalibi.cloneNode(true);
+		panelBagiKur(kart.querySelector('a'), ekran);
+		izgara.appendChild(kart);
+	}
+	kalip.parentElement.appendChild(bolum);
+}
+
+/*
+  İkisi de "eksikse ekle" mantığıyla çalıştığı için gözlemcinin kendi
+  eklediğimiz düğümler yüzünden yeniden tetiklenmesi sonsuz döngü kurmuyor:
+  ikinci turda her şey yerinde bulunuyor ve hiçbir şey yapılmıyor.
+*/
+function panelYuzeyleriniTazele() {
+	try {
+		yanMenuyuEkle();
+		gostergePaneliniEkle();
+	} catch (hata) {
+		// Keystatic'in DOM'u değişmiş olabilir; editör yine de çalışsın.
+		console.error('[panel yüzeyleri]', hata);
+	}
+}
+
 function baslat() {
 	/*
 	  Şerit ÖNCE kuruluyor: çeviri gezgini gövdeyi baştan sona yürüyor ve
@@ -803,6 +949,34 @@ function baslat() {
 		attributes: true,
 		attributeFilter: NITELIKLER,
 	});
+
+	/*
+	  Panel girdileri React ilk çizimden SONRA eklenebiliyor; ilk çağrı
+	  genelde erken kalıyor ve gözlemci devralıyor.
+
+	  Tazeleme erteleniyor çünkü React tek bir güncellemede onlarca düğüm
+	  değiştiriyor; her biri için ayrı ayrı çalışmanın anlamı yok.
+
+	  ERTELEME `setTimeout` İLE, `requestAnimationFrame` İLE DEĞİL.
+
+	  Önce rAF kullanıldı ve ölçümde kırıldı: pencere görünmediğinde
+	  (`document.hidden`) tarayıcı rAF'ı hiç çalıştırmıyor. Gözlemci
+	  tetikleniyor, geri çağrı sıraya giriyor ve orada kalıyor. Sonuç:
+	  kullanıcı paneli simge durumuna küçültüp Keystatic içinde gezinirse
+	  panel girdileri siliniyor ve bir daha geri gelmiyor.
+
+	  `setTimeout` gizli sekmede de çalışıyor (yalnızca kısılıyor). Ölçüldü.
+	*/
+	panelYuzeyleriniTazele();
+	let bekleyen = false;
+	new MutationObserver(() => {
+		if (bekleyen) return;
+		bekleyen = true;
+		setTimeout(() => {
+			bekleyen = false;
+			panelYuzeyleriniTazele();
+		}, 0);
+	}).observe(document.body, { childList: true, subtree: true });
 }
 
 /*
