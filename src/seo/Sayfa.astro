@@ -1,0 +1,700 @@
+---
+import Kabuk from '../panel/Kabuk.astro';
+import { seoRaporu, BASLIK_UST, ACIKLAMA_UST, type Durum, type SayfaOlcumu } from './olcum';
+import { yazmaAcikMi } from './metinler.mjs';
+import './seo.css';
+
+/*
+  SEO YÖNETİMİ
+
+  Bu sayfa `src/pages/` altında DEĞİL; oraya konsaydı `astro build` onu üretir
+  ve sitenin bütün SEO eksiklerini sıralayan — üstelik site metinlerini
+  değiştirebilen — bir sayfa internete açılırdı. Rotayı `src/seo/eklenti.mjs`
+  bağlıyor, o eklentiyi de yalnızca panel yapılandırmaları okuyor.
+
+  EKRANIN CEVAPLADIĞI SORU: "sayfalarım arama sonucunda nasıl görünüyor ve
+  neresi eksik". Tekil içerik kusurları (çift h1, kırık bağlantı, taslak, eksik
+  alt metni) bu ekranda YOK — onlar Yayın öncesi kontrol ekranının işi. İki
+  ekran aynı şeyi söylerse hangisine bakılacağı belirsizleşir ve ikisi birden
+  okunmaz olur.
+
+  Ölçüm her istekte yeniden yapılıyor: dev sunucusu bileşeni her açılışta
+  çalıştırıyor, yani derlemeyi yenileyip sayfayı tazelemek yeniden ölçmeye
+  yetiyor.
+*/
+const rapor = await seoRaporu();
+
+/*
+  YAZMA ALANLARI İNTERNETE AÇIK KOPYADA HİÇ BASILMIYOR.
+
+  `PANEL_EDITOR_YOK=1` ile çalışan kopyada bu bölüm HTML'e girmiyor ve onu süren
+  betik de basılmıyor; uç nokta da bağlanmıyor (bkz. eklenti.mjs). Gizlemek
+  yetmezdi — geliştirici araçlarıyla geri getirilebilirdi.
+
+  Gerekçe: o kopya sunucudaki depoya yazıyor, oraya yazılan metin kullanıcının
+  bilgisayarındaki depoya hiç ulaşmıyor. Kaybolduğu fark edilmeyen bir düzeltme,
+  hiç yapılmayan düzeltmeden kötü.
+*/
+const yazmaAcik = yazmaAcikMi();
+
+/*
+  Üst şeritteki sekme: Kabuk'un `aktif` alanı şu an üç ekranı tanıyor ve
+  `src/panel/Kabuk.astro` bu dalda BİLEREK değiştirilmiyor (orada başka bir iş
+  sürüyor). "seo" değeri hiçbir sekmeyle eşleşmediği için şeritte hiçbir sekme
+  "buradasın" diye işaretlenmiyor — yanlış sekmeyi işaretlemekten iyisi bu.
+  Kabuk'a sekme eklendiğinde buradaki dönüştürme de kalkacak.
+*/
+const AKTIF = 'seo' as unknown as 'kontrol';
+
+/* ------------------------------------------------------------------ */
+/* Görünüş                                                             */
+/* ------------------------------------------------------------------ */
+
+/*
+  Durumun GÖRSEL KARŞILIĞI tek yerde ve renk tek başına taşıyıcı değil: her
+  durumun bir simgesi (✓ ! ✕ ·) ve bir sözcüğü var. Renk körü bir kullanıcı da,
+  ekranı gri basan bir çıktı da aynı bilgiyi okuyor.
+*/
+const GORUNUS: Record<Durum, { im: string; sozcuk: string; rozet: string; sinif: string }> = {
+	iyi: { im: '✓', sozcuk: 'Tamam', rozet: 'p-rozet--iyi', sinif: 's-durum-iyi' },
+	dikkat: { im: '!', sozcuk: 'Bakılmalı', rozet: 'p-rozet--dikkat', sinif: 's-durum-dikkat' },
+	agir: { im: '✕', sozcuk: 'Eksik', rozet: 'p-rozet--agir', sinif: 's-durum-agir' },
+	notr: { im: '·', sozcuk: 'Gerekmez', rozet: 'p-rozet--notr', sinif: 's-durum-notr' },
+};
+
+/** Tablodaki evet/hayır hücresi: simge + sözcük + renk. */
+function ikili(
+	dogruMu: boolean,
+	evet: string,
+	hayir: string,
+	kotuDurum: Durum = 'agir',
+): { durum: Durum; im: string; sozcuk: string } {
+	const durum: Durum = dogruMu ? 'iyi' : kotuDurum;
+	return { durum, im: GORUNUS[durum].im, sozcuk: dogruMu ? evet : hayir };
+}
+
+/* ------------------------------------------------------------------ */
+/* Özet sayıları                                                       */
+/* ------------------------------------------------------------------ */
+
+const dizinlenebilir = rapor.sayfalar.filter((s) => !s.dizinDisi);
+const olcuAsan = rapor.sayfalar.filter(
+	(s) => s.baslik.durum !== 'iyi' || s.aciklama.durum !== 'iyi',
+);
+const yinelenenSayisi = rapor.yinelenenBaslik.length + rapor.yinelenenAciklama.length;
+const sorunluOlcu = rapor.olculer.filter((o) => o.durum !== 'iyi');
+
+/** Kutunun rakamı "sıfır olması iyi" anlamına geliyorsa durumu buna göre. */
+function sifirIyi(sayi: number): Durum {
+	return sayi === 0 ? 'iyi' : 'dikkat';
+}
+
+/*
+  `sozcuk` bazı kutularda elle veriliyor: sayfa sayısı bir kusur değil, bir
+  bağlam. Durum sözlüğünden gelen "Gerekmez" orada yanlış okunurdu.
+*/
+const ozetKutulari: { sayi: string; ad: string; durum: Durum; sozcuk?: string }[] = [
+	{
+		sayi: `${dizinlenebilir.length}`,
+		ad: `Dizinlenebilir sayfa (${rapor.sayfalar.length} toplam)`,
+		durum: 'notr',
+		sozcuk: 'Ölçüldü',
+	},
+	{
+		sayi: `${olcuAsan.length}`,
+		ad: 'Başlık/açıklama ölçüsü sınırda',
+		durum: sifirIyi(olcuAsan.length),
+	},
+	{
+		sayi: `${yinelenenSayisi}`,
+		ad: 'İki sayfada aynı metin',
+		durum: sifirIyi(yinelenenSayisi),
+	},
+	{
+		sayi: `${sorunluOlcu.length}`,
+		ad: `Site ölçüsü dikkat istiyor (${rapor.olculer.length} ölçü)`,
+		durum: sifirIyi(sorunluOlcu.length),
+	},
+];
+
+/* ------------------------------------------------------------------ */
+/* Sayfa tablosu                                                       */
+/* ------------------------------------------------------------------ */
+
+/*
+  Satır SIRASI sabit: önce Türkçe, sonra İngilizce, her biri kendi içinde
+  adrese göre. Sıra "en sorunlu üstte" olsaydı bir kusuru düzeltince bütün
+  tablo yer değiştirir, kullanıcı ikinci bakışta aradığı satırı bulamazdı.
+*/
+const siraliSayfalar = [...rapor.sayfalar].sort(
+	(a, b) => a.dil.localeCompare(b.dil) || a.rota.localeCompare(b.rota, 'tr'),
+);
+
+/** JSON-LD türleri tabloda kısa dursun: üç tür yan yana satırı taşırıyor. */
+function turOzeti(sayfa: SayfaOlcumu): string {
+	if (sayfa.jsonLdTurleri.length === 0) return 'yok';
+	return sayfa.jsonLdTurleri.join(' + ');
+}
+
+const olcumAni = new Date().toLocaleString('tr-TR', {
+	dateStyle: 'long',
+	timeStyle: 'short',
+});
+const derlemeMetni = rapor.derlemeAni
+	? rapor.derlemeAni.toLocaleString('tr-TR', { dateStyle: 'long', timeStyle: 'short' })
+	: 'derleme yok';
+
+/*
+  Yazma uç noktasının adresi ÖNEKTEN geçiyor, sabit yazılmıyor: `Kabuk.astro`
+  içindeki bağlantılar da aynı sebeple öyle. Adres HTML'e bir `data-` niteliği
+  olarak basılıp betikte oradan okunuyor — satır içi betikler derleyiciden
+  geçmediği için `import.meta.env` onların içinde çalışmıyor.
+*/
+const yazmaAdresi = `${import.meta.env.BASE_URL.replace(/\/$/, '')}/seo/yaz`;
+
+/* Düzenlenebilir alanlar dile göre ayrılıyor: iki dil yan yana sütunda. */
+const trAlanlari = rapor.alanlar.filter((a) => a.dil === 'tr');
+const enAlanlari = rapor.alanlar.filter((a) => a.dil === 'en');
+---
+
+<Kabuk
+	baslik="SEO yönetimi"
+	aktif={AKTIF}
+	not={rapor.ciktiVar
+		? `${rapor.sayfalar.length} sayfa ölçüldü · derleme: ${derlemeMetni} · ${olcumAni}`
+		: `Derlenmiş çıktı yok · ${olcumAni}`}
+>
+	<div class="p-yigin">
+		{
+			!rapor.ciktiVar && (
+				<section class="p-uyari">
+					<h2 class="p-uyari-baslik">
+						<span class="p-im p-metin-dikkat" aria-hidden="true">
+							!
+						</span>
+						Önce derleyin
+					</h2>
+					<p class="p-not">
+						Bu ekran <span class="p-kod">dist/</span> klasöründeki HTML dosyalarını
+						okuyor — yani arama motorunun gerçekte göreceği sayfaları. Klasör yok, bu
+						yüzden ölçülecek bir şey de yok.
+					</p>
+					<p class="p-not">
+						<strong>Ne yapmalı:</strong> <span class="p-kod">npm run build</span>
+						çalıştırın ya da Site durumu ekranından "Derle ve karşılaştır" deyin, sonra
+						bu sayfayı yenileyin.
+					</p>
+					<p class="p-not p-not--kisik">
+						Kaynaktan tahmin yürütülmüyor: sayfa başlığı üç ayrı yerden besleniyor ve
+						onu yeniden hesaplamak, er geç yayındakinden farklı bir sonuç üretirdi.
+						{yazmaAcik && ' Aşağıdaki metin alanları yine de çalışıyor; onlar kaynağı okuyor.'}
+					</p>
+				</section>
+			)
+		}
+
+		{
+			rapor.kaynakDahaYeni && (
+				<section class="p-uyari">
+					<h2 class="p-uyari-baslik">
+						<span class="p-im p-metin-dikkat" aria-hidden="true">
+							!
+						</span>
+						Rapor son derlemeyi anlatıyor
+					</h2>
+					<p class="p-not">
+						Site metinleri ya da düzen dosyası bu derlemeden sonra değişmiş. Aşağıdaki
+						tablo şu anki kaynağı değil, en son derlenen hâli gösteriyor — az önce
+						yaptığınız bir düzeltme burada henüz görünmez.
+					</p>
+					<p class="p-not">
+						<strong>Ne yapmalı:</strong> yeniden derleyip sayfayı yenileyin.
+					</p>
+				</section>
+			)
+		}
+
+		{
+			rapor.ciktiVar && (
+				<>
+					{/* ÖZET — dört rakam; hangisinin iyi hangisinin kötü olduğu rozetten
+					    okunuyor, renkten değil */}
+					<section class="p-izgara p-izgara--4">
+						{ozetKutulari.map((kutu) => (
+							<div class="p-kart p-kart--sikisik">
+								<div class="p-kart-basi">
+									<span class="p-olcu-sayi">{kutu.sayi}</span>
+									<span class={`p-rozet ${GORUNUS[kutu.durum].rozet}`}>
+										<span class="p-im" aria-hidden="true">
+											{GORUNUS[kutu.durum].im}
+										</span>
+										{kutu.sozcuk ?? GORUNUS[kutu.durum].sozcuk}
+									</span>
+								</div>
+								<div class="p-olcu-ad">{kutu.ad}</div>
+							</div>
+						))}
+					</section>
+
+					{/* SİTE GENELİ */}
+					<section class="p-yigin">
+						<div>
+							<h2 class="p-kart-baslik">Site geneli</h2>
+							<p class="p-not">
+								Tek tek sayfaların değil, sitenin bütününün ölçüleri: arama motoru
+								sayfaları bulabiliyor mu, bulduğunda ne görüyor.
+							</p>
+						</div>
+
+						<div class="p-kart p-kart--duz">
+							{rapor.olculer.map((olcu) => (
+								<div class="p-durum-satir">
+									<div class="p-durum-ad">{olcu.ad}</div>
+									<div class="p-durum-govde">
+										<p class={`p-durum-metin ${GORUNUS[olcu.durum].sinif}`}>
+											{olcu.deger}
+										</p>
+										<p class="p-not">{olcu.aciklama}</p>
+										{olcu.ayrinti.length > 0 && (
+											<ul class="p-ayrinti">
+												{olcu.ayrinti.map((madde) => (
+													<li>{madde}</li>
+												))}
+											</ul>
+										)}
+									</div>
+									<span class={`p-rozet ${GORUNUS[olcu.durum].rozet}`}>
+										<span class="p-im" aria-hidden="true">
+											{GORUNUS[olcu.durum].im}
+										</span>
+										{GORUNUS[olcu.durum].sozcuk}
+									</span>
+								</div>
+							))}
+						</div>
+					</section>
+
+					{/* YİNELENEN METİNLER */}
+					{yinelenenSayisi > 0 && (
+						<section class="p-kart">
+							<h2 class="p-kart-baslik">İki sayfada aynı metin</h2>
+							<p class="p-not">
+								Arama motoru aynı metni taşıyan sayfalardan birini seçip ötekini
+								gizliyor. Ziyaretçi de arama sonucunda hangisinin hangisi olduğunu
+								ayırt edemiyor.
+							</p>
+							<ul class="p-liste p-kart-govde">
+								{[
+									...rapor.yinelenenBaslik.map((k) => ({ tur: 'Başlık', ...k })),
+									...rapor.yinelenenAciklama.map((k) => ({ tur: 'Açıklama', ...k })),
+								].map((kayit) => (
+									<li>
+										<div class="p-kv">
+											<span class="p-kv-ad" style="white-space: normal">
+												<strong>{kayit.tur}:</strong> {kayit.deger}
+											</span>
+										</div>
+										<ul class="p-ayrinti">
+											{kayit.rotalar.map((rota) => (
+												<li>{rota}</li>
+											))}
+										</ul>
+									</li>
+								))}
+							</ul>
+						</section>
+					)}
+
+					{/* SAYFA TABLOSU */}
+					<section class="p-yigin">
+						<div>
+							<h2 class="p-kart-baslik">Sayfa sayfa</h2>
+							<p class="p-not">
+								Her satır bir yayınlanan adres. Değerler{' '}
+								<span class="p-kod">dist/</span> içindeki HTML'den okundu; yani arama
+								motorunun gerçekte gördüğü şey. Başlık sınırı {BASLIK_UST}, açıklama
+								sınırı {ACIKLAMA_UST} karakter.
+							</p>
+						</div>
+
+						<div class="s-tablo-sarmal" tabindex="0" role="region" aria-label="Sayfa ölçümleri tablosu">
+							<table class="s-tablo">
+								<thead>
+									<tr>
+										<th scope="col">Sayfa</th>
+										<th scope="col">Başlık</th>
+										<th scope="col">Uz.</th>
+										<th scope="col">Açıklama</th>
+										<th scope="col">Uz.</th>
+										<th scope="col">Paylaşım görseli</th>
+										<th scope="col">Canonical</th>
+										<th scope="col">Dil bağı</th>
+										<th scope="col">JSON-LD</th>
+										<th scope="col">H1</th>
+										<th scope="col">Haritada</th>
+										<th scope="col">Gelen bağ</th>
+									</tr>
+								</thead>
+								<tbody>
+									{siraliSayfalar.map((sayfa) => {
+										const gorsel = ikili(sayfa.ogGorselVar, 'var', 'yok');
+										const canon = ikili(sayfa.canonicalDogru, 'doğru', 'yanlış');
+										const diller = ikili(sayfa.hreflangTam, 'tam', 'eksik', 'dikkat');
+										// `noindex` sayfanın haritada OLMAMASI doğru: iki işaret
+										// birbirinin tersini söylerse hangisinin geçerli olduğu
+										// belirsizleşir.
+										const harita = sayfa.dizinDisi
+											? { durum: 'notr' as Durum, im: '·', sozcuk: 'gerekmez' }
+											: ikili(sayfa.haritada, 'var', 'yok', 'dikkat');
+										/*
+										  H1 ve gelen bağ sütunlarında SÖZCÜK yerine rakamın
+										  kendisi duruyor: "1 tane" gibi bir ek, on iki sütunlu
+										  bir tabloda bilgi taşımadan yer kaplardı. Simge yine
+										  rakamın yanında, yani durum renksiz de okunuyor.
+										*/
+										const h1Durum: Durum = sayfa.h1Sayisi === 1 ? 'iyi' : 'dikkat';
+										const bagDurum: Durum =
+											sayfa.gelenBaglanti > 0 || sayfa.dizinDisi ? 'iyi' : 'dikkat';
+										return (
+											<tr>
+												<td>
+													<span class="s-yol">{sayfa.rota}</span>
+													<span class="s-dil">{sayfa.dil}</span>
+													{sayfa.dizinDisi && (
+														<div class="s-hucre-durum s-durum-notr">
+															<span aria-hidden="true">·</span> noindex
+														</div>
+													)}
+												</td>
+												<td class="s-metin">
+													{sayfa.baslik.metin || (
+														<span class="s-metin--bos">başlık yok</span>
+													)}
+													{/*
+													  Metni ÜRETEN alanın adı: aşağıdaki düzenleme
+													  kutularının hangisinin bu satırı değiştireceği
+													  tabloda yazılı olmasaydı, kullanıcı 28 kutu
+													  arasında doğru olanı aramak zorunda kalırdı.
+													  Yazı sayfalarında boş: onların başlığı
+													  frontmatter'dan geliyor.
+													*/}
+													{sayfa.baslikAnahtari && (
+														<div class="s-kaynak">{sayfa.baslikAnahtari}</div>
+													)}
+													{sayfa.baslik.not && (
+														<div class="s-olcu-not">{sayfa.baslik.not}</div>
+													)}
+												</td>
+												<td>
+													<span
+														class={`s-uzunluk ${GORUNUS[sayfa.baslik.durum].sinif}`}
+													>
+														<span aria-hidden="true">
+															{GORUNUS[sayfa.baslik.durum].im}
+														</span>
+														{sayfa.baslik.uzunluk}
+													</span>
+												</td>
+												<td class="s-metin">
+													{sayfa.aciklama.metin || (
+														<span class="s-metin--bos">açıklama yok</span>
+													)}
+													{sayfa.aciklamaAnahtari && (
+														<div class="s-kaynak">{sayfa.aciklamaAnahtari}</div>
+													)}
+													{sayfa.aciklama.not && (
+														<div class="s-olcu-not">{sayfa.aciklama.not}</div>
+													)}
+												</td>
+												<td>
+													<span
+														class={`s-uzunluk ${GORUNUS[sayfa.aciklama.durum].sinif}`}
+													>
+														<span aria-hidden="true">
+															{GORUNUS[sayfa.aciklama.durum].im}
+														</span>
+														{sayfa.aciklama.uzunluk}
+													</span>
+												</td>
+												<td>
+													<span class={`s-hucre-durum ${GORUNUS[gorsel.durum].sinif}`}>
+														<span aria-hidden="true">{gorsel.im}</span>
+														{gorsel.sozcuk}
+													</span>
+												</td>
+												<td>
+													<span class={`s-hucre-durum ${GORUNUS[canon.durum].sinif}`}>
+														<span aria-hidden="true">{canon.im}</span>
+														{canon.sozcuk}
+													</span>
+												</td>
+												<td>
+													<span class={`s-hucre-durum ${GORUNUS[diller.durum].sinif}`}>
+														<span aria-hidden="true">{diller.im}</span>
+														{diller.sozcuk}
+													</span>
+												</td>
+												<td>
+													<span class="s-tur">{turOzeti(sayfa)}</span>
+												</td>
+												<td>
+													<span class={`s-hucre-durum ${GORUNUS[h1Durum].sinif}`}>
+														<span aria-hidden="true">{GORUNUS[h1Durum].im}</span>
+														<span class="s-sayi">{sayfa.h1Sayisi}</span>
+													</span>
+												</td>
+												<td>
+													<span class={`s-hucre-durum ${GORUNUS[harita.durum].sinif}`}>
+														<span aria-hidden="true">{harita.im}</span>
+														{harita.sozcuk}
+													</span>
+												</td>
+												<td>
+													<span class={`s-hucre-durum ${GORUNUS[bagDurum].sinif}`}>
+														<span aria-hidden="true">{GORUNUS[bagDurum].im}</span>
+														<span class="s-sayi">{sayfa.gelenBaglanti}</span>
+													</span>
+												</td>
+											</tr>
+										);
+									})}
+								</tbody>
+							</table>
+						</div>
+
+						<p class="p-not p-not--kisik">
+							"Gelen bağ" o sayfaya bağlantı veren FARKLI sayfa sayısı; sayfanın
+							kendine verdiği bağlantı sayılmıyor. Sıfır olması sayfanın yetim
+							kaldığı anlamına geliyor — hata sayfalarında beklenen bir durum.
+						</p>
+					</section>
+				</>
+			)
+		}
+
+		{/* ————————————— YAZILABİLİR ALANLAR ————————————— */}
+		{
+			yazmaAcik && (
+				<section class="p-yigin" data-seo-yazma data-adres={yazmaAdresi}>
+					<div>
+						<h2 class="p-kart-baslik">Sayfa başlıkları ve açıklamaları</h2>
+						<p class="p-not">
+							Yukarıdaki tabloda gördüğünüz başlık ve açıklamalar bu alanlardan
+							geliyor: <span class="p-kod">src/icerik/metinler-tr.json</span> ve{' '}
+							<span class="p-kod">metinler-en.json</span>. Bir alanı değiştirip
+							kaydedince dosyaya yazılıyor; tablodaki karşılığı ise ancak siteyi
+							yeniden derleyince değişiyor.
+						</p>
+						<p class="p-not p-not--kisik">
+							Yazı başlıkları burada değil: onlar yazının kendi frontmatter'ında ve
+							Yazılar ekranından düzenleniyor.
+						</p>
+						{/*
+						  Kaydetmenin görünen yan etkisi ÖNCEDEN söyleniyor.
+
+						  Dosya değişince dev sunucusu sayfayı baştan yüklüyor; kaydetme
+						  onayı o anda ekrandan siliniyor ve kullanıcı "kaydedildi mi"
+						  diye tereddüt ediyor — ölçüldü. Yenilenen sayfada kutuda yeni
+						  değerin durması ve üstteki "yeniden derleyin" uyarısının
+						  belirmesi, kaydın gerçekleştiğinin kanıtı.
+						*/}
+						<p class="p-not p-not--kisik">
+							Kaydedince sayfa kendiliğinden yenileniyor — dosya değişti, panel
+							sunucusu onu görüp tazeliyor. Kutuda yeni değerin durması ve yukarıda
+							"yeniden derleyin" uyarısının belirmesi, yazma işinin bittiğini
+							gösteriyor.
+						</p>
+					</div>
+
+					{[
+						{ dil: 'tr' as const, ad: 'Türkçe', liste: trAlanlari },
+						{ dil: 'en' as const, ad: 'İngilizce', liste: enAlanlari },
+					].map((bolum) => (
+						<div class="p-kart">
+							<h3 class="p-kart-baslik">{bolum.ad}</h3>
+							<div class="s-alanlar p-kart-govde">
+								{bolum.liste.map((alan) => {
+									const sinir = alan.tur === 'baslik' ? BASLIK_UST : ACIKLAMA_UST;
+									const uzunluk = [...alan.deger].length;
+									const kimlik = `alan-${alan.dil}-${alan.anahtar.replace('.', '-')}`;
+									return (
+										<div
+											class="s-alan"
+											data-alan
+											data-dil={alan.dil}
+											data-anahtar={alan.anahtar}
+											data-sinir={sinir}
+										>
+											<div class="s-alan-basi">
+												<label class="s-alan-ad" for={kimlik}>
+													{alan.etiket}
+												</label>
+												<span class="s-alan-anahtar">{alan.anahtar}</span>
+											</div>
+											<input
+												class="s-girdi"
+												id={kimlik}
+												type="text"
+												value={alan.deger}
+												data-ilk={alan.deger}
+												autocomplete="off"
+												spellcheck="false"
+											/>
+											{/* Saf CSS ölçek: rakamı okumadan önce sınıra ne kadar
+											    kaldığı görünüyor. */}
+											<div class="s-olcek">
+												<div
+													class="s-olcek-dolgu"
+													data-olcek
+													style={`width: ${Math.min(100, Math.round((uzunluk / sinir) * 100))}%`}
+												></div>
+											</div>
+											<div class="s-alan-alti">
+												<span class="s-sayac" data-sayac>
+													<span aria-hidden="true">{uzunluk > sinir ? '!' : '·'}</span>
+													{uzunluk} / {sinir}
+												</span>
+												<button class="p-dugme" type="button" data-kaydet disabled>
+													Kaydet
+												</button>
+											</div>
+											{/* Kaydetme sonucu ekran okuyucuya da bildiriliyor:
+											    yalnızca renkli bir satır değişseydi klavyeyle
+											    çalışan kullanıcı kaydın olup olmadığını bilemezdi. */}
+											<p class="s-alan-durum" data-durum aria-live="polite"></p>
+										</div>
+									);
+								})}
+							</div>
+						</div>
+					))}
+				</section>
+			)
+		}
+
+		{/* KAPSAM — "sorun yok" ile "bakmadım" karışmasın */}
+		{
+			rapor.ciktiVar && (
+				<section class="p-kart">
+					<h2 class="p-kart-baslik">Bu ekran neye bakmıyor</h2>
+					<ul class="p-liste p-kart-govde">
+						{rapor.kapsamDisi.map((satir) => (
+							<li class="p-kv">
+								<span
+									class="p-kv-ad"
+									style="white-space: normal; color: var(--p-metin-2)"
+								>
+									· {satir}
+								</span>
+							</li>
+						))}
+					</ul>
+				</section>
+			)
+		}
+
+		<p class="p-dipnot">
+			Ölçüm her sayfa yenilemesinde <span class="p-kod">dist/</span> klasörünün o anki
+			hâlinden yeniden yapılıyor. Bu sayfa yalnızca panel kipinde var; yayın derlemesine
+			girmiyor.
+			{!yazmaAcik &&
+				' Bu kopyada metin düzenleme yok: buraya yazılan bir değişiklik sizin deponuza ulaşmazdı.'}
+		</p>
+	</div>
+
+	{/*
+	  PANELDE JAVASCRIPT SERBEST — sitede değil.
+
+	  "Ziyaretçiye sıfır JavaScript" kuralı yayın çıktısı için. Bu sayfa hiç
+	  yayınlanmıyor ve bir metni kaydetmenin betiksiz yolu yok. Çerçeve yok,
+	  yalnızca düz betik.
+
+	  `is:inline`: Astro'nun paketleyicisinden geçmesin, kaynakta ne yazıyorsa o
+	  çalışsın.
+	*/}
+	{yazmaAcik && (
+		<script is:inline>
+			(() => {
+				const kapsayici = document.querySelector('[data-seo-yazma]');
+				if (!kapsayici) return;
+				const YAZMA_ADRESI = kapsayici.dataset.adres;
+
+				for (const kutu of document.querySelectorAll('[data-alan]')) {
+					const girdi = kutu.querySelector('input');
+					const dugme = kutu.querySelector('[data-kaydet]');
+					const sayac = kutu.querySelector('[data-sayac]');
+					const olcek = kutu.querySelector('[data-olcek]');
+					const durum = kutu.querySelector('[data-durum]');
+					const sinir = Number(kutu.dataset.sinir);
+
+					// Kod NOKTASI sayılıyor: `length` bir emojiyi iki sayıp sayacı
+					// sunucudaki ölçümden farklı gösterirdi.
+					const uzunluk = (metin) => [...metin].length;
+
+					function tazele() {
+						const boy = uzunluk(girdi.value);
+						sayac.textContent = '';
+						const im = document.createElement('span');
+						im.setAttribute('aria-hidden', 'true');
+						im.textContent = boy > sinir ? '!' : '·';
+						sayac.append(im, ` ${boy} / ${sinir}`);
+						sayac.className = 's-sayac ' + (boy > sinir ? 's-durum-dikkat' : '');
+						olcek.style.width = Math.min(100, Math.round((boy / sinir) * 100)) + '%';
+						olcek.className =
+							's-olcek-dolgu' + (boy > sinir ? ' s-olcek-dolgu--dikkat' : '');
+
+						/*
+						  Kaydet düğmesi DEĞİŞİKLİK YOKKEN kapalı. Açık olsaydı
+						  kullanıcı hiçbir şey değiştirmeden kaydedip dosyanın
+						  tarihini değiştirir, panel de "kaynak derlemeden yeni"
+						  uyarısını sebepsiz yere gösterirdi.
+						*/
+						const degisti = girdi.value !== girdi.dataset.ilk;
+						dugme.disabled = !degisti || girdi.value.trim() === '';
+					}
+
+					function bildir(metin, sinifAdi) {
+						durum.textContent = metin;
+						durum.className = 's-alan-durum ' + sinifAdi;
+					}
+
+					girdi.addEventListener('input', () => {
+						if (durum.textContent) bildir('', '');
+						tazele();
+					});
+
+					dugme.addEventListener('click', async () => {
+						dugme.disabled = true;
+						bildir('Kaydediliyor…', 's-durum-notr');
+						try {
+							const yanit = await fetch(YAZMA_ADRESI, {
+								method: 'POST',
+								headers: { 'Content-Type': 'application/json' },
+								body: JSON.stringify({
+									dil: kutu.dataset.dil,
+									anahtar: kutu.dataset.anahtar,
+									deger: girdi.value,
+								}),
+							});
+							const sonuc = await yanit.json();
+							if (!yanit.ok || !sonuc.basarili) {
+								throw new Error(sonuc.hata || 'Kaydedilemedi.');
+							}
+							// Sunucu yazdığı DEĞERİ geri veriyor (kırpılmış hâliyle);
+							// kutuya onu koymak, dosyada duranla ekranda duranın
+							// ayrışmasını önlüyor.
+							girdi.value = sonuc.deger;
+							girdi.dataset.ilk = sonuc.deger;
+							bildir('✓ Dosyaya yazıldı. Tabloda görünmesi için yeniden derleyin.', 's-durum-iyi');
+						} catch (hata) {
+							bildir('✕ ' + (hata?.message ?? 'Kaydedilemedi.'), 's-durum-agir');
+						}
+						tazele();
+					});
+
+					tazele();
+				}
+			})();
+		</script>
+	)}
+</Kabuk>

@@ -4,6 +4,7 @@ import keystatic from '@keystatic/astro';
 import temelYapilandirma from './astro.config.mjs';
 import istatistikPaneli from './src/istatistik/eklenti.mjs';
 import kontrolPaneli from './src/kontrol/eklenti.mjs';
+import seoPaneli from './src/seo/eklenti.mjs';
 import yayinPaneli from './src/yayin/eklenti.mjs';
 import { satteri } from '@astrojs/markdown-satteri';
 import gorselTabani from './araclar/gorsel-tabani-eklentisi.mjs';
@@ -39,6 +40,10 @@ import gorselTabani from './araclar/gorsel-tabani-eklentisi.mjs';
   Site durumu ve yayınlama sayfası (`/durum`) da öyle. O sayfa sunucu adresini,
   git durumunu ve taslak başlıklarını gösteriyor; üstelik bir düğmesi canlı
   siteyi değiştiriyor. İnternete açık bir kopyası düşünülemez.
+
+  SEO yönetimi sayfası (`/seo`) da aynı listede: sitenin bütün SEO eksiklerini
+  sıralıyor ve site metinlerini DOSYAYA YAZABİLİYOR. Yazma yalnızca burada var;
+  internete açık kopyada uç nokta hiç bağlanmıyor (bkz. src/seo/eklenti.mjs).
 */
 export default defineConfig({
 	...temelYapilandirma,
@@ -83,6 +88,7 @@ export default defineConfig({
 		keystatic(),
 		istatistikPaneli(),
 		kontrolPaneli(),
+		seoPaneli(),
 		yayinPaneli(),
 	],
 });

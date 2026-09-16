@@ -4,6 +4,7 @@ import node from '@astrojs/node';
 import temelYapilandirma from './astro.config.mjs';
 import istatistikPaneli from './src/istatistik/eklenti.mjs';
 import kontrolPaneli from './src/kontrol/eklenti.mjs';
+import seoPaneli from './src/seo/eklenti.mjs';
 import yayinPaneli from './src/yayin/eklenti.mjs';
 
 /*
@@ -43,6 +44,11 @@ import yayinPaneli from './src/yayin/eklenti.mjs';
     erişilemiyor; tek kapı nginx ve orada parola koruması var.
   - `PANEL_SALT_OKUR=1` ile çalışıyor: Yayınla ve Geri al düğmeleri HTML'e
     hiç basılmıyor, onları süren betik de yok. Gizlemek yetmezdi.
+  - `PANEL_EDITOR_YOK=1` ile çalışıyor: yazı editörü sekmesi ve SEO ekranının
+    metin yazma alanları HTML'e hiç basılmıyor, yazma uç noktası da
+    bağlanmıyor. Gerekçe güvenlikten önce doğruluk: bu kopya SUNUCUDAKİ depoya
+    yazıyor ve oraya yazılan metin kullanıcının bilgisayarındaki depoya hiçbir
+    zaman ulaşmıyor — sessizce kaybolan bir düzeltme, hiç yapılamayandan kötü.
   - `PANEL_YEREL_KAYIT=1` ile çalışıyor: ziyaretçi kayıtları SSH yerine
     doğrudan yerel dosyadan okunuyor. Böylece sitenin dağıtım anahtarı
     internete bakan makinede HİÇ BULUNMUYOR — makine ele geçse bile sunucuya
@@ -85,6 +91,7 @@ export default defineConfig({
 		...(temelYapilandirma.integrations ?? []),
 		istatistikPaneli(),
 		kontrolPaneli(),
+		seoPaneli(),
 		yayinPaneli(),
 	],
 });

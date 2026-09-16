@@ -1,0 +1,288 @@
+/*
+  SEO EKRANINA ÖZGÜ SINIFLAR
+
+  Ortak sözlük `src/panel/panel.css` içinde ve o dosyaya DOKUNULMUYOR (başka
+  bir iş orada sürüyor). Burada yalnızca o sözlükte karşılığı olmayan iki şey
+  var: sayfa sayfa TABLO ve metin DÜZENLEME satırı. İkisi de bu ekrana özgü.
+
+  Bütün değerler panel.css'in değişkenlerinden geliyor; tek bir renk, boşluk ya
+  da yazı yüzü burada yeniden tanımlanmıyor. Böylece panelin teması değiştiğinde
+  bu ekran da kendiliğinden değişiyor — ve koyu temadaki "nötr gri" kuralı
+  burada ayrıca korunmak zorunda kalmıyor.
+
+  Ön ek `s-`: panel.css'in `p-` sözlüğüyle karışmasın, hangi sınıfın nereden
+  geldiği adından okunsun.
+*/
+
+/* ————————————————————————— TABLO ————————————————————————— */
+
+/*
+  Tablo 12 sütun ve dar ekrana sığmıyor. Küçültmek yerine KAYDIRILIYOR: 11
+  pikselin altına inen bir tabloda rakamlar okunmaz oluyor, sütun gizlemek ise
+  "her sayfanın her ölçüsü tek ekranda" sözünü bozardı. Kaydırma kutusu
+  klavyeyle de gezilebilsin diye odaklanabilir (`tabindex`).
+
+  YÜKSEKLİK DE SINIRLI — ve bu, yatay kaydırmanın zorunlu sonucu.
+
+  `overflow-x: auto` veren bir kutuda dikey eksen de kendiliğinden kaydırma
+  kutusuna dönüşüyor. Kutu sayfa boyu uzun olduğunda fare tekerleği onun
+  üzerindeyken sayfa HİÇ kaydırılamıyordu — ölçüldü: imleç tablonun üzerindeyken
+  10 tık tekerlek sayfada hiçbir şeyi oynatmadı, tablonun dışında aynı hareket
+  çalıştı. Yükseklik sınırlanınca tekerlek önce tabloyu, tablo bitince sayfayı
+  kaydırıyor; başlık satırı da (`position: sticky`) ancak bu kutu dikey
+  kaydığında yapışabiliyor. 21 satırlık bir tabloda sütun adının görünür kalması
+  zaten gerekliydi.
+*/
+.s-tablo-sarmal {
+	max-height: min(70vh, 640px);
+	overflow: auto;
+	border: 1px solid var(--p-cizgi);
+	border-radius: var(--p-yuvarlak);
+	background: var(--p-yuzey);
+}
+
+.s-tablo {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 12px;
+}
+
+.s-tablo th,
+.s-tablo td {
+	padding: var(--p-b2) var(--p-b3);
+	text-align: left;
+	vertical-align: top;
+	border-top: 1px solid var(--p-cizgi);
+	white-space: nowrap;
+}
+
+.s-tablo thead th {
+	position: sticky;
+	top: 0;
+	z-index: 1;
+	border-top: 0;
+	background: var(--p-yuzey-2);
+	font-family: var(--p-mono);
+	font-size: 10px;
+	font-weight: 700;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	color: var(--p-metin-2);
+}
+
+/* Satırın kimliği solda ve tek aralıklı: göz yol sütununu tarayarak
+   aradığı sayfayı buluyor. */
+.s-yol {
+	font-family: var(--p-mono);
+	font-size: 12px;
+	font-weight: 600;
+	color: var(--p-metin);
+}
+
+.s-dil {
+	margin-left: 6px;
+	font-family: var(--p-mono);
+	font-size: 10px;
+	text-transform: uppercase;
+	color: var(--p-metin-3);
+}
+
+/*
+  Başlık ve açıklama hücreleri: metin sarılıyor ve genişliği sınırlı.
+  Tek satıra sıkıştırılıp üç noktayla kesilselerdi, ekranın asıl sorusu olan
+  "bu başlık arama sonucunda nasıl görünüyor" cevapsız kalırdı.
+*/
+/* Seçici iki sınıflı: `.s-tablo td` kuralındaki `nowrap` tek sınıf + tek etiket
+   ağırlığında ve yalnız `.s-metin` onu yenemezdi — metin sarılmaz, hücre tek
+   satır kalırdı. */
+.s-tablo .s-metin {
+	white-space: normal;
+	min-width: 220px;
+	max-width: 340px;
+	line-height: 1.45;
+	color: var(--p-metin);
+}
+
+.s-metin--bos {
+	color: var(--p-agir);
+	font-style: italic;
+}
+
+/* Metni üreten `metinler-*.json` anahtarı: metnin kendisiyle karışmasın diye
+   tek aralıklı ve soluk — bir bilgi, bir cümle değil. */
+.s-kaynak {
+	margin-top: 3px;
+	font-family: var(--p-mono);
+	font-size: 10px;
+	color: var(--p-metin-3);
+}
+
+.s-olcu-not {
+	margin-top: 3px;
+	font-size: 11px;
+	color: var(--p-metin-2);
+}
+
+/* Uzunluk rakamı: hizalansın diye tek aralıklı ve sabit genişlikli. */
+.s-uzunluk {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	font-family: var(--p-mono);
+	font-size: 11px;
+	font-weight: 700;
+	font-variant-numeric: tabular-nums;
+}
+
+.s-durum-iyi {
+	color: var(--p-iyi);
+}
+
+.s-durum-dikkat {
+	color: var(--p-dikkat);
+}
+
+.s-durum-agir {
+	color: var(--p-agir);
+}
+
+.s-durum-notr {
+	color: var(--p-metin-3);
+}
+
+/* Hücre içindeki küçük durum: simge + sözcük yan yana, renk üçüncü işaret. */
+.s-hucre-durum {
+	display: inline-flex;
+	align-items: baseline;
+	gap: 5px;
+	font-size: 11px;
+	font-weight: 600;
+}
+
+.s-sayi {
+	font-family: var(--p-mono);
+	font-weight: 700;
+	font-variant-numeric: tabular-nums;
+}
+
+.s-tur {
+	font-family: var(--p-mono);
+	font-size: 11px;
+	color: var(--p-metin-2);
+}
+
+/* ————————————————————————— DÜZENLEME SATIRI ————————————————————————— */
+
+.s-alanlar {
+	display: grid;
+	gap: var(--p-b3);
+}
+
+@media (min-width: 900px) {
+	.s-alanlar {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+}
+
+.s-alan {
+	display: grid;
+	gap: 6px;
+	padding: var(--p-b3);
+	border: 1px solid var(--p-cizgi);
+	border-radius: var(--p-yuvarlak);
+	background: var(--p-yuzey-2);
+}
+
+.s-alan-basi {
+	display: flex;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: var(--p-b2);
+}
+
+.s-alan-ad {
+	font-family: var(--p-mono);
+	font-size: 11px;
+	font-weight: 700;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	color: var(--p-metin);
+}
+
+.s-alan-anahtar {
+	font-family: var(--p-mono);
+	font-size: 10px;
+	color: var(--p-metin-3);
+}
+
+/*
+  Metin kutusu `textarea` değil `input`: bu alanlar tek satır olarak basılıyor
+  (<title>, <meta description>) ve çok satırlı bir kutu, kabul edilmeyecek bir
+  şeyi yazılabilir gösterirdi.
+*/
+.s-girdi {
+	width: 100%;
+	padding: 7px 9px;
+	border: 1px solid var(--p-cizgi-guclu);
+	border-radius: var(--p-yuvarlak-kucuk);
+	background: var(--p-yuzey);
+	color: var(--p-metin);
+	font-family: inherit;
+	font-size: 13px;
+	line-height: 1.4;
+}
+
+.s-alan-alti {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--p-b2);
+}
+
+/* Sayaç yazarken anında değişiyor; sınırı aşınca simgesi ve sözcüğü de
+   değişiyor, yalnızca rengi değil. */
+.s-sayac {
+	display: inline-flex;
+	align-items: baseline;
+	gap: 5px;
+	font-family: var(--p-mono);
+	font-size: 11px;
+	font-weight: 700;
+	font-variant-numeric: tabular-nums;
+	color: var(--p-metin-2);
+}
+
+.s-alan-durum {
+	font-size: 11px;
+	min-height: 15px;
+}
+
+/* ————————————————————————— ÖLÇÜ ÇUBUĞU ————————————————————————— */
+
+/*
+  Saf CSS ölçek: başlığın sınıra göre nerede durduğunu rakamdan önce gösteren
+  tek çizgi. Kütüphane yok — bir çubuğun genişliği için paket eklemek bu
+  paneldeki hiçbir soruya cevap vermezdi.
+*/
+.s-olcek {
+	position: relative;
+	height: 4px;
+	margin-top: 5px;
+	border-radius: 999px;
+	background: var(--p-yuzey-3);
+	overflow: hidden;
+}
+
+.s-olcek-dolgu {
+	height: 100%;
+	background: var(--p-vurgu-dolgu);
+}
+
+.s-olcek-dolgu--dikkat {
+	background: var(--p-dikkat-dolgu);
+}
+
+.s-olcek-dolgu--agir {
+	background: var(--p-agir-dolgu);
+}
