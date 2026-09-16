@@ -1,4 +1,4 @@
-import { app, BrowserWindow, Menu, shell, dialog, nativeTheme } from 'electron';
+import { app, BrowserWindow, Menu, shell, dialog } from 'electron';
 import { spawn, spawnSync } from 'node:child_process';
 import { createServer } from 'node:net';
 import { readFileSync, writeFileSync } from 'node:fs';
@@ -455,16 +455,29 @@ function pencereyiKur() {
 		title: 'Yönetim paneli',
 		/*
 		  Pencere ilk boyanana kadar bu renkte duruyor; sayfa yüklenirken beyaz
-		  bir kare parlamasın diye. Sabit koyu bir renk verilseydi açık temada
-		  bu sefer ters yönde parlardı, o yüzden sistemin temasına bakılıyor.
+		  bir kare parlamasın diye.
+
+		  Eskiden sistemin temasına bakılıyordu (`shouldUseDarkColors`). Artık
+		  sabit koyu: panelin dört sayfası da koyu — üçü kendi stiliyle,
+		  Keystatic de `masaustu/onyukleme.cjs` sayesinde. Sisteme bakmak açık
+		  temalı bir makinede pencereyi açık renk boyar, sayfa koyu gelir ve
+		  tam olarak kaçındığımız parlama çıkardı. Renk Keystatic'in koyu
+		  ölçeğinden alındı (`--kui-color-scale-slate2`), böylece pencere
+		  zemini ile sayfa zemini arasında geçiş görünmüyor.
 
 		  `show: false` + `ready-to-show` kalıbı bilinçli olarak KULLANILMIYOR:
 		  `loadFile` ile yerel bir dosya yüklendiğinde o olay ateşlenmeyip
 		  pencere görünmez kalıyordu — başlığı ve tutamacı olan ama ekranda
 		  hiç çizilmeyen bir pencere. Pencere baştan görünür açılıyor.
 		*/
-		backgroundColor: nativeTheme.shouldUseDarkColors ? '#0a0a0a' : '#fafafa',
+		backgroundColor: '#252525',
 		webPreferences: {
+			/*
+			  Koyu tema ve Türkçeleştirme burada: preload sayfanın kendi
+			  JavaScript'inden ÖNCE çalışan tek yer. Gerekçesi o dosyanın
+			  başında yazılı.
+			*/
+			preload: join(BURASI, 'onyukleme.cjs'),
 			/*
 			  Uygulama yalnızca 127.0.0.1 yüklüyor, yani teoride bu ayarlar
 			  olmadan da "güvenli". Yine de açık bırakılıyorlar çünkü yüklenen
