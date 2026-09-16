@@ -118,6 +118,55 @@ export interface YinelenenKayit {
 	rotalar: string[];
 }
 
+/*
+  PUANLAMA
+
+  Tek bir rakam vermenin riski şu: rakam yükselsin diye ölçüyü kolaylaştırma
+  isteği doğar ve panel gerçeği değil kendini ölçmeye başlar. Bu yüzden puan
+  üç kurala bağlandı.
+
+  1. Puan YALNIZCA bu ekranın zaten ölçtüğü şeylerden türüyor. Yeni bir
+     "SEO hissi" katsayısı yok; her kayıp bir kusura kadar izlenebiliyor.
+  2. Her kalem kimin işi olduğunu söylüyor (`is`). Metin uzunluğunu kullanıcı
+     düzeltir, canonical'ı kod düzeltir; ikisini aynı torbaya koyan bir puan
+     "ne yapmalıyım" sorusunu cevaplayamaz.
+  3. Ağırlıklar etkiye göre: dizine girmeyen sayfanın başlığının hiçbir önemi
+     yok, o yüzden dizinlenebilirlik en ağır kalem.
+
+  `dikkat` yarım puan alıyor, `agir` sıfır. Uyarıyı da sıfırlamak "eşik bir
+  karakter aşıldı" ile "etiket hiç yok"u aynı yere koyardı.
+*/
+
+export interface PuanKalemi {
+	ad: string;
+	/** Toplam 100 içindeki payı. */
+	agirlik: number;
+	/** Kazanılan puan, 0..agirlik. */
+	kazanilan: number;
+	/** Ölçülen öğe sayısı ve bunların kaçı tam — "23 sayfanın 21'i". */
+	toplamOge: number;
+	tamOge: number;
+	/** Puan kaybı varsa tek cümlelik gerekçe; kayıp yoksa boş. */
+	not: string;
+	/** Kaybı kim kapatır: biçim/kod mu, yazılan metin mi. */
+	is: 'teknik' | 'metin';
+}
+
+export interface Puan {
+	/** 0..100, tam sayıya yuvarlanmış. */
+	toplam: number;
+	durum: Durum;
+	/** "İyi", "Geliştirilebilir" gibi tek sözcüklük hüküm. */
+	hukum: string;
+	kalemler: PuanKalemi[];
+	/** En çok puan kaybettiren kalemin adı; kayıp yoksa boş. */
+	enBuyukKayip: string;
+	/** Metin kaynaklı toplam kayıp — kullanıcının elindeki puan. */
+	metinKaybi: number;
+	/** Teknik kaynaklı toplam kayıp. */
+	teknikKaybi: number;
+}
+
 export interface SeoRaporu {
 	/** `dist/` var mı — yoksa rapor üretilemiyor, kullanıcıya "derleyin" deniyor. */
 	ciktiVar: boolean;
@@ -134,6 +183,8 @@ export interface SeoRaporu {
 	yinelenenAciklama: YinelenenKayit[];
 	/** Panelden düzenlenebilen metin alanları (iki dil). */
 	alanlar: MetinAlani[];
+	/** Ölçülenlerden türeyen tek rakam ve dökümü. */
+	puan: Puan;
 	/** Bu aracın BAKMADIĞI şeyler; "bulgu yok" ile "bakmadım" karışmasın. */
 	kapsamDisi: string[];
 }
@@ -389,6 +440,166 @@ function adresiRotayaCevir(adres: string, koku: string, taban: string): string {
 /* Rapor                                                               */
 /* ------------------------------------------------------------------ */
 
+/* ------------------------------------------------------------------ */
+/* Puan                                                                */
+/* ------------------------------------------------------------------ */
+
+/** `iyi` tam, `dikkat` yarım, `agir` ve `notr` sıfır puan. */
+function durumKatsayisi(durum: Durum): number {
+	if (durum === 'iyi') return 1;
+	if (durum === 'dikkat') return 0.5;
+	return 0;
+}
+
+/** Site geneli ölçüsünü adıyla bulur; yoksa `notr` sayılır. */
+function olcuKatsayisi(olculer: SiteOlcusu[], ad: string): number {
+	const o = olculer.find((x) => x.ad === ad);
+	return o ? durumKatsayisi(o.durum) : 0;
+}
+
+function puanla(
+	ad: string,
+	agirlik: number,
+	is: 'teknik' | 'metin',
+	oranlar: number[],
+	not: (eksik: number) => string,
+): PuanKalemi {
+	/*
+	  Ölçülecek öğe yoksa kalem TAM sayılıyor. Alternatifi sıfır vermekti ve
+	  yanlış olurdu: ölçülecek bir şeyin olmaması bir kusur değil.
+	*/
+	const toplamOge = oranlar.length;
+	const tamOge = oranlar.filter((x) => x === 1).length;
+	const ortalama = toplamOge === 0 ? 1 : oranlar.reduce((a, b) => a + b, 0) / toplamOge;
+	const kazanilan = agirlik * ortalama;
+	const eksik = toplamOge - tamOge;
+	return {
+		ad,
+		agirlik,
+		kazanilan,
+		toplamOge,
+		tamOge,
+		not: eksik > 0 ? not(eksik) : '',
+		is,
+	};
+}
+
+export function puanHesapla(
+	sayfalar: SayfaOlcumu[],
+	olculer: SiteOlcusu[],
+	yinelenenBaslik: YinelenenKayit[],
+	yinelenenAciklama: YinelenenKayit[],
+): Puan {
+	/*
+	  `noindex` sayfalar (404) puana girmiyor: dizine girmeyecekleri için
+	  başlıkları, dil bağları ve haritada bulunmamaları kusur değil. Girselerdi
+	  puan hiçbir zaman 100 olamazdı ve rakam anlamsızlaşırdı.
+	*/
+	const olculen = sayfalar.filter((s) => !s.dizinDisi);
+
+	const kalemler: PuanKalemi[] = [
+		// Dizine girmeyen sayfanın başka hiçbir ölçüsü işe yaramıyor: en ağır kalem.
+		puanla(
+			'Dizinlenebilirlik',
+			30,
+			'teknik',
+			[
+				olcuKatsayisi(olculer, 'Site haritası'),
+				olcuKatsayisi(olculer, 'Canonical'),
+				olcuKatsayisi(olculer, 'Yetim sayfalar'),
+			],
+			() => 'Site haritası, canonical ya da iç bağlantı zincirinde eksik var.',
+		),
+		puanla(
+			'Sayfa başlıkları',
+			20,
+			'metin',
+			olculen.map((s) => durumKatsayisi(s.baslik.durum)),
+			(n) => `${n} sayfanın başlığı uzunluk sınırının dışında.`,
+		),
+		puanla(
+			'Açıklamalar',
+			15,
+			'metin',
+			olculen.map((s) => durumKatsayisi(s.aciklama.durum)),
+			(n) => `${n} sayfanın açıklaması uzunluk sınırının dışında.`,
+		),
+		// İki dilli bir sitede eksik dil bağı, yanlış dildeki sayfanın sıralanmasına yol açıyor.
+		puanla(
+			'Dil bağları',
+			15,
+			'metin',
+			olculen.map((s) => (s.hreflangTam ? 1 : 0)),
+			(n) => `${n} sayfada dil bağı eksik — çoğu zaman çevirisi hiç yok.`,
+		),
+		puanla(
+			'Paylaşım ve yapılandırılmış veri',
+			10,
+			'teknik',
+			[
+				olcuKatsayisi(olculer, 'Paylaşım görseli'),
+				...olculen.map((s) => (s.jsonLdTurleri.length > 0 ? 1 : 0)),
+			],
+			() => 'Paylaşım görseli ya da JSON-LD eksik olan sayfa var.',
+		),
+		puanla(
+			'Teknik düzen',
+			10,
+			'teknik',
+			[
+				olcuKatsayisi(olculer, 'robots.txt'),
+				...olculen.map((s) => (s.h1Sayisi === 1 ? 1 : 0)),
+				yinelenenBaslik.length === 0 ? 1 : 0,
+				yinelenenAciklama.length === 0 ? 1 : 0,
+			],
+			() => 'robots.txt, H1 sayısı ya da yinelenen metin kalemlerinden biri eksik.',
+		),
+	];
+
+	const toplamHam = kalemler.reduce((a, k) => a + k.kazanilan, 0);
+	const toplam = Math.round(toplamHam);
+
+	const kayiplar = kalemler
+		.map((k) => ({ ad: k.ad, kayip: k.agirlik - k.kazanilan }))
+		.filter((x) => x.kayip > 0.01)
+		.sort((a, b) => b.kayip - a.kayip);
+
+	const topla = (is: 'teknik' | 'metin') =>
+		Math.round(
+			kalemler.filter((k) => k.is === is).reduce((a, k) => a + (k.agirlik - k.kazanilan), 0),
+		);
+
+	/*
+	  Eşikler cömert değil. 90 "iyi" demek için yeterli çünkü kalan kayıp
+	  genelde tek bir uzun açıklama oluyor; 70'in altı ise dizinlenebilirlikte
+	  bir şeyin kırık olduğu anlamına geliyor ve bu ağır bir durum.
+	*/
+	let hukum = 'Çok iyi';
+	let durum: Durum = 'iyi';
+	if (toplam < 90) {
+		hukum = 'İyi';
+		durum = 'iyi';
+	}
+	if (toplam < 75) {
+		hukum = 'Geliştirilebilir';
+		durum = 'dikkat';
+	}
+	if (toplam < 55) {
+		hukum = 'Zayıf';
+		durum = 'agir';
+	}
+
+	return {
+		toplam,
+		durum,
+		hukum,
+		kalemler,
+		enBuyukKayip: kayiplar.length ? kayiplar[0].ad : '',
+		metinKaybi: topla('metin'),
+		teknikKaybi: topla('teknik'),
+	};
+}
+
 export async function seoRaporu(): Promise<SeoRaporu> {
 	const kok = process.cwd();
 	const ciktiKoku = join(kok, CIKTI_KLASORU);
@@ -408,6 +619,15 @@ export async function seoRaporu(): Promise<SeoRaporu> {
 		yinelenenBaslik: [],
 		yinelenenAciklama: [],
 		alanlar,
+		puan: {
+			toplam: 0,
+			durum: 'notr',
+			hukum: 'Ölçülemedi',
+			kalemler: [],
+			enBuyukKayip: '',
+			metinKaybi: 0,
+			teknikKaybi: 0,
+		},
 		kapsamDisi: [],
 	};
 	if (dosyalar.length === 0) return bos;
@@ -632,7 +852,7 @@ export async function seoRaporu(): Promise<SeoRaporu> {
 			: robotsEngel
 				? '`Disallow: /` bütün siteyi arama motorlarına kapatıyor.'
 				: taban
-					? `Dosya doğru yazılmış ama yanlış yere düşüyor: robots.txt yalnızca alan adının kökünden okunur, bu site ise "${taban}" altında yayınlanıyor. Dosya "${taban}/robots.txt" adresine gidiyor ve okunmuyor. Site köke taşınana kadar sunucu tarafında bir yönlendirme gerekiyor.`
+					? `Dosya doğru yazılmış ama yanlış yere düşüyor: robots.txt yalnızca alan adının kökünden okunur, bu site ise "${taban}" altında yayınlanıyor. Dosya "${taban}/robots.txt" adresine gidiyor ve okunmuyor. ÇÖZÜM YÖNLENDİRME DEĞİL: kökteki robots.txt alan adındaki öteki uygulamaya ait ve dolu, yönlendirme onu kırar. Yapılacak iş, o dosyaya tek satır eklemek — "Sitemap: ${koku}${taban}/sitemap-index.xml". robots.txt birden çok Sitemap satırı kabul ediyor ve bu satır öteki uygulamanın kurallarına dokunmuyor.`
 					: 'Dosya kökte ve site haritasını gösteriyor.',
 		ayrinti: robotsMetni
 			? robotsMetni.split('\n').filter((s) => s.trim()).map((s) => s.trim())
@@ -758,6 +978,7 @@ export async function seoRaporu(): Promise<SeoRaporu> {
 		yinelenenBaslik,
 		yinelenenAciklama,
 		alanlar,
+		puan: puanHesapla(sayfalar, olculer, yinelenenBaslik, yinelenenAciklama),
 		kapsamDisi: [
 			'Ölçüm son derlemeye bakıyor; kaynakta yapılan ama derlenmemiş değişiklik burada görünmez.',
 			'Sıralama, tıklanma ve arama hacmi ölçülmüyor: bunlar için arama motorunun kendi verisi gerekiyor.',

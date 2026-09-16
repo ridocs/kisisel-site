@@ -286,3 +286,152 @@
 .s-olcek-dolgu--agir {
 	background: var(--p-agir-dolgu);
 }
+
+/* ————————————————————————— PUAN ————————————————————————— */
+
+/*
+  Puan kartı iki sütun: solda rakam, sağda dökümü. Dökümü kısmak ve yalnızca
+  rakamı göstermek düşünüldü, reddedildi — tek başına bir sayı neyin
+  düzeltileceğini söylemiyor ve panelin işi tam olarak bunu söylemek.
+
+  Renkler ve boşluklar panel.css değişkenlerinden; burada hiçbir renk yeniden
+  tanımlanmıyor.
+*/
+.s-puan {
+	display: grid;
+	gap: var(--p-b6);
+}
+
+@media (min-width: 900px) {
+	.s-puan {
+		/* Sol sütun rakamın genişliğine göre sabit; dökümü kalanı alıyor.
+		   `auto` yerine sabit vermek, kalemlerin adı uzadıkça rakamın
+		   kaymasını engelliyor. */
+		grid-template-columns: 210px 1fr;
+		align-items: start;
+	}
+}
+
+.s-puan-sol {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: var(--p-b2);
+}
+
+.s-puan-sayi {
+	font-family: var(--p-yazi-tek, ui-monospace, monospace);
+	/* 44 piksel: ekrandaki en büyük rakam bu olmalı, ama başlıkla yarışmasın. */
+	font-size: 44px;
+	line-height: 1;
+	font-weight: 700;
+	font-variant-numeric: tabular-nums;
+}
+
+.s-puan-bolu {
+	font-size: 16px;
+	font-weight: 400;
+	color: var(--p-metin-kisik);
+	margin-left: 2px;
+}
+
+.s-puan-ozet {
+	margin: 0;
+	max-width: 34ch;
+}
+
+.s-puan-dokum {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: grid;
+	gap: var(--p-b2);
+}
+
+/*
+  Satır dört parçalı: ad, çubuk, rakam, gerekçe. Dar ekranda çubuk ile rakam
+  yan yana kalıyor, gerekçe alta iniyor — gerekçe en uzun parça ve onu
+  sıkıştırmak okunmaz hâle getiriyordu.
+*/
+.s-puan-satir {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) auto;
+	align-items: center;
+	gap: var(--p-b1) var(--p-b3);
+	padding-bottom: var(--p-b2);
+	border-bottom: 1px solid var(--p-cizgi);
+}
+
+.s-puan-satir:last-child {
+	border-bottom: 0;
+	padding-bottom: 0;
+}
+
+@media (min-width: 720px) {
+	.s-puan-satir {
+		grid-template-columns: 220px 120px auto minmax(0, 1fr);
+	}
+}
+
+.s-puan-ad {
+	display: flex;
+	align-items: center;
+	gap: var(--p-b2);
+	font-weight: 500;
+}
+
+/*
+  "metin" / "teknik" etiketi kararın sahibini söylüyor. Renkle değil SÖZCÜKLE
+  ayrılıyor: renk körlüğünde ayrım kaybolurdu ve bu etiket puanın en işe
+  yarayan parçası.
+*/
+.s-puan-is {
+	font-size: 11px;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	padding: 1px 6px;
+	border-radius: var(--p-yuvarlak-kucuk);
+	border: 1px solid var(--p-cizgi);
+	color: var(--p-metin-kisik);
+	white-space: nowrap;
+}
+
+.s-puan-is--metin {
+	border-color: var(--p-vurgu-soluk);
+	color: var(--p-vurgu);
+}
+
+.s-puan-cubuk {
+	display: block;
+	height: 6px;
+	border-radius: 999px;
+	background: var(--p-cizgi);
+	overflow: hidden;
+}
+
+.s-puan-dolu {
+	display: block;
+	height: 100%;
+	border-radius: 999px;
+	background: currentColor;
+}
+
+.s-puan-deger {
+	font-family: var(--p-yazi-tek, ui-monospace, monospace);
+	font-variant-numeric: tabular-nums;
+	font-size: 13px;
+	white-space: nowrap;
+}
+
+.s-puan-not {
+	color: var(--p-metin-kisik);
+	font-size: 13px;
+	/* Dar ekranda satırın tamamını kaplasın; üstteki iki sütunun altına geçsin. */
+	grid-column: 1 / -1;
+}
+
+@media (min-width: 720px) {
+	.s-puan-not {
+		grid-column: auto;
+	}
+}

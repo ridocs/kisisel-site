@@ -216,6 +216,72 @@ const enAlanlari = rapor.alanlar.filter((a) => a.dil === 'en');
 		{
 			rapor.ciktiVar && (
 				<>
+					{/*
+					  PUAN — ekranın ilk şeyi.
+
+					  Rakamın yanında MUTLAKA dökümü duruyor. Tek başına bir "98"
+					  hiçbir şey söylemez ve yükseltmek için ne yapılacağını hiç
+					  söylemez; asıl bilgi hangi kalemin kaç puan kaybettirdiği.
+
+					  İki kayıp ayrı ayrı yazılıyor: metin kaynaklı olan kullanıcının
+					  elinde (başlık/açıklama yazmak), teknik olan kodun. Kullanıcı
+					  "benim yapacağım bir şey var mı" sorusunu tek bakışta
+					  cevaplayabilsin.
+					*/}
+					<section class="p-kart s-puan">
+						<div class="s-puan-sol">
+							<div class={`s-puan-sayi ${GORUNUS[rapor.puan.durum].sinif}`}>
+								{rapor.puan.toplam}
+								<span class="s-puan-bolu">/100</span>
+							</div>
+							<span class={`p-rozet ${GORUNUS[rapor.puan.durum].rozet}`}>
+								<span class="p-im" aria-hidden="true">{GORUNUS[rapor.puan.durum].im}</span>
+								{rapor.puan.hukum}
+							</span>
+							<p class="p-not s-puan-ozet">
+								{rapor.puan.toplam === 100 ? (
+									'Ölçülen her kalem tam.'
+								) : (
+									<>
+										Kayıp: <strong>{rapor.puan.metinKaybi} puan metin</strong>,{' '}
+										<strong>{rapor.puan.teknikKaybi} puan teknik</strong>.
+										{rapor.puan.enBuyukKayip && <> En çok kaybettiren: {rapor.puan.enBuyukKayip}.</>}
+									</>
+								)}
+							</p>
+						</div>
+
+						<ul class="s-puan-dokum">
+							{rapor.puan.kalemler.map((k) => {
+								const oran = k.agirlik === 0 ? 1 : k.kazanilan / k.agirlik;
+								const durum: Durum = oran >= 0.999 ? 'iyi' : oran >= 0.75 ? 'dikkat' : 'agir';
+								return (
+									<li class="s-puan-satir">
+										<span class="s-puan-ad">
+											{k.ad}
+											<span class={`s-puan-is s-puan-is--${k.is}`}>
+												{k.is === 'metin' ? 'metin' : 'teknik'}
+											</span>
+										</span>
+										{/* Çubuk süs değil: kazanılanın ağırlığa oranı. Genişlik
+										    yüzdeyle veriliyor, rakam da yanında duruyor ki
+										    ekran okuyucuda da okunsun. */}
+										<span class="s-puan-cubuk" aria-hidden="true">
+											<span
+												class={`s-puan-dolu ${GORUNUS[durum].sinif}`}
+												style={`width: ${Math.round(oran * 100)}%`}
+											/>
+										</span>
+										<span class="s-puan-deger">
+											{k.kazanilan.toFixed(1).replace('.0', '')}/{k.agirlik}
+										</span>
+										<span class="s-puan-not">{k.not || `${k.tamOge}/${k.toplamOge} tam`}</span>
+									</li>
+								);
+							})}
+						</ul>
+					</section>
+
 					{/* ÖZET — dört rakam; hangisinin iyi hangisinin kötü olduğu rozetten
 					    okunuyor, renkten değil */}
 					<section class="p-izgara p-izgara--4">
