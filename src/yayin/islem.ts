@@ -1,5 +1,22 @@
 import type { APIRoute } from 'astro';
 import { islemiYurut, islemSuruyorMu, islemiKilitle, kilidiAc } from './islem-yurut.mjs';
+import { kokuAyarla } from './yayinla.mjs';
+
+/*
+  PROJE KÖKÜ BURADA AYARLANIYOR, EKLENTİDE DEĞİL.
+
+  `eklenti.mjs` kökü `astro:config:setup` içinde veriyor; o kanca DERLEME
+  anında çalışıyor. Masaüstünde sorun çıkmıyordu çünkü orada ara katman aynı
+  süreçte yaşıyor. Derlenmiş sunucuda ise uç nokta ayrı bir süreçte ve İSTEK
+  anında çalışıyor: yapılandırma kancası oraya hiç uğramıyor, kök ayarsız
+  kalıyordu.
+
+  Belirti: "Proje kökü ayarlanmadı" hatası. Ölçülerek bulundu.
+
+  `process.cwd()` doğru kaynak: servis depo klasöründen başlatılıyor
+  (pm2 çalışma dizini `/opt/panel/kisisel-site`).
+*/
+kokuAyarla(process.cwd());
 
 /*
   YAYIN İŞLEMLERİ — SUNUCU KİPİ UÇ NOKTASI
