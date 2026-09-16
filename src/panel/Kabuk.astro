@@ -22,7 +22,7 @@ interface Props {
 	/** Sekme başlığı ve sayfanın H1'i. */
 	baslik: string;
 	/** Hangi panelde olduğumuz; üst şeritte işaretlenir. */
-	aktif: 'istatistik' | 'kontrol' | 'durum';
+	aktif: 'istatistik' | 'kontrol' | 'seo' | 'durum';
 	/** Başlığın yanındaki bağlam satırı: kaynak, çekim anı, özet. */
 	not?: string;
 }
@@ -75,6 +75,7 @@ const PANELLER = [
 		: []),
 	{ anahtar: 'istatistik', ad: 'İstatistik', adres: yol('/istatistik'), disari: false },
 	{ anahtar: 'kontrol', ad: 'Yayın öncesi kontrol', adres: yol('/kontrol'), disari: false },
+	{ anahtar: 'seo', ad: 'SEO', adres: yol('/seo'), disari: false },
 	{ anahtar: 'durum', ad: 'Site durumu', adres: yol('/durum'), disari: false },
 ] as const;
 ---

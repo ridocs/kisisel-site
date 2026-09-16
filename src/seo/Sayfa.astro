@@ -44,7 +44,6 @@ const yazmaAcik = yazmaAcikMi();
   "buradasın" diye işaretlenmiyor — yanlış sekmeyi işaretlemekten iyisi bu.
   Kabuk'a sekme eklendiğinde buradaki dönüştürme de kalkacak.
 */
-const AKTIF = 'seo' as unknown as 'kontrol';
 
 /* ------------------------------------------------------------------ */
 /* Görünüş                                                             */
@@ -159,7 +158,7 @@ const enAlanlari = rapor.alanlar.filter((a) => a.dil === 'en');
 
 <Kabuk
 	baslik="SEO yönetimi"
-	aktif={AKTIF}
+	aktif="seo"
 	not={rapor.ciktiVar
 		? `${rapor.sayfalar.length} sayfa ölçüldü · derleme: ${derlemeMetni} · ${olcumAni}`
 		: `Derlenmiş çıktı yok · ${olcumAni}`}

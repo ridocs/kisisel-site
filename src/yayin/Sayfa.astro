@@ -288,7 +288,12 @@ const saltOkur = process.env.PANEL_SALT_OKUR === '1';
 			</div>
 
 			{/* İŞLEM KAYDI — derleme yarım dakika sürüyor, boş ekran donma sanılıyor */}
-			<pre id="kayit" hidden class="p-kayit p-kart-govde"></pre>
+			{/*
+				  `tabindex` kutuyu klavyeyle odaklanabilir yapıyor. Kayıt uzun ve
+				  kendi içinde kayıyor; odaklanamayan bir kutuyu klavye kullanıcısı
+				  kaydıramıyor, yayın çıktısının sonunu hiç göremiyordu.
+				*/}
+				<pre id="kayit" hidden tabindex="0" class="p-kayit p-kart-govde"></pre>
 		</section>
 
 		{/* GERİ ALMA */}
