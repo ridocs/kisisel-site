@@ -59,17 +59,8 @@ const { baslik, aktif, not } = Astro.props;
 const onek = import.meta.env.BASE_URL.replace(/\/$/, '');
 const yol = (adres: string) => `${onek}${adres}`;
 
-/*
-  Yazı editörü yalnızca masaüstü panelinde var; internete açık kopyada
-  Keystatic hiç derlenmiyor. Bağlantıyı yine de bassaydık 404'e giden ölü bir
-  sekme olurdu — kullanıcı tıklar, boş sayfa alır, sebebini anlamaz.
-*/
-const yaziEditoruVar = process.env.PANEL_SALT_OKUR !== '1';
-
 const PANELLER = [
-	...(yaziEditoruVar
-		? [{ anahtar: 'yazilar', ad: 'Yazılar', adres: yol('/keystatic'), disari: true } as const]
-		: []),
+	{ anahtar: 'yazilar', ad: 'Yazılar', adres: yol('/keystatic'), disari: true },
 	{ anahtar: 'istatistik', ad: 'İstatistik', adres: yol('/istatistik'), disari: false },
 	{ anahtar: 'kontrol', ad: 'Yayın öncesi kontrol', adres: yol('/kontrol'), disari: false },
 	{ anahtar: 'durum', ad: 'Site durumu', adres: yol('/durum'), disari: false },

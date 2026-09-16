@@ -1,6 +1,7 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
 import node from '@astrojs/node';
+import keystatic from '@keystatic/astro';
 import temelYapilandirma from './astro.config.mjs';
 import istatistikPaneli from './src/istatistik/eklenti.mjs';
 import kontrolPaneli from './src/kontrol/eklenti.mjs';
@@ -15,10 +16,15 @@ import yayinPaneli from './src/yayin/eklenti.mjs';
 
   NEDEN AYRI BİR YAPILANDIRMA
 
-  1. KEYSTATIC BURADA YOK. Keystatic dosyaları diske yazıyor. Bu kopya
-     sunucuda çalışıyor, yani buradan yazılan bir yazı sunucudaki dosyaya
-     giderdi — kullanıcının deposuna hiç ulaşmazdı. İki ayrı içerik deposu
-     oluşur, biri diğerini ezerdi. Yazma masaüstünde kalıyor.
+  1. KEYSTATIC VAR ama tek başına değil. Keystatic dosyaları diske yazıyor;
+     bu kopya sunucuda çalıştığı için yazılan yazı sunucudaki dosyaya
+     düşüyor ve kullanıcının deposuna kendiliğinden ulaşmıyor. İki kopya
+     çatallanırdı.
+
+     Bunu `araclar/icerik-esitleyici.mjs` çözüyor: içerik klasörlerini
+     izliyor, değişiklikleri toplayıp işliyor ve GitHub'a gönderiyor. Yani
+     tek gerçek kaynak yine depo. Eşitleyici çalışmıyorsa yazılar sunucuda
+     birikir — kayıtlarında sebebi yazıyor.
 
   2. SUNUCU KİPİ. Panel sayfaları çalışma anında ölçüm yapıyor: kayıt
      okuyor, git durumuna bakıyor, dosya deniyor. Statik derlemede bu
@@ -74,6 +80,7 @@ export default defineConfig({
 	adapter: node({ mode: 'standalone' }),
 	integrations: [
 		...(temelYapilandirma.integrations ?? []),
+		keystatic(),
 		istatistikPaneli(),
 		kontrolPaneli(),
 		yayinPaneli(),
