@@ -25,11 +25,21 @@ interface Props {
 	aktif: 'istatistik' | 'kontrol' | 'durum';
 	/** Başlığın yanındaki bağlam satırı: kaynak, çekim anı, özet. */
 	not?: string;
-	/** Durum ve kontrol ekranları liste ağırlıklı; dar sütun okumayı kolaylaştırıyor. */
-	dar?: boolean;
 }
 
-const { baslik, aktif, not, dar = false } = Astro.props;
+/*
+  Genişlik seçeneği YOK, üç ekran da aynı sütunu kullanıyor.
+
+  Önce istatistik geniş (1220px), kontrol ve durum dar (920px) idi; gerekçe
+  liste ağırlıklı ekranlarda satır uzunluğuydu. Ama sekmeler arasında geçerken
+  içerik her seferinde yerinden oynuyordu ve bu, okuma kolaylığından daha çok
+  rahatsız ediyordu. Tek ölçü seçildi: istatistiğin iki sütunlu ızgarası için
+  yeterli, öbür ikisinde satırları aşırı germeyecek kadar dar.
+
+  Satır uzunluğu sorunu sütunu daraltarak değil, metin bloklarının kendi üst
+  sınırıyla çözülüyor (`p-olcum` altındaki açıklama metinleri).
+*/
+const { baslik, aktif, not } = Astro.props;
 
 /*
   Dört panel tek listede. "Yazılar" Keystatic'e gidiyor — o sayfa bizim değil,
@@ -92,7 +102,7 @@ const PANELLER = [
 			</div>
 		</header>
 
-		<main id="panel-icerik" class={dar ? 'p-govde p-govde--dar' : 'p-govde'}>
+		<main id="panel-icerik" class="p-govde">
 			<div class="p-basi">
 				<h1 class="p-h1">{baslik}</h1>
 				{not && <p class="p-basi-not">{not}</p>}

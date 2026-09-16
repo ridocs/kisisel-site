@@ -266,14 +266,14 @@ html:has(.p-kabuk) {
 
 /* ————————————————————————— SAYFA GÖVDESİ ————————————————————————— */
 
+/*
+  Üç ekranın ortak sütunu. Tek ölçü: sekme değiştirirken içeriğin yerinden
+  oynamaması, ekran başına birkaç piksel ideal genişlikten daha önemli.
+*/
 .p-govde {
-	max-width: 1220px;
+	max-width: 1100px;
 	margin: 0 auto;
 	padding: var(--p-b6) var(--p-b4) 48px;
-}
-
-.p-govde--dar {
-	max-width: 920px;
 }
 
 .p-basi {

@@ -56,10 +56,16 @@ if (!location.pathname.startsWith('/keystatic')) return;
   makinede aynı pencerenin bir sekmesi bembeyaz, öbür üçü koyu olurdu —
   tema seçeneği sunmak değil, tutarsızlık üretmek olurdu bu.
 
-  Bedeli: Keystatic'in kenar çubuğundaki tema seçicisi artık KALICI değil.
-  Seçim o oturumda çalışıyor ama panel yeniden açıldığında koyuya dönüyor,
-  çünkü aşağıdaki satır her yüklemede tercihi yeniden yazıyor. Bilinçli:
-  "sabit koyu" kararının doğrudan sonucu.
+  KOYU YALNIZCA VARSAYILAN — kullanıcının seçimi korunuyor.
+
+  Önce her yüklemede `dark` yazılıyordu. Tema koyu geliyordu ama kenar
+  çubuğundaki seçici işe yaramıyordu: kullanıcı açık temaya geçse bile panel
+  yeniden açıldığında koyuya dönüyordu, çünkü bu satır tercihi eziyordu.
+  Çalışmayan bir düğme, hiç olmayan düğmeden kötü.
+
+  Artık yalnızca HİÇ tercih kaydedilmemişse yazılıyor. İlk açılışta koyu
+  geliyor (öbür üç panelle tutarlı), sonrasında seçici gerçekten çalışıyor ve
+  seçim kalıcı oluyor.
 
   Keystatic tercihi `localStorage` içinde tutuyor ve değeri React ilk
   çizimde, `useState` başlatıcısında okuyor. Yani buraya yazmak yetiyor;
@@ -67,8 +73,17 @@ if (!location.pathname.startsWith('/keystatic')) return;
   temada boyanırdı.
 */
 const TEMA_ANAHTARI = 'keystatic-color-scheme';
+let temaKoyuMu = true;
 try {
-	localStorage.setItem(TEMA_ANAHTARI, 'dark');
+	const kayitli = localStorage.getItem(TEMA_ANAHTARI);
+	if (kayitli === null) {
+		localStorage.setItem(TEMA_ANAHTARI, 'dark');
+	} else {
+		// Kullanıcı açık temayı seçtiyse aşağıdaki zemin CSS'i de açık olmalı;
+		// koyu zemin basıp üstüne açık tema çizilirse ilk kare ters renkte
+		// yanıp sönüyor.
+		temaKoyuMu = kayitli !== 'light';
+	}
 } catch {
 	// localStorage kapalıysa tema seçimi kaybolur ama panel çalışmalı.
 	// Aşağıdaki CSS zaten zemini koyu tutuyor.
@@ -88,12 +103,21 @@ try {
   oluşmadan iliştiriyor ve yalnızca bu belge için geçerli — gezinmede
   kendiliğinden düşüyor, preload da her gezinmede yeniden çalışıyor.
 
-  `color-scheme: dark` de burada: kaydırma çubuğu ve yerel form denetimleri
+  `color-scheme` de burada: kaydırma çubuğu ve yerel form denetimleri
   React'ten bağımsız, tarayıcının kendi çizdiği parçalar.
+
+  Renkler kullanıcının tercihine göre seçiliyor. Sabit koyu bassaydık açık
+  temayı seçmiş birinde ilk kare koyu, sonraki kare açık olurdu — parlamayı
+  önlemek için eklenen kat, ters yönde parlama üretirdi. Açık ölçek de
+  Keystatic'in kendi değerlerinden: `#ffffff` tuval, `#f6f6f6` gövde.
 */
+const zemin = temaKoyuMu
+	? { sema: 'dark', tuval: '#1f1f1f', govde: '#252525' }
+	: { sema: 'light', tuval: '#ffffff', govde: '#f6f6f6' };
+
 webFrame.insertCSS(`
-	:root { color-scheme: dark; background-color: #1f1f1f; }
-	body { background-color: #252525; }
+	:root { color-scheme: ${zemin.sema}; background-color: ${zemin.tuval}; }
+	body { background-color: ${zemin.govde}; }
 `);
 
 /* ------------------------------------------------------------------ */

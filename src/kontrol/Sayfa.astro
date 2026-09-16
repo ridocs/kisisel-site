@@ -106,7 +106,6 @@ const cekimAni = new Date().toLocaleString('tr-TR', {
 <Kabuk
 	baslik="Yayın öncesi kontrol"
 	aktif="kontrol"
-	dar
 	not={`${rapor.yaziSayisi} yazı · ${rapor.sayfaSayisi} sayfa denetlendi · ${cekimAni}`}
 >
 	<div class="p-yigin">
@@ -159,6 +158,13 @@ const cekimAni = new Date().toLocaleString('tr-TR', {
 			kovalar.map((kova) => {
 				const bulgular = rapor.bulgular.filter((b) => b.onem === kova.onem);
 				if (bulgular.length === 0) return null;
+				const gruplar = denetimeGore(bulgular);
+				/*
+				  Kart üzerindeki sayı rozeti yalnızca birden fazla denetim grubu
+				  varken anlamlı. Tek grupta bölüm başlığındaki rozetle aynı sayıyı
+				  gösteriyor ve okuyucu iki ayrı şey sanıp arıyor.
+				*/
+				const kartRozetiGerekli = gruplar.length > 1;
 				return (
 					<section class="p-yigin">
 						<div>
@@ -174,13 +180,15 @@ const cekimAni = new Date().toLocaleString('tr-TR', {
 							<p class="p-not">{kova.aciklama}</p>
 						</div>
 
-						{denetimeGore(bulgular).map((grup) => (
+						{gruplar.map((grup) => (
 							<article class={`p-kart ${GORUNUS[kova.onem].kenar}`}>
 								<div class="p-kart-basi">
 									<h3 class="p-kart-baslik">{grup.ad}</h3>
-									<span class={`p-rozet ${GORUNUS[kova.onem].rozet}`}>
-										{grup.liste.length}
-									</span>
+									{kartRozetiGerekli && (
+										<span class={`p-rozet ${GORUNUS[kova.onem].rozet}`}>
+											{grup.liste.length}
+										</span>
+									)}
 								</div>
 
 								{/*
