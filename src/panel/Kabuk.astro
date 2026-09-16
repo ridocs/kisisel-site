@@ -46,11 +46,24 @@ const { baslik, aktif, not } = Astro.props;
   ona stil verilmiyor, yalnızca bağlantı veriliyor. Panelden çıkıldığı ok imiyle
   belirtiliyor ki kullanıcı üst şeridin orada da duracağını sanmasın.
 */
+/*
+  Adresler ÖNEKTEN geçiyor, sabit yazılmıyor.
+
+  Masaüstü panelinde önek yok (`/istatistik`), internete açık kopyada var
+  (`/web-sitem/panel-root/istatistik`). Sabit yazıldığında ikinci durumda
+  bağlantılar sitenin köküne çıkıyor ve 404 veriyordu — ölçüldü.
+
+  `BASE_URL` sondaki eğik çizgiyle geliyor (`/` ya da `/web-sitem/panel-root/`),
+  bu yüzden birleştirmede çift çizgi oluşmaması için kırpılıyor.
+*/
+const onek = import.meta.env.BASE_URL.replace(/\/$/, '');
+const yol = (adres: string) => `${onek}${adres}`;
+
 const PANELLER = [
-	{ anahtar: 'yazilar', ad: 'Yazılar', adres: '/keystatic', disari: true },
-	{ anahtar: 'istatistik', ad: 'İstatistik', adres: '/istatistik', disari: false },
-	{ anahtar: 'kontrol', ad: 'Yayın öncesi kontrol', adres: '/kontrol', disari: false },
-	{ anahtar: 'durum', ad: 'Site durumu', adres: '/durum', disari: false },
+	{ anahtar: 'yazilar', ad: 'Yazılar', adres: yol('/keystatic'), disari: true },
+	{ anahtar: 'istatistik', ad: 'İstatistik', adres: yol('/istatistik'), disari: false },
+	{ anahtar: 'kontrol', ad: 'Yayın öncesi kontrol', adres: yol('/kontrol'), disari: false },
+	{ anahtar: 'durum', ad: 'Site durumu', adres: yol('/durum'), disari: false },
 ] as const;
 ---
 
