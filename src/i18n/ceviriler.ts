@@ -117,6 +117,8 @@ export function digerDilYolu(url: URL, hedef: Dil): string {
 		uses: { tr: 'kullandiklarim', en: 'uses' },
 		gizlilik: { tr: 'gizlilik', en: 'privacy' },
 		privacy: { tr: 'gizlilik', en: 'privacy' },
+		projeler: { tr: 'projeler', en: 'projects' },
+		projects: { tr: 'projeler', en: 'projects' },
 		// Sürüm günlüğü. İki yönde de yazılı: dil değiştirici hem Türkçe hem
 		// İngilizce addan arama yapıyor.
 		'neler-degisti': { tr: 'neler-degisti', en: 'whats-changed' },

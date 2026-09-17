@@ -1,0 +1,246 @@
+---
+import { getCollection } from 'astro:content';
+import { Icon } from 'astro-icon/components';
+import { cevirici, dilBul } from '@/i18n/ceviriler';
+
+/*
+  AKTİF PROJELER SAYFASININ GÖVDESİ — iki dil de bu bileşeni kullanıyor.
+
+  Veri buradan DEĞİL, `src/content/projeler/` altındaki dosyalardan geliyor ve
+  panelden düzenleniyor. Kullandıklarım ve Hizmetler sayfalarında kalemler
+  bileşenin içinde duruyor; burada durmuyor çünkü proje listesi kullanıcının
+  kendi güncelleyeceği bir şey — her ekleme için kod değiştirmek gerekmemeli.
+
+  Sayfa ekrana kilitlenmiyor (`data-sayfa` yok): bu bir okuma sayfası, liste
+  uzadıkça hamle başına bir bölüm ilerlemek onu ortasından keserdi.
+*/
+
+const dil = dilBul(Astro.url);
+const m = cevirici(dil);
+
+/*
+  Süzme ve sıralama.
+
+  - Taslak olan hiç basılmıyor: yarım bir açıklamayı yayında tutmaktansa
+    projeyi hiç göstermemek doğru.
+  - Sayfa "AKTİF projelerim" olduğu için arşiv de dışarıda. Arşiv ileride
+    ayrı bir bölüm isterse alan zaten şemada duruyor.
+  - Sıra önce elle verilen `sira` alanına, eşitlikte ada göre. Tarihe göre
+    sıralamak yanıltıcı olurdu: proje eklenme tarihi değil, önem sırası
+    önemli.
+*/
+const hepsi = await getCollection('projeler');
+const projeler = hepsi
+	.filter((p) => !p.data.taslak && p.data.durum === 'aktif')
+	.sort((a, b) => a.data.sira - b.data.sira || a.data.ad.localeCompare(b.data.ad, 'tr'));
+
+/** Tür rozetinin metni ve simgesi. */
+const TURLER = {
+	website: { anahtar: 'projeler.website', ikon: 'lucide:globe' },
+	mobil: { anahtar: 'projeler.mobil', ikon: 'lucide:smartphone' },
+} as const;
+---
+
+<section class="proje-alan">
+	<header class="proje-basi">
+		<h1>{m('projeler.baslik')}</h1>
+		<p class="proje-giris">{m('projeler.aciklama')}</p>
+	</header>
+
+	{
+		projeler.length === 0 ? (
+			<p class="proje-bos">{m('projeler.bos')}</p>
+		) : (
+			<ul class="proje-listesi">
+				{projeler.map((proje) => {
+					const ozet = dil === 'en' ? proje.data.ozetEn : proje.data.ozet;
+					return (
+						<li class="proje">
+							<div class="proje-ust">
+								<h2 class="proje-ad">{proje.data.ad}</h2>
+								{/*
+								  Tür rozeti renkle değil SÖZCÜKLE ayrılıyor; renk körlüğünde
+								  ayrım kaybolurdu. Simge yalnızca destek, tek başına anlam
+								  taşımıyor.
+								*/}
+								<ul class="proje-turler">
+									{proje.data.tur.map((tur) => (
+										<li class="proje-tur">
+											<Icon name={TURLER[tur].ikon} class="proje-tur-ikon" aria-hidden="true" />
+											{m(TURLER[tur].anahtar)}
+										</li>
+									))}
+								</ul>
+							</div>
+
+							<p class="proje-ozet">{ozet}</p>
+
+							{proje.data.teknolojiler.length > 0 && (
+								<ul class="proje-tekno" aria-label={m('projeler.teknoloji')}>
+									{proje.data.teknolojiler.map((t) => (
+										<li>{t}</li>
+									))}
+								</ul>
+							)}
+
+							{/* Adres yoksa bağlantı hiç basılmıyor — çalışmayan bir
+							    bağlantı, olmayan bağlantıdan kötü. */}
+							{proje.data.adres && (
+								<a class="proje-baglanti" href={proje.data.adres} rel="noopener" target="_blank">
+									{m('projeler.ziyaret')}
+									<Icon name="lucide:arrow-up-right" class="proje-ok" aria-hidden="true" />
+								</a>
+							)}
+						</li>
+					);
+				})}
+			</ul>
+		)
+	}
+</section>
+
+<style>
+	.proje-alan {
+		display: flex;
+		flex-direction: column;
+		gap: 2rem;
+	}
+
+	.proje-basi h1 {
+		font-size: clamp(1.75rem, 4vw, 2.25rem);
+		font-weight: 700;
+		letter-spacing: -0.02em;
+		margin: 0 0 0.5rem;
+	}
+
+	.proje-giris {
+		margin: 0;
+		color: var(--muted-foreground);
+		max-width: 60ch;
+	}
+
+	.proje-bos {
+		color: var(--muted-foreground);
+	}
+
+	.proje-listesi {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: grid;
+		gap: 1rem;
+	}
+
+	.proje {
+		display: flex;
+		flex-direction: column;
+		gap: 0.75rem;
+		padding: 1.25rem;
+		border: 1px solid var(--border);
+		border-radius: 0.875rem;
+	}
+
+	/*
+	  Ad ile tür rozetleri aynı satırda; dar ekranda rozetler alta iniyor.
+	  `align-items: baseline` başlıkla rozet metnini aynı çizgide tutuyor.
+	*/
+	.proje-ust {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: baseline;
+		gap: 0.5rem 0.75rem;
+	}
+
+	.proje-ad {
+		font-size: 1.125rem;
+		font-weight: 600;
+		margin: 0;
+	}
+
+	.proje-turler {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.375rem;
+	}
+
+	.proje-tur {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.3rem;
+		font-size: 0.75rem;
+		padding: 0.1rem 0.5rem;
+		border: 1px solid var(--border);
+		border-radius: 999px;
+		color: var(--muted-foreground);
+		white-space: nowrap;
+	}
+
+	.proje-tur-ikon {
+		width: 0.8125rem;
+		height: 0.8125rem;
+	}
+
+	.proje-ozet {
+		margin: 0;
+		color: var(--muted-foreground);
+		max-width: 65ch;
+	}
+
+	.proje-tekno {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.375rem;
+		font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+		font-size: 0.75rem;
+		color: var(--muted-foreground);
+	}
+
+	.proje-tekno li::after {
+		content: " ·";
+	}
+
+	.proje-tekno li:last-child::after {
+		content: "";
+	}
+
+	.proje-baglanti {
+		align-self: flex-start;
+		display: inline-flex;
+		align-items: center;
+		gap: 0.25rem;
+		/* Dokunma hedefi: 44 piksel yüksekliğe ulaşsın diye dikey dolgu. */
+		min-height: 2.25rem;
+		font-size: 0.875rem;
+		font-weight: 500;
+		text-decoration: none;
+		color: inherit;
+		border-bottom: 1px solid var(--border);
+		transition: border-color 200ms ease-out;
+	}
+
+	.proje-baglanti:hover {
+		border-bottom-color: currentColor;
+	}
+
+	.proje-baglanti:focus-visible {
+		outline: 2px solid var(--ring);
+		outline-offset: 3px;
+	}
+
+	.proje-ok {
+		width: 0.875rem;
+		height: 0.875rem;
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.proje-baglanti {
+			transition: none;
+		}
+	}
+</style>

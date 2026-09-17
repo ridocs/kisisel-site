@@ -283,13 +283,82 @@ const metinSingletonu = (dil: 'tr' | 'en', etiket: string) =>
  * Yapılandırma
  * ------------------------------------------------------------------ */
 
+/*
+  Projeler koleksiyonu.
+
+  Alanlar `src/content.config.ts` içindeki şemayla BİREBİR aynı olmak zorunda;
+  biri değişip öteki değişmezse panel dosyayı yazar, derleme tip hatası verir.
+*/
+const projelerKoleksiyonu = collection({
+	label: 'Projeler',
+	path: 'src/content/projeler/*',
+	slugField: 'ad',
+	format: { contentField: 'icerik' },
+	entryLayout: 'content',
+	columns: ['ad', 'durum'],
+	schema: {
+		ad: fields.slug({
+			name: { label: 'Proje adı' },
+			slug: { label: 'Adres (dosya adı)' },
+		}),
+		tur: fields.multiselect({
+			label: 'Tür',
+			description: 'Bir proje hem site hem uygulama olabilir.',
+			options: [
+				{ label: 'Web sitesi', value: 'website' },
+				{ label: 'Mobil uygulama', value: 'mobil' },
+			],
+			defaultValue: ['website'],
+		}),
+		ozet: fields.text({
+			label: 'Özet (Türkçe)',
+			description: 'Bir iki cümle. Kartta bu görünüyor.',
+			multiline: true,
+		}),
+		ozetEn: fields.text({
+			label: 'Özet (İngilizce)',
+			multiline: true,
+		}),
+		adres: fields.url({
+			label: 'Canlı adres',
+			description: 'Boş bırakılırsa kart bağlantı olmuyor.',
+		}),
+		teknolojiler: fields.array(fields.text({ label: 'Teknoloji' }), {
+			label: 'Teknolojiler',
+			itemLabel: (props) => props.value,
+		}),
+		durum: fields.select({
+			label: 'Durum',
+			options: [
+				{ label: 'Aktif', value: 'aktif' },
+				{ label: 'Arşiv', value: 'arsiv' },
+			],
+			defaultValue: 'aktif',
+		}),
+		sira: fields.number({
+			label: 'Sıra',
+			description: 'Küçük sayı önce gelir.',
+			defaultValue: 100,
+		}),
+		taslak: fields.checkbox({
+			label: 'Taslak',
+			description: 'İşaretliyken sayfaya hiç basılmıyor.',
+			defaultValue: false,
+		}),
+		icerik: fields.mdx({
+			label: 'Ayrıntı',
+			description: 'İsteğe bağlı. Kartın altında değil, ileride ayrıntı sayfasında kullanılacak.',
+		}),
+	},
+});
+
 export default config({
 	storage: { kind: 'local' },
 
 	ui: {
 		brand: { name: 'Mustafa Eybek' },
 		navigation: {
-			İçerik: ['yazilar'],
+			İçerik: ['yazilar', 'projeler'],
 			'Site metinleri': ['metinlerTr', 'metinlerEn'],
 		},
 	},
@@ -300,6 +369,7 @@ export default config({
 	},
 
 	collections: {
+		projeler: projelerKoleksiyonu,
 		yazilar: collection({
 			label: 'Yazılar',
 			path: 'src/content/blog/*',

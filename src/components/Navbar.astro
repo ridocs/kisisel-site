@@ -13,16 +13,30 @@ const iletisimCapasi = dil === 'en' ? '#contact' : '#iletisim';
 /*
   MASAÜSTÜ ve MOBİL listeleri ayrı.
 
-  Masaüstü çubuğu yatay ve dar: beşinci bağlantı orada sıkışıyor ve hepsi eşit
-  ağırlıkta görünüp hiçbiri öne çıkmıyor. Mobil menü ise dikey açılan bir liste,
-  bir satır daha yer sorunu değil — Kullandıklarım orada yerini buluyor.
+  Çubukta artık BEŞ bağlantı var. Önce dördü vardı ve buradaki yorum "beşinci
+  sıkışır" diyordu; kapsül genişletildi (aşağıdaki `max-w`) ve masaüstü
+  eşiği yükseltildi.
+
+  EŞİK 768 DEĞİL 1024 — ölçülerek bulundu. Parçalar şu genişlikte:
+  marka 110px + beş bağlantı 472px + sağdaki düğmeler 240px, artı boşluk ve
+  dolgu = en az 926 piksel ekran gerekiyor. Menü 768'den itibaren açılsaydı
+  768-925 arasında taşardı. Bu yüzden `md:flex` yerine `lg:flex`; o aralıkta
+  mobil menü devrede ve orada satır sayısı sorun değil.
+
+  Betikteki `matchMedia` eşiği de aynı değerde olmak zorunda: ayrışırsa menü
+  görünürken betik onu kapalı sayar ve odak yönetimi bozulur.
+
+  Mobil menü dikey açılan bir liste, orada satır sayısı sorun değil —
+  Kullandıklarım yalnızca orada.
 
   Yeni sayfa eklerken hangi listeye gireceğine karar ver: çubuk birincil
-  sayfalar için, mobil menü sitenin tamamı için.
+  sayfalar için, mobil menü sitenin tamamı için. Altıncı bağlantıdan önce
+  ölçüm yap; genişletmenin de bir sınırı var.
 */
 const masaustuBaglantilari = [
 	{ ad: m('nav.anasayfa'), yol: yol(dil, '') },
 	{ ad: m('nav.hizmetler'), yol: yol(dil, dil === 'en' ? 'services' : 'hizmetler') },
+	{ ad: m('nav.projeler'), yol: yol(dil, dil === 'en' ? 'projects' : 'projeler') },
 	{ ad: m('nav.blog'), yol: yol(dil, 'blog') },
 	{ ad: m('nav.hakkimda'), yol: yol(dil, hakkimdaParcasi) },
 ];
@@ -118,7 +132,7 @@ const eylemDugmesi =
 */}
 <header id="ust-cubuk" data-kaydirildi="false" class="group fixed inset-x-0 top-0 z-50">
 	<div
-		class="mx-auto w-full max-w-[1352px] px-4 transition-all duration-200 ease-out group-data-[kaydirildi=true]:max-w-[1232px] motion-reduce:transition-none sm:px-6 group-data-[kaydirildi=true]:sm:px-4"
+		class="mx-auto w-full max-w-[1480px] px-4 transition-all duration-200 ease-out group-data-[kaydirildi=true]:max-w-[1340px] motion-reduce:transition-none sm:px-6 group-data-[kaydirildi=true]:sm:px-4"
 	>
 		{/*
 		  Koyu temada zeminler `neutral` ailesinden, `slate` DEĞİL: slate mavi
@@ -152,7 +166,7 @@ const eylemDugmesi =
 				  birbirinden kopuk üç ayrı öğe gibi gösteriyordu; yakın yerleşim hem
 				  gruplandırmayı hem de gösterge kaymasının okunabilirliğini artırıyor.
 				*/}
-				<ul id="menu-listesi" class="relative hidden items-center gap-2 md:flex">
+				<ul id="menu-listesi" class="relative hidden items-center gap-2 lg:flex">
 					{/*
 					  Gösterge opak: açık temada siyah, koyu temada beyaz. Üzerindeki
 					  bağlantının metni karşıt renge geçtiği için kontrast korunuyor
@@ -219,7 +233,7 @@ const eylemDugmesi =
 					<button
 						id="menu-dugmesi"
 						type="button"
-						class={`${eylemDugmesi} group/dugme md:hidden`}
+						class={`${eylemDugmesi} group/dugme lg:hidden`}
 						aria-expanded="false"
 						aria-controls="mobil-menu"
 						aria-label={m('nav.menuAc')}
@@ -233,7 +247,7 @@ const eylemDugmesi =
 			</nav>
 
 			<!-- Mobil menü: kapsülün içinde açılır, böylece yuvarlatılmış form bozulmaz -->
-			<div id="mobil-menu" class="hidden border-t border-slate-900/10 md:hidden dark:border-white/10">
+			<div id="mobil-menu" class="hidden border-t border-slate-900/10 lg:hidden dark:border-white/10">
 				<ul class="space-y-1 p-2">
 					{
 						mobilBaglantilar.map((baglanti) => (
@@ -408,7 +422,7 @@ const eylemDugmesi =
 	});
 
 	// Masaüstü genişliğine geçildiğinde açık kalan mobil menüyü sıfırla.
-	window.matchMedia('(min-width: 48rem)').addEventListener('change', (olay) => {
+	window.matchMedia('(min-width: 64rem)').addEventListener('change', (olay) => {
 		if (olay.matches) menuyuAyarla(false);
 	});
 

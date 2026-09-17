@@ -118,6 +118,7 @@ dosyalarında.
 | `/` | `index.astro` | `en/index.astro` |
 | `/hakkimda` | `hakkimda.astro` | `en/about.astro` |
 | `/hizmetler` | `hizmetler.astro` | `en/services.astro` |
+| `/projeler` | `projeler.astro` | `en/projects.astro` |
 | `/kullandiklarim` | `kullandiklarim.astro` | `en/uses.astro` |
 | `/gizlilik` | `gizlilik.astro` | `en/privacy.astro` |
 | `/neler-degisti` | `neler-degisti.astro` | `en/whats-changed.astro` |
@@ -195,6 +196,10 @@ Bir kural şemada zorlanıyor: **kapak varsa `kapakAlt` boş olamaz**, yoksa
 derleme durur.
 
 Şu an 7 yazı: üç TR/EN çifti + `dart-dili` (çevirisi yok).
+
+İkinci koleksiyon `projeler`: her proje TEK dosya, iki dilin özeti aynı
+dosyada (`ozet` / `ozetEn`). Bir proje hem site hem uygulama olabiliyor, bu
+yüzden `tur` liste. `taslak` işaretli olan sayfaya hiç basılmıyor.
 
 ### `keystatic.config.ts`
 

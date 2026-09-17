@@ -29,6 +29,10 @@ const digerDilBaglantisi =
 const baglantilar = [
 	{ etiket: m('nav.anasayfa'), yol: yol(dil, '') },
 	{ etiket: m('nav.hizmetler'), yol: yol(dil, dil === 'en' ? 'services' : 'hizmetler') },
+	{
+		etiket: m('nav.projeler'),
+		yol: yol(dil, dil === 'en' ? 'projects' : 'projeler'),
+	},
 	{ etiket: m('nav.blog'), yol: yol(dil, 'blog') },
 	{ etiket: m('nav.hakkimda'), yol: yol(dil, dil === 'en' ? 'about' : 'hakkimda') },
 	{ etiket: m('nav.kullandiklarim'), yol: yol(dil, dil === 'en' ? 'uses' : 'kullandiklarim') },

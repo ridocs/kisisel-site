@@ -1,0 +1,20 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ProjelerIcerik from '../components/ProjelerIcerik.astro';
+import { cevirici, dilBul } from '@/i18n/ceviriler';
+
+/*
+  Sayfanın gövdesi ProjelerIcerik bileşeninde; İngilizce eşi (/en/projects) de
+  aynı bileşeni kullanıyor — Hakkımda ve Kullandıklarım ile aynı kalıp.
+
+  Projeler panelden düzenleniyor (`src/content/projeler/`), yani yeni proje
+  eklemek için bu dosyaya dokunmak gerekmiyor.
+*/
+
+const dil = dilBul(Astro.url);
+const m = cevirici(dil);
+---
+
+<BaseLayout title={m('projeler.baslik')} description={m('projeler.aciklama')}>
+	<ProjelerIcerik />
+</BaseLayout>

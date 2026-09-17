@@ -56,4 +56,43 @@ const blog = defineCollection({
 		}),
 });
 
-export const collections = { blog };
+/*
+  AKTİF PROJELER
+
+  Blogdan ayrı bir koleksiyon: yazı zamana bağlı ve arşive gider, proje ise
+  bir durumdur — yaşarken güncellenir, bitince arşive çekilir. İkisini aynı
+  koleksiyonda tutmak "tarihe göre sırala" ile "duruma göre süz" arasında
+  sürekli çatışma çıkarırdı.
+
+  İki dil AYNI dosyada, blogdaki gibi ayrı dosyalarda değil. Sebep: bir yazının
+  çevirisi ayrı bir metindir, ama bir proje TEK bir şeydir — iki dosyaya
+  bölmek aynı projenin iki kaydı gibi görünür ve biri güncellenip öteki
+  unutulur. Sitede aynı kalıp Kullandıklarım ve Hizmetler'de de var.
+*/
+const projeler = defineCollection({
+	loader: glob({ base: './src/content/projeler', pattern: '**/*.{md,mdx}' }),
+	schema: z.object({
+		ad: z.string(),
+		/*
+		  Bir proje hem site hem uygulama olabiliyor (TwinShare öyle), bu yüzden
+		  tek seçim değil liste. En az bir tür zorunlu: türü olmayan bir kayıt
+		  sayfada hangi başlığın altına gireceğini bilemez.
+		*/
+		tur: z.array(z.enum(['website', 'mobil'])).min(1),
+		ozet: z.string(),
+		ozetEn: z.string(),
+		/** Canlı adres. Yoksa kart bağlantı olarak basılmıyor. */
+		adres: z.string().optional(),
+		teknolojiler: z.array(z.string()).default([]),
+		durum: z.enum(['aktif', 'arsiv']).default('aktif'),
+		/** Küçük sayı önce gelir; eşitse ada göre sıralanır. */
+		sira: z.number().default(100),
+		/*
+		  Taslak proje sayfaya HİÇ basılmıyor. Yarım bir açıklamayı yayında
+		  tutmaktansa projeyi hiç göstermemek doğru.
+		*/
+		taslak: z.boolean().default(false),
+	}),
+});
+
+export const collections = { blog, projeler };
