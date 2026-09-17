@@ -90,9 +90,9 @@ kopya yalnızca okuyor. Ayrımı env bayrakları kuruyor:
 | `PANEL_YEREL_SUNUCU` | `src/yayin/sunucu.mjs:87` | `ssh()` yerine yerel `sh -c` |
 | `PANEL_YEREL_YAYIN` | `src/yayin/yayinla.mjs:59`, `src/yayin/eklenti.mjs:43` | `scp` yerine `cp`; derlemeden önce `git pull` |
 
-> **Bilinen açık:** `PANEL_SALT_OKUR` yalnızca HTML basımını engelliyor.
-> `/durum/islem` POST uç noktası sunucuda bağlı kalıyor ve nginx deseni
-> `durum` önekiyle onu da kapsıyor. Tek koruma nginx parolası.
+> **Dikkat:** `PANEL_SALT_OKUR` yalnızca HTML basımını engelliyor, uç
+> noktayı değil. Yani düğmeyi gizlemek yetmiyor — denetim sunucu tarafına da
+> yazılmalı. Bu açık biliniyor ve kapatılacak.
 
 ### Keystatic neden yalnızca masaüstünde
 
@@ -291,30 +291,32 @@ Yerel kip. Bir koleksiyon (`yazilar`) ve iki tekil (`metinlerTr`,
 
 ## 6. Sunucu ve dağıtım
 
-| | |
-|---|---|
-| Sunucu | `root@45.141.151.156` |
-| Sitenin kökü | `/var/www/twinshareapp_static/web-sitem` |
-| Geri alma kopyası | `…/web-sitem.eski` (yayın atomik takasla yapılıyor) |
-| Panel klonu | `/opt/panel/kisisel-site`, `main` dalında |
-| Panel süreci | pm2 `panel-root`, `127.0.0.1:4500` |
-| nginx | `/etc/nginx/sites-enabled/twinshareapp` |
-| Panel parolası | `/etc/nginx/panel-root.htpasswd` |
-| SSH anahtarı | `~/.ssh/twinshare_server` — **yalnızca kullanıcının bilgisayarında** |
+> **Sunucu adresi, dizin yolları ve süreç adları BU DEPODA YAZILI DEĞİL.**
+> Depo herkese açık; o bilgiler yalnızca kullanıcının yerel notlarında
+> duruyor. `DAGITIM.md` de aynı sebeple yer tutucularla genel tutulmuştur.
 
-Dağıtım anahtarı internete bakan makineye bilerek konulmadı: makine ele
-geçse bile sunucuya yazma yetkisi kazanılmıyor. İnternete açık panel bu
-yüzden `PANEL_YEREL_*` bayraklarıyla çalışıyor.
+Yapının şekli şöyle (somut değerler olmadan):
+
+- Site, alan adının **statik kökü altında bir dizinde** duruyor. Yayın
+  **atomik takasla** yapılıyor: yeni sürüm komşu bir dizine yükleniyor,
+  sahiplik ayarlanıyor, sonra iki dizin yer değiştiriyor. Bir önceki sürüm
+  `…eski` adıyla duruyor, geri alma bundan ibaret.
+- İnternete açık panel **ayrı bir klon** üzerinde, yalnızca yerel arayüzü
+  dinleyen bir süreç olarak çalışıyor; dışarıya tek kapı nginx ve orada
+  parola var.
+- **Dağıtım anahtarı internete bakan makinede YOK** — bilerek. Makine ele
+  geçse bile sunucuya yazma yetkisi kazanılmıyor; internete açık panel bu
+  yüzden `PANEL_YEREL_*` bayraklarıyla çalışıyor.
 
 ### nginx'te panelin üç bloğu
 
-1. `= /web-sitem/panel-root/` → parola, `/istatistik`'e yönlendirir
-2. `~ ^/web-sitem/panel-root/(istatistik|kontrol|durum|_astro/|…)` → parola + proxy
-3. `/web-sitem/panel-root/` → parola + **404**
+Panel adresleri **izin listesiyle** açılıyor: kök adres parolalı bir
+yönlendirme, adı listede geçen panel rotaları parolalı vekil, geri kalan her
+şey parola sonrası **404**. Böylece sitenin ikinci bir kopyası parolanın
+arkasında durmuyor.
 
-> **Bilinen açık:** 2. bloktaki izin listesinde **`seo` yok** — web panelde
-> SEO sekmesi 404 veriyor. Ayrıca desenin sonu bağlı olmadığı için `durum`
-> öneki `durum/islem`'i de kapsıyor.
+> Bu listede bilinen iki kusur var; ayrıntısı bilerek buraya yazılmadı
+> (herkese açık depo). Kullanıcının yerel notlarında duruyor.
 
 ---
 
@@ -355,9 +357,9 @@ durumundayken rAF'a bağlanan iş sıraya girip orada kalıyor.
   `Sitemap: https://twinshareapp.com/web-sitem/sitemap-index.xml`.
   O dosya alan adındaki öteki uygulamaya ait ve dolu; **yönlendirme değil**,
   tek satır eklenecek (robots.txt birden çok `Sitemap` satırı kabul eder).
-- nginx izin listesine `seo` eklenmeli.
-- `/durum/islem` uç noktası `PANEL_SALT_OKUR` denetimi almalı.
-- Panel parolası (`root2172`) zayıf, değiştirilmeli.
+- nginx izin listesine SEO ekranı eklenmeli (şu an 404 veriyor).
+- Yayın uç noktası salt-okur denetimini sunucu tarafında da almalı.
+- **Panel parolası değiştirilmeli.**
 - Metin eksikleri: `/gizlilik` (170) ve `/en/privacy` (161) açıklamaları 160
   sınırının üstünde; `/blog/dart-dili` başlığı 81 karakter; o yazının
   İngilizce çevirisi yok.
