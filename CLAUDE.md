@@ -1,3 +1,23 @@
+# Kişisel site (Astro) — twinshareapp.com/web-sitem
+
+**Önce `MIMARI.md`'yi oku.** Dosya haritası, üç ayrı Astro yapılandırmasının
+hangisinin ne ürettiği, sunucu/panel kurulumu ve ölçülerek öğrenilmiş tuzaklar
+orada. Bu dosya yalnızca günlük komutları anlatır.
+
+Bilinmesi gereken üç şey, kısaca:
+
+1. Site `/web-sitem/` **alt dizininde** yayınlanıyor. Elle yazılan her adres
+   önekten geçmek zorunda.
+2. **Ziyaretçiye JavaScript inmiyor.** React bileşeni ekleme; verilen React
+   kodunu Astro + CSS ile yeniden kur.
+3. Koyu temada **lacivert yok** — nötr gri, chroma sıfır.
+
+Panel çalıştırırken: aynı klasörde **ikinci bir dev sunucusu başlatma**.
+`npm run yazi` bunu zaten engelliyor; elle `astro dev` açmak içerik deposunu
+bozuyor ve yazılan makale sessizce kayboluyor (gerekçe `MIMARI.md` §6).
+
+---
+
 ## Development
 
 When starting the dev server, use background mode:
