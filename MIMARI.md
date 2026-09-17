@@ -17,7 +17,7 @@ Mustafa Eybek'in kişisel tanıtım ve blog sitesi.
 | | |
 |---|---|
 | Yayın adresi | `https://twinshareapp.com/web-sitem/` |
-| Yönetim paneli (web) | `https://twinshareapp.com/web-sitem/panel-root` (parola korumalı) |
+| Yönetim paneli | Yalnızca masaüstünde (`npm run panel`). İnternete açık kopya **kaldırıldı**. |
 | Depo | `github.com/ridocs/kisisel-site`, ana dal `main` |
 | Yığın | Astro 7 · Tailwind CSS 4 · MDX · TypeScript |
 | Diller | Türkçe (kök) + İngilizce (`/en/`) |
@@ -71,13 +71,18 @@ yapılandırması** var ve üçü üç farklı şey üretiyor.
 |---|---|---|---|
 | `astro.config.mjs` | **Yayınlanan site** | `dist/` | `npm run build` |
 | `astro.config.cms.mjs` | **Masaüstü paneli** (Keystatic dahil) | dev sunucusu | `npm run yazi` / `npm run panel` |
-| `astro.config.genel.mjs` | **İnternete açık panel** (Keystatic YOK) | `dist-panel/` | sunucuda pm2 |
+| `astro.config.genel.mjs` | İnternete açık panel — **şu an dağıtılmıyor** | `dist-panel/` | (yok) |
 
 `astro build` yalnızca `astro.config.mjs`'i okur. Panel eklentileri öteki iki
 dosyada durduğu için yayın çıktısına **sızamaz** — güvenlik değil, mimari
 güvence.
 
 ### Neden panelin iki kopyası var
+
+> **17 Eylül 2026: internete açık kopya kaldırıldı.** nginx blokları silindi,
+> pm2 süreci durduruldu; `/web-sitem/panel-root/` artık 404. Kod ve
+> yapılandırma duruyor — kendi alan adına geçildiğinde bir alt alan adında
+> yeniden kurulabilir. Aşağısı o kopya geri getirilirse geçerli.
 
 Masaüstü kopyası yazma yapıyor (Keystatic dosyalara yazıyor), internete açık
 kopya yalnızca okuyor. Ayrımı env bayrakları kuruyor:
@@ -306,22 +311,20 @@ Yapının şekli şöyle (somut değerler olmadan):
   **atomik takasla** yapılıyor: yeni sürüm komşu bir dizine yükleniyor,
   sahiplik ayarlanıyor, sonra iki dizin yer değiştiriyor. Bir önceki sürüm
   `…eski` adıyla duruyor, geri alma bundan ibaret.
-- İnternete açık panel **ayrı bir klon** üzerinde, yalnızca yerel arayüzü
-  dinleyen bir süreç olarak çalışıyor; dışarıya tek kapı nginx ve orada
-  parola var.
+- İnternete açık panel **artık çalışmıyor** (17 Eylül 2026'da kaldırıldı).
+  Klon ve parola dosyası sunucuda duruyor ama hiçbir şey onları sunmuyor.
 - **Dağıtım anahtarı internete bakan makinede YOK** — bilerek. Makine ele
   geçse bile sunucuya yazma yetkisi kazanılmıyor; internete açık panel bu
   yüzden `PANEL_YEREL_*` bayraklarıyla çalışıyor.
 
-### nginx'te panelin üç bloğu
+### nginx'te panel blokları
 
-Panel adresleri **izin listesiyle** açılıyor: kök adres parolalı bir
-yönlendirme, adı listede geçen panel rotaları parolalı vekil, geri kalan her
-şey parola sonrası **404**. Böylece sitenin ikinci bir kopyası parolanın
-arkasında durmuyor.
+Yok — 17 Eylül 2026'da silindi. Panel adresleri artık sitenin kendi bloğuna
+düşüyor ve 404 dönüyor; parola da sorulmuyor.
 
-> Bu listede bilinen iki kusur var; ayrıntısı bilerek buraya yazılmadı
-> (herkese açık depo). Kullanıcının yerel notlarında duruyor.
+Geri getirilirse kural şuydu ve yine öyle olmalı: panel adresleri **izin
+listesiyle** açılır, listede olmayan her şey parola sonrası 404 döner —
+böylece sitenin ikinci bir kopyası parolanın arkasında durmaz.
 
 ---
 
@@ -358,7 +361,8 @@ durumundayken rAF'a bağlanan iş sıraya girip orada kalıyor.
 
 ## 8. Bekleyenler
 
-- **Panel parolası değiştirilmeli.**
+- Panel parolası: internete açık kopya kaldırıldığı için artık bir kapı
+  korumuyor. Aynı parola başka bir yerde kullanıldıysa yine de değiştirilmeli.
 
 Kapatılanlar (17 Eylül 2026):
 
