@@ -66,7 +66,7 @@ const disBaglantilar = [
 	{ etiket: 'GitHub', adres: SOSYAL.github, ikon: 'lucide:github' },
 	{ etiket: 'LinkedIn', adres: SOSYAL.linkedin, ikon: 'lucide:linkedin' },
 	{ etiket: 'Instagram', adres: SOSYAL.instagram, ikon: 'lucide:instagram' },
-	{ etiket: m('nav.rss'), adres: `${taban}/rss.xml`, ikon: 'lucide:rss' },
+	{ etiket: m('nav.rss'), adres: dil === 'en' ? `${taban}/en/rss.xml` : `${taban}/rss.xml`, ikon: 'lucide:rss' },
 ].filter((b) => b.adres);
 
 /*

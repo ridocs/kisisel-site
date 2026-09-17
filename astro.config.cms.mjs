@@ -1,6 +1,7 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
 import keystatic from '@keystatic/astro';
+import react from '@astrojs/react';
 import temelYapilandirma from './astro.config.mjs';
 import istatistikPaneli from './src/istatistik/eklenti.mjs';
 import kontrolPaneli from './src/kontrol/eklenti.mjs';
@@ -85,6 +86,12 @@ export default defineConfig({
 	server: { port: 4321, strictPort: true },
 	integrations: [
 		...(temelYapilandirma.integrations ?? []),
+		/*
+		  React yalnızca BURADA: Keystatic bir React uygulaması. Yayın
+		  yapılandırmasından çıkarıldı çünkü sitede tek adacık yok ve
+		  entegrasyon orada kullanılmayan bir paket üretiyordu.
+		*/
+		react(),
 		keystatic(),
 		istatistikPaneli(),
 		kontrolPaneli(),

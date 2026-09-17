@@ -183,7 +183,7 @@ const eylemDugmesi =
 
 				<!-- Eylemler -->
 				<div class="flex shrink-0 items-center gap-2">
-					<a href={`${taban}/rss.xml`} aria-label={m('nav.rss')} class={eylemDugmesi}>
+					<a href={dil === 'en' ? `${taban}/en/rss.xml` : `${taban}/rss.xml`} aria-label={m('nav.rss')} class={eylemDugmesi}>
 						<Icon name="lucide:rss" class="size-[18px]" />
 					</a>
 

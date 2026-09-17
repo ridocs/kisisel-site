@@ -3,7 +3,6 @@ import { defineConfig } from 'astro/config';
 import mdx from '@astrojs/mdx';
 import sitemap from '@astrojs/sitemap';
 import icon from 'astro-icon';
-import react from '@astrojs/react';
 import tailwindcss from '@tailwindcss/vite';
 import Icons from 'unplugin-icons/vite';
 import { satteri } from '@astrojs/markdown-satteri';
@@ -48,7 +47,18 @@ export default defineConfig({
 		// kendiliğinden atıyor, /en/404 elle süzülüyor.
 		sitemap({ filter: (sayfa) => !sayfa.includes('/404') }),
 		icon(),
-		react(),
+		/*
+		  React BURADA YOK — bilerek.
+
+		  Yayınlanan sitede tek bir React adacığı bulunmuyor (`client:*`
+		  direktifi hiçbir dosyada geçmiyor). Entegrasyon yine de kayıtlı
+		  olduğu için derleme her seferinde `_astro/client.*.js` üretiyordu:
+		  ~220 KB, hiçbir sayfanın çağırmadığı ölü bir dosya. Ziyaretçiye
+		  inmiyordu ama her yayında sunucuya gidiyordu.
+
+		  React'e ihtiyacı olan tek yer Keystatic; o da `astro.config.cms.mjs`
+		  içinde, kendi entegrasyonunun yanında duruyor.
+		*/
 	],
 	vite: {
 		// Vite, bilinmeyen host başlıklarını güvenlik gereği reddediyor. Siteyi

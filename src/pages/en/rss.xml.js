@@ -17,22 +17,20 @@ import { taban } from '@/i18n/ceviriler';
 
 export async function GET(context) {
 	const yazilar = (
-		await getCollection('blog', ({ data }) => !data.draft && data.dil === 'tr')
+		await getCollection('blog', ({ data }) => !data.draft && data.dil === 'en')
 	).sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
 
 	return rss({
 		title: 'Mustafa Eybek — Blog',
-		description: 'Kişisel blog yazıları.',
-		// Kanalın kendi bağlantısı da alt dizini göstermeli; context.site
-		// yalnızca alan adının kökünü verir.
+		description: 'Posts from my personal blog.',
 		site: new URL(taban + '/', context.site),
 		items: yazilar.map((yazi) => ({
 			title: yazi.data.title,
 			description: yazi.data.description,
 			pubDate: yazi.data.pubDate,
-			// Alt dizinde yayınlandığında bağlantılar da öneki taşımalı.
-			link: `${taban}/blog/${yazi.id}/`,
+			// İngilizce yazı İngilizce yolda durur.
+			link: `${taban}/en/blog/${yazi.id}/`,
 		})),
-		customData: '<language>tr-tr</language>',
+		customData: '<language>en</language>',
 	});
 }

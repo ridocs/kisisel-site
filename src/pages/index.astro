@@ -19,10 +19,6 @@ const posts = (await getCollection('blog', ({ data }) => !data.draft && data.dil
 ---
 
 <BaseLayout title={m('site.baslik')}>
-	{/*
-	  Sayfadaki tek React adacığı. İmleç etkileşimi ilk ekranda olduğu için
-	  client:idle ile, tarayıcı boşa çıkınca yükleniyor: ilk boyamayı geciktirmiyor.
-	*/}
 	<HeroBolumu
 		slot="tam-genislik"
 		baslik="Mustafa Eybek"

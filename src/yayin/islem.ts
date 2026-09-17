@@ -34,7 +34,30 @@ kokuAyarla(process.cwd());
 */
 export const prerender = false;
 
+/*
+  SALT-OKUR DENETİMİ BURADA, EKRANDA DEĞİL.
+
+  `PANEL_SALT_OKUR` uzun süre yalnızca `Sayfa.astro` içinde okunuyordu ve
+  orada sadece düğmelerin BASILMASINI engelliyordu. Uç noktanın kendisi
+  açıktı: düğme görünmüyordu ama adres biliniyorsa doğrudan POST edilebiliyor
+  ve canlı site değiştirilebiliyordu.
+
+  Düğmeyi gizlemek bir yetki denetimi değildir. Denetim isteği karşılayan
+  yerde durmalı; arayüz yalnızca kullanıcıya kolaylık.
+
+  Bu, ağ katmanındaki korumanın (nginx parolası ve izin listesi) YERİNE
+  geçmiyor, ona EKLENİYOR. İzin listesindeki bir kusur tek başına siteyi
+  değiştirmeye yetmesin diye.
+*/
+const SALT_OKUR = process.env.PANEL_SALT_OKUR === '1';
+
 export const POST: APIRoute = async ({ request }) => {
+	if (SALT_OKUR) {
+		return new Response('Bu panel salt okur kipinde; yayın işlemleri kapalı.', {
+			status: 403,
+		});
+	}
+
 	let istem: unknown;
 	try {
 		istem = await request.json();
