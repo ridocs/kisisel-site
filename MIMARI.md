@@ -353,13 +353,18 @@ durumundayken rAF'a bağlanan iş sıraya girip orada kalıyor.
 
 ## 8. Bekleyenler
 
-- Kökteki `robots.txt`'ye site haritası satırı eklenmeli:
-  `Sitemap: https://twinshareapp.com/web-sitem/sitemap-index.xml`.
-  O dosya alan adındaki öteki uygulamaya ait ve dolu; **yönlendirme değil**,
-  tek satır eklenecek (robots.txt birden çok `Sitemap` satırı kabul eder).
-- nginx izin listesine SEO ekranı eklenmeli (şu an 404 veriyor).
-- Yayın uç noktası salt-okur denetimini sunucu tarafında da almalı.
 - **Panel parolası değiştirilmeli.**
+
+Kapatılanlar (17 Eylül 2026):
+
+- Site haritası artık kökteki `robots.txt`'den beyan ediliyor — yeni bir
+  `Sitemap` satırı eklendi, alan adındaki öteki uygulamanın kurallarına
+  dokunulmadı.
+- nginx izin listesi SEO ekranını kapsıyor ve desen sona bağlandı; yayın uç
+  noktası dışarıdan erişilemiyor.
+- Yayın uç noktası salt-okur denetimini kodda da aldı (`src/yayin/islem.ts`).
+- İnternete açık panel gerçekten salt-okur kipinde çalışıyor: `PANEL_SALT_OKUR`
+  ayarlanmamıştı, eklendi ve pm2 kaydı güncellendi.
 - Metin eksikleri: `/gizlilik` (170) ve `/en/privacy` (161) açıklamaları 160
   sınırının üstünde; `/blog/dart-dili` başlığı 81 karakter; o yazının
   İngilizce çevirisi yok.
