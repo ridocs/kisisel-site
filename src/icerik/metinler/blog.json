@@ -1,0 +1,12 @@
+{
+  "tr": {
+    "baslik": "Blog",
+    "sayfaBasligi": "Blog: yazılım ve altyapı notları — Mustafa Eybek",
+    "aciklama": "Karşılaştığım sorunların ve çözümlerinin kaydı: web geliştirme, CSS, altyapı ve otomasyon üzerine ölçerek yazılmış kısa notlar."
+  },
+  "en": {
+    "baslik": "Blog",
+    "sayfaBasligi": "Blog: notes on software and infrastructure — Mustafa Eybek",
+    "aciklama": "A record of problems I ran into and how I solved them: short, measured notes on web development, CSS, infrastructure and automation."
+  }
+}

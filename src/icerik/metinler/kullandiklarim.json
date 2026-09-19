@@ -1,0 +1,36 @@
+{
+  "tr": {
+    "sayfaBasligi": "Kullandıklarım: donanım, program ve araçlar — Mustafa Eybek",
+    "aciklama": "Günlük işimde kullandığım donanım, program ve araçlar; editörden dillere, bu sitenin yığınından sunucuya, her biri için kısa bir gerekçeyle.",
+    "ustBaslik": "KULLANDIKLARIM",
+    "baslik": "Kullandıklarım",
+    "giris": "Çalışırken elimin altında duran şeyler. Salt liste değil: her kalemin yanında neden onu seçtiğim yazıyor — asıl bilgi orada.",
+    "not": "“Yer tutucu” işaretli satırlar henüz doldurulmadı. Uydurma bir liste yazmaktansa boş bırakıldı.",
+    "yerTutucu": "yer tutucu",
+    "donanimBaslik": "Donanım",
+    "donanimMetin": "Masanın üstündekiler. Bu bölümün tamamı henüz yer tutucu: donanımı sen dolduracaksın.",
+    "gelistirmeBaslik": "Geliştirme",
+    "gelistirmeMetin": "Kod yazarken açık duran programlar ve en çok dokunduğum diller.",
+    "siteBaslik": "Bu site",
+    "siteMetin": "Şu an okuduğun sayfanın yığını. Sürümler depodaki kurulu paketlerden alındı.",
+    "sunucuBaslik": "Sunucu",
+    "sunucuMetin": "Yayına çıkan tarafta çalışanlar."
+  },
+  "en": {
+    "sayfaBasligi": "Uses: hardware, software and tools — Mustafa Eybek",
+    "aciklama": "The hardware, software and tools I use day to day — editor, languages, this site’s own stack and the server side — each with a short reason.",
+    "ustBaslik": "USES",
+    "baslik": "What I use",
+    "giris": "The things within arm’s reach while I work. Not just a list: each item says why I picked it — that is where the useful part is.",
+    "not": "Rows marked “placeholder” have not been filled in yet. Left empty rather than made up.",
+    "yerTutucu": "placeholder",
+    "donanimBaslik": "Hardware",
+    "donanimMetin": "What sits on the desk. This whole section is still a placeholder — the hardware is yours to fill in.",
+    "gelistirmeBaslik": "Development",
+    "gelistirmeMetin": "The programs open while I write code, and the languages I touch most.",
+    "siteBaslik": "This site",
+    "siteMetin": "The stack behind the page you are reading. Versions are taken from the packages installed in the repository.",
+    "sunucuBaslik": "Server",
+    "sunucuMetin": "What runs on the published side."
+  }
+}

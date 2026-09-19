@@ -1,0 +1,20 @@
+{
+  "tr": {
+    "tanim": "Web uygulamaları, altyapı ve otomasyon üzerine çalışıyorum.",
+    "gezinme": "Altbilgi gezinmesi",
+    "gezinmeBaslik": "Sayfalar",
+    "baglantiBaslik": "Bağlantılar",
+    "sifirJs": "tarayıcıya inen JavaScript yok",
+    "surum": "Sürüm",
+    "lisans": "MIT lisansı ile yayımlanmıştır."
+  },
+  "en": {
+    "tanim": "I work on web applications, infrastructure and automation.",
+    "gezinme": "Footer navigation",
+    "gezinmeBaslik": "Pages",
+    "baglantiBaslik": "Links",
+    "sifirJs": "zero JavaScript shipped",
+    "surum": "Version",
+    "lisans": "Published under the MIT license."
+  }
+}

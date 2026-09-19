@@ -1,0 +1,18 @@
+{
+  "tr": {
+    "ustBaslik": "BEN KİMİM?",
+    "paragraf1": "2005 yılında Kayseri’de doğdum. 2023 yılında OSB Mesleki ve Teknik Anadolu Lisesi’nden mezun oldum. Makine teknisyenliğinde 3 yıl deneyim kazandım. Aynı zamanda ağ altyapısı ve Flutter ile mobil uygulama geliştirme konularında kendimi geliştirmeye devam ettim.",
+    "paragraf2": "Öğrendiklerimi not almayı seviyorum. Buradaki yazılar, öğrendiklerimin ve hatalarımdan ortaya çıkan çözümlerin sizlere sunulduğu yer. Açıkçası hata yapmayı seviyorum; bu sayede kendimi geliştirebildiğimi düşünüyorum.",
+    "paragraf3": "Yeni bir iş veya ortak bir proje için bana ulaşabilirsiniz.",
+    "dugme": "Devamını oku",
+    "gorselAlt": "Mustafa Eybek portre fotoğrafı"
+  },
+  "en": {
+    "ustBaslik": "WHAT I DO",
+    "paragraf1": "I build web applications — touching every end of the work, from the interface to the database, from deployment to automation.",
+    "paragraf2": "I like taking notes on what I learn. Most of the writing here is a record of problems I ran into and how I solved them.",
+    "paragraf3": "Write to me for a new role, a shared project, or just a conversation.",
+    "dugme": "Read more",
+    "gorselAlt": "Portrait photo of Mustafa Eybek"
+  }
+}

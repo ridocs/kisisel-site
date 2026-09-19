@@ -1,0 +1,18 @@
+{
+  "tr": {
+    "ustBaslik": "YAZILAR",
+    "bos": "Henüz yayımlanmış bir yazı yok. Yakında burada olacak.",
+    "dakika": "dk okuma",
+    "guncellendi": "güncellendi",
+    "tumune": "← Tüm yazılar",
+    "sonraki": "Sonraki içerik →"
+  },
+  "en": {
+    "ustBaslik": "WRITING",
+    "bos": "No posts published yet. They will show up here.",
+    "dakika": "min read",
+    "guncellendi": "updated",
+    "tumune": "← All posts",
+    "sonraki": "Next post →"
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "tr": {
+    "sayfaBasligi": "Neler Değişti — Mustafa Eybek",
+    "aciklama": "Bu sitede ne değişti, ne eklendi, ne düzeltildi. Gün gün, en yeniden en eskiye.",
+    "ustBaslik": "SÜRÜM GÜNLÜĞÜ",
+    "baslik": "Neler değişti",
+    "giris": "Bu site ilk günden beri durmadan değişiyor. Aşağıda ne eklendiğini, ne düzeltildiğini ve neyin baştan yazıldığını gün gün görebilirsin.",
+    "metin": "Liste elle tutulmuyor; her yayında sitenin kendi geçmişinden üretiliyor. Yalnızca senin gördüğün yüzü değiştiren çalışmalar burada — sayfalar, yazılar, metinler, görünüm. Perde arkasındaki panel, araç ve sunucu işleri listeye girmiyor.",
+    "kunyeSurum": "Yayındaki sürüm",
+    "kunyeTarih": "Son değişiklik",
+    "kunyeKayit": "Kayıt sayısı",
+    "yeniYazi": "Yeni yazı",
+    "dilNotu": "Notlar sitenin kendi geçmişinden, yazıldıkları hâliyle alınıyor.",
+    "bosBaslik": "Günlük bu derlemede okunamadı",
+    "bosMetin": "Değişiklik listesi sitenin geçmişinden üretiliyor ve bu derlemede o geçmişe ulaşılamadı. Sayfanın geri kalanı yerinde; liste bir sonraki yayında geri gelir."
+  },
+  "en": {
+    "sayfaBasligi": "What's Changed — Mustafa Eybek",
+    "aciklama": "What changed on this site, what was added, what was fixed. Day by day, newest first.",
+    "ustBaslik": "RELEASE LOG",
+    "baslik": "What's changed",
+    "giris": "This site has been changing since day one. Below you can see what was added, what was fixed and what was rewritten, day by day.",
+    "metin": "The list is not written by hand; it is generated from the site's own history on every release. Only the work that changes what you see is here — pages, posts, wording, looks. Panel, tooling and server work stays out of it.",
+    "kunyeSurum": "Live version",
+    "kunyeTarih": "Last change",
+    "kunyeKayit": "Entries",
+    "yeniYazi": "New post",
+    "dilNotu": "Notes come straight from the site's own history, in the author's own words — so they are written in Turkish.",
+    "bosBaslik": "The log could not be read for this build",
+    "bosMetin": "The list is generated from the site's history, and that history was not reachable during this build. The rest of the page is intact; the list comes back with the next release."
+  }
+}

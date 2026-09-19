@@ -1,0 +1,38 @@
+{
+  "tr": {
+    "anasayfa": "Ana Sayfa",
+    "blog": "Blog",
+    "projeler": "Projeler",
+    "hakkimda": "Hakkımda",
+    "hizmetler": "Hizmetler",
+    "kullandiklarim": "Kullandıklarım",
+    "gizlilik": "Gizlilik",
+    "iletisim": "İletişim",
+    "rss": "RSS Akışı",
+    "menuAc": "Menüyü Aç",
+    "menuKapat": "Menüyü Kapat",
+    "koyuTema": "Koyu Temaya Geç",
+    "acikTema": "Açık Temaya Geç",
+    "dilDegistir": "Switch to English",
+    "icerigeGec": "İçeriğe Geç",
+    "nelerDegisti": "Neler Değişti"
+  },
+  "en": {
+    "anasayfa": "Home",
+    "blog": "Blog",
+    "projeler": "Projects",
+    "hakkimda": "About",
+    "hizmetler": "Services",
+    "kullandiklarim": "Uses",
+    "gizlilik": "Privacy",
+    "iletisim": "Contact",
+    "rss": "RSS feed",
+    "menuAc": "Open menu",
+    "menuKapat": "Close menu",
+    "koyuTema": "Switch to dark theme",
+    "acikTema": "Switch to light theme",
+    "dilDegistir": "Türkçeye geç",
+    "icerigeGec": "Skip to content",
+    "nelerDegisti": "What's changed"
+  }
+}

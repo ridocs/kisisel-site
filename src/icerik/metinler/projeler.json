@@ -1,0 +1,32 @@
+{
+  "tr": {
+    "baslik": "Aktif projelerim",
+    "aciklama": "Üzerinde çalıştığım işler. Bir proje hem web sitesi hem mobil uygulama olabiliyor.",
+    "website": "Web sitesi",
+    "mobil": "Mobil uygulama",
+    "ziyaret": "Siteye git",
+    "teknoloji": "Teknolojiler",
+    "bos": "Şu an yayımlanmış bir proje yok.",
+    "detayBak": "Projeyi incele",
+    "hakkinda": "Proje hakkında",
+    "katkiVerenler": "Katkı verenler",
+    "tumProjeler": "Tüm projeler",
+    "durumAktif": "Sürüyor",
+    "durumArsiv": "Arşivde"
+  },
+  "en": {
+    "baslik": "Active projects",
+    "aciklama": "What I am currently working on. A project can be both a website and a mobile app.",
+    "website": "Website",
+    "mobil": "Mobile app",
+    "ziyaret": "Visit site",
+    "teknoloji": "Technologies",
+    "bos": "No projects published yet.",
+    "detayBak": "View project",
+    "hakkinda": "About the project",
+    "katkiVerenler": "Contributors",
+    "tumProjeler": "All projects",
+    "durumAktif": "In progress",
+    "durumArsiv": "Archived"
+  }
+}

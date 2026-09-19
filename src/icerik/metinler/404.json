@@ -1,0 +1,18 @@
+{
+  "tr": {
+    "sayfaBasligi": "Ops! Sayfa bulunamadı.",
+    "baslik": "Hop! Sayfa kayıp.",
+    "metin": "Aradığın sayfa buralarda değil, galiba hayalet olmuş.",
+    "dugme": "Ana Sayfaya Dön",
+    "ikincilBag": "Blog Sayfama Göz Atmaya Ne Dersin?",
+    "hayaletAlt": "Şaşkın bir hayalet çizimi"
+  },
+  "en": {
+    "sayfaBasligi": "Page not found — Mustafa Eybek",
+    "baslik": "Boo! Page missing.",
+    "metin": "The page you are looking for isn't here — it must be a ghost.",
+    "dugme": "Back to home",
+    "ikincilBag": "Browse the posts",
+    "hayaletAlt": "Drawing of a puzzled ghost"
+  }
+}

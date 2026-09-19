@@ -1,0 +1,16 @@
+{
+  "tr": {
+    "ustBaslik": "YETKİNLİKLER",
+    "baslik": "Kullandığım diller ve araçlar",
+    "metin": "Günlük işimde en çok dokunduğum teknolojiler ve her biriyle ne kadar yol aldığım.",
+    "ipucu": "Ayrıntı için tıkla",
+    "ilerlemeBaslik": "NEREDE KULLANDIM"
+  },
+  "en": {
+    "ustBaslik": "SKILLS",
+    "baslik": "Languages and tools I use",
+    "metin": "The technologies I touch most in daily work, and how far I have come with each.",
+    "ipucu": "Click for details",
+    "ilerlemeBaslik": "WHERE I USED IT"
+  }
+}

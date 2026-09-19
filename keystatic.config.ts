@@ -1,5 +1,5 @@
 import { config, collection, fields, singleton } from '@keystatic/core';
-import trMetinler from './src/icerik/metinler-tr.json';
+import { BOLUMLER } from './src/icerik/metinler/_bolumler';
 import { TEKNOLOJI_SECENEKLERI } from './src/lib/teknolojiler';
 
 /**
@@ -185,7 +185,16 @@ const grupBilgisi: Record<string, { etiket: string; aciklama?: string }> = {
 			'Menü adları ile düğmelerin erişilebilirlik etiketleri. "Dil değiştir" bilinçli olarak öbür dilde yazılı: düğme neye götürdüğünü kendi dilinde söylüyor.',
 	},
 	hero: { etiket: 'Açılış bölümü' },
-	anasayfa: { etiket: 'Ana sayfa' },
+	projeler: {
+		etiket: 'Projeler sayfası',
+		aciklama:
+			'Yalnızca sayfa kabuğu burada. Projelerin kendisi soldaki “Projeler” bölümünde.',
+	},
+	degisiklik: {
+		etiket: 'Sürüm günlüğü',
+		aciklama: 'Neler değişti sayfasının başlıkları. Kayıtlar git geçmişinden geliyor.',
+	},
+	anasayfa: { etiket: 'Son yazılar bloğu' },
 	tanitim: {
 		etiket: 'Tanıtım bölümü',
 		aciklama: 'Açılıştan sonra gelen bölüm. Metinler yer tutucu; değiştirilecek.',
@@ -212,9 +221,9 @@ const grupBilgisi: Record<string, { etiket: string; aciklama?: string }> = {
 	iletisim: { etiket: 'İletişim bölümü' },
 	altbilgi: { etiket: 'Altbilgi' },
 	yetkinlik: {
-		etiket: 'Yetkinlikler',
+		etiket: 'Yetkinlikler bölümü',
 		aciklama:
-			'Yalnızca bölüm kabuğu burada. Kalemlerin kendisi `YetkinlikBolumu.astro` içinde duruyor.',
+			'Yalnızca bölüm başlıkları burada. Teknolojilerin kendisi soldaki “Yetkinlikler” bölümünde.',
 	},
 	hizmet: {
 		etiket: 'Hizmetler sayfası',
@@ -233,52 +242,80 @@ const grupBilgisi: Record<string, { etiket: string; aciklama?: string }> = {
 	},
 };
 
-/** Bir dilin bütün metin alanlarını, veri dosyasının yapısına göre üretir. */
-function metinAlanlari() {
-	const kaynak = trMetinler as Record<string, Record<string, string>>;
+/*
+  BİR BÖLÜMÜN DÜZENLEME SAYFASI.
 
-	return Object.fromEntries(
-		Object.entries(kaynak).map(([grup, kalemler]) => {
-			const alanlar = Object.fromEntries(
-				Object.entries(kalemler).map(([anahtar, ornek]) => [
-					anahtar,
-					fields.text({
-						label: alanEtiketi(anahtar),
-						// Uzun metin tek satırlık kutuya sığmıyor. Eşik Türkçe
-						// metnin uzunluğundan alınıyor ki iki dilde aynı yerleşim
-						// çıksın; farklı olsaydı çeviriyi yan yana okumak zorlaşırdı.
-						multiline: ornek.length > 70,
-						// Bu metinlerin hepsi arayüzde görünüyor: boş bırakılan bir
-						// alan sayfada boşluk demek, o yüzden hiçbiri isteğe bağlı değil.
-						validation: { isRequired: true },
-					}),
-				]),
-			);
+  Panelde her bölüm (açılış, iletişim kartı, gizlilik…) kendi sayfasında
+  duruyor ve o sayfada İKİ DİL birlikte görünüyor. Önceden iki dev sayfa
+  vardı — "Türkçe metinler" ve "İngilizce metinler" — ve 239 alan tek listede
+  akıyordu; aranan metni bulmak da, bir metnin öteki dildeki karşılığını
+  görmek de zordu.
 
-			const bilgi = grupBilgisi[grup];
-			return [
-				grup,
-				fields.object(alanlar, {
-					label: bilgi?.etiket ?? grup,
-					description: bilgi?.aciklama,
-				}),
-			];
-		}),
+  Alan listesi ELLE YAZILMIYOR: bölümün kendi JSON dosyasından türetiliyor.
+  Dosyaya bir alan eklendiğinde panelde kendiliğinden beliriyor.
+*/
+function bolumAlanlari(kalemler: Record<string, string>, dilEtiketi: string) {
+	const alanlar = Object.fromEntries(
+		Object.entries(kalemler).map(([anahtar, ornek]) => [
+			anahtar,
+			fields.text({
+				label: alanEtiketi(anahtar),
+				// Uzun metin tek satırlık kutuya sığmıyor. Eşik Türkçe metnin
+				// uzunluğundan alınıyor ki iki dilde aynı yerleşim çıksın;
+				// farklı olsaydı çeviriyi yan yana okumak zorlaşırdı.
+				multiline: ornek.length > 70,
+				// Bu metinlerin hepsi arayüzde görünüyor: boş bırakılan bir alan
+				// sayfada boşluk demek, o yüzden hiçbiri isteğe bağlı değil.
+				validation: { isRequired: true },
+			}),
+		]),
 	);
+	return fields.object(alanlar, { label: dilEtiketi });
 }
 
 /*
   `path` sonunda eğik çizgi YOK: Keystatic çizgili yolu dizin sayıp
   `.../index.json` yazıyor, çizgisiz olunca dosyanın kendisini —
-  `src/icerik/metinler-tr.json` — yazıyor. Site tam da o dosyayı okuyor.
+  `src/icerik/metinler/<bölüm>.json` — yazıyor. Site tam da o dosyayı okuyor.
+
+  Türkçe alanların uzunluğu iki dilde de ölçü alınıyor (bk. `bolumAlanlari`),
+  bu yüzden ikisine de `tr` kalemleri veriliyor.
 */
-const metinSingletonu = (dil: 'tr' | 'en', etiket: string) =>
-	singleton({
-		label: etiket,
-		path: `src/icerik/metinler-${dil}`,
+const bolumSingletonu = (ad: keyof typeof BOLUMLER) => {
+	const bilgi = grupBilgisi[ad];
+	const kalemler = BOLUMLER[ad].tr as Record<string, string>;
+	return singleton({
+		label: bilgi?.etiket ?? ad,
+		path: `src/icerik/metinler/${ad}`,
 		format: { data: 'json' },
-		schema: metinAlanlari(),
+		schema: {
+			tr: bolumAlanlari(kalemler, 'Türkçe'),
+			en: bolumAlanlari(kalemler, 'İngilizce'),
+		},
 	});
+};
+
+/*
+  Panelin sol menüsü sitenin kendi yapısını izliyor: önce ana sayfanın
+  bölümleri yukarıdan aşağıya sırayla, sonra ayrı sayfalar, sonra her sayfada
+  görünen ortak parçalar. Aranan metni bulmak için sitede nerede durduğunu
+  hatırlamak yetiyor.
+*/
+const METIN_AGACI: Record<string, (keyof typeof BOLUMLER)[]> = {
+	'Ana sayfa': ['hero', 'tanitim', 'yetkinlik', 'calisma', 'anasayfa', 'iletisim'],
+	Sayfalar: ['hakkimda', 'hizmet', 'projeler', 'blog', 'kullandiklarim', 'degisiklik', 'gizlilik'],
+	'Site geneli': ['site', 'nav', 'altbilgi', 'yazi', 'sarmasik', '404'],
+};
+
+/** Menüdeki her bölüm için bir singleton; anahtar `metinHero` gibi. */
+const metinSingletonAdi = (ad: string) => `metin_${ad}`;
+
+const metinSingletonlari = Object.fromEntries(
+	(Object.keys(BOLUMLER) as (keyof typeof BOLUMLER)[]).map((ad) => [
+		metinSingletonAdi(ad),
+		bolumSingletonu(ad),
+	]),
+);
 
 /* ------------------------------------------------------------------ *
  * Yapılandırma
@@ -433,16 +470,19 @@ export default config({
 	ui: {
 		brand: { name: 'Mustafa Eybek' },
 		navigation: {
-			İçerik: ['yazilar', 'projeler'],
-			'Site metinleri': ['metinlerTr', 'metinlerEn'],
-			Yetkinlikler: ['yetkinlikler'],
+			İçerik: ['yazilar', 'projeler', 'yetkinlikler'],
+			...Object.fromEntries(
+				Object.entries(METIN_AGACI).map(([baslik, adlar]) => [
+					baslik,
+					adlar.map(metinSingletonAdi),
+				]),
+			),
 		},
 	},
 
 
 	singletons: {
-		metinlerTr: metinSingletonu('tr', 'Türkçe metinler'),
-		metinlerEn: metinSingletonu('en', 'İngilizce metinler'),
+		...metinSingletonlari,
 		yetkinlikler: yetkinliklerSingletonu,
 	},
 

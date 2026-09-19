@@ -1,21 +1,30 @@
 /**
  * Arayüz metinlerinin okuyucusu.
  *
- * METİNLER ARTIK BURADA DEĞİL: `src/icerik/metinler-tr.json` ve
- * `metinler-en.json` içindeler ve yazı panelinden ("Site metinleri")
- * düzenleniyorlar. Sebep: metni değiştirmek için kaynak koda dokunmak
- * gerekiyordu; bir metin düzeltmesi artık derleme bilgisi istemiyor.
+ * METİNLER BURADA DEĞİL: `src/icerik/metinler/` altında, HER BÖLÜM KENDİ
+ * DOSYASINDA duruyor (`hero.json`, `iletisim.json`, `gizlilik.json`…) ve yazı
+ * panelinden düzenleniyor. Her dosya iki dili birden taşıyor:
+ *
+ *     { "tr": { "baslik": "…" }, "en": { "baslik": "…" } }
+ *
+ * Neden bölündü: önceden iki büyük dosya vardı (`metinler-tr.json` ve
+ * `metinler-en.json`), panelde 239 alan tek listede akıyordu ve aranan metni
+ * bulmak zordu. Bölüm bölüm ayrılınca panelin sol menüsü sitenin kendi
+ * yapısına benziyor: ana sayfa bölümleri, sayfalar, site geneli.
+ *
+ * Neden iki dil aynı dosyada: bir metni düzenlerken öteki dildeki karşılığı
+ * da düzenlenmek isteniyor. Ayrı dosyalarda tutulunca biri güncellenip öteki
+ * unutuluyordu.
  *
  * Bu dosyada kalanlar metin DEĞİL, yönlendirme mantığı: dil listesi, yol
- * üretimi ve `esleme` sözlüğü. Bunlar panele açılmadı, çünkü yanlış bir
- * değer metni bozmakla kalmaz, sayfayı 404'e düşürür.
+ * üretimi ve `esleme` sözlüğü. Bunlar panele açılmadı, çünkü yanlış bir değer
+ * metni bozmakla kalmaz, sayfayı 404'e düşürür.
  *
- * Veri dosyaları gruplanmış duruyor ("site", "nav", "gizlilik"…) ki panelde
- * 209 alan tek listede akmasın. Kod ise eskisi gibi düz anahtarla ("site.baslik")
- * çalışıyor; birleştirme aşağıdaki `duzles` ile bir kez yapılıyor.
+ * YENİ BÖLÜM EKLEMEK: `src/icerik/metinler/` altına dosyayı koy, aşağıya bir
+ * `import` ve `GRUPLAR` içine bir satır ekle, `keystatic.config.ts` içinde de
+ * bir singleton tanımla. Üçü birden yapılmazsa panel ile site ayrı düşer.
  */
-import trGruplar from '../icerik/metinler-tr.json';
-import enGruplar from '../icerik/metinler-en.json';
+import { BOLUMLER } from '../icerik/metinler/_bolumler';
 
 export const diller = ['tr', 'en'] as const;
 export type Dil = (typeof diller)[number];
@@ -23,20 +32,28 @@ export type Dil = (typeof diller)[number];
 export const varsayilanDil: Dil = 'tr';
 
 /*
-  Anahtar birleşimi JSON'un kendi yapısından türetiliyor: "site" grubundaki
-  "baslik" alanı `site.baslik` oluyor. Elle yazılmış bir liste olsaydı, veri
-  dosyasına eklenen bir alan koda yazılmadığı sürece görünmezdi; burada
-  eklenir eklenmez derleyici tanıyor, yanlış yazılan anahtar ise hata veriyor.
+  Bölüm listesi `src/icerik/metinler/_bolumler.ts` içinde; panel de aynı
+  kaydı okuyor. Anahtar adı metin anahtarının ilk parçası oluyor:
+  `hero` + `altBaslik` → `hero.altBaslik`.
 */
-type Gruplar = typeof trGruplar;
+const GRUPLAR = BOLUMLER;
+
+/*
+  Anahtar birleşimi JSON'un kendi yapısından türetiliyor: `hero` dosyasının
+  `tr` bölümündeki `altBaslik` alanı `hero.altBaslik` oluyor. Elle yazılmış
+  bir liste olsaydı, dosyaya eklenen bir alan koda yazılmadığı sürece
+  görünmezdi; burada eklenir eklenmez derleyici tanıyor, yanlış yazılan
+  anahtar ise hata veriyor.
+*/
+type Gruplar = typeof GRUPLAR;
 export type MetinAnahtari = {
-	[Grup in keyof Gruplar & string]: `${Grup}.${keyof Gruplar[Grup] & string}`;
+	[Grup in keyof Gruplar & string]: `${Grup}.${keyof Gruplar[Grup]['tr'] & string}`;
 }[keyof Gruplar & string];
 
-function duzles(gruplar: Record<string, Record<string, string>>): Record<string, string> {
+function duzles(dil: Dil): Record<string, string> {
 	const duz: Record<string, string> = {};
-	for (const [grup, kalemler] of Object.entries(gruplar)) {
-		for (const [ad, metin] of Object.entries(kalemler)) {
+	for (const [grup, icerik] of Object.entries(GRUPLAR)) {
+		for (const [ad, metin] of Object.entries((icerik as Record<Dil, Record<string, string>>)[dil])) {
 			duz[`${grup}.${ad}`] = metin;
 		}
 	}
@@ -44,8 +61,8 @@ function duzles(gruplar: Record<string, Record<string, string>>): Record<string,
 }
 
 export const ceviriler: Record<Dil, Record<MetinAnahtari, string>> = {
-	tr: duzles(trGruplar) as Record<MetinAnahtari, string>,
-	en: duzles(enGruplar) as Record<MetinAnahtari, string>,
+	tr: duzles('tr') as Record<MetinAnahtari, string>,
+	en: duzles('en') as Record<MetinAnahtari, string>,
 };
 
 /** Yol adından dili çıkarır: /en/... -> "en", diğer her şey -> "tr". */
@@ -61,9 +78,6 @@ export function cevirici(dil: Dil) {
 	};
 }
 
-/**
- * Dile göre yol üretir. Varsayılan dil ön ek almaz: "/blog" ve "/en/blog".
- */
 /**
  * Sitenin yayınlandığı alt dizin ('' ya da ör. '/web-sitem').
  *
@@ -83,6 +97,9 @@ function tabansizParcalar(url: URL): string[] {
 	return yolAdi.split('/').filter(Boolean);
 }
 
+/**
+ * Dile göre yol üretir. Varsayılan dil ön ek almaz: "/blog" ve "/en/blog".
+ */
 export function yol(dil: Dil, parca = ''): string {
 	// Sondaki eğik çizgi bilinçli: derleme dizin tabanlı çıktı üretiyor
 	// (/blog/index.html). Çizgisiz bağlantı sunucuda 301 ile çizgili

@@ -1,0 +1,26 @@
+{
+  "tr": {
+    "ustBaslik": "İLETİŞİM",
+    "baslik": "Bir fikrin mi var, konuşalım",
+    "durum": "Yeni işlere açığım",
+    "rol": "Yazılım geliştirici",
+    "yaz": "Bana yaz",
+    "kopyala": "E-postayı kopyala",
+    "kopyalandi": "Kopyalandı",
+    "qrAlt": "Sitenin adresini içeren kare kod",
+    "qrNot": "Telefonunla okut, site cebinde açılsın.",
+    "serit": "Genelde aynı gün dönüyorum"
+  },
+  "en": {
+    "ustBaslik": "CONTACT",
+    "baslik": "Got an idea? Let us talk",
+    "durum": "Available for work",
+    "rol": "Software developer",
+    "yaz": "Write to me",
+    "kopyala": "Copy email",
+    "kopyalandi": "Copied",
+    "qrAlt": "Square code containing the address of this site",
+    "qrNot": "Scan it and the site opens on your phone.",
+    "serit": "I usually reply the same day"
+  }
+}
