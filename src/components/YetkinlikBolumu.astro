@@ -6,113 +6,38 @@ const dil = dilBul(Astro.url);
 const m = cevirici(dil);
 
 /*
-  YETKİNLİK İÇERİĞİ — düzenlenecek tek yer burası.
+  YETKİNLİK VERİSİ — iki kaynaktan birleşiyor.
 
-  Her satır:
-    ad       : teknolojinin adı (çevrilmiyor, özel ad)
-    ikon     : @iconify-json/logos içindeki ad; derleme sırasında gömülüyor
-    oran     : 0-100 arası. Ekranda GÖRÜNMÜYOR; yalnızca kartların sırasını
-                           belirliyor (büyükten küçüğe).
-    sure     : { tr, en }  kartın altındaki not: kaç yıldır kullandığın
-    tanim    : { tr, en }  kart seçilince panelde SOLDA çıkan tanım
-    ilerleme : { tr, en }  panelde SAĞDA çıkan metin: projeler, nerede
-                           kullandığın, nereye geldiğin
+  1. `src/lib/teknolojiler.ts` — KATALOG. Teknolojinin adı, simgesi ve
+     "bu nedir" tanımı. Nesnel bilgi; her sitede aynı olurdu, bu yüzden
+     panelde elle yazılmıyor.
+  2. `src/icerik/yetkinlikler.json` — PANELDEN yazılan kişisel kısım:
+     teknolojinin kimliği, ne kadardır kullanıldığı ve nerede kullanıldığı.
 
-  Metinler YER TUTUCU. Sıralama burada değil bileşende yapılıyor — diziye
-  istediğin sırayla yazabilirsin.
+  Panelde teknoloji bir listeden seçiliyor; katalogdaki karşılığı burada
+  bulunup birleştiriliyor. Katalogda olmayan bir kimlik varsa (teknoloji
+  listeden çıkarılmışsa) o kalem SESSİZCE ATLANIYOR — adı ve simgesi
+  olmayan bir kart basmaktansa hiç basmamak doğru.
+
+  Sıra listenin kendi sırası: panelde sürükleyerek değiştiriliyor. Eskiden
+  ekranda görünmeyen bir `oran` sayısı vardı, o kalktı.
 */
-const yetkinlikler = [
-	{
-		ad: 'Python',
-		ikon: 'logos:python',
-		oran: 85,
-		sure: { tr: '4 yıl', en: '4 years' },
-		tanim: {
-			tr: 'Okunabilirliği öne alan, betikten veri işlemeye kadar geniş bir alanda kullanılan genel amaçlı dil.',
-			en: 'A general-purpose language built around readability, used from scripting to data work.',
-		},
-		ilerleme: {
-			tr: 'En rahat olduğum dil. Otomasyon betikleri, veri dönüştürme işleri ve küçük servisler yazdım; bu sitenin yazı tipi alt kümeleme aracı da Python ile.',
-			en: 'The language I am most at home in. Automation scripts, data transforms and small services — even this site’s font-subsetting tool is Python.',
-		},
-	},
-	{
-		ad: 'JavaScript',
-		ikon: 'logos:javascript',
-		oran: 80,
-		sure: { tr: '3 yıl', en: '3 years' },
-		tanim: {
-			tr: 'Tarayıcının kendi dili; sunucu tarafında da Node.js ile çalışıyor.',
-			en: 'The browser’s own language; also runs server-side with Node.js.',
-		},
-		ilerleme: {
-			tr: 'Arayüz tarafında günlük işim. Bu sitedeki kaydırma, menü ve etkileşim betikleri kütüphanesiz, saf JavaScript.',
-			en: 'My daily work on the interface side. The scroll, menu and interaction scripts on this site are plain JavaScript, no libraries.',
-		},
-	},
-	{
-		ad: 'Dart',
-		ikon: 'logos:dart',
-		oran: 75,
-		sure: { tr: '2 yıl', en: '2 years' },
-		tanim: {
-			tr: 'Flutter ile tek koddan mobil, masaüstü ve web arayüzü üretmek için tasarlanmış dil.',
-			en: 'Designed for Flutter: one codebase for mobile, desktop and web interfaces.',
-		},
-		ilerleme: {
-			tr: 'Mobil tarafta kullandığım dil. Flutter ile arayüz kurup durum yönetimi ve platform kanalları üzerine çalıştım.',
-			en: 'My language on the mobile side. Built interfaces with Flutter and worked on state management and platform channels.',
-		},
-	},
-	{
-		ad: 'TypeScript',
-		ikon: 'logos:typescript-icon',
-		oran: 70,
-		sure: { tr: '2 yıl', en: '2 years' },
-		tanim: {
-			tr: 'JavaScript’in tip sistemi eklenmiş hâli; hatayı çalışma anından derleme anına taşıyor.',
-			en: 'JavaScript with a type system; moves errors from runtime to build time.',
-		},
-		ilerleme: {
-			tr: 'Büyüyen web projelerinde tercihim. Bu sitenin çeviri katmanı ve bileşen arayüzleri TypeScript ile yazıldı.',
-			en: 'My preference on growing web projects. This site’s translation layer and component interfaces are written in TypeScript.',
-		},
-	},
-	{
-		ad: 'Docker',
-		ikon: 'logos:docker-icon',
-		oran: 65,
-		sure: { tr: '2 yıl', en: '2 years' },
-		tanim: {
-			tr: 'Uygulamayı bağımlılıklarıyla paketleyip her ortamda aynı şekilde çalıştıran kapsayıcı aracı.',
-			en: 'Packages an app with its dependencies so it runs the same everywhere.',
-		},
-		ilerleme: {
-			tr: 'Geliştirme ortamlarını ve küçük servisleri kapsayıcıya aldım; dağıtımda tekrarlanabilirliği buradan sağlıyorum.',
-			en: 'Containerised dev environments and small services; this is how I keep deployments repeatable.',
-		},
-	},
-	{
-		ad: 'PostgreSQL',
-		ikon: 'logos:postgresql',
-		oran: 60,
-		sure: { tr: '2 yıl', en: '2 years' },
-		tanim: {
-			tr: 'İlişkisel veritabanı; güçlü sorgu yetenekleri ve veri bütünlüğü güvenceleriyle biliniyor.',
-			en: 'A relational database known for strong query capabilities and data-integrity guarantees.',
-		},
-		ilerleme: {
-			tr: 'Şema tasarımı, indeksleme ve sorgu iyileştirme üzerine çalıştım; projelerde ana veri deposu olarak kullanıyorum.',
-			en: 'Worked on schema design, indexing and query tuning; I use it as the primary data store in projects.',
-		},
-	},
-];
+import yetkinlikVerisi from '@/icerik/yetkinlikler.json';
+import { teknolojiBul } from '@/lib/teknolojiler';
 
-/*
-  Azalan sıralama: en çok çalışılan teknoloji ızgaranın ilk gözünde, açılışta
-  seçili olan da o. Okuma sırası böylece kendiliğinden bir öncelik bildiriyor.
-*/
-const sirali = [...yetkinlikler].sort((a, b) => b.oran - a.oran);
+const sirali = yetkinlikVerisi.kalemler
+	.map((kalem) => {
+		const teknoloji = teknolojiBul(kalem.teknoloji);
+		if (!teknoloji) return null;
+		return {
+			ad: teknoloji.ad,
+			ikon: teknoloji.ikon,
+			tanim: teknoloji.tanim,
+			sure: { tr: kalem.sure, en: kalem.sureEn },
+			ilerleme: { tr: kalem.kullanim, en: kalem.kullanimEn },
+		};
+	})
+	.filter((y) => y !== null);
 ---
 
 {/*

@@ -1,5 +1,6 @@
 import { config, collection, fields, singleton } from '@keystatic/core';
 import trMetinler from './src/icerik/metinler-tr.json';
+import { TEKNOLOJI_SECENEKLERI } from './src/lib/teknolojiler';
 
 /**
  * Yazı ve site metni yönetim paneli.
@@ -378,6 +379,54 @@ const projelerKoleksiyonu = collection({
 	},
 });
 
+/*
+  YETKİNLİKLER
+
+  Teknoloji katalogdan SEÇİLİYOR (`src/lib/teknolojiler.ts`): adı, simgesi ve
+  "bu teknoloji nedir" tanımı oradan geliyor, panelde yeniden yazılmıyor.
+  Burada yalnızca kişisel olan kısım var: ne kadardır kullanıldığı ve nerede
+  kullanıldığı.
+
+  Sıra listenin kendi sırası — kalemleri sürükleyerek değiştirebiliyorsun.
+  Önceki sürümde bir `oran` alanı vardı ve ekranda görünmeyen bir sayıyla
+  sıralama yapılıyordu; sürükleyip bırakmak hem görünür hem anlaşılır.
+*/
+const yetkinliklerSingletonu = singleton({
+	label: 'Yetkinlikler',
+	path: 'src/icerik/yetkinlikler',
+	format: { data: 'json' },
+	schema: {
+		kalemler: fields.array(
+			fields.object({
+				teknoloji: fields.select({
+					label: 'Teknoloji',
+					description: 'Adı, simgesi ve tanımı hazır geliyor.',
+					options: TEKNOLOJI_SECENEKLERI,
+					defaultValue: TEKNOLOJI_SECENEKLERI[0].value,
+				}),
+				sure: fields.text({
+					label: 'Ne kadardır (Türkçe)',
+					description: 'Kartta görünüyor. Örn. "4 yıl".',
+				}),
+				sureEn: fields.text({ label: 'Ne kadardır (İngilizce)', description: 'Örn. "4 years".' }),
+				kullanim: fields.text({
+					label: 'Nerede kullandın? (Türkçe)',
+					description: 'Kart seçilince açılan panelde görünüyor. Somut yaz: hangi proje, hangi iş.',
+					multiline: true,
+				}),
+				kullanimEn: fields.text({
+					label: 'Nerede kullandın? (İngilizce)',
+					multiline: true,
+				}),
+			}),
+			{
+				label: 'Yetkinlikler',
+				itemLabel: (props) => props.fields.teknoloji.value || 'Yetkinlik',
+			},
+		),
+	},
+});
+
 export default config({
 	storage: { kind: 'local' },
 
@@ -386,12 +435,15 @@ export default config({
 		navigation: {
 			İçerik: ['yazilar', 'projeler'],
 			'Site metinleri': ['metinlerTr', 'metinlerEn'],
+			Yetkinlikler: ['yetkinlikler'],
 		},
 	},
+
 
 	singletons: {
 		metinlerTr: metinSingletonu('tr', 'Türkçe metinler'),
 		metinlerEn: metinSingletonu('en', 'İngilizce metinler'),
+		yetkinlikler: yetkinliklerSingletonu,
 	},
 
 	collections: {

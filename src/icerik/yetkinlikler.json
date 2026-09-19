@@ -1,0 +1,46 @@
+{
+  "kalemler": [
+    {
+      "teknoloji": "python",
+      "sure": "4 yıl",
+      "sureEn": "4 years",
+      "kullanim": "En rahat olduğum dil. Otomasyon betikleri, veri dönüştürme işleri ve küçük servisler yazdım; bu sitenin yazı tipi alt kümeleme aracı da Python ile.",
+      "kullanimEn": "The language I am most at home in. Automation scripts, data transforms and small services — even this site's font-subsetting tool is Python."
+    },
+    {
+      "teknoloji": "javascript",
+      "sure": "3 yıl",
+      "sureEn": "3 years",
+      "kullanim": "Arayüz tarafında günlük işim. Bu sitedeki kaydırma, menü ve etkileşim betikleri kütüphanesiz, saf JavaScript.",
+      "kullanimEn": "My daily work on the interface side. The scroll, menu and interaction scripts on this site are plain JavaScript, no libraries."
+    },
+    {
+      "teknoloji": "dart",
+      "sure": "2 yıl",
+      "sureEn": "2 years",
+      "kullanim": "Mobil tarafta kullandığım dil. Flutter ile arayüz kurup durum yönetimi ve platform kanalları üzerine çalıştım.",
+      "kullanimEn": "The language I use on mobile. I build interfaces with Flutter and have worked on state management and platform channels."
+    },
+    {
+      "teknoloji": "typescript",
+      "sure": "2 yıl",
+      "sureEn": "2 years",
+      "kullanim": "Büyüyen web projelerinde tercihim. Bu sitenin çeviri katmanı ve bileşen arayüzleri TypeScript ile yazıldı.",
+      "kullanimEn": "My choice on web projects as they grow. This site's translation layer and component interfaces are written in TypeScript."
+    },
+    {
+      "teknoloji": "docker",
+      "sure": "2 yıl",
+      "sureEn": "2 years",
+      "kullanim": "Geliştirme ortamlarını ve küçük servisleri kapsayıcıya aldım; dağıtımda tekrarlanabilirliği buradan sağlıyorum.",
+      "kullanimEn": "I containerise development environments and small services; this is where deployment repeatability comes from."
+    },
+    {
+      "teknoloji": "postgresql",
+      "sure": "2 yıl",
+      "sureEn": "2 years",
+      "kullanim": "Şema tasarımı, indeksleme ve sorgu iyileştirme üzerine çalıştım; projelerde ana veri deposu olarak kullanıyorum.",
+      "kullanimEn": "I have worked on schema design, indexing and query tuning; it is the main data store in my projects."
+    }
+  ]
+}
