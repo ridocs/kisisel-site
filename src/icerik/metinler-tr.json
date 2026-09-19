@@ -8,7 +8,7 @@
     "hayaletAlt": "Şaşkın bir hayalet çizimi"
   },
   "site": {
-    "baslik": "Mustafa Eybek・Software Developer & DevOps Engineer & SolidWorks Designer・Kayseri",
+    "baslik": "Mustafa Eybek・Technical Solutions Developer・Kayseri",
     "aciklama": "Kayseri’de ikamet etmekle birlikte, 2023 yılında Makine Bölümü’nden mezun oldum. Lise bittikten sonra yazılıma merak salmış ve alan değiştirmiş bulunmaktayım. Fakat yine de gerektiğinde makine hakkındaki becerilerimi ve SolidWorks becerilerimi kullanmaktan çekinmem."
   },
   "nav": {
@@ -30,7 +30,7 @@
     "nelerDegisti": "Neler Değişti"
   },
   "hero": {
-    "altBaslik": "Web & Mobile Development · DevOps & Infrastructure · SolidWorks Designer** olarak kendimi sürekli geliştiriyor ve yeni projeler geliştiriyorum. Aynı zamanda freelancer olarak farklı projelerde yapıyorum. Burası, hayatımın tam merkezi. Siz de bu merkezi keşfetmek üzeresiniz.",
+    "altBaslik": "Technical Solutions Developer olarak devamlı yeni projeler geliştiriyorum. Aynı zamanda freelancer olarak farklı projelerde yapıyorum. Burası, hayatımın tam merkezi. Siz de bu merkezi keşfetmek üzeresiniz.",
     "birincilDugme": "Gelişmelere Bak",
     "ikincilDugme": "GitHub Profilim",
     "yeniSekme": "(yeni sekmede açılır)"
@@ -40,10 +40,10 @@
     "tumYazilar": "Tüm yazılar →"
   },
   "tanitim": {
-    "ustBaslik": "NE YAPIYORUM?",
-    "paragraf1": "Web uygulamaları geliştiriyorum: arayüzden veritabanına, dağıtımdan otomasyona kadar işin her ucuna dokunuyorum.",
-    "paragraf2": "Öğrendiklerimi not almayı seviyorum. Buradaki yazılar çoğunlukla karşılaştığım sorunların ve çözümlerinin kaydı.",
-    "paragraf3": "Yeni bir iş, ortak bir proje ya da sadece sohbet için yazabilirsin.",
+    "ustBaslik": "BEN KİMİM?",
+    "paragraf1": "2005 yılında Kayseri’de doğdum. 2023 yılında OSB Mesleki ve Teknik Anadolu Lisesi’nden mezun oldum. Makine teknisyenliğinde 3 yıl deneyim kazandım. Aynı zamanda ağ altyapısı ve Flutter ile mobil uygulama geliştirme konularında kendimi geliştirmeye devam ettim.",
+    "paragraf2": "Öğrendiklerimi not almayı seviyorum. Buradaki yazılar, öğrendiklerimin ve hatalarımdan ortaya çıkan çözümlerin sizlere sunulduğu yer. Açıkçası hata yapmayı seviyorum; bu sayede kendimi geliştirebildiğimi düşünüyorum.",
+    "paragraf3": "Yeni bir iş veya ortak bir proje için bana ulaşabilirsiniz.",
     "dugme": "Devamını oku",
     "gorselAlt": "Mustafa Eybek portre fotoğrafı"
   },
