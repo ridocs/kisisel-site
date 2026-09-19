@@ -1,6 +1,6 @@
 ---
 import { Image } from 'astro:assets';
-import { Icon } from 'astro-icon/components';
+import AkanDugme from './AkanDugme.astro';
 import { cevirici, dilBul, yol } from '@/i18n/ceviriler';
 import portre from '@/assets/mustafa-eybek.jpg';
 
@@ -114,16 +114,21 @@ const OLCU = '(min-width: 768px) 25rem, (min-width: 640px) 300px, min(250px, 62v
 				style="--sira: 5"
 			>{m('tanitim.paragraf3')}</p>
 
-			<a
+			{/*
+			  Sitedeki öbür düğmelerle aynı akan düğme. `aria-label` korundu:
+			  görünen metin tek başına ("Devamını oku") nereye gittiğini
+			  söylemiyor, ekran okuyucuya hedef sayfa da veriliyor.
+			*/}
+			<AkanDugme
 				href={hakkimdaYolu}
+				agirlik="dolu"
+				class="mt-7"
 				data-belir-oge
 				style="--sira: 6"
 				aria-label={`${m('tanitim.dugme')} — ${m('nav.hakkimda')}`}
-				class="mt-7 inline-flex items-center gap-2 rounded-full bg-slate-900 px-6 py-2.5 text-sm font-medium text-white transition-transform hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current motion-reduce:transition-none dark:bg-white dark:text-neutral-900"
 			>
-				<span>{m('tanitim.dugme')}</span>
-				<Icon name="lucide:arrow-right" class="size-4" />
-			</a>
+				{m('tanitim.dugme')}
+			</AkanDugme>
 		</div>
 	</div>
 </section>

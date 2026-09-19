@@ -31,6 +31,14 @@ interface Props {
 	yeniSekmeMetni?: string;
 	/** Ek sınıflar (yerleşim için). */
 	class?: string;
+	/*
+	  Kalan her öznitelik olduğu gibi bağlantıya geçiyor. Buna ihtiyaç var
+	  çünkü düğmeler farklı bağlamlarda ek bilgi taşıyor: belirme
+	  animasyonunun `data-belir-oge` ve `--sira` değerleri, bağlam ekleyen
+	  bir `aria-label`, bazen bir `id`. Hepsi için ayrı prop açmak yerine
+	  geçirgen bırakıldı.
+	*/
+	[key: string]: unknown;
 }
 
 const {
@@ -39,6 +47,7 @@ const {
 	disBaglanti = false,
 	yeniSekmeMetni,
 	class: ekSinif,
+	...kalanOzellikler
 } = Astro.props;
 
 const disOzellikler = disBaglanti
@@ -46,7 +55,12 @@ const disOzellikler = disBaglanti
 	: {};
 ---
 
-<a class:list={['akan-dugme', agirlik === 'dolu' && 'dolu', ekSinif]} href={href} {...disOzellikler}>
+<a
+	class:list={['akan-dugme', agirlik === 'dolu' && 'dolu', ekSinif]}
+	href={href}
+	{...disOzellikler}
+	{...kalanOzellikler}
+>
 	{/* Soldaki ok normalde kadrajın dışında; üzerine gelince içeri kayıyor. */}
 	<Icon name="lucide:arrow-right" class="ok ok-sol" aria-hidden="true" />
 	<span class="etiket"><slot /></span>
