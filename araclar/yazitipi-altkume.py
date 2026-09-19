@@ -40,11 +40,25 @@ TEMEL = (
 # Ek takım: Türkçe'ye özgü, Latin-1'de olmayan harfler.
 # Ayrıca Avrupa adlarında sık geçen birkaç harf korunuyor (ā ē ī ō ū değil,
 # yalnızca yaygın olanlar) — blog yazılarında ad geçerse kutu görünmesin.
+#
+# `ı` (U+0131) BURAYA GİRMEMELİ: o harf temel dosyada duruyor. Aynı karakter
+# iki takımda birden tanımlıysa tarayıcı sonra geleni seçiyor ve tek bir `ı`
+# yüzünden bu dosyanın tamamı iniyordu — İngilizce sayfalarda 15 KB'lık
+# gereksiz bir indirme demekti.
+#
+# `₺` (U+20BA) ise burada KALMALI. Temel listede de yazıyor ama kaynak yazı
+# tipinin latin alt kümesinde o glif yok, dolayısıyla temel dosyaya hiç
+# girmiyor; ₺ yalnızca bu dosyadan geliyor. Çıkarılırsa kutu görünür.
+#
+# Buradaki aralık `src/styles/global.css` içindeki `unicode-range` ile AYNI
+# olmak zorunda: biri değişip öbürü kalırsa ya kutu görünür ya da gereksiz
+# indirme geri gelir.
 EK = (
     "U+011E-011F,"      # Ğ ğ
     "U+0130,"           # İ
     "U+015E-015F,"      # Ş ş
-    "U+0100-017F,"      # Latin Extended-A tamamı (Lehçe, Çekçe, Hırvatça adlar)
+    "U+0100-0130,"      # Latin Extended-A (Lehçe, Çekçe, Hırvatça adlar)
+    "U+0132-017F,"      # — U+0131 (ı) hariç: o temel dosyada
     "U+20BA"            # ₺ (temel dosyada yok, buradan geliyor)
 )
 

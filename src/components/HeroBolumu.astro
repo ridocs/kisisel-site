@@ -9,6 +9,7 @@ const KAY_Y = [-18, -13, -22, -16, -11, -20, -14, -19];
 const DON = [6, -5, 4, -7, 5, -4, 7, -6];
 
 import { Icon } from 'astro-icon/components';
+import { cevirici, dilBul } from '@/i18n/ceviriler';
 
 interface Props {
 	baslik: string;
@@ -21,6 +22,8 @@ interface Props {
 
 const { baslik, altBaslik, birincilMetin, birincilHedef, ikincilMetin, ikincilHedef } =
 	Astro.props;
+
+const m = cevirici(dilBul(Astro.url));
 
 /*
   Bu bölüm React'ten Astro'ya taşındı. Önceden framer-motion ve React DOM
@@ -141,7 +144,7 @@ const ikonlar = [
 				class="inline-flex items-center rounded-lg bg-slate-900 px-8 py-4 text-base font-semibold text-white transition-colors hover:bg-slate-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current dark:bg-white dark:text-neutral-900 dark:hover:bg-white/85"
 			>
 				{ikincilMetin}
-				<span class="sr-only"> (yeni sekmede açılır)</span>
+				<span class="sr-only"> {m('hero.yeniSekme')}</span>
 			</a>
 		</div>
 	</div>

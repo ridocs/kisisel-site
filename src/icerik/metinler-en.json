@@ -32,7 +32,8 @@
   "hero": {
     "altBaslik": "Software developer. I work on web applications, infrastructure and automation — and write about what I learn.",
     "birincilDugme": "Read the posts",
-    "ikincilDugme": "My GitHub"
+    "ikincilDugme": "My GitHub",
+    "yeniSekme": "(opens in a new tab)"
   },
   "anasayfa": {
     "sonYazilar": "Latest posts",

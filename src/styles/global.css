@@ -21,7 +21,25 @@
 	font-display: swap;
 	font-weight: 100 900;
 	src: url("./yazitipi/inter-ek.woff2") format("woff2-variations");
-	unicode-range: U+0100-017F, U+20BA;
+	/*
+	  U+0131 (ı) BU ARALIKTA OLMAMALI.
+
+	  Önceden `U+0100-017F` yazıyordu ve bu aralık `ı` harfini de kapsıyor —
+	  oysa `ı` yukarıdaki TEMEL dosyada duruyor (doğrulandı: temel dosyanın
+	  cmap'inde var). Aynı karakter iki `@font-face` içinde tanımlıysa
+	  tarayıcı SONRA geleni seçiyor, yani tek bir `ı` gören sayfa 15 KB'lık
+	  ek dosyayı indiriyordu. İngilizce ana sayfada bunu tetikleyen şey
+	  ekranda bile görünmüyordu: ekran okuyucu için yazılmış, çevrilmeyi
+	  unutulmuş tek bir etiket.
+
+	  `₺` (U+20BA) ise LİSTEDE KALMALI: temel dosyada o glif YOK (kaynak
+	  yazı tipinin latin alt kümesi taşımıyor), yalnızca bu dosyadan geliyor.
+	  Aralıktan çıkarılırsa ₺ hiçbir dosyadan karşılanmaz.
+
+	  Sonuç: ek dosya yalnızca gerçekten Türkçeye özgü harfler (ğ İ ş), ₺ ya
+	  da Latin Extended-A gerektiren bir ad geçtiğinde iniyor.
+	*/
+	unicode-range: U+0100-0130, U+0132-017F, U+20BA;
 }
 
 @import "tailwindcss";

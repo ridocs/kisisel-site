@@ -32,7 +32,8 @@
   "hero": {
     "altBaslik": "Yazılım geliştirici. Web uygulamaları, altyapı ve otomasyon üzerine çalışıyorum; öğrendiklerimi burada yazıyorum.",
     "birincilDugme": "Yazıları oku",
-    "ikincilDugme": "GitHub profilim"
+    "ikincilDugme": "GitHub profilim",
+    "yeniSekme": "(yeni sekmede açılır)"
   },
   "anasayfa": {
     "sonYazilar": "Son yazılar",
