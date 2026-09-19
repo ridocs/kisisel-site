@@ -1,0 +1,417 @@
+---
+/**
+ * Tek bir projenin detay sayfası.
+ *
+ * Liste sayfasındaki kart özeti gösteriyordu; burada projenin ne olduğu,
+ * hangi teknolojilerle yapıldığı ve kimlerin katkı verdiği bir arada duruyor.
+ * İki dil de bu bileşeni kullanıyor — düzen tek yerde.
+ *
+ * Uzun anlatım iki kaynaktan geliyor: Türkçede dosyanın MDX gövdesi
+ * (`<Content />`), İngilizcede `detayEn` alanı. Gerekçesi
+ * `src/content.config.ts` içindeki alan notunda.
+ */
+import { Icon } from 'astro-icon/components';
+import type { CollectionEntry } from 'astro:content';
+import AkanDugme from './AkanDugme.astro';
+import { cevirici, dilBul, yol } from '@/i18n/ceviriler';
+
+interface Props {
+	proje: CollectionEntry<'projeler'>;
+	/** MDX gövdesi. Yalnızca Türkçe sayfada veriliyor. */
+	Icerik?: astroHTML.JSX.Element | null;
+}
+
+const { proje, Icerik = null } = Astro.props;
+
+const dil = dilBul(Astro.url);
+const m = cevirici(dil);
+
+const TURLER = {
+	website: { anahtar: 'projeler.website', ikon: 'lucide:globe' },
+	mobil: { anahtar: 'projeler.mobil', ikon: 'lucide:smartphone' },
+} as const;
+
+const veri = proje.data;
+const ozet = dil === 'en' ? veri.ozetEn : veri.ozet;
+const projelerYolu = yol(dil, dil === 'en' ? 'projects' : 'projeler');
+
+/*
+  İngilizce detay düz metin: paragraflar boş satırla ayrılıyor. Alan boşsa
+  özet gösteriliyor — bölüm boş bir başlıkla kalmıyor.
+*/
+const enParagraflar = (veri.detayEn ?? '')
+	.split(/\n\s*\n/)
+	.map((p) => p.trim())
+	.filter(Boolean);
+
+const durumEtiketi = veri.durum === 'aktif' ? m('projeler.durumAktif') : m('projeler.durumArsiv');
+---
+
+<article class="detay">
+	<a class="geri" href={projelerYolu}>
+		<Icon name="lucide:arrow-left" class="geri-ok" aria-hidden="true" />
+		{m('projeler.tumProjeler')}
+	</a>
+
+	<header class="basi">
+		<div class="rozetler">
+			<ul class="turler">
+				{
+					veri.tur.map((tur) => (
+						<li class="tur">
+							<Icon name={TURLER[tur].ikon} class="tur-ikon" aria-hidden="true" />
+							{m(TURLER[tur].anahtar)}
+						</li>
+					))
+				}
+			</ul>
+			{/* Durum sözcükle yazılıyor; renk tek başına anlam taşımıyor. */}
+			<span class:list={['durum', veri.durum]}>{durumEtiketi}</span>
+		</div>
+
+		<h1>{veri.ad}</h1>
+		<p class="ozet">{ozet}</p>
+
+		{
+			veri.adres && (
+				<div class="eylem">
+					<AkanDugme href={veri.adres} agirlik="dolu" disBaglanti yeniSekmeMetni={m('hero.yeniSekme')}>
+						{m('projeler.ziyaret')}
+					</AkanDugme>
+				</div>
+			)
+		}
+	</header>
+
+	{/*
+	  Ne gövde ne `detayEn` varsa bölüm HİÇ basılmıyor: özet zaten yukarıda
+	  duruyor ve onu bir başlık altında tekrar etmek sayfayı uzatıp hiçbir
+	  şey eklemiyordu.
+	*/}
+	{
+		(Icerik || enParagraflar.length > 0) && (
+			<section class="bolum">
+				<h2>{m('projeler.hakkinda')}</h2>
+				{Icerik ? (
+					<div class="anlatim">{Icerik}</div>
+				) : (
+					<div class="anlatim">
+						{enParagraflar.map((p) => (
+							<p>{p}</p>
+						))}
+					</div>
+				)}
+			</section>
+		)
+	}
+
+	{
+		veri.teknolojiler.length > 0 && (
+			<section class="bolum">
+				<h2>{m('projeler.teknoloji')}</h2>
+				<ul class="tekno">
+					{veri.teknolojiler.map((t) => (
+						<li>{t}</li>
+					))}
+				</ul>
+			</section>
+		)
+	}
+
+	{
+		veri.katkiVerenler.length > 0 && (
+			<section class="bolum">
+				<h2>{m('projeler.katkiVerenler')}</h2>
+				<ul class="katki">
+					{veri.katkiVerenler.map((kisi) => {
+						const rol = dil === 'en' ? kisi.rolEn || kisi.rol : kisi.rol;
+						return (
+							<li class="katki-kalem">
+								<span class="katki-ad">
+									{kisi.adres ? (
+										<a href={kisi.adres} rel="noopener" target="_blank">
+											{kisi.ad}
+											<Icon name="lucide:arrow-up-right" class="katki-ok" aria-hidden="true" />
+										</a>
+									) : (
+										kisi.ad
+									)}
+								</span>
+								{rol && <span class="katki-rol">{rol}</span>}
+							</li>
+						);
+					})}
+				</ul>
+			</section>
+		)
+	}
+</article>
+
+<style>
+	.detay {
+		display: flex;
+		flex-direction: column;
+		gap: 2.5rem;
+	}
+
+	/* --- Geri bağlantısı --- */
+	.geri {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.4rem;
+		align-self: start;
+		font-size: 0.875rem;
+		color: var(--muted-foreground);
+		text-decoration: none;
+		transition: color 200ms ease-out;
+	}
+
+	.geri:hover {
+		color: var(--foreground);
+	}
+
+	/* Ok geri yönünü gösteriyor: imleç gelince sola kayıyor. */
+	.geri-ok {
+		width: 1rem;
+		height: 1rem;
+		transition: translate 200ms cubic-bezier(0.22, 1, 0.36, 1);
+	}
+
+	.geri:hover .geri-ok {
+		translate: -3px 0;
+	}
+
+	/* --- Başlık --- */
+	.basi {
+		display: flex;
+		flex-direction: column;
+		gap: 1rem;
+	}
+
+	.rozetler {
+		display: flex;
+		align-items: center;
+		flex-wrap: wrap;
+		gap: 0.5rem;
+	}
+
+	.turler {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5rem;
+		list-style: none;
+		padding: 0;
+		margin: 0;
+	}
+
+	.tur {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.35rem;
+		border: 1px solid var(--border);
+		border-radius: 9999px;
+		padding: 0.25rem 0.7rem;
+		font-size: 0.75rem;
+		color: var(--muted-foreground);
+	}
+
+	.tur-ikon {
+		width: 0.875rem;
+		height: 0.875rem;
+	}
+
+	.durum {
+		border-radius: 9999px;
+		padding: 0.25rem 0.7rem;
+		font-size: 0.75rem;
+		font-weight: 600;
+	}
+
+	.durum.aktif {
+		background: color-mix(in oklab, var(--color-marka-500) 16%, transparent);
+		color: color-mix(in oklab, var(--color-marka-500) 80%, var(--foreground));
+	}
+
+	.durum.arsiv {
+		background: color-mix(in oklab, var(--foreground) 8%, transparent);
+		color: var(--muted-foreground);
+	}
+
+	.basi h1 {
+		font-size: clamp(1.875rem, 4vw, 2.75rem);
+		font-weight: 700;
+		line-height: 1.15;
+		letter-spacing: -0.02em;
+		color: var(--foreground);
+	}
+
+	.ozet {
+		max-width: 44rem;
+		font-size: 1.05rem;
+		line-height: 1.7;
+		color: var(--muted-foreground);
+	}
+
+	.eylem {
+		margin-top: 0.5rem;
+	}
+
+	/* --- Bölümler --- */
+	.bolum {
+		display: flex;
+		flex-direction: column;
+		gap: 0.875rem;
+		padding-top: 2rem;
+		border-top: 1px solid var(--border);
+	}
+
+	.bolum h2 {
+		font-size: 0.6875rem;
+		font-weight: 700;
+		letter-spacing: 0.16em;
+		text-transform: uppercase;
+		color: var(--muted-foreground);
+	}
+
+	.anlatim {
+		max-width: 44rem;
+		line-height: 1.75;
+		color: var(--foreground);
+	}
+
+	/*
+	  Gövde MDX'ten geliyor; başlık, liste ve bağlantı yazılabiliyor. Kapsamlı
+	  stil alt öğelere geçmediği için `:global` gerekiyor.
+	*/
+	.anlatim :global(p + p) {
+		margin-top: 1rem;
+	}
+
+	/* Listeden sonra gelen paragraf son maddeye yapışıyordu. */
+	.anlatim :global(ul + p),
+	.anlatim :global(ol + p) {
+		margin-top: 1rem;
+	}
+
+	.anlatim :global(h2),
+	.anlatim :global(h3) {
+		margin-top: 1.75rem;
+		margin-bottom: 0.5rem;
+		font-size: 1.125rem;
+		font-weight: 600;
+		color: var(--foreground);
+	}
+
+	.anlatim :global(ul),
+	.anlatim :global(ol) {
+		margin-top: 0.75rem;
+		padding-inline-start: 1.25rem;
+		display: grid;
+		gap: 0.35rem;
+	}
+
+	.anlatim :global(ul) {
+		list-style: disc;
+	}
+
+	.anlatim :global(ol) {
+		list-style: decimal;
+	}
+
+	.anlatim :global(a) {
+		color: var(--foreground);
+		text-decoration: underline;
+		text-underline-offset: 3px;
+	}
+
+	.anlatim :global(code) {
+		font-size: 0.9em;
+		background: color-mix(in oklab, var(--foreground) 7%, transparent);
+		border-radius: 0.3rem;
+		padding: 0.1rem 0.35rem;
+	}
+
+	.anlatim.bos {
+		color: var(--muted-foreground);
+	}
+
+	/* --- Teknolojiler --- */
+	.tekno {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5rem;
+		list-style: none;
+		padding: 0;
+		margin: 0;
+	}
+
+	.tekno li {
+		border: 1px solid var(--border);
+		border-radius: 0.5rem;
+		padding: 0.3rem 0.7rem;
+		font-size: 0.8125rem;
+		color: var(--foreground);
+	}
+
+	/* --- Katkı verenler --- */
+	.katki {
+		display: grid;
+		gap: 0.75rem;
+		list-style: none;
+		padding: 0;
+		margin: 0;
+	}
+
+	@media (min-width: 640px) {
+		.katki {
+			grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+		}
+	}
+
+	.katki-kalem {
+		display: flex;
+		flex-direction: column;
+		gap: 0.15rem;
+		border-inline-start: 2px solid var(--border);
+		padding-inline-start: 0.75rem;
+	}
+
+	.katki-ad {
+		font-weight: 600;
+		color: var(--foreground);
+	}
+
+	.katki-ad a {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.2rem;
+		color: inherit;
+		text-decoration: none;
+		border-bottom: 1px solid color-mix(in oklab, var(--foreground) 25%, transparent);
+	}
+
+	.katki-ad a:hover {
+		border-bottom-color: var(--foreground);
+	}
+
+	.katki-ok {
+		width: 0.8rem;
+		height: 0.8rem;
+	}
+
+	.katki-rol {
+		font-size: 0.8125rem;
+		color: var(--muted-foreground);
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.geri,
+		.geri-ok {
+			transition: none;
+		}
+
+		.geri:hover .geri-ok {
+			translate: none;
+		}
+	}
+</style>

@@ -1,0 +1,27 @@
+---
+/*
+  Bir projenin İngilizce detay sayfası: /en/projects/<ad>/
+
+  Türkçe eşiyle (/projeler/<ad>/) aynı bileşeni kullanıyor. Fark tek yerde:
+  uzun anlatım burada MDX gövdesinden DEĞİL `detayEn` alanından geliyor —
+  gövde tek tane ve Türkçe. Gerekçesi `src/content.config.ts` içinde.
+*/
+import { getCollection } from 'astro:content';
+import type { GetStaticPaths } from 'astro';
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import ProjeDetayIcerik from '../../../components/ProjeDetayIcerik.astro';
+
+export const getStaticPaths: GetStaticPaths = async () => {
+	const projeler = await getCollection('projeler', ({ data }) => !data.taslak);
+	return projeler.map((proje) => ({ params: { id: proje.id }, props: { proje } }));
+};
+
+const { proje } = Astro.props;
+---
+
+<BaseLayout
+	title={`${proje.data.ad} — Mustafa Eybek`}
+	description={proje.data.ozetEn}
+>
+	<ProjeDetayIcerik proje={proje} />
+</BaseLayout>
