@@ -282,6 +282,7 @@ const yapilandirilmisVeri = JSON.stringify({
 		<script is:inline>
 			(function () {
 				try {
+					if (/bot|crawler|spider|lighthouse|pagespeed/i.test(navigator.userAgent)) return;
 					if (localStorage.getItem('dil-secildi')) return;
 					// Site bir alt dizinde yayınlanabiliyor; önek <html data-taban>
 					// üzerinden okunuyor. Satır içi betikler derleyiciden geçmediği

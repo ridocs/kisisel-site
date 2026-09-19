@@ -30,3 +30,4 @@ pnpm-debug.log*
 masaustu/cikti/
 release/
 dist-panel
+.claude/

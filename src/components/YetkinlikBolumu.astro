@@ -158,31 +158,29 @@ const sirali = [...yetkinlikler].sort((a, b) => b.oran - a.oran);
 		</p>
 
 		<div class="alan" data-yetkinlik-alani>
-			<ul class="izgara" role="tablist" aria-label={m('yetkinlik.baslik')}>
+			<div class="izgara" role="tablist" aria-label={m('yetkinlik.baslik')}>
 				{
 					sirali.map((y, sira) => (
-						<li>
-							<button
-								type="button"
-								class="kart"
-								role="tab"
-								id={`yetkinlik-sekme-${sira}`}
-								aria-controls={`yetkinlik-panel-${sira}`}
-								aria-selected={sira === 0 ? 'true' : 'false'}
-								tabindex={sira === 0 ? 0 : -1}
-								data-belir-oge
-								style={`--sira: ${3 + sira}`}
-							>
-								<span class="simge" aria-hidden="true">
-									<Icon name={y.ikon} class="size-6" />
-								</span>
-								<span class="ad">{y.ad}</span>
-								<span class="sure">{y.sure[dil]}</span>
-							</button>
-						</li>
+						<button
+							type="button"
+							class="kart"
+							role="tab"
+							id={`yetkinlik-sekme-${sira}`}
+							aria-controls={`yetkinlik-panel-${sira}`}
+							aria-selected={sira === 0 ? 'true' : 'false'}
+							tabindex={sira === 0 ? 0 : -1}
+							data-belir-oge
+							style={`--sira: ${3 + sira}`}
+						>
+							<span class="simge" aria-hidden="true">
+								<Icon name={y.ikon} class="size-6" />
+							</span>
+							<span class="ad">{y.ad}</span>
+							<span class="sure">{y.sure[dil]}</span>
+						</button>
 					))
 				}
-			</ul>
+			</div>
 
 			{/* Izgaranın tıklanabilir olduğunu bir kez söylüyoruz; her kartta
 			    tekrarlanan bir yönerge listeyi gürültülü yapıyordu. */}
