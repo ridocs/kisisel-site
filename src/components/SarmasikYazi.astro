@@ -21,9 +21,22 @@
 interface Props {
 	/** Sarmaşık boyunca tekrarlanacak kelime. */
 	metin: string;
+	/**
+	 * İlk ekran opak bir bölümle kaplı mı.
+	 *
+	 * Ana sayfada hero tam ekran ve kendi zemini var; sarmaşık onun arkasında
+	 * kalıyor, yani ilk ekranda zaten GÖRÜNMÜYOR. Buna rağmen tarayıcı onu
+	 * çiziyor ve — bir milyon pikselden büyük olduğu için — sayfanın "en
+	 * büyük içerik öğesi" (LCP) sayıyordu. Ölçülen LCP böylece hiç
+	 * görünmeyen bir süsü gösteriyor, gerçek içeriği değil.
+	 *
+	 * Açıkken sarmaşık ilk ekrandan sonra başlıyor: görünen hiçbir şey
+	 * değişmiyor, LCP gerçek metni ölçmeye başlıyor.
+	 */
+	ilkEkranKapali?: boolean;
 }
 
-const { metin } = Astro.props;
+const { metin, ilkEkranKapali = false } = Astro.props;
 
 /*
   Aynı sayfada birden çok kez kullanılabilsin diye her örnek kendi id önekini
@@ -135,7 +148,7 @@ const tekrarliMetin = birim.repeat(TEKRAR);
 const SURE = 72;
 ---
 
-<div class="sarmasik-alan" aria-hidden="true">
+<div class:list={['sarmasik-alan', ilkEkranKapali && 'ilk-ekran-bos']} aria-hidden="true">
 	{
 		parcalar.map((i) => (
 			<svg class="parca" viewBox="0 0 1000 1100" focusable="false">
@@ -204,6 +217,18 @@ const SURE = 72;
 			#000 86%,
 			#000 100%
 		);
+	}
+
+	/*
+	  İlk ekran zaten opak bir bölümle kaplıysa sarmaşık oradan sonra
+	  başlıyor. Gerekçesi `ilkEkranKapali` prop'unda: görünen hiçbir şey
+	  değişmiyor, yalnızca hiç görünmeyen bir katman çizilmemiş oluyor.
+
+	  `100lvh` — hero da aynı birimi kullanıyor; `svh` ile ölçseydik mobil
+	  tarayıcı çubuğu kadar bir şerit açıkta kalırdı.
+	*/
+	.ilk-ekran-bos {
+		top: 100lvh;
 	}
 
 	.parca {

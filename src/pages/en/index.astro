@@ -19,7 +19,7 @@ const posts = (await getCollection('blog', ({ data }) => !data.draft && data.dil
 ---
 
 {/* Türkçe ana sayfayla aynı: altbilgi kaydırmanın son durağı. */}
-<BaseLayout title={m('site.baslik')} altbilgiSayfa>
+<BaseLayout title={m('site.baslik')} altbilgiSayfa heroVar>
 	<HeroBolumu
 		slot="tam-genislik"
 		baslik="Mustafa Eybek"

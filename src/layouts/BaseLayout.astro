@@ -34,6 +34,12 @@ interface Props {
 	 */
 	altbilgiSayfa?: boolean;
 	/**
+	 * İlk ekranı tam kaplayan, kendi zemini olan bir bölüm var mı (hero).
+	 * Varsa sarmaşık oradan sonra başlıyor; gerekçesi `SarmasikYazi.astro`
+	 * içindeki `ilkEkranKapali` prop'unda.
+	 */
+	heroVar?: boolean;
+	/**
 	 * Yazı sayfalarında verilir. Verildiğinde og:type "article" olur, makale
 	 * meta etiketleri basılır ve sayfaya BlogPosting yapılandırılmış verisi
 	 * eklenir. Diğer sayfalarda boş kalır, onların çıktısı değişmez.
@@ -72,6 +78,7 @@ const {
 	description = m('site.aciklama'),
 	altbilgi = true,
 	altbilgiSayfa = false,
+	heroVar = false,
 	dilBagi,
 	makale,
 	dizinDisi = false,
@@ -316,7 +323,7 @@ const yapilandirilmisVeri = JSON.stringify({
 	    arkasında duruyor ve zemin body'de kalsaydı onun da arkasına düşüp
 	    görünmez olurdu. `relative` ise katmanın yaslandığı kutu. */}
 	<body class="relative flex min-h-svh flex-col text-slate-800 antialiased dark:text-neutral-200">
-		<SarmasikYazi metin={m('sarmasik.metin')} />
+		<SarmasikYazi metin={m('sarmasik.metin')} ilkEkranKapali={heroVar} />
 		<KaydirmaSeridi />
 		<SosyalRay />
 

@@ -22,6 +22,20 @@ export default defineConfig({
 	// `taban` üzerinden aynı öneki alıyor.
 	base: TABAN,
 	/*
+	  STİLLER SATIR İÇİNDE, AYRI DOSYADA DEĞİL.
+
+	  Varsayılan ('auto') yalnızca küçük stil dosyalarını satır içine alıyor;
+	  düzenin 15 KB'lık sayfa stili ayrı bir dosya olarak kalıyordu ve
+	  tarayıcı onu indirip çözene kadar HİÇBİR ŞEY boyayamıyordu. Lighthouse
+	  bunu "oluşturmayı engelleyen kaynak" olarak bildiriyordu; ölçümde ilk
+	  boyamayı bekleten en büyük kalem buydu.
+
+	  Satır içi olunca stil HTML ile aynı yanıtta geliyor, fazladan gidiş
+	  dönüş kalmıyor. Karşılığında HTML birkaç KB büyüyor — sıkıştırılmış
+	  hâlde küçük bir fark ve ayrı bir isteğin gecikmesinden ucuz.
+	*/
+	build: { inlineStylesheets: 'always' },
+	/*
 	  Yazı içindeki görseller: alt dizin öneki ve metin karşılığı denetimi.
 	  Gerekçesi araclar/gorsel-tabani-eklentisi.mjs içinde.
 
