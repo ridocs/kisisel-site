@@ -1,6 +1,7 @@
 ---
 import { Icon } from 'astro-icon/components';
-import { cevirici, dilBul } from '@/i18n/ceviriler';
+import { cevirici, dilBul, type MetinAnahtari } from '@/i18n/ceviriler';
+import kullandiklarimVerisi from '@/icerik/kullandiklarim.json';
 
 /*
   KULLANDIKLARIM SAYFASININ GÖVDESİ — iki dil de bu bileşeni kullanıyor.
@@ -56,240 +57,40 @@ type Bolum = {
 	kalemler: Kalem[];
 };
 
-const bolumler: Bolum[] = [
-	{
-		baslik: m('kullandiklarim.donanimBaslik'),
-		metin: m('kullandiklarim.donanimMetin'),
-		ikon: 'lucide:keyboard',
-		kalemler: [
-			{
-				ad: { tr: 'Bilgisayar', en: 'Computer' },
-				neden: {
-					tr: 'Model adını ve neden onu seçtiğini yaz: taşınabilirlik mi, derleme süresi mi, ekran mı?',
-					en: 'Write the model and why you chose it: portability, build times, or the screen?',
-				},
-				yerTutucu: true,
-			},
-			{
-				ad: { tr: 'Monitör', en: 'Monitor' },
-				neden: {
-					tr: 'Kaç inç, hangi çözünürlük ve ikinci bir ekran kullanıp kullanmadığını yaz.',
-					en: 'Write the size, the resolution, and whether you run a second screen.',
-				},
-				yerTutucu: true,
-			},
-			{
-				ad: { tr: 'Klavye', en: 'Keyboard' },
-				neden: {
-					tr: 'Marka ve düzen (Q / F) yaz. Bütün gün yazan biri için burası sanılandan önemli.',
-					en: 'Write the make and the layout. For someone typing all day this matters more than it looks.',
-				},
-				yerTutucu: true,
-			},
-			{
-				ad: { tr: 'Fare', en: 'Mouse' },
-				neden: {
-					tr: 'Model ve gerekçe: avuç boyu mu, kablosuz mu, dikey mi?',
-					en: 'Model and reason: palm size, wireless, vertical?',
-				},
-				yerTutucu: true,
-			},
-			{
-				ad: { tr: 'Kulaklık', en: 'Headphones' },
-				neden: {
-					tr: 'Model yaz ve ne için kullandığını söyle: odaklanma mı, görüşme mi, ikisi için ayrı mı?',
-					en: 'Write the model and what it is for: focus, calls, or a separate pair for each?',
-				},
-				yerTutucu: true,
-			},
-			{
-				ad: { tr: 'Telefon', en: 'Phone' },
-				neden: {
-					tr: 'Model yaz. Bu siteyi gerçek cihazda denediğin telefon burası — hangi cihaz olduğu okuyana bir şey söyler.',
-					en: 'Write the model. This is the phone you test the site on, so naming it tells the reader something.',
-				},
-				yerTutucu: true,
-			},
-		],
-	},
-	{
-		baslik: m('kullandiklarim.gelistirmeBaslik'),
-		metin: m('kullandiklarim.gelistirmeMetin'),
-		ikon: 'lucide:terminal',
-		kalemler: [
-			{
-				ad: { tr: 'Windows 11', en: 'Windows 11' },
-				neden: {
-					tr: 'Günlük işletim sistemim; bu site de baştan sona burada geliştirildi.',
-					en: 'My day-to-day operating system; this site was built on it from start to finish.',
-				},
-				yerTutucu: false,
-			},
-			{
-				ad: { tr: 'Visual Studio Code', en: 'Visual Studio Code' },
-				neden: {
-					tr: 'Editörüm. Depo yalnızca tek bir eklenti öneriyor (Astro); yeni bir makinede kurulum tek yerden başlıyor.',
-					en: 'My editor. The repository recommends exactly one extension (Astro), so setup on a new machine starts from a single place.',
-				},
-				yerTutucu: false,
-			},
-			{
-				ad: { tr: 'Terminal', en: 'Terminal' },
-				neden: {
-					tr: 'Hangi terminali kullandığını yaz (Windows Terminal, PowerShell, WSL…) ve neden onda karar kıldığını.',
-					en: 'Write which terminal you use (Windows Terminal, PowerShell, WSL…) and why you settled on it.',
-				},
-				yerTutucu: true,
-			},
-			{
-				ad: { tr: 'Git', en: 'Git' },
-				neden: {
-					tr: 'Her şey sürüm kontrolünde; bu sitenin kendisi de bir depo, yazılar dâhil.',
-					en: 'Everything lives in version control; this site is itself a repository, posts included.',
-				},
-				yerTutucu: false,
-			},
-			{
-				ad: { tr: 'Python', en: 'Python' },
-				neden: {
-					tr: 'Otomasyon ve veri işleri. Sitenin yazı tipini küçülten araç (araclar/yazitipi-altkume.py) da Python.',
-					en: 'Automation and data work. The tool that shrinks this site’s font (araclar/yazitipi-altkume.py) is Python too.',
-				},
-				yerTutucu: false,
-			},
-			{
-				ad: { tr: 'JavaScript ve TypeScript', en: 'JavaScript and TypeScript' },
-				neden: {
-					tr: 'Web tarafındaki günlük işim. Tip sistemi eksik bir çeviri anahtarını çalışma anında değil derlemede yakalıyor.',
-					en: 'My daily work on the web side. The type system catches a missing translation key at build time, not at runtime.',
-				},
-				yerTutucu: false,
-			},
-			{
-				ad: { tr: 'Dart ve Flutter', en: 'Dart and Flutter' },
-				neden: {
-					tr: 'Mobil taraftaki takımım: tek koddan birden çok platforma arayüz.',
-					en: 'My kit on the mobile side: one codebase, interfaces on several platforms.',
-				},
-				yerTutucu: false,
-			},
-			{
-				ad: { tr: 'SQL ve PostgreSQL', en: 'SQL and PostgreSQL' },
-				neden: {
-					tr: 'Projelerde ana veri deposu. Şema tasarımı, indeksleme ve sorgu iyileştirme buradan geçiyor.',
-					en: 'The primary data store in my projects. Schema design, indexing and query tuning all go through it.',
-				},
-				yerTutucu: false,
-			},
-			{
-				ad: { tr: 'Docker', en: 'Docker' },
-				neden: {
-					tr: 'Geliştirme ortamını ve küçük servisleri kapsayıcıya alıyorum; dağıtımın tekrarlanabilirliği buradan geliyor.',
-					en: 'I containerise dev environments and small services; this is where repeatable deployments come from.',
-				},
-				yerTutucu: false,
-			},
-		],
-	},
-	{
-		baslik: m('kullandiklarim.siteBaslik'),
-		metin: m('kullandiklarim.siteMetin'),
-		ikon: 'lucide:code-xml',
-		kalemler: [
-			{
-				ad: { tr: 'Astro', en: 'Astro' },
-				neden: {
-					tr: 'Sayfaları derleme anında HTML’e çeviriyor. Tarayıcıya çerçeve kodu inmiyor; sayfa JavaScript olmadan da eksiksiz okunuyor.',
-					en: 'Renders pages to HTML at build time. No framework code reaches the browser; the page reads fully without JavaScript.',
-				},
-				surum: '7.3.2',
-				yerTutucu: false,
-			},
-			{
-				ad: { tr: 'Tailwind CSS', en: 'Tailwind CSS' },
-				neden: {
-					tr: 'Düzen ve boşluklar sınıflarla, renkler tema değişkenlerinden. Koyu tema böylece tek yerden dönüyor.',
-					en: 'Layout and spacing through classes, colours through theme variables — so dark mode flips from one place.',
-				},
-				surum: '4.3.3',
-				yerTutucu: false,
-			},
-			{
-				ad: { tr: 'MDX', en: 'MDX' },
-				neden: {
-					tr: 'Yazılar düz Markdown; gerektiğinde araya bileşen koyabilmek için MDX. Bir yazı için istisna açmak gerekmiyor.',
-					en: 'Posts are plain Markdown, with MDX so a component can drop in when one is needed — no exception required per post.',
-				},
-				surum: '8.0.1',
-				yerTutucu: false,
-			},
-			{
-				ad: { tr: 'TypeScript', en: 'TypeScript' },
-				neden: {
-					tr: 'Çeviri katmanı ve bileşen arayüzleri tipli. Bir dilde unutulan metin sayfaya değil, derleme hatasına dönüşüyor.',
-					en: 'The translation layer and component interfaces are typed. A string forgotten in one language becomes a build error, not a hole on the page.',
-				},
-				yerTutucu: false,
-			},
-			{
-				ad: { tr: 'Keystatic', en: 'Keystatic' },
-				neden: {
-					tr: 'Yazı paneli yalnızca geliştirme sunucusunda açılıyor ve doğrudan depodaki dosyalara yazıyor. Yayın derlemesinde hiç yer almıyor.',
-					en: 'The writing panel only opens on the dev server and writes straight into the repository’s files. It is absent from the production build.',
-				},
-				surum: '0.6.9',
-				yerTutucu: false,
-			},
-			{
-				ad: { tr: 'Inter (alt kümelenmiş)', en: 'Inter (subsetted)' },
-				neden: {
-					tr: 'Hazır dosyalar tarayıcıya 133 KB indiriyordu; sitenin gerçekten kullandığı harflere indirildi. Türkçe harfler ayrı bir dosyada, yalnızca Türkçe sayfalarda isteniyor.',
-					en: 'The stock files shipped 133 KB to the browser; they were cut down to the characters the site actually uses. Turkish letters sit in a separate file, requested only on Turkish pages.',
-				},
-				yerTutucu: false,
-			},
-			{
-				ad: { tr: 'Lucide ve Iconify “logos”', en: 'Lucide and Iconify “logos”' },
-				neden: {
-					tr: 'Arayüz ikonları Lucide, teknoloji logoları “logos” takımı. İkisi de derleme sırasında gömülüyor: çalışma anında ağ isteği yok, çevrimdışı çalışıyor.',
-					en: 'Interface icons from Lucide, technology logos from the “logos” set. Both are inlined at build time: no runtime network request, works offline.',
-				},
-				yerTutucu: false,
-			},
-		],
-	},
-	{
-		baslik: m('kullandiklarim.sunucuBaslik'),
-		metin: m('kullandiklarim.sunucuMetin'),
-		ikon: 'lucide:server',
-		kalemler: [
-			{
-				ad: { tr: 'nginx', en: 'nginx' },
-				neden: {
-					tr: 'Statik dosyaları sunuyor. Site alan adının kökünde değil bir alt dizinde yayınlandığı için yönlendirme ve önbellek kuralları burada duruyor.',
-					en: 'Serves the static files. The site is published in a subdirectory rather than at the domain root, so the redirect and cache rules live here.',
-				},
-				yerTutucu: false,
-			},
-			{
-				ad: { tr: 'PocketBase', en: 'PocketBase' },
-				neden: {
-					tr: 'Tek dosyalık arka uç: veritabanı, kimlik doğrulama ve dosya yükleme bir arada. Küçük bir proje için ayrı bir yığın kurmaya değmiyor.',
-					en: 'A single-file backend: database, auth and file uploads in one. For a small project, standing up a separate stack is not worth it.',
-				},
-				yerTutucu: false,
-			},
-			{
-				ad: { tr: 'PM2', en: 'PM2' },
-				neden: {
-					tr: 'Sunucudaki süreçleri ayakta tutuyor: çöken servisi yeniden başlatıyor, makine yeniden açıldığında kendiliğinden kalkıyor.',
-					en: 'Keeps the processes on the server up: restarts a service that crashes and brings everything back after a reboot.',
-				},
-				yerTutucu: false,
-			},
-		],
-	},
-];
+/*
+  Bölüm kabuğu burada, KALEMLER PANELDEN.
+
+  Başlık ve bölüm girişi metinlerden geliyor ("Kullandıklarım sayfası"),
+  kalemler ise soldaki "Kullandıklarım" sayfasından düzenleniyor. Simge ve
+  bölüm sırası kodda kaldı: ikisi de tasarım kararı, panelde değiştirilecek
+  bir şey değil.
+
+  Bir kalemin hangi bölüme gireceğini panelde seçiliyor; buradaki süzme o
+  seçime bakıyor. Bölümü boş kalan bir kalem hiçbir yerde görünmez, bu yüzden
+  panelde alan zorunlu.
+*/
+const BOLUM_SIRASI = ['donanim', 'gelistirme', 'site', 'sunucu'] as const;
+
+const BOLUM_SIMGELERI: Record<(typeof BOLUM_SIRASI)[number], string> = {
+	donanim: 'lucide:keyboard',
+	gelistirme: 'lucide:terminal',
+	site: 'lucide:code-xml',
+	sunucu: 'lucide:server',
+};
+
+const bolumler: Bolum[] = BOLUM_SIRASI.map((anahtar) => ({
+	baslik: m(`kullandiklarim.${anahtar}Baslik` as MetinAnahtari),
+	metin: m(`kullandiklarim.${anahtar}Metin` as MetinAnahtari),
+	ikon: BOLUM_SIMGELERI[anahtar],
+	kalemler: kullandiklarimVerisi.kalemler
+		.filter((k) => k.bolum === anahtar)
+		.map((k) => ({
+			ad: { tr: k.ad, en: k.adEn },
+			neden: { tr: k.neden, en: k.nedenEn },
+			surum: k.surum || undefined,
+			yerTutucu: k.yerTutucu,
+		})),
+}));
 
 // Belirme sırası her bölümde sıfırdan başlıyor; bölüm kendi `data-belir`
 // kapsamında. Başlık ve giriş metni ilk iki sırayı aldığı için kalemler

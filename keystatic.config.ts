@@ -243,6 +243,135 @@ const grupBilgisi: Record<string, { etiket: string; aciklama?: string }> = {
 };
 
 /*
+  KULLANDIKLARIM — donanım, geliştirme, site ve sunucu kalemleri.
+
+  Bölüm başlıkları metinlerde ("Kullandıklarım sayfası"), kalemler burada.
+  Her kalemin hangi bölüme gireceği seçiliyor; bölümü olmayan kalem sayfada
+  görünmez, bu yüzden alan zorunlu.
+
+  "Yer tutucu" işareti bilinçli: doldurulmamış satırlar sayfada rozetle
+  işaretleniyor, böylece uydurma bir liste gibi okunmuyor. Gerçek bilgiyi
+  yazınca işareti kaldır.
+*/
+const kullandiklarimSingletonu = singleton({
+	label: 'Kullandıklarım',
+	path: 'src/icerik/kullandiklarim',
+	format: { data: 'json' },
+	schema: {
+		kalemler: fields.array(
+			fields.object({
+				bolum: fields.select({
+					label: 'Bölüm',
+					options: [
+						{ label: 'Donanım', value: 'donanim' },
+						{ label: 'Geliştirme ortamı', value: 'gelistirme' },
+						{ label: 'Bu sitenin yığını', value: 'site' },
+						{ label: 'Sunucu ve yayın', value: 'sunucu' },
+					],
+					defaultValue: 'donanim',
+				}),
+				ad: fields.text({ label: 'Ad (Türkçe)' }),
+				adEn: fields.text({ label: 'Ad (İngilizce)' }),
+				neden: fields.text({
+					label: 'Neden (Türkçe)',
+					description: 'Salt liste değil: neden onu seçtiğini yaz. Asıl bilgi burada.',
+					multiline: true,
+				}),
+				nedenEn: fields.text({ label: 'Neden (İngilizce)', multiline: true }),
+				surum: fields.text({
+					label: 'Sürüm',
+					description: 'Varsa yazılır, yoksa boş bırak.',
+				}),
+				yerTutucu: fields.checkbox({
+					label: 'Yer tutucu',
+					description: 'İşaretliyken sayfada “yer tutucu” rozetiyle görünüyor.',
+					defaultValue: true,
+				}),
+			}),
+			{
+				label: 'Kalemler',
+				itemLabel: (props) => props.fields.ad.value || 'Kalem',
+			},
+		),
+	},
+});
+
+/*
+  SEÇİLMİŞ ÇALIŞMALAR — ana sayfadaki üç kart.
+
+  "Projeler" koleksiyonundan ayrı bir şey: orası sitenin proje sayfası, burası
+  ana sayfada öne çıkarılan birkaç iş. Kartlar kısa; detay sayfası yok.
+
+  Sıra listenin kendi sırası, sürükleyerek değiştiriliyor.
+*/
+const calismalarSingletonu = singleton({
+	label: 'Seçilmiş çalışmalar',
+	path: 'src/icerik/calismalar',
+	format: { data: 'json' },
+	schema: {
+		kalemler: fields.array(
+			fields.object({
+				ad: fields.text({ label: 'Ad (Türkçe)' }),
+				adEn: fields.text({ label: 'Ad (İngilizce)' }),
+				ozet: fields.text({
+					label: 'Özet (Türkçe)',
+					description: 'Ne yaptığını ve senin payının ne olduğunu bir iki cümleyle anlat.',
+					multiline: true,
+				}),
+				ozetEn: fields.text({ label: 'Özet (İngilizce)', multiline: true }),
+				etiketler: fields.array(fields.text({ label: 'Etiket' }), {
+					label: 'Etiketler',
+					description: 'Kullanılan teknolojiler. Kartın altında rozet olarak görünüyor.',
+					itemLabel: (props) => props.value,
+				}),
+				yil: fields.text({ label: 'Yıl' }),
+				baglanti: fields.url({
+					label: 'Bağlantı',
+					description: 'Boş bırakılırsa kart tıklanabilir olmuyor.',
+				}),
+			}),
+			{
+				label: 'Çalışmalar',
+				itemLabel: (props) => props.fields.ad.value || 'Çalışma',
+			},
+		),
+	},
+});
+
+/*
+  İLETİŞİM BİLGİLERİ — sitenin tek adres kaynağı.
+
+  Aynı bilgi üç yerde birden görünüyor (ana sayfadaki koyu kart, Hakkımda
+  sayfasındaki kanal listesi, altbilginin iletişim sütunu) ve arama motorlarına
+  verilen yapılandırılmış veriye de giriyor. Hepsi bu tek kayıttan okuyor.
+
+  Sosyal adresleri boş bırakmak serbest — boş olan hiçbir yere basılmıyor.
+  YANLIŞ bir adres yazmak boş bırakmaktan kötü: başka birinin profilini
+  seninmiş gibi bildirir.
+*/
+const iletisimSingletonu = singleton({
+	label: 'İletişim bilgileri',
+	path: 'src/icerik/iletisim-bilgisi',
+	format: { data: 'json' },
+	schema: {
+		eposta: fields.text({ label: 'E-posta', validation: { isRequired: true } }),
+		whatsapp: fields.text({
+			label: 'WhatsApp numarası',
+			description: 'Başında + ve boşluk OLMADAN, ülke koduyla: 905334798049. Boş bırakılırsa WhatsApp düğmesi hiç basılmıyor.',
+		}),
+		telefonGorunen: fields.text({
+			label: 'Telefon (görünen biçim)',
+			description: 'Ekranda böyle yazıyor: +90 533 479 80 49',
+		}),
+		konum: fields.text({ label: 'Konum (Türkçe)' }),
+		konumEn: fields.text({ label: 'Konum (İngilizce)' }),
+		github: fields.url({ label: 'GitHub' }),
+		linkedin: fields.url({ label: 'LinkedIn' }),
+		instagram: fields.url({ label: 'Instagram' }),
+	},
+});
+
+/*
   BİR BÖLÜMÜN DÜZENLEME SAYFASI.
 
   Panelde her bölüm (açılış, iletişim kartı, gizlilik…) kendi sayfasında
@@ -470,7 +599,14 @@ export default config({
 	ui: {
 		brand: { name: 'Mustafa Eybek' },
 		navigation: {
-			İçerik: ['yazilar', 'projeler', 'yetkinlikler'],
+			İçerik: [
+				'yazilar',
+				'projeler',
+				'yetkinlikler',
+				'calismalar',
+				'kullandiklarim',
+				'iletisimBilgisi',
+			],
 			...Object.fromEntries(
 				Object.entries(METIN_AGACI).map(([baslik, adlar]) => [
 					baslik,
@@ -484,6 +620,9 @@ export default config({
 	singletons: {
 		...metinSingletonlari,
 		yetkinlikler: yetkinliklerSingletonu,
+		calismalar: calismalarSingletonu,
+		iletisimBilgisi: iletisimSingletonu,
+		kullandiklarim: kullandiklarimSingletonu,
 	},
 
 	collections: {

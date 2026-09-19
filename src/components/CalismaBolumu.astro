@@ -1,6 +1,7 @@
 ---
 import { Icon } from 'astro-icon/components';
 import { cevirici, dilBul } from '@/i18n/ceviriler';
+import calismaVerisi from '@/icerik/calismalar.json';
 
 const dil = dilBul(Astro.url);
 const m = cevirici(dil);
@@ -23,38 +24,20 @@ const m = cevirici(dil);
   yetkinlik metinleri) kullanıcı dolduracak. Uydurma proje adı ya da müşteri
   ismi yazılmadı: sahte portfolyo ilk soruda çöker.
 */
-const calismalar = [
-	{
-		ad: { tr: 'Proje adı', en: 'Project name' },
-		ozet: {
-			tr: 'Ne yaptığını ve senin payının ne olduğunu bir iki cümleyle anlat. Sayı verebiliyorsan ver.',
-			en: 'Describe what it does and what your part was, in a sentence or two. Give a number if you have one.',
-		},
-		etiketler: ['Astro', 'TypeScript', 'PostgreSQL'],
-		yil: '2026',
-		baglanti: undefined as string | undefined,
-	},
-	{
-		ad: { tr: 'Proje adı', en: 'Project name' },
-		ozet: {
-			tr: 'Çözdüğü sorunu yaz; teknolojiyi değil sonucu öne al.',
-			en: 'Write the problem it solved; lead with the outcome, not the stack.',
-		},
-		etiketler: ['Flutter', 'Dart'],
-		yil: '2025',
-		baglanti: undefined as string | undefined,
-	},
-	{
-		ad: { tr: 'Proje adı', en: 'Project name' },
-		ozet: {
-			tr: 'Küçük ama iyi anlatılmış bir iş, uzun bir listeden daha çok şey söyler.',
-			en: 'One small piece of work, well told, says more than a long list.',
-		},
-		etiketler: ['Python', 'Docker'],
-		yil: '2025',
-		baglanti: undefined as string | undefined,
-	},
-];
+/*
+  Kalemler panelden geliyor ("Seçilmiş çalışmalar"). Önceden bu dosyada sabit
+  duruyordu ve her düzenleme için koda dokunmak gerekiyordu.
+
+  Boş bağlantı, bağlantı yok demek: panelde alan boş bırakılınca kart
+  tıklanabilir olmuyor.
+*/
+const calismalar = calismaVerisi.kalemler.map((k) => ({
+	ad: { tr: k.ad, en: k.adEn },
+	ozet: { tr: k.ozet, en: k.ozetEn },
+	etiketler: k.etiketler,
+	yil: k.yil,
+	baglanti: k.baglanti || undefined,
+}));
 ---
 
 {/*

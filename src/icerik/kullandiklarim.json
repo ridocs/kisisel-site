@@ -1,0 +1,229 @@
+{
+  "kalemler": [
+    {
+      "bolum": "donanim",
+      "ad": "Bilgisayar",
+      "adEn": "Computer",
+      "neden": "Model adını ve neden onu seçtiğini yaz: taşınabilirlik mi, derleme süresi mi, ekran mı?",
+      "nedenEn": "Write the model and why you chose it: portability, build times, or the screen?",
+      "surum": "",
+      "yerTutucu": true
+    },
+    {
+      "bolum": "donanim",
+      "ad": "Monitör",
+      "adEn": "Monitor",
+      "neden": "Kaç inç, hangi çözünürlük ve ikinci bir ekran kullanıp kullanmadığını yaz.",
+      "nedenEn": "Write the size, the resolution, and whether you run a second screen.",
+      "surum": "",
+      "yerTutucu": true
+    },
+    {
+      "bolum": "donanim",
+      "ad": "Klavye",
+      "adEn": "Keyboard",
+      "neden": "Marka ve düzen (Q / F) yaz. Bütün gün yazan biri için burası sanılandan önemli.",
+      "nedenEn": "Write the make and the layout. For someone typing all day this matters more than it looks.",
+      "surum": "",
+      "yerTutucu": true
+    },
+    {
+      "bolum": "donanim",
+      "ad": "Fare",
+      "adEn": "Mouse",
+      "neden": "Model ve gerekçe: avuç boyu mu, kablosuz mu, dikey mi?",
+      "nedenEn": "Model and reason: palm size, wireless, vertical?",
+      "surum": "",
+      "yerTutucu": true
+    },
+    {
+      "bolum": "donanim",
+      "ad": "Kulaklık",
+      "adEn": "Headphones",
+      "neden": "Model yaz ve ne için kullandığını söyle: odaklanma mı, görüşme mi, ikisi için ayrı mı?",
+      "nedenEn": "Write the model and what it is for: focus, calls, or a separate pair for each?",
+      "surum": "",
+      "yerTutucu": true
+    },
+    {
+      "bolum": "donanim",
+      "ad": "Telefon",
+      "adEn": "Phone",
+      "neden": "Model yaz. Bu siteyi gerçek cihazda denediğin telefon burası — hangi cihaz olduğu okuyana bir şey söyler.",
+      "nedenEn": "Write the model. This is the phone you test the site on, so naming it tells the reader something.",
+      "surum": "",
+      "yerTutucu": true
+    },
+    {
+      "bolum": "gelistirme",
+      "ad": "Windows 11",
+      "adEn": "Windows 11",
+      "neden": "Günlük işletim sistemim; bu site de baştan sona burada geliştirildi.",
+      "nedenEn": "My day-to-day operating system; this site was built on it from start to finish.",
+      "surum": "",
+      "yerTutucu": false
+    },
+    {
+      "bolum": "gelistirme",
+      "ad": "Visual Studio Code",
+      "adEn": "Visual Studio Code",
+      "neden": "Editörüm. Depo yalnızca tek bir eklenti öneriyor (Astro); yeni bir makinede kurulum tek yerden başlıyor.",
+      "nedenEn": "My editor. The repository recommends exactly one extension (Astro), so setup on a new machine starts from a single place.",
+      "surum": "",
+      "yerTutucu": false
+    },
+    {
+      "bolum": "gelistirme",
+      "ad": "Terminal",
+      "adEn": "Terminal",
+      "neden": "Hangi terminali kullandığını yaz (Windows Terminal, PowerShell, WSL…) ve neden onda karar kıldığını.",
+      "nedenEn": "Write which terminal you use (Windows Terminal, PowerShell, WSL…) and why you settled on it.",
+      "surum": "",
+      "yerTutucu": true
+    },
+    {
+      "bolum": "gelistirme",
+      "ad": "Git",
+      "adEn": "Git",
+      "neden": "Her şey sürüm kontrolünde; bu sitenin kendisi de bir depo, yazılar dâhil.",
+      "nedenEn": "Everything lives in version control; this site is itself a repository, posts included.",
+      "surum": "",
+      "yerTutucu": false
+    },
+    {
+      "bolum": "gelistirme",
+      "ad": "Python",
+      "adEn": "Python",
+      "neden": "Otomasyon ve veri işleri. Sitenin yazı tipini küçülten araç (araclar/yazitipi-altkume.py) da Python.",
+      "nedenEn": "Automation and data work. The tool that shrinks this site’s font (araclar/yazitipi-altkume.py) is Python too.",
+      "surum": "",
+      "yerTutucu": false
+    },
+    {
+      "bolum": "gelistirme",
+      "ad": "JavaScript ve TypeScript",
+      "adEn": "JavaScript and TypeScript",
+      "neden": "Web tarafındaki günlük işim. Tip sistemi eksik bir çeviri anahtarını çalışma anında değil derlemede yakalıyor.",
+      "nedenEn": "My daily work on the web side. The type system catches a missing translation key at build time, not at runtime.",
+      "surum": "",
+      "yerTutucu": false
+    },
+    {
+      "bolum": "gelistirme",
+      "ad": "Dart ve Flutter",
+      "adEn": "Dart and Flutter",
+      "neden": "Mobil taraftaki takımım: tek koddan birden çok platforma arayüz.",
+      "nedenEn": "My kit on the mobile side: one codebase, interfaces on several platforms.",
+      "surum": "",
+      "yerTutucu": false
+    },
+    {
+      "bolum": "gelistirme",
+      "ad": "SQL ve PostgreSQL",
+      "adEn": "SQL and PostgreSQL",
+      "neden": "Projelerde ana veri deposu. Şema tasarımı, indeksleme ve sorgu iyileştirme buradan geçiyor.",
+      "nedenEn": "The primary data store in my projects. Schema design, indexing and query tuning all go through it.",
+      "surum": "",
+      "yerTutucu": false
+    },
+    {
+      "bolum": "gelistirme",
+      "ad": "Docker",
+      "adEn": "Docker",
+      "neden": "Geliştirme ortamını ve küçük servisleri kapsayıcıya alıyorum; dağıtımın tekrarlanabilirliği buradan geliyor.",
+      "nedenEn": "I containerise dev environments and small services; this is where repeatable deployments come from.",
+      "surum": "",
+      "yerTutucu": false
+    },
+    {
+      "bolum": "site",
+      "ad": "Astro",
+      "adEn": "Astro",
+      "neden": "Sayfaları derleme anında HTML’e çeviriyor. Tarayıcıya çerçeve kodu inmiyor; sayfa JavaScript olmadan da eksiksiz okunuyor.",
+      "nedenEn": "Renders pages to HTML at build time. No framework code reaches the browser; the page reads fully without JavaScript.",
+      "surum": "",
+      "yerTutucu": false
+    },
+    {
+      "bolum": "site",
+      "ad": "Tailwind CSS",
+      "adEn": "Tailwind CSS",
+      "neden": "Düzen ve boşluklar sınıflarla, renkler tema değişkenlerinden. Koyu tema böylece tek yerden dönüyor.",
+      "nedenEn": "Layout and spacing through classes, colours through theme variables — so dark mode flips from one place.",
+      "surum": "",
+      "yerTutucu": false
+    },
+    {
+      "bolum": "site",
+      "ad": "MDX",
+      "adEn": "MDX",
+      "neden": "Yazılar düz Markdown; gerektiğinde araya bileşen koyabilmek için MDX. Bir yazı için istisna açmak gerekmiyor.",
+      "nedenEn": "Posts are plain Markdown, with MDX so a component can drop in when one is needed — no exception required per post.",
+      "surum": "",
+      "yerTutucu": false
+    },
+    {
+      "bolum": "site",
+      "ad": "TypeScript",
+      "adEn": "TypeScript",
+      "neden": "Çeviri katmanı ve bileşen arayüzleri tipli. Bir dilde unutulan metin sayfaya değil, derleme hatasına dönüşüyor.",
+      "nedenEn": "The translation layer and component interfaces are typed. A string forgotten in one language becomes a build error, not a hole on the page.",
+      "surum": "",
+      "yerTutucu": false
+    },
+    {
+      "bolum": "site",
+      "ad": "Keystatic",
+      "adEn": "Keystatic",
+      "neden": "Yazı paneli yalnızca geliştirme sunucusunda açılıyor ve doğrudan depodaki dosyalara yazıyor. Yayın derlemesinde hiç yer almıyor.",
+      "nedenEn": "The writing panel only opens on the dev server and writes straight into the repository’s files. It is absent from the production build.",
+      "surum": "",
+      "yerTutucu": false
+    },
+    {
+      "bolum": "site",
+      "ad": "Inter (alt kümelenmiş)",
+      "adEn": "Inter (subsetted)",
+      "neden": "Hazır dosyalar tarayıcıya 133 KB indiriyordu; sitenin gerçekten kullandığı harflere indirildi. Türkçe harfler ayrı bir dosyada, yalnızca Türkçe sayfalarda isteniyor.",
+      "nedenEn": "The stock files shipped 133 KB to the browser; they were cut down to the characters the site actually uses. Turkish letters sit in a separate file, requested only on Turkish pages.",
+      "surum": "",
+      "yerTutucu": false
+    },
+    {
+      "bolum": "site",
+      "ad": "Lucide ve Iconify “logos”",
+      "adEn": "Lucide and Iconify “logos”",
+      "neden": "Arayüz ikonları Lucide, teknoloji logoları “logos” takımı. İkisi de derleme sırasında gömülüyor: çalışma anında ağ isteği yok, çevrimdışı çalışıyor.",
+      "nedenEn": "Interface icons from Lucide, technology logos from the “logos” set. Both are inlined at build time: no runtime network request, works offline.",
+      "surum": "",
+      "yerTutucu": false
+    },
+    {
+      "bolum": "sunucu",
+      "ad": "nginx",
+      "adEn": "nginx",
+      "neden": "Statik dosyaları sunuyor. Site alan adının kökünde değil bir alt dizinde yayınlandığı için yönlendirme ve önbellek kuralları burada duruyor.",
+      "nedenEn": "Serves the static files. The site is published in a subdirectory rather than at the domain root, so the redirect and cache rules live here.",
+      "surum": "",
+      "yerTutucu": false
+    },
+    {
+      "bolum": "sunucu",
+      "ad": "PocketBase",
+      "adEn": "PocketBase",
+      "neden": "Tek dosyalık arka uç: veritabanı, kimlik doğrulama ve dosya yükleme bir arada. Küçük bir proje için ayrı bir yığın kurmaya değmiyor.",
+      "nedenEn": "A single-file backend: database, auth and file uploads in one. For a small project, standing up a separate stack is not worth it.",
+      "surum": "",
+      "yerTutucu": false
+    },
+    {
+      "bolum": "sunucu",
+      "ad": "PM2",
+      "adEn": "PM2",
+      "neden": "Sunucudaki süreçleri ayakta tutuyor: çöken servisi yeniden başlatıyor, makine yeniden açıldığında kendiliğinden kalkıyor.",
+      "nedenEn": "Keeps the processes on the server up: restarts a service that crashes and brings everything back after a reboot.",
+      "surum": "",
+      "yerTutucu": false
+    }
+  ]
+}
