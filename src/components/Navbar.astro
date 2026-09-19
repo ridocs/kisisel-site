@@ -359,7 +359,29 @@ const eylemDugmesi =
 	}
 
 	window.addEventListener('scroll', kaydirmayiUygula, { passive: true });
-	kaydirmayiUygula();
+
+	/*
+	  İLK DURUM DA BİR KARE BEKLİYOR.
+
+	  `window.scrollY` okumak düzen gerektiriyor. Bu satır sayfa açılırken
+	  doğrudan çalıştığında tarayıcı henüz hiçbir düzen çıkarmamış oluyor ve
+	  bütün sayfanınkini tek seferde hesaplamak zorunda kalıyordu: ölçümlerde
+	  açılıştaki zorunlu yeniden düzenlemenin en büyük kalemi buydu (~46 ms).
+
+	  Yukarıdaki not `scroll` olayını rAF ile KISITLAMAMAK üzerine; o hâlâ
+	  geçerli ve değişmedi. Ertelenen yalnızca ilk okuma.
+
+	  Sayfanın tepesinde durum zaten "false" ve HTML'de öyle yazılı, yani
+	  gecikme görünmüyor. Kaydırılmış konumda açılan bir sayfada çubuk bir kare
+	  sonra yerini alıyor. rAF hiç çalışmazsa (arka planda açılmış sekme) ilk
+	  gerçek kaydırma zaten durumu uyguluyor.
+
+	  `requestAnimationFrame` İÇİNDE `setTimeout`: rAF geri çağrısı karenin
+	  düzen adımından önce çalıştığı için tek başına yetmiyor, okuma orada da
+	  düzeni zorluyor. Gerekçenin tamamı `BaseLayout.astro` içinde.
+	*/
+	if (document.readyState === 'complete') setTimeout(kaydirmayiUygula, 0);
+	else window.addEventListener('load', () => setTimeout(kaydirmayiUygula, 0), { once: true });
 
 	// --- Mobil menü ----------------------------------------------------------
 	const menuAcikEtiketi = menuDugmesi?.dataset.etiketKapat ?? 'Menüyü kapat';
@@ -493,12 +515,50 @@ const eylemDugmesi =
 			if (!menuListesi.contains(olay.relatedTarget as Node)) gostergeyiAktifeAl();
 		});
 
-		// İlk yerleşim animasyonsuz olmalı; aksi hâlde sayfa açılırken gösterge
-		// sol kenardan hedefe doğru süzülüyor.
-		gosterge.style.transition = 'none';
-		gostergeyiAktifeAl(false);
-		void gosterge.offsetWidth;
-		gosterge.style.transition = '';
+		/*
+		  İlk yerleşim animasyonsuz olmalı; aksi hâlde sayfa açılırken gösterge
+		  sol kenardan hedefe doğru süzülüyor.
+
+		  Ölçüm İLK BOYAMADAN SONRAYA bırakılıyor. `getBoundingClientRect`
+		  sayfa açılırken, tarayıcı daha hiçbir düzen çıkarmamışken çağrılınca
+		  bütün sayfanın düzeni tek seferde zorlanıyor ("zorunlu yeniden
+		  düzenleme") ve bu satır ölçümlerde 50 ms'ye kadar çıkıyordu. Bir kare
+		  beklendiğinde düzen zaten hazır oluyor, okuma bedava kalıyor.
+
+		  `requestAnimationFrame` İÇİNDE `setTimeout`: rAF geri çağrısı karenin
+		  düzen adımından önce çalıştığı için tek başına yetmiyor. Gerekçenin
+		  tamamı `BaseLayout.astro` içinde.
+
+		  Gecikme gözle görünmüyor: gösterge konumlanana kadar `data-gorunur`
+		  atanmadığı için zaten gizli, hemen ardından doğru yerde beliriyor.
+		*/
+		const ilkYerlesim = () => {
+			gosterge.style.transition = 'none';
+			gostergeyiAktifeAl(false);
+			void gosterge.offsetWidth;
+			gosterge.style.transition = '';
+		};
+
+		/*
+		  İlk yerleşim yazı tipleri hazır olunca yapılıyor.
+
+		  Zaten aşağıda `document.fonts.ready` ile bir kez daha ölçülüyordu:
+		  yazı tipi geç yüklendiğinde bağlantıların genişliği değişiyor ve ilk
+		  ölçüm geçersiz kalıyor. Yani açılıştaki ölçüm hem düzeni zorluyor hem
+		  de sonucu birazdan çöpe gidiyordu.
+
+		  `fonts.ready` ilk boyamadan sonra çözüldüğü için düzen o noktada
+		  hazır; okuma bedavaya geliyor ve gösterge tek seferde doğru yerine
+		  oturuyor. Yazı tipi arayüzü olmayan tarayıcıda boyama sonrasına
+		  düşen `setTimeout` yedeği çalışıyor.
+		*/
+		const yerlesimiPlanla = () => {
+			if (document.fonts?.ready) document.fonts.ready.then(ilkYerlesim);
+			else ilkYerlesim();
+		};
+
+		if (document.readyState === 'complete') yerlesimiPlanla();
+		else window.addEventListener('load', yerlesimiPlanla, { once: true });
 
 		window.addEventListener('resize', () => gostergeyiAktifeAl(false), { passive: true });
 
@@ -514,7 +574,7 @@ const eylemDugmesi =
 			characterData: true,
 		});
 
-		// Yazı tipi geç yüklenirse ölçüler kayıyor; hazır olduğunda bir kez daha.
-		document.fonts?.ready.then(() => gostergeyiAktifeAl(false));
+		// İlk yerleşim zaten `document.fonts.ready` üzerinden yapılıyor
+		// (yukarıda); ayrıca bir kez daha ölçmek gereksizdi.
 	}
 </script>

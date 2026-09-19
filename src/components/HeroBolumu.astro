@@ -282,7 +282,22 @@ const ikonlar = [
 			});
 		};
 
-		olc();
+		/*
+		  İlk ölçüm bir kare bekliyor. Yirmiden fazla kartın
+		  `getBoundingClientRect` değeri sayfa açılırken, düzen henüz
+		  çıkarılmamışken okununca tarayıcı bütün sayfanın düzenini o anda
+		  hesaplamak zorunda kalıyordu (zorunlu yeniden düzenleme, ölçümlerde
+		  ~19 ms). Boyama bittikten sonra aynı okuma bedava.
+
+		  Bu sırada `merkezler` boş kalıyor; imleç tepkisi bir kare sonra
+		  başlıyor, kimse fark etmiyor.
+
+		  `requestAnimationFrame` İÇİNDE `setTimeout`: rAF geri çağrısı karenin
+		  düzen adımından önce çalıştığı için tek başına yetmiyor. Gerekçenin
+		  tamamı `BaseLayout.astro` içinde.
+		*/
+		if (document.readyState === 'complete') setTimeout(olc, 0);
+		else window.addEventListener('load', () => setTimeout(olc, 0), { once: true });
 		window.setTimeout(olc, 1400);
 		window.addEventListener('resize', olc, { passive: true });
 		window.addEventListener('scroll', olc, { passive: true });

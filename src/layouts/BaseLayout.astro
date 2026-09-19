@@ -535,7 +535,7 @@ const yapilandirilmisVeri = JSON.stringify({
 						var yon = olay.deltaY > 0 ? 1 : -1;
 
 						// Bölüm ekrana sığmıyorsa, kenarına gelene kadar olağan kaydırma.
-						if (yon > 0 && alt > EKRAN_BOYU + 4) return;
+						if (yon > 0 && alt > ekranBoyu() + 4) return;
 						if (yon < 0 && ust < -4) return;
 
 						var hedef = i + yon;
@@ -581,7 +581,59 @@ const yapilandirilmisVeri = JSON.stringify({
 					return boy > 0 ? boy : window.innerHeight;
 				}
 
-				var EKRAN_BOYU = enBuyukGorunum();
+				/*
+				  ÖLÇÜM AÇILIŞTA DEĞİL, İLK BOYAMADAN SONRA.
+
+				  Yukarıdaki ölçüm gövdeye bir eleman ekleyip hemen `offsetHeight`
+				  soruyor. Bu ikisi arka arkaya gelince tarayıcı düzeni o anda
+				  hesaplamak zorunda kalıyor — "zorunlu yeniden düzenleme". Betik
+				  sayfa açılırken çalıştığı için henüz hiçbir düzen çıkarılmamış
+				  oluyor ve bütün sayfanın düzeni tek seferde zorlanıyordu:
+				  DevTools bu satırı 120 milisaniye ile işaretliyordu.
+
+				  Değere yalnızca kullanıcı tekerleği çevirdiğinde ihtiyaç var.
+				  Artık ilk boyama bittikten sonra ölçülüyor; o noktada düzen zaten
+				  güncel olduğu için ölçümün maliyeti kalmıyor. Kaydırma daha erken
+				  gelirse değer orada hesaplanıyor, yani davranış değişmiyor.
+
+				  BOYAMADAN SONRA ÇALIŞMANIN YOLU: `requestAnimationFrame` İÇİNDE
+				  `setTimeout`.
+
+				  Yalnızca rAF yetmiyor — hatta iki tane de yetmiyor, ölçüldü.
+				  rAF geri çağrıları karenin düzen ve boyama adımlarından ÖNCE
+				  çalışıyor, dolayısıyla içine konan bir geometri okuması ilk
+				  düzeni yine zorluyor. `setTimeout` ise kare tamamlandıktan
+				  sonraki göreve düşüyor: o noktada düzen çıkarılmış, boyama
+				  yapılmış oluyor ve okuma bedavaya geliyor.
+
+				  Aynı desen üç yerde daha var (üst çubuğun kaydırma durumu,
+				  kayan gösterge, hero'daki logo kartları); hepsi açılışta
+				  geometri okuyup düzeni zorluyordu.
+				*/
+				var olculenEkranBoyu = 0;
+
+				function ekranBoyu() {
+					if (!olculenEkranBoyu) olculenEkranBoyu = enBuyukGorunum();
+					return olculenEkranBoyu;
+				}
+
+				/*
+				  Ön ısıtma `load` olayından sonra. Ölçüldü: `requestAnimationFrame`
+				  ve içine konan `setTimeout` da yetmiyor, çünkü sayfanın İLK
+				  düzeni o noktada hâlâ çıkarılmamış olabiliyor ve okuma onu
+				  zorluyor. `load` anında düzen kesin hazır; aynı ölçüm 45
+				  milisaniyeden bir milisaniyenin altına iniyor.
+
+				  Değer zaten tembel: `load` geç gelir ve kullanıcı daha önce
+				  kaydırırsa ölçüm orada yapılıyor, davranış değişmiyor.
+				*/
+				if (document.readyState === 'complete') {
+					setTimeout(ekranBoyu, 0);
+				} else {
+					window.addEventListener('load', function () {
+						setTimeout(ekranBoyu, 0);
+					}, { once: true });
+				}
 
 			})();
 		</script>
