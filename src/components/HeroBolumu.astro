@@ -9,6 +9,7 @@ const KAY_Y = [-18, -13, -22, -16, -11, -20, -14, -19];
 const DON = [6, -5, 4, -7, 5, -4, 7, -6];
 
 import { Icon } from 'astro-icon/components';
+import AkanDugme from './AkanDugme.astro';
 import { cevirici, dilBul } from '@/i18n/ceviriler';
 
 interface Props {
@@ -130,22 +131,19 @@ const ikonlar = [
 		<p class="mx-auto mt-6 max-w-[min(36rem,90vw)] text-[clamp(1rem,1.15vw,1.2rem)] text-muted-foreground">
 			{altBaslik}
 		</p>
+		{/*
+		  Düğmeler 404 sayfasındaki akan düğmenin aynısı; stil orada kopyalanmak
+		  yerine `AkanDugme.astro` bileşenine taşındı.
+
+		  Biri dolu biri hatlı: animasyon ikisinde de birebir aynı ama hangisinin
+		  asıl eylem olduğu durağan hâlde de görünüyor. İkisini birden dolu
+		  yapmak o ayrımı siliyordu.
+		*/}
 		<div class="mt-10 flex flex-wrap items-center justify-center gap-3">
-			<a
-				href={birincilHedef}
-				class="inline-flex items-center rounded-lg bg-primary px-8 py-4 text-base font-semibold text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current"
-			>
-				{birincilMetin}
-			</a>
-			<a
-				href={ikincilHedef}
-				target="_blank"
-				rel="noopener noreferrer"
-				class="inline-flex items-center rounded-lg bg-slate-900 px-8 py-4 text-base font-semibold text-white transition-colors hover:bg-slate-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current dark:bg-white dark:text-neutral-900 dark:hover:bg-white/85"
-			>
+			<AkanDugme href={birincilHedef} agirlik="dolu">{birincilMetin}</AkanDugme>
+			<AkanDugme href={ikincilHedef} disBaglanti yeniSekmeMetni={m('hero.yeniSekme')}>
 				{ikincilMetin}
-				<span class="sr-only"> {m('hero.yeniSekme')}</span>
-			</a>
+			</AkanDugme>
 		</div>
 	</div>
 </section>

@@ -1,0 +1,219 @@
+---
+/**
+ * Akan düğme.
+ *
+ * Üzerine gelince ortadaki daire büyüyüp düğmeyi dolduruyor, köşeler
+ * yuvarlaktan köşeliye geçiyor, yazı sağa kayıyor ve iki ok yer değiştiriyor:
+ * soldaki kadrajın dışından içeri giriyor, sağdaki dışarı çıkıyor.
+ *
+ * Önce yalnızca 404 sayfasında duruyordu; hero de aynı düğmeyi isteyince
+ * stil kopyalanmak yerine buraya taşındı. İki yerde duran bir animasyon
+ * kaçınılmaz olarak birbirinden ayrı düşerdi.
+ *
+ * Tamamı CSS — tarayıcıya betik inmiyor.
+ */
+import { Icon } from 'astro-icon/components';
+
+interface Props {
+	/** Bağlantı hedefi. */
+	href: string;
+	/**
+	 * Görsel ağırlık.
+	 *
+	 * `hatli` (varsayılan): saydam zemin, ince kenarlık. İkincil eylemler.
+	 * `dolu`: zemin dolu, yazı ters renkte. Sayfadaki BİR eylem için —
+	 * ikisini de dolu yapmak hangisinin asıl eylem olduğunu siliyor.
+	 */
+	agirlik?: 'hatli' | 'dolu';
+	/** Yeni sekmede açılacaksa; `rel` ve ekran okuyucu notu buna bağlı. */
+	disBaglanti?: boolean;
+	/** Ekran okuyucuya "yeni sekmede açılır" bilgisini veren çeviri metni. */
+	yeniSekmeMetni?: string;
+	/** Ek sınıflar (yerleşim için). */
+	class?: string;
+}
+
+const {
+	href,
+	agirlik = 'hatli',
+	disBaglanti = false,
+	yeniSekmeMetni,
+	class: ekSinif,
+} = Astro.props;
+
+const disOzellikler = disBaglanti
+	? { target: '_blank', rel: 'noopener noreferrer' }
+	: {};
+---
+
+<a class:list={['akan-dugme', agirlik === 'dolu' && 'dolu', ekSinif]} href={href} {...disOzellikler}>
+	{/* Soldaki ok normalde kadrajın dışında; üzerine gelince içeri kayıyor. */}
+	<Icon name="lucide:arrow-right" class="ok ok-sol" aria-hidden="true" />
+	<span class="etiket"><slot /></span>
+	<span class="daire" aria-hidden="true"></span>
+	<Icon name="lucide:arrow-right" class="ok ok-sag" aria-hidden="true" />
+	{disBaglanti && yeniSekmeMetni && <span class="sr-only"> {yeniSekmeMetni}</span>}
+</a>
+
+<style>
+	/*
+	  Özgün FlowButton'ın davranışı. Ölçüler ve süreler 404 sayfasındaki ilk
+	  uygulamadan geliyor; oradan taşındı.
+	*/
+	.akan-dugme {
+		position: relative;
+		display: inline-flex;
+		align-items: center;
+		gap: 0.25rem;
+		overflow: hidden;
+		border-radius: 100px;
+		border: 1.5px solid color-mix(in oklab, var(--foreground) 40%, transparent);
+		padding: 0.75rem 2rem;
+		font-size: 0.875rem;
+		font-weight: 600;
+		color: var(--foreground);
+		text-decoration: none;
+		isolation: isolate;
+		transition:
+			border-color 600ms cubic-bezier(0.23, 1, 0.32, 1),
+			background-color 600ms cubic-bezier(0.23, 1, 0.32, 1),
+			color 600ms cubic-bezier(0.23, 1, 0.32, 1),
+			border-radius 600ms cubic-bezier(0.23, 1, 0.32, 1);
+	}
+
+	/*
+	  DOLU VARYANT — sayfadaki asıl eylem.
+
+	  Zemin baştan dolu; üzerine gelindiğinde açılan daire ile YER DEĞİŞTİRİYOR
+	  (daire zemin renginde, yazı koyuya dönüyor). Böylece animasyon hatlı
+	  varyantla birebir aynı hareketi yapıyor ama düğme durağan hâlinde de
+	  ağırlığını koruyor.
+	*/
+	.dolu {
+		background: var(--foreground);
+		border-color: var(--foreground);
+		color: var(--background);
+	}
+
+	.akan-dugme:hover,
+	.akan-dugme:focus-visible {
+		border-color: transparent;
+		border-radius: 12px;
+		color: var(--background);
+	}
+
+	.dolu:hover,
+	.dolu:focus-visible {
+		color: var(--foreground);
+	}
+
+	.akan-dugme:active {
+		transform: scale(0.95);
+	}
+
+	.akan-dugme:focus-visible {
+		outline: 2px solid var(--ring);
+		outline-offset: 2px;
+	}
+
+	.etiket {
+		position: relative;
+		z-index: 1;
+		transform: translateX(-0.75rem);
+		transition: transform 800ms ease-out;
+	}
+
+	.akan-dugme:hover .etiket,
+	.akan-dugme:focus-visible .etiket {
+		transform: translateX(0.75rem);
+	}
+
+	.daire {
+		position: absolute;
+		top: 50%;
+		left: 50%;
+		width: 1rem;
+		height: 1rem;
+		translate: -50% -50%;
+		border-radius: 50%;
+		background: var(--foreground);
+		opacity: 0;
+		transition:
+			width 800ms cubic-bezier(0.19, 1, 0.22, 1),
+			height 800ms cubic-bezier(0.19, 1, 0.22, 1),
+			opacity 800ms cubic-bezier(0.19, 1, 0.22, 1);
+	}
+
+	/* Dolu varyantta daire zemin renginde: dolu düğmenin içinde açılan açık
+	   bir alan, hatlı varyantın tam tersi. */
+	.dolu .daire {
+		background: var(--background);
+	}
+
+	.akan-dugme:hover .daire,
+	.akan-dugme:focus-visible .daire {
+		width: 220px;
+		height: 220px;
+		opacity: 1;
+	}
+
+	.ok {
+		position: absolute;
+		z-index: 9;
+		width: 1rem;
+		height: 1rem;
+		color: var(--foreground);
+		transition:
+			left 800ms cubic-bezier(0.34, 1.56, 0.64, 1),
+			right 800ms cubic-bezier(0.34, 1.56, 0.64, 1),
+			color 800ms cubic-bezier(0.34, 1.56, 0.64, 1);
+	}
+
+	.dolu .ok {
+		color: var(--background);
+	}
+
+	.ok-sol {
+		left: -25%;
+	}
+
+	.ok-sag {
+		right: 1rem;
+	}
+
+	.akan-dugme:hover .ok-sol,
+	.akan-dugme:focus-visible .ok-sol {
+		left: 1rem;
+		color: var(--background);
+	}
+
+	.akan-dugme:hover .ok-sag,
+	.akan-dugme:focus-visible .ok-sag {
+		right: -25%;
+		color: var(--background);
+	}
+
+	.dolu:hover .ok-sol,
+	.dolu:focus-visible .ok-sol,
+	.dolu:hover .ok-sag,
+	.dolu:focus-visible .ok-sag {
+		color: var(--foreground);
+	}
+
+	/*
+	  Hareketi azaltılmış tercihte geçişler kapalı; düğme yine de durumunu
+	  gösteriyor (daire anında beliriyor), yalnızca yol alması kalkıyor.
+	*/
+	@media (prefers-reduced-motion: reduce) {
+		.akan-dugme,
+		.etiket,
+		.daire,
+		.ok {
+			transition: none;
+		}
+
+		.akan-dugme:active {
+			transform: none;
+		}
+	}
+</style>
