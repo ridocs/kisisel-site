@@ -194,12 +194,35 @@ dil yönlendirmesi, belirme animasyonu, sayfa sayfa kaydırma.
 - `src/i18n/ceviriler.ts` — **metin içermez, yalnızca mantık**: `dilBul()`,
   `cevirici()` → `m('grup.anahtar')`, `yol()` (önek ve sondaki eğik çizgi),
   `digerDilYolu()` + yol adı eşleme sözlüğü.
-- `src/icerik/metinler-tr.json` / `metinler-en.json` — 18 grup, 224 alan.
-  Anahtar tipi **TR JSON'un kendi yapısından** türetiliyor, yani yanlış
-  anahtar derlemeyi durduruyor.
+- `src/icerik/metinler/<bölüm>.json` — **19 bölüm, 239 alan** (dil başına).
+  Her dosya iki dili birden taşıyor: `{ "tr": {...}, "en": {...} }`.
+  Anahtar tipi dosyaların kendi yapısından türetiliyor, yani yanlış anahtar
+  derlemeyi durduruyor.
+- `src/icerik/metinler/_bolumler.ts` — bölüm kaydı. **Hem site hem panel**
+  buradan okuyor; iki ayrı liste tutulsaydı biri güncellenip öteki unutulurdu.
 
-Bölüm içeriği (proje listesi, yetkinlik kalemleri) çeviri dosyasında değil,
-ilgili bileşenin içinde `{tr, en}` sözlüğü olarak duruyor.
+Eskiden iki dev dosya vardı (`metinler-tr.json`, `metinler-en.json`) ve
+panelde 239 alan tek listede akıyordu. Bölünmenin sebebi panel: sol menü artık
+sitenin kendi yapısını izliyor (ana sayfa bölümleri → sayfalar → site geneli).
+İki dilin aynı dosyada olması da bilinçli — ayrı dosyalarda biri güncellenip
+öteki unutuluyordu.
+
+**Bölüm içeriği de artık panelde.** Kodda `{tr, en}` sözlüğü olarak duran
+listeler `src/icerik/` altına taşındı:
+
+| Dosya | Ne |
+|---|---|
+| `yetkinlikler.json` | teknoloji seçimi + süre + nerede kullanıldığı |
+| `calismalar.json` | ana sayfadaki seçilmiş çalışma kartları |
+| `kullandiklarim.json` | 25 kalem, bölüm seçimiyle |
+| `iletisim-bilgisi.json` | e-posta, telefon, konum, sosyal adresler |
+
+Yetkinliklerde teknolojinin **adı, simgesi ve tanımı** panelde yazılmıyor:
+`src/lib/teknolojiler.ts` içindeki katalogdan (27 kalem) seçiliyor. Panelde
+elle yazılan tek şey kişisel olan kısım.
+
+Kodda kalanlar metin değil **tasarım kararı**: bölüm sırası, simgeler,
+hero'daki logo konumları, yol adları.
 
 **Dil düğmesi:** durağan sayfalarda yol adı çevriliyor; yazılarda slug'lar
 farklı olduğu için gerçek adres `dilBagi` prop'uyla geçiriliyor, çevirisi
