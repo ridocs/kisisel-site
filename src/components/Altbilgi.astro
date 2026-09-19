@@ -1,7 +1,7 @@
 ---
 import { Icon } from 'astro-icon/components';
 import { cevirici, dilBul, digerDilYolu, taban, yol } from '@/i18n/ceviriler';
-import { SOSYAL } from '@/lib/iletisim';
+import { EPOSTA, KONUM, SOSYAL, TELEFON_GORUNEN, WHATSAPP } from '@/lib/iletisim';
 import { surumBul } from '@/lib/surum';
 
 const dil = dilBul(Astro.url);
@@ -20,9 +20,21 @@ const digerDil = dil === 'tr' ? 'en' : 'tr';
 interface Props {
 	/** Düzen veriyor: yazılarda gerçek çeviri adresi, çevirisi yoksa null. */
 	dilBagi?: string | null;
+	/**
+	 * Altbilgi kendi ekranını alsın mı.
+	 *
+	 * Ana sayfa bölüm bölüm kaydırılıyor ve altbilgi son bölümün kuyruğuna
+	 * iliştiğinde iletişim kartıyla aynı ekranı paylaşıyor, ikisi de yarım
+	 * kalıyordu. Açıkken altbilgi `data-sayfa` listesine giriyor: kaydırmanın
+	 * son durağı oluyor ve ekranın tamamını kullanıyor.
+	 *
+	 * Yazı ve iç sayfalarda KAPALI. Uzun bir metnin altında ekran boyu bir
+	 * altbilgi, okuma bittikten sonra bir ekran daha kaydırmak demekti.
+	 */
+	sayfa?: boolean;
 }
 
-const { dilBagi } = Astro.props;
+const { dilBagi, sayfa = false } = Astro.props;
 const digerDilBaglantisi =
 	dilBagi !== undefined ? dilBagi : digerDilYolu(Astro.url, digerDil);
 
@@ -98,9 +110,28 @@ const yil = derlemeZamani.getFullYear();
 */
 const surum = surumBul();
 const gunlukYolu = yol(dil, dil === 'en' ? 'whats-changed' : 'neler-degisti');
+
+/*
+  İLETİŞİM SÜTUNU.
+
+  Altbilgi eskiden yalnızca gezinme ve profillerden ibaretti; adresi öğrenmek
+  için ana sayfanın iletişim kartına dönmek gerekiyordu. İç sayfalarda o kart
+  hiç yok, dolayısıyla bir yazıyı okuyan kişinin ulaşabileceği tek adres
+  altbilgideydi ve orada da yazmıyordu.
+
+  Değerler `lib/iletisim.ts` içindeki tek kaynaktan; burada ikinci bir kopya
+  tutulmuyor. WhatsApp boşsa satır hiç basılmıyor — iletişim kartındaki kural
+  ile aynı.
+*/
+const iletisimKalemleri = [
+	{ etiket: EPOSTA, adres: `mailto:${EPOSTA}`, ikon: 'lucide:mail' },
+	WHATSAPP
+		? { etiket: TELEFON_GORUNEN, adres: `https://wa.me/${WHATSAPP}`, ikon: 'lucide:message-circle' }
+		: null,
+].filter((k) => k !== null);
 ---
 
-<footer class="altbilgi">
+<footer class:list={['altbilgi', sayfa && 'altbilgi-sayfa']} data-sayfa={sayfa ? true : undefined}>
 	<div class="mx-auto w-full max-w-3xl px-4 lg:max-w-4xl">
 		<div class="ust">
 			{/*
@@ -144,29 +175,64 @@ const gunlukYolu = yol(dil, dil === 'en' ? 'whats-changed' : 'neler-degisti');
 					</ul>
 				</nav>
 
+				{/*
+				  Profiller artık etiketleriyle birlikte. Yalnızca ikon basan
+				  eski hâlinde hangi kutucuğun hangi ağ olduğu ikonu tanımaya
+				  bağlıydı ve dört küçük kare altbilginin sağ üstünde adsız bir
+				  küme gibi duruyordu; adı yazınca sütun hem okunur oldu hem de
+				  yanındaki gezinme listesiyle aynı ritmi tutturdu.
+				*/}
 				<div>
 					<p class="baslik">{m('altbilgi.baglantiBaslik')}</p>
-					<div class="yan">
+					<ul class="baglantilar">
 						{
 							disBaglantilar.map((b) => (
-								<a
-									class="simge"
-									href={b.adres}
-									aria-label={b.etiket}
-									{...(b.adres.startsWith('http') ? { rel: 'noopener' } : {})}
-								>
-									<Icon name={b.ikon} class="size-[18px]" />
-								</a>
+								<li>
+									<a
+										href={b.adres}
+										{...(b.adres.startsWith('http') ? { rel: 'noopener' } : {})}
+									>
+										<Icon name={b.ikon} class="size-[15px] dis-ikon" />
+										<span>{b.etiket}</span>
+									</a>
+								</li>
 							))
 						}
-						{/* Çevirisi olmayan yazıda hiç basılmıyor: 404'e giden bir
-						    bağlantı, olmayan bağlantıdan kötü. */}
-						{digerDilBaglantisi && (
+					</ul>
+				</div>
+
+				<div>
+					<p class="baslik">{m('iletisim.ustBaslik')}</p>
+					<ul class="baglantilar">
+						{
+							iletisimKalemleri.map((k) => (
+								<li>
+									<a
+										href={k.adres}
+										{...(k.adres.startsWith('http') ? { rel: 'noopener' } : {})}
+									>
+										<Icon name={k.ikon} class="size-[15px] dis-ikon" />
+										<span>{k.etiket}</span>
+									</a>
+								</li>
+							))
+						}
+						{/* Konum bir bağlantı değil: tıklanacak bir yeri yok. */}
+						<li class="duz">
+							<Icon name="lucide:map-pin" class="size-[15px] dis-ikon" />
+							<span>{KONUM[dil]}</span>
+						</li>
+					</ul>
+
+					{/* Çevirisi olmayan yazıda hiç basılmıyor: 404'e giden bir
+					    bağlantı, olmayan bağlantıdan kötü. */}
+					{digerDilBaglantisi && (
+						<div class="yan">
 							<a class="dil" href={digerDilBaglantisi} hreflang={digerDil}>
 								{digerDil.toUpperCase()}
 							</a>
-						)}
-					</div>
+						</div>
+					)}
 				</div>
 			</div>
 		</div>
@@ -203,6 +269,64 @@ const gunlukYolu = yol(dil, dil === 'en' ? 'whats-changed' : 'neler-degisti');
 		padding-block: 2.5rem 2rem;
 		font-size: 0.875rem;
 		color: var(--muted-foreground);
+	}
+
+	/*
+	  ALTBİLGİ KENDİ EKRANINDA (yalnızca ana sayfa).
+
+	  `data-sayfa` ile kaydırmanın son durağı olduğu için ekranın tamamını
+	  kaplıyor ve içerik dikeyde ortalanıyor; yarım görünen bir altbilgiyle
+	  biten sayfa yerine kapanışı olan bir sayfa çıkıyor.
+
+	  Yükseklik telefonda da zorlanıyor: altbilgi `data-sayfa` listesinde
+	  olduğu için dokunmatik kaydırma da onu bir durak sayıyor, yarım ekranlık
+	  bir durak ise geçişi yarıda kesilmiş gösterirdi. `min-height` olduğundan
+	  içerik ekrandan uzunsa blok esniyor ve kaydırma sistemi o durumda zaten
+	  bölümü olağan biçimde kaydırtıyor.
+	*/
+	.altbilgi-sayfa {
+		margin-top: 0;
+		display: flex;
+		align-items: center;
+		min-height: 100svh;
+		padding-block: 3rem;
+	}
+
+	.altbilgi-sayfa > div {
+		width: 100%;
+	}
+
+	@media (min-width: 768px) {
+		.altbilgi-sayfa {
+			padding-block: 4rem;
+		}
+
+		/*
+		  Tam ekranda bloklar yan yana değil, alt alta.
+
+		  Yan yana dizildiklerinde üç sütun genişliğin çoğunu alıyor ve
+		  uçbirim bloğuna dar bir şerit kalıyordu: içindeki komut satırları
+		  sarıyor, bir uçbirim penceresi gibi okunmayı bırakıyordu. Ekranın
+		  tamamı zaten elimizdeyken sıkıştırmanın bir sebebi yok — uçbirim
+		  üstte tam genişlikte duruyor, sütunlar altında yayılıyor.
+		*/
+		.altbilgi-sayfa .ust {
+			flex-direction: column;
+			align-items: stretch;
+			gap: 3.5rem;
+		}
+
+		/* Sütunlar artık uçbirimle genişlik yarışmıyor, o yüzden yan yana
+		   düzenin genişlik sınırı burada geçerli değil: üçü satırın tamamına
+		   yayılıyor. */
+		.altbilgi-sayfa .yan-sutun {
+			min-width: 0;
+			max-width: none;
+		}
+
+		.altbilgi-sayfa .alt {
+			margin-top: 3rem;
+		}
 	}
 
 	.ust {
@@ -318,30 +442,26 @@ const gunlukYolu = yol(dil, dil === 'en' ? 'whats-changed' : 'neler-degisti');
 	  daralsın, kalan yeri düğmeler alsın.
 	*/
 	/*
-	  Sayfalar solda, Bağlantılar sağda: iki sütun kendi kenarlarına yaslanıyor
-	  ve aradaki boşluk esniyor. Ortalanmış hâlinde ikisi birbirine yapışıp
-	  altbilginin ortasında küçük bir küme gibi duruyordu.
+	  Üç sütun: Sayfalar, Bağlantılar, İletişim.
+
+	  İki sütunken ikisi kendi kenarlarına yaslanıyor, aradaki boşluk
+	  esniyordu — sağdaki sütunun metni de bu yüzden sağa hizalıydı. Üçüncü
+	  sütun gelince o düzen tutmuyor: ortadaki sütunun hizası belirsiz
+	  kalıyor. Artık üçü de eşit genişlikte ve hepsi baştan hizalı, listeler
+	  aynı çizgiden başlıyor.
 	*/
 	.yan-sutun {
 		display: grid;
-		grid-template-columns: auto auto;
-		justify-content: space-between;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
 		gap: 1.5rem;
 		align-items: start;
 		flex: none;
 	}
 
-	.yan-sutun > :first-child {
-		text-align: start;
-	}
-
-	.yan-sutun > :last-child {
-		text-align: end;
-	}
-
 	@media (min-width: 480px) {
 		.yan-sutun {
-			gap: 2.5rem;
+			grid-template-columns: repeat(3, minmax(0, 1fr));
+			gap: 2rem;
 		}
 	}
 
@@ -373,6 +493,22 @@ const gunlukYolu = yol(dil, dil === 'en' ? 'whats-changed' : 'neler-degisti');
 		transition: color 200ms ease-out;
 	}
 
+	/* Konum satırının tıklanacak yeri yok; listedeki bağlantılarla aynı
+	   ölçüde duruyor ki sütun hizası kaymasın. */
+	.baglantilar .duz {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.4rem;
+		min-height: 2rem;
+	}
+
+	/* Profil ve iletişim ikonları, gezinme listesindeki okla aynı vurgu
+	   renginde: üç sütun tek bir işaret diliyle okunuyor. */
+	.dis-ikon {
+		color: color-mix(in oklab, var(--color-marka-500) 85%, var(--foreground));
+		flex: none;
+	}
+
 	/* Ok imleç gelince içeri kayıyor: bağlantının canlandığını alt çizgi
 	   eklemeden söylüyor, altbilgi sade kalıyor. */
 	.ok {
@@ -389,12 +525,12 @@ const gunlukYolu = yol(dil, dil === 'en' ? 'whats-changed' : 'neler-degisti');
 		translate: 3px 0;
 	}
 
-	/* Düğmeler yan yana ve sütunun sağ kenarına yaslı. */
+	/* Dil değiştirici, iletişim listesinin altında kendi satırında. */
 	.yan {
 		display: flex;
 		align-items: center;
-		justify-content: flex-end;
 		gap: 0.375rem;
+		margin-top: 0.75rem;
 	}
 
 	/* Dokunma hedefi 40 piksel: WCAG 2.2 web için 24 istiyor, dokunmatikte
@@ -513,8 +649,13 @@ const gunlukYolu = yol(dil, dil === 'en' ? 'whats-changed' : 'neler-degisti');
 		}
 
 		.yan-sutun {
-			/* İki sütun yan yana; uçbirim bloğu kalan alanı alıyor. */
-			min-width: 17rem;
+			/*
+			  Üç sütun yan yana; uçbirim bloğu kalan alanı alıyor. Üst sınır
+			  şart: sınırsız bırakıldığında sütunlar genişliğin çoğunu alıp
+			  uçbirimi kod satırları saracak kadar daraltıyordu.
+			*/
+			min-width: 24rem;
+			max-width: 60%;
 		}
 	}
 

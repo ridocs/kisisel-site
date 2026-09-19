@@ -1,7 +1,9 @@
 ---
+import { Image } from 'astro:assets';
 import { Icon } from 'astro-icon/components';
-import { cevirici, dilBul, taban } from '@/i18n/ceviriler';
+import { cevirici, dilBul } from '@/i18n/ceviriler';
 import { EPOSTA, GITHUB, KONUM, WHATSAPP } from '@/lib/iletisim';
+import portre from '@/assets/mustafa-eybek.jpg';
 
 /*
   HAKKIMDA SAYFASININ GÖVDESİ — iki dil de bu bileşeni kullanıyor.
@@ -179,12 +181,15 @@ const kanallar = [
 			  Özgün ölçü 888×1489; 4:5 kutuda kırpma yukarı kaydırıldı, ortadan
 			  kırpınca kadraj göbekten başlıyor.
 			*/}
-			<img
+			{/* Ölçüler ve WebP karşılığı derlemede üretiliyor; gerekçesi
+			    `TanitimBolumu.astro` içindeki portre notunda. */}
+			<Image
 				class="portre"
-				src={`${taban}/mustafa-eybek.jpg`}
+				src={portre}
 				alt={m('hakkimda.portreAlt')}
-				width="888"
-				height="1489"
+				widths={[200, 280, 400, 560, 800]}
+				sizes="(min-width: 768px) 280px, 100vw"
+				format="webp"
 				loading="lazy"
 				decoding="async"
 			/>

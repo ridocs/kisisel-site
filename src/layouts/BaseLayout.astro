@@ -7,6 +7,13 @@ import SosyalRay from '../components/SosyalRay.astro';
 import { cevirici, digerDilYolu, dilBul, taban } from '@/i18n/ceviriler';
 import { EPOSTA, GITHUB, TELEFON_GORUNEN, SOSYAL_ADRESLER } from '@/lib/iletisim';
 import '../styles/global.css';
+/*
+  Yapılandırılmış veri portreyi de bildiriyor. Dosya `public/` altından
+  `src/assets/` altına taşındığı için adres artık elle yazılmıyor: derlemenin
+  ürettiği yol içe aktarılıyor. Elle yazılan hâli, dosya her işlendiğinde
+  değişen ada işaret edip sessizce 404'e düşerdi.
+*/
+import portre from '../assets/mustafa-eybek.jpg';
 // ?url ile içe aktarıldığında Vite hash'li son adresi veriyor; önyükleme
 // bağlantısı ile CSS'in istediği dosya birebir aynı olsun diye böyle.
 import yaziTipiTemel from '../styles/yazitipi/inter-temel.woff2?url';
@@ -21,6 +28,11 @@ interface Props {
 	 * çubuğu üretiyor.
 	 */
 	altbilgi?: boolean;
+	/**
+	 * Altbilgi kendi ekranını alsın mı. Yalnızca bölüm bölüm kaydırılan ana
+	 * sayfada açık; gerekçesi `Altbilgi.astro` içindeki `sayfa` prop'unda.
+	 */
+	altbilgiSayfa?: boolean;
 	/**
 	 * Yazı sayfalarında verilir. Verildiğinde og:type "article" olur, makale
 	 * meta etiketleri basılır ve sayfaya BlogPosting yapılandırılmış verisi
@@ -59,6 +71,7 @@ const {
 	title,
 	description = m('site.aciklama'),
 	altbilgi = true,
+	altbilgiSayfa = false,
 	dilBagi,
 	makale,
 	dizinDisi = false,
@@ -116,7 +129,7 @@ const kisi = {
 	'@id': `${kok}#kisi`,
 	name: SITE_ADI,
 	url: kok,
-	image: new URL(`${taban}/mustafa-eybek.jpg`, Astro.site).href,
+	image: new URL(portre.src, Astro.site).href,
 	jobTitle: m('iletisim.rol'),
 	email: `mailto:${EPOSTA}`,
 	telephone: TELEFON_GORUNEN,
@@ -341,7 +354,12 @@ const yapilandirilmisVeri = JSON.stringify({
 		}
 
 		{
-			altbilgi && <Altbilgi dilBagi={dilBagi === undefined ? undefined : (oteki ? oteki.pathname : null)} />
+			altbilgi && (
+				<Altbilgi
+					dilBagi={dilBagi === undefined ? undefined : oteki ? oteki.pathname : null}
+					sayfa={altbilgiSayfa}
+				/>
+			)
 		}
 
 		{/* Bölümler görünür alana girdikçe belirir. Bir kez göründükten sonra

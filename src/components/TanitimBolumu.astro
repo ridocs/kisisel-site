@@ -1,20 +1,28 @@
 ---
+import { Image } from 'astro:assets';
 import { Icon } from 'astro-icon/components';
-import { cevirici, dilBul, taban, yol } from '@/i18n/ceviriler';
+import { cevirici, dilBul, yol } from '@/i18n/ceviriler';
+import portre from '@/assets/mustafa-eybek.jpg';
 
 const dil = dilBul(Astro.url);
 const m = cevirici(dil);
 const hakkimdaYolu = yol(dil, dil === 'en' ? 'about' : 'hakkimda');
 
 /*
-  Portre. `public/` altında duruyor ve önekten geçiyor: site alt dizinde
-  yayınlandığı için ("/web-sitem") düz "/mustafa-eybek.jpg" yazmak 404 verirdi.
+  Portre. `public/` yerine `src/assets/` altında: oradaki dosyalar olduğu gibi
+  kopyalanıyor, buradakiler derleme sırasında işleniyor. 888×1489'luk özgün
+  JPEG 233 KB'tı ve tarayıcıya aynen iniyordu; oysa görsel ekranda en fazla
+  400 piksel genişlikte duruyor. Ölçüler ve WebP karşılığı artık derlemede
+  üretiliyor, tarayıcı da kendi genişliğine uyanı indiriyor.
 
-  Özgün ölçü 888×1489, yani maskenin 4:5 oranından daha dar ve uzun. Kırpma
-  `object-position` ile yukarı kaydırıldı; ortadan kırpınca kadraj göbekten
-  başlıyordu.
+  Fotoğrafı değiştirmek için bu dosyanın üzerine yazmak yeterli; boyutlandırma
+  ve biçim dönüşümü kendiliğinden yeniden yapılıyor.
+
+  Özgün oran maskenin 4:5'inden daha dar ve uzun. Kırpma `object-position` ile
+  yukarı kaydırıldı; ortadan kırpınca kadraj göbekten başlıyordu.
 */
-const gorsel = `${taban}/mustafa-eybek.jpg`;
+const GENISLIKLER = [250, 300, 400, 500, 600, 800];
+const OLCU = '(min-width: 768px) 25rem, (min-width: 640px) 300px, min(250px, 62vw)';
 ---
 
 {/*
@@ -62,11 +70,12 @@ const gorsel = `${taban}/mustafa-eybek.jpg`;
 				aria-hidden="true"
 			>
 			</div>
-			<img
-				src={gorsel}
+			<Image
+				src={portre}
 				alt={m('tanitim.gorselAlt')}
-				width="888"
-				height="1489"
+				widths={GENISLIKLER}
+				sizes={OLCU}
+				format="webp"
 				loading="lazy"
 				decoding="async"
 				class="gorsel-maske object-cover object-[50%_30%]"

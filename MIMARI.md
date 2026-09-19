@@ -175,6 +175,20 @@ dil yönlendirmesi, belirme animasyonu, sayfa sayfa kaydırma.
 - `yazitipi/inter-temel.woff2` — her sayfada ön yüklenen temel alt küme.
 - `yazitipi/inter-ek.woff2` — Türkçeye özgü harfler, yalnızca TR sayfalarda.
 
+### `src/assets/` — işlenen görseller
+
+- `mustafa-eybek.jpg` — portre. **`public/` altında DEĞİL, bilerek.** Oradaki
+  dosyalar olduğu gibi kopyalanıyor; buradakiler `astro:assets` ile derlemede
+  işleniyor. Portre `public/` altındayken 233 KB'lık özgün JPEG tarayıcıya
+  aynen iniyordu, oysa ekranda en fazla 400 piksel genişlikte duruyor —
+  telefona inen dosya şimdi 8,6 KB.
+- **Fotoğrafı değiştirmek** için bu dosyanın üzerine yazmak yeterli: ölçüler
+  ve WebP karşılıkları her derlemede yeniden üretiliyor, elle bir iş yok.
+  Kullanan yerler `TanitimBolumu.astro`, `HakkimdaIcerik.astro` ve
+  `BaseLayout.astro` (yapılandırılmış veri).
+- İşleme `sharp` ile yapılıyor (devDependency). Ziyaretçiye inen bir şey
+  değil; yalnızca derleme aracı.
+
 ### Çeviri düzeneği
 
 - `src/i18n/ceviriler.ts` — **metin içermez, yalnızca mantık**: `dilBul()`,

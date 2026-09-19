@@ -62,20 +62,45 @@ const SESSIZ_ALAN = 4;
 */
 const DERINLIK = 0.26;
 /*
-  Boşluk küçük ve köşeler az yuvarlak: bitişik modüller birleşip tek bir
-  kabartma kütle oluştursun. Geniş boşluk + çok yuvarlak köşe her modülü ayrı
-  bir noktaya çeviriyordu; kod hem konfeti gibi görünüyor hem de koyu alan
-  küçüldüğü için okunması zorlaşıyordu.
+  Boşluk küçük: bitişik modüller birleşip tek bir kabartma kütle oluştursun.
+  Geniş boşluk her modülü ayrı bir noktaya çeviriyordu; kod hem konfeti gibi
+  görünüyor hem de koyu alan küçüldüğü için okunması zorlaşıyordu.
 */
 const BOSLUK = 0.035;
 const YUZ = 1 - BOSLUK * 2;
 
-const moduller: { x: number; y: number }[] = [];
-for (let satir = 0; satir < boyut; satir++) {
-	for (let sutun = 0; sutun < boyut; sutun++) {
-		if (qr.modules.get(satir, sutun) === 1) moduller.push({ x: sutun, y: satir });
+/*
+  İKİ PATH, 858 DİKDÖRTGEN DEĞİL.
+
+  Her modül ayrı bir <rect> iken bu bölüm tek başına 858 element basıyordu
+  (429 modül × iki katman) ve Lighthouse sayfanın DOM'unu "aşırı büyük"
+  bulup buraya işaret ediyordu. Aynı geometri tek bir path verisiyle
+  çiziliyor: element sayısı 858'den 2'ye, HTML'deki karşılığı da yaklaşık
+  üçte birine iniyor.
+
+  Köşe yuvarlaması (eski rx=0.12) bu sırada düştü. 168 pikselde bir modül
+  4.3 piksel, yuvarlaklığı yarım pikseldi — path'e arc olarak yazmak modül
+  başına dört komut daha demekti, karşılığında gözle görülmeyen bir fark.
+
+  Sayılar iki ondalığa yuvarlanıyor; 29×29'luk bir ızgarada daha fazlası
+  aynı pikseli işaret ediyor.
+*/
+function pathVerisi(kaydir: number): string {
+	const parcalar: string[] = [];
+	const en = YUZ.toFixed(2);
+	for (let satir = 0; satir < boyut; satir++) {
+		for (let sutun = 0; sutun < boyut; sutun++) {
+			if (qr.modules.get(satir, sutun) !== 1) continue;
+			const x = (sutun + BOSLUK + kaydir).toFixed(2);
+			const y = (satir + BOSLUK + kaydir).toFixed(2);
+			parcalar.push(`M${x} ${y}h${en}v${en}h-${en}z`);
+		}
 	}
+	return parcalar.join('');
 }
+
+const qrGovdeYolu = pathVerisi(DERINLIK);
+const qrYuzYolu = pathVerisi(0);
 ---
 
 {/*
@@ -92,6 +117,12 @@ for (let satir = 0; satir < boyut; satir++) {
 	data-sayfa
 	id="iletisim"
 >
+	{/*
+	  Kartın genişliği 4xl'de (896px) kalıyor, ama artık boşlukla değil
+	  ayraçla bölünüyor: eskiden düğmelerle QR arasındaki o fazlalık ölü bir
+	  alana dönüşüyordu. Daraltmak boşluğu kapatıyor fakat bu kez üç düğme
+	  tek satıra sığmıyordu — bölmeyi çizgiyle ayırmak ikisini birden çözdü.
+	*/}
 	<div class="mx-auto w-full max-w-3xl px-4 lg:max-w-4xl">
 		<p
 			class="text-xs font-semibold tracking-[0.22em] text-muted-foreground"
@@ -114,14 +145,23 @@ for (let satir = 0; satir < boyut; satir++) {
 					<div class="durum">
 						<span class="nokta" aria-hidden="true"></span>
 						<span>{m('iletisim.durum')}</span>
-						<span class="konum">{KONUM[dil]}</span>
 					</div>
 
 					<div class="kimlik">
 						<span class="bas-harf" aria-hidden="true">ME</span>
-						<div>
+						<div class="kimlik-metin">
 							<p class="ad">Mustafa Eybek</p>
-							<p class="rol">{m('iletisim.rol')}</p>
+							{/*
+							  Rol ve konum tek satırda, aralarında bir ayraç. Konum eskiden
+							  durum satırının sağ ucuna `margin-inline-start: auto` ile
+							  itiliyordu; satır sarıldığında sola düşüp hizasız kalıyordu ve
+							  zaten kimliğe ait bir bilgiyi kartın öbür ucunda tutuyordu.
+							*/}
+							<p class="rol">
+								<span>{m('iletisim.rol')}</span>
+								<span class="ayrac" aria-hidden="true">·</span>
+								<span>{KONUM[dil]}</span>
+							</p>
 						</div>
 					</div>
 
@@ -175,34 +215,10 @@ for (let satir = 0; satir < boyut; satir++) {
 							aria-label={m('iletisim.qrAlt')}
 						>
 							{/* Gövde: kaydırılmış alt katman, kabartmanın yan yüzü. */}
-							<g class="qr-govde">
-								{
-									moduller.map((n) => (
-										<rect
-											x={n.x + BOSLUK + DERINLIK}
-											y={n.y + BOSLUK + DERINLIK}
-											width={YUZ}
-											height={YUZ}
-											rx={0.12}
-										/>
-									))
-								}
-							</g>
+							<path class="qr-govde" d={qrGovdeYolu} />
 
 							{/* Üst yüz: okunan katman bu. */}
-							<g class="qr-yuz">
-								{
-									moduller.map((n) => (
-										<rect
-											x={n.x + BOSLUK}
-											y={n.y + BOSLUK}
-											width={YUZ}
-											height={YUZ}
-											rx={0.12}
-										/>
-									))
-								}
-							</g>
+							<path class="qr-yuz" d={qrYuzYolu} />
 						</svg>
 					</div>
 					<p class="qr-not">{m('iletisim.qrNot')}</p>
@@ -221,6 +237,22 @@ for (let satir = 0; satir < boyut; satir++) {
 	.baslik {
 		font-size: clamp(1.5rem, 1.1rem + 1.6vh, 2.125rem);
 		line-height: 1.2;
+		/* Başlık iki satıra düştüğünde satırlar dengeli bölünsün; dar ekranda
+		   tek kelimelik bir alt satır kalmıyor. */
+		text-wrap: balance;
+	}
+
+	/*
+	  VURGU TONU — kartta tek bir yeşil var.
+
+	  Önceden üç ayrı yeşil yan yana duruyordu: durum noktası, WhatsApp
+	  düğmesi ve alt şerit. Üçü birbirine yakın ama aynı değildi, bu yüzden
+	  kalibresiz görünüyordu. WhatsApp kendi marka yeşilini koruyor (düğmenin
+	  ne olduğunu yazıdan önce söylüyor), kartın geri kalanı tek tondan
+	  besleniyor.
+	*/
+	.kart {
+		--vurgu: oklch(0.82 0.19 130);
 	}
 
 	/*
@@ -230,12 +262,22 @@ for (let satir = 0; satir < boyut; satir++) {
 	  doğrudan veriliyor; `--foreground` kullanılsaydı açık temada kart
 	  beyazlayıp vurgusunu kaybederdi.
 	*/
+	/*
+	  Kart koyu temada sayfa zeminiyle neredeyse aynı koyulukta kalıyor. Eski
+	  hâlde bunu fark ettirmeyen şey alt şeridin parlak yeşiliydi: kartın
+	  sınırını o çiziyordu. Şerit nötrleşince kart zeminde eriyip gitti, bu
+	  yüzden sınırını artık kendisi taşıyor — bir tık açık zemin, çevresinde
+	  ince bir çerçeve ve açık temada onu kâğıttan ayıran yumuşak bir gölge.
+	*/
 	.kart {
 		margin-top: 2rem;
 		border-radius: 1.5rem;
 		overflow: hidden;
-		background: oklch(0.17 0 0);
-		box-shadow: 0 1px 0 oklch(1 0 0 / 0.08) inset;
+		background: oklch(0.19 0 0);
+		box-shadow:
+			0 1px 0 oklch(1 0 0 / 0.08) inset,
+			0 0 0 1px oklch(1 0 0 / 0.1),
+			0 12px 32px oklch(0 0 0 / 0.14);
 	}
 
 	.kart-govde {
@@ -263,13 +305,17 @@ for (let satir = 0; satir < boyut; satir++) {
 		width: 0.5rem;
 		height: 0.5rem;
 		border-radius: 9999px;
-		background: oklch(0.82 0.19 130);
+		background: var(--vurgu);
 		flex: none;
 	}
 
-	.konum {
-		margin-inline-start: auto;
-		color: oklch(0.65 0 0);
+	.kimlik-metin {
+		min-width: 0;
+	}
+
+	.ayrac {
+		margin-inline: 0.45rem;
+		color: oklch(0.5 0 0);
 	}
 
 	.kimlik {
@@ -308,11 +354,31 @@ for (let satir = 0; satir < boyut; satir++) {
 		color: oklch(0.68 0 0);
 	}
 
+	/*
+	  Dar ekranda düğmeler ızgaraya giriyor: birincil eylem üstte tam
+	  genişlikte, diğer ikisi altında eşit iki sütun. `flex-wrap` ile üçü
+	  sarıldığında satır sonlarına göre rastgele genişlikler oluşuyordu —
+	  "E-postayı kopyala" tek başına kalıp birincil düğmeden geniş
+	  görünüyordu ve ağırlık sırası tersine dönüyordu.
+	*/
 	.dugmeler {
-		display: flex;
-		flex-wrap: wrap;
+		display: grid;
+		/* En dar ekranda tek sütun: iki sütuna bölündüğünde "E-postayı
+		   kopyala" düğmenin içinde iki satıra sarıyor ve yanındaki tek
+		   satırlık WhatsApp'la aynı yüksekliğe zorlanıyordu. */
+		grid-template-columns: 1fr;
 		gap: 0.625rem;
 		margin-top: 1.5rem;
+	}
+
+	@media (min-width: 480px) {
+		.dugmeler {
+			grid-template-columns: 1fr 1fr;
+		}
+
+		.birincil {
+			grid-column: 1 / -1;
+		}
 	}
 
 	.dugme {
@@ -382,10 +448,16 @@ for (let satir = 0; satir < boyut; satir++) {
 		display: inline-flex;
 	}
 
+	/* Kopyala düğmesi basılmadığında ızgarada boş bir hücre kalmasın:
+	   WhatsApp satırın tamamını alıyor. */
+	:global(html:not(.js-var)) .whatsapp {
+		grid-column: 1 / -1;
+	}
+
 	.adres {
 		margin-top: 1rem;
 		font-size: 0.8125rem;
-		color: oklch(0.6 0 0);
+		color: oklch(0.7 0 0);
 	}
 
 	.adres a {
@@ -399,8 +471,18 @@ for (let satir = 0; satir < boyut; satir++) {
 	}
 
 	/* --- QR --- */
+
+	/*
+	  QR TELEFONDA BASILMIYOR.
+
+	  Kodun tek işi, masaüstünde siteyi gösterirken karşıdakinin telefonuyla
+	  okutabilmesi. Ziyaretçi zaten telefondaysa kendi ekranındaki kodu
+	  okutamaz: kart mobilde yüksekliğinin yarısını hiçbir işe yaramayan
+	  beyaz bir bloğa veriyordu. `display: none` olduğu için matris de
+	  çizilmiyor, dar ekranda boşuna iş yapılmıyor.
+	*/
 	.kart-sag {
-		display: flex;
+		display: none;
 		flex-direction: column;
 		align-items: center;
 		gap: 0.625rem;
@@ -433,30 +515,69 @@ for (let satir = 0; satir < boyut; satir++) {
 
 	.qr-not {
 		font-size: 0.75rem;
-		color: oklch(0.62 0 0);
+		color: oklch(0.7 0 0);
 		text-align: center;
-		max-width: 11rem;
+		/* Not QR kutusunun genişliğini aşmıyor: iki blok aynı kenardan
+		   hizalanıyor, altta sarkan bir satır kalmıyor. */
+		max-width: 12.5rem;
+		line-height: 1.45;
 	}
 
-	/* --- Alt vurgu şeridi --- */
+	/*
+	  ALT ŞERİT — vurgu değil, dipnot.
+
+	  Şerit eskiden kartın tam genişliğinde parlak yeşil bir bloktu ve kartın
+	  en çok dikkat çeken parçası oydu. Taşıdığı bilgi ("genelde aynı gün
+	  dönüyorum") ise en önemsiziydi: göz önce oraya gidip sonra yukarı,
+	  asıl eyleme dönüyordu. Şerit artık koyu zeminde, üstünde ince bir
+	  ayraçla duruyor; yeşil yalnızca ikonda kaldı. Böylece sıralama
+	  düzeliyor — önce "Bana yaz", sonra bu not.
+	*/
 	.serit {
 		display: flex;
 		align-items: center;
 		justify-content: center;
 		gap: 0.5rem;
 		padding: 0.875rem 1rem;
-		background: oklch(0.82 0.19 130);
-		color: oklch(0.22 0.05 130);
+		background: oklch(0.24 0 0);
+		border-top: 1px solid oklch(1 0 0 / 0.08);
+		color: oklch(0.78 0 0);
 		font-size: 0.875rem;
-		font-weight: 600;
+		font-weight: 500;
+	}
+
+	.serit svg {
+		color: var(--vurgu);
 	}
 
 	@media (min-width: 768px) {
 		.kart-govde {
 			flex-direction: row;
 			align-items: center;
-			gap: 2.5rem;
+			gap: 2rem;
 			padding: 2rem;
+		}
+
+		.kart-sag {
+			display: flex;
+		}
+
+		/*
+		  Sol sütunla QR arasına ince bir ayraç. İkisi eskiden aralarındaki
+		  boşlukla ayrılıyordu ve geniş ekranda o boşluk kartın ortasında
+		  ölü bir alana dönüşüyordu; çizgi aynı işi daha az yerle yapıyor,
+		  QR'ı da kartın rastgele sağ ucunda değil kendi bölmesinde tutuyor.
+		*/
+		.kart-sag {
+			padding-inline-start: 2rem;
+			border-inline-start: 1px solid oklch(1 0 0 / 0.1);
+		}
+
+		/* Geniş ekranda düğmeler içerikleri kadar yer kaplıyor: ızgaranın
+		   eşit iki sütunu burada gereksiz, satır zaten yetiyor. */
+		.dugmeler {
+			display: flex;
+			flex-wrap: wrap;
 		}
 
 		.dugme {
@@ -467,11 +588,6 @@ for (let satir = 0; satir < boyut; satir++) {
 	@media (min-width: 1024px) {
 		.kart {
 			margin-top: 2.5rem;
-		}
-
-		.qr {
-			width: 184px;
-			height: 184px;
 		}
 	}
 

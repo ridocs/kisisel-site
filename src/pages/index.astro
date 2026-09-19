@@ -18,7 +18,11 @@ const posts = (await getCollection('blog', ({ data }) => !data.draft && data.dil
 
 ---
 
-<BaseLayout title={m('site.baslik')}>
+{/*
+  Ana sayfa bölüm bölüm kaydırılıyor; altbilgi de bu sıranın son durağı ve
+  kendi ekranını alıyor. Gerekçesi `Altbilgi.astro` içindeki `sayfa` prop'unda.
+*/}
+<BaseLayout title={m('site.baslik')} altbilgiSayfa>
 	<HeroBolumu
 		slot="tam-genislik"
 		baslik="Mustafa Eybek"
