@@ -84,6 +84,37 @@ const projeler = defineCollection({
 		/** Canlı adres. Yoksa kart bağlantı olarak basılmıyor. */
 		adres: z.string().optional(),
 		teknolojiler: z.array(z.string()).default([]),
+		/*
+		  KATKI VERENLER
+
+		  Projeyi tek başına yapmadıysan burası doluyor; boşsa detay sayfasında
+		  o bölüm hiç basılmıyor. Rol iki dilde ayrı: "Arayüz" ile "Frontend"
+		  aynı kutuya sığmıyor ve İngilizce sayfada Türkçe bir rol adı
+		  görünmesi istenmiyor. Rol boş bırakılırsa yalnızca ad yazılıyor.
+
+		  `adres` varsa ad bağlantıya dönüyor (GitHub, LinkedIn, kişisel site).
+		*/
+		katkiVerenler: z
+			.array(
+				z.object({
+					ad: z.string(),
+					rol: z.string().optional(),
+					rolEn: z.string().optional(),
+					adres: z.string().optional(),
+				}),
+			)
+			.default([]),
+		/*
+		  Detay sayfasındaki uzun anlatım.
+
+		  TÜRKÇESİ dosyanın GÖVDESİNDE duruyor (MDX): panelde zengin metin
+		  editörüyle yazılıyor, başlık ve liste kullanılabiliyor.
+		  İngilizcesi burada düz metin: gövde tek tane ve iki dile
+		  bölünemiyor. Paragraflar boş satırla ayrılıyor.
+
+		  Boşsa detay sayfasında özet gösteriliyor, bölüm boş kalmıyor.
+		*/
+		detayEn: z.string().optional(),
 		durum: z.enum(['aktif', 'arsiv']).default('aktif'),
 		/** Küçük sayı önce gelir; eşitse ada göre sıralanır. */
 		sira: z.number().default(100),

@@ -327,6 +327,32 @@ const projelerKoleksiyonu = collection({
 			label: 'Teknolojiler',
 			itemLabel: (props) => props.value,
 		}),
+		/*
+		  Katkı verenler. Boş bırakılırsa detay sayfasında o bölüm hiç
+		  basılmıyor — "Katkı verenler: —" yazan boş bir başlık kalmıyor.
+		*/
+		katkiVerenler: fields.array(
+			fields.object({
+				ad: fields.text({ label: 'Ad' }),
+				rol: fields.text({ label: 'Rol (Türkçe)', description: 'Örn. Arayüz, Tasarım, Veri tarafı.' }),
+				rolEn: fields.text({ label: 'Rol (İngilizce)', description: 'Örn. Frontend, Design.' }),
+				adres: fields.url({ label: 'Bağlantı', description: 'GitHub, LinkedIn ya da kişisel site. Boşsa ad düz yazı kalır.' }),
+			}),
+			{
+				label: 'Katkı verenler',
+				itemLabel: (props) => props.fields.ad.value || 'Katkı veren',
+			},
+		),
+		/*
+		  Detayın İNGİLİZCESİ. Türkçesi sayfanın gövdesinde (aşağıdaki zengin
+		  metin alanı); gövde tek tane olduğu için ikinci dil buraya düz metin
+		  olarak yazılıyor. Paragrafları boş satırla ayır.
+		*/
+		detayEn: fields.text({
+			label: 'Detay (İngilizce)',
+			description: 'Projeyi anlatan uzun metin. Boş bırakılırsa İngilizce sayfada özet gösterilir.',
+			multiline: true,
+		}),
 		durum: fields.select({
 			label: 'Durum',
 			options: [

@@ -1,0 +1,37 @@
+---
+/*
+  Bir projenin Türkçe detay sayfası: /projeler/<ad>/
+
+  Düzen `ProjeDetayIcerik` bileşeninde; İngilizce eşi (/en/projects/<ad>/) de
+  aynı bileşeni kullanıyor.
+
+  Taslak projeler burada da basılmıyor — listede görünmeyen bir projenin
+  adresini tahmin ederek açabilmek istenmiyor.
+*/
+import { getCollection, render } from 'astro:content';
+import type { GetStaticPaths } from 'astro';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ProjeDetayIcerik from '../../components/ProjeDetayIcerik.astro';
+
+export const getStaticPaths: GetStaticPaths = async () => {
+	const projeler = await getCollection('projeler', ({ data }) => !data.taslak);
+	return projeler.map((proje) => ({ params: { id: proje.id }, props: { proje } }));
+};
+
+const { proje } = Astro.props;
+
+/*
+  Uzun anlatımın Türkçesi dosyanın MDX gövdesinde. Gövde boşsa `render`
+  yine çalışıyor ama hiçbir şey basmıyor; bu durumda bileşen özete düşüyor,
+  o yüzden boş gövdeyi `null` olarak geçiyoruz.
+*/
+const { Content } = await render(proje);
+const govdeVar = (proje.body ?? '').trim().length > 0;
+---
+
+<BaseLayout
+	title={`${proje.data.ad} — Mustafa Eybek`}
+	description={proje.data.ozet}
+>
+	<ProjeDetayIcerik proje={proje} Icerik={govdeVar ? <Content /> : null} />
+</BaseLayout>

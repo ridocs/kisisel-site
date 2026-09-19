@@ -1,7 +1,7 @@
 ---
 import { getCollection } from 'astro:content';
 import { Icon } from 'astro-icon/components';
-import { cevirici, dilBul } from '@/i18n/ceviriler';
+import { cevirici, dilBul, yol } from '@/i18n/ceviriler';
 
 /*
   AKTİF PROJELER SAYFASININ GÖVDESİ — iki dil de bu bileşeni kullanıyor.
@@ -33,6 +33,10 @@ const hepsi = await getCollection('projeler');
 const projeler = hepsi
 	.filter((p) => !p.data.taslak && p.data.durum === 'aktif')
 	.sort((a, b) => a.data.sira - b.data.sira || a.data.ad.localeCompare(b.data.ad, 'tr'));
+
+/** Bir projenin detay sayfasının adresi; dil önekini `yol` veriyor. */
+const detayYolu = (id: string) =>
+	`${yol(dil, dil === 'en' ? 'projects' : 'projeler')}${id}/`;
 
 /** Tür rozetinin metni ve simgesi. */
 const TURLER = {
@@ -83,14 +87,31 @@ const TURLER = {
 								</ul>
 							)}
 
-							{/* Adres yoksa bağlantı hiç basılmıyor — çalışmayan bir
-							    bağlantı, olmayan bağlantıdan kötü. */}
-							{proje.data.adres && (
-								<a class="proje-baglanti" href={proje.data.adres} rel="noopener" target="_blank">
-									{m('projeler.ziyaret')}
-									<Icon name="lucide:arrow-up-right" class="proje-ok" aria-hidden="true" />
+							{/*
+							  İki bağlantı: detay sayfası ve canlı adres.
+							
+							  Detay her projede var — özet kartta duruyor, gerisi (anlatım,
+							  teknolojiler, katkı verenler) orada. Canlı adres yoksa o bağlantı
+							  hiç basılmıyor: çalışmayan bir bağlantı, olmayandan kötü.
+							*/}
+							<div class="proje-baglantilar">
+								<a class="proje-baglanti" href={detayYolu(proje.id)}>
+									{m('projeler.detayBak')}
+									<Icon name="lucide:arrow-right" class="proje-ok" aria-hidden="true" />
 								</a>
-							)}
+								
+								{proje.data.adres && (
+									<a
+										class="proje-baglanti ikincil"
+										href={proje.data.adres}
+										rel="noopener"
+										target="_blank"
+									>
+										{m('projeler.ziyaret')}
+										<Icon name="lucide:arrow-up-right" class="proje-ok" aria-hidden="true" />
+									</a>
+								)}
+							</div>
 						</li>
 					);
 				})}
@@ -207,6 +228,28 @@ const TURLER = {
 
 	.proje-tekno li:last-child::after {
 		content: "";
+	}
+
+	/*
+	  İki bağlantı yan yana; dar ekranda alt alta düşüyorlar. Aralarındaki
+	  boşluk dokunma hedeflerinin birbirine değmemesi için 1rem.
+	*/
+	.proje-baglantilar {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0.25rem 1rem;
+	}
+
+	/* Detay birincil eylem: alt çizgisi baştan görünür. Canlı adres ikincil,
+	   çizgisi yalnızca imleç gelince beliriyor. */
+	.proje-baglanti.ikincil {
+		color: var(--muted-foreground);
+		border-bottom-color: transparent;
+	}
+
+	.proje-baglanti.ikincil:hover {
+		color: var(--foreground);
 	}
 
 	.proje-baglanti {

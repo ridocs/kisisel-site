@@ -67,7 +67,13 @@
     "mobil": "Mobil uygulama",
     "ziyaret": "Siteye git",
     "teknoloji": "Teknolojiler",
-    "bos": "Şu an yayımlanmış bir proje yok."
+    "bos": "Şu an yayımlanmış bir proje yok.",
+    "detayBak": "Projeyi incele",
+    "hakkinda": "Proje hakkında",
+    "katkiVerenler": "Katkı verenler",
+    "tumProjeler": "Tüm projeler",
+    "durumAktif": "Sürüyor",
+    "durumArsiv": "Arşivde"
   },
   "hakkimda": {
     "baslik": "Hakkımda",

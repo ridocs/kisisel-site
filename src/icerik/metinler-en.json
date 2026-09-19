@@ -67,7 +67,13 @@
     "mobil": "Mobile app",
     "ziyaret": "Visit site",
     "teknoloji": "Technologies",
-    "bos": "No projects published yet."
+    "bos": "No projects published yet.",
+    "detayBak": "View project",
+    "hakkinda": "About the project",
+    "katkiVerenler": "Contributors",
+    "tumProjeler": "All projects",
+    "durumAktif": "In progress",
+    "durumArsiv": "Archived"
   },
   "hakkimda": {
     "baslik": "About",
