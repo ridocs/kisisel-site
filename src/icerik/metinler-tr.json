@@ -2,14 +2,14 @@
   "404": {
     "sayfaBasligi": "Ops! Sayfa bulunamadı.",
     "baslik": "Hop! Sayfa kayıp.",
-    "metin": "Aradığın sayfa buralarda değil — galiba hayalet olmuş.",
-    "dugme": "Ana sayfaya dön",
-    "ikincilBag": "Yazılara göz at",
+    "metin": "Aradığın sayfa buralarda değil, galiba hayalet olmuş.",
+    "dugme": "Ana Sayfaya Dön",
+    "ikincilBag": "Blog Sayfama Göz Atmaya Ne Dersin?",
     "hayaletAlt": "Şaşkın bir hayalet çizimi"
   },
   "site": {
-    "baslik": "Mustafa Eybek — Yazılım geliştirici, Kayseri",
-    "aciklama": "Kayseri’de çalışan yazılım geliştirici. Web uygulamaları, altyapı ve otomasyon üzerine işler; öğrendiklerimi anlattığım yazılar burada."
+    "baslik": "Mustafa Eybek・Software Developer & DevOps Engineer & SolidWorks Designer・Kayseri",
+    "aciklama": "Kayseri’de ikamet etmekle birlikte, 2023 yılında Makine Bölümü’nden mezun oldum. Lise bittikten sonra yazılıma merak salmış ve alan değiştirmiş bulunmaktayım. Fakat yine de gerektiğinde makine hakkındaki becerilerimi ve SolidWorks becerilerimi kullanmaktan çekinmem."
   },
   "nav": {
     "anasayfa": "Ana Sayfa",
@@ -20,19 +20,19 @@
     "kullandiklarim": "Kullandıklarım",
     "gizlilik": "Gizlilik",
     "iletisim": "İletişim",
-    "rss": "RSS akışı",
-    "menuAc": "Menüyü aç",
-    "menuKapat": "Menüyü kapat",
-    "koyuTema": "Koyu temaya geç",
-    "acikTema": "Açık temaya geç",
+    "rss": "RSS Akışı",
+    "menuAc": "Menüyü Aç",
+    "menuKapat": "Menüyü Kapat",
+    "koyuTema": "Koyu Temaya Geç",
+    "acikTema": "Açık Temaya Geç",
     "dilDegistir": "Switch to English",
-    "icerigeGec": "İçeriğe geç",
-    "nelerDegisti": "Neler değişti"
+    "icerigeGec": "İçeriğe Geç",
+    "nelerDegisti": "Neler Değişti"
   },
   "hero": {
-    "altBaslik": "Yazılım geliştirici. Web uygulamaları, altyapı ve otomasyon üzerine çalışıyorum; öğrendiklerimi burada yazıyorum.",
-    "birincilDugme": "Yazıları oku",
-    "ikincilDugme": "GitHub profilim",
+    "altBaslik": "Web & Mobile Development · DevOps & Infrastructure · SolidWorks Designer** olarak kendimi sürekli geliştiriyor ve yeni projeler geliştiriyorum. Aynı zamanda freelancer olarak farklı projelerde yapıyorum. Burası, hayatımın tam merkezi. Siz de bu merkezi keşfetmek üzeresiniz.",
+    "birincilDugme": "Gelişmelere Bak",
+    "ikincilDugme": "GitHub Profilim",
     "yeniSekme": "(yeni sekmede açılır)"
   },
   "anasayfa": {
