@@ -491,6 +491,34 @@
     {
       "tr": "Panelden içerik: yetkinlikler",
       "en": "Content from the panel: skills"
+    },
+    {
+      "tr": "Gizlilik sayfası kendi ağzımdan yeniden yazıldı",
+      "en": "Rewrote the privacy page in my own voice"
+    },
+    {
+      "tr": "Uzun tire kaldırıldı, örnek blog yazıları silindi",
+      "en": "Dropped the em dash, deleted the sample blog posts"
+    },
+    {
+      "tr": "Panelden içerik: hero alt başlığı, çalışmalar",
+      "en": "Content from the panel: hero subtitle and selected work"
+    },
+    {
+      "tr": "İngilizce içerik Türkçenin karşılığı hâline getirildi",
+      "en": "Brought the English content in line with the Turkish"
+    },
+    {
+      "tr": "Neler değişti: kayıt başlıkları İngilizce sayfada İngilizce",
+      "en": "Changelog: entry titles now read in English on the English page"
+    },
+    {
+      "tr": "Üç arayüz düzeltmesi: hover kayması, gizlilik düğmesi, üst çubuk aktifliği",
+      "en": "Three interface fixes: hover shift, privacy button, active link in the bar"
+    },
+    {
+      "tr": "Sürüm günlüğü açıklaması gerçeğe uyduruldu, rozet metni eklendi",
+      "en": "Changelog blurb now matches reality, added the badge label"
     }
   ]
 }
