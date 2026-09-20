@@ -1,5 +1,5 @@
 import { readdir, readFile } from 'node:fs/promises';
-import { statSync } from 'node:fs';
+import { readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { seoAlanlariniOku, type MetinAlani } from './metinler.mjs';
 
@@ -47,8 +47,51 @@ export const BASLIK_UST = 60;
 export const ACIKLAMA_ALT = 50;
 export const ACIKLAMA_UST = 160;
 
-/** Ölçümün okuduğu klasör; proje köküne göre. */
-const CIKTI_KLASORU = 'dist';
+/**
+ * Ölçümün okuyabileceği çıktı klasörleri, proje köküne göre, İKİSİNDEN YENİSİ
+ * seçiliyor.
+ *
+ * `dist/` yalnızca elle `astro build` çalıştırılınca doluyor. Panelden
+ * yayınlayan biri bunu hiç çalıştırmıyor: yayın akışı kendi kopyasına
+ * (`node_modules/.yayin-derleme/cikti`) derliyor. Tek kaynak `dist/` olduğu
+ * sürece rapor, panelden yayınlanan bir sitede günler öncesinin derlemesini
+ * anlatıyordu — düzeltilmiş bir başlık için "çok uzun" demeye devam ediyordu.
+ */
+const CIKTI_ADAYLARI = ['node_modules/.yayin-derleme/cikti', 'dist'];
+
+/** Var olan çıktı klasörlerinden en yenisi; hiçbiri yoksa null. */
+function ciktiKlasorunuSec(kok: string): string | null {
+	let secilen: { klasor: string; ani: number } | null = null;
+	for (const aday of CIKTI_ADAYLARI) {
+		try {
+			// `index.html` derlemenin tamamlandığının işareti: klasörün kendi
+			// tarihi yarım kalmış bir derlemede de tazeleniyor.
+			const ani = statSync(join(kok, aday, 'index.html')).mtimeMs;
+			if (!secilen || ani > secilen.ani) secilen = { klasor: aday, ani };
+		} catch {
+			// Klasör ya da index.html yoksa aday da yok.
+		}
+	}
+	return secilen?.klasor ?? null;
+}
+
+/**
+ * Bir dosyanın ya da klasör ağacının en son değişme anı (ms).
+ * Ulaşılamayan yol 0 dönüyor: karşılaştırmada "hiç değişmemiş" sayılıyor.
+ */
+function enYeniDegisiklik(yol: string): number {
+	try {
+		const bilgi = statSync(yol);
+		if (!bilgi.isDirectory()) return bilgi.mtimeMs;
+		let en = 0;
+		for (const ad of readdirSync(yol)) {
+			en = Math.max(en, enYeniDegisiklik(join(yol, ad)));
+		}
+		return en;
+	} catch {
+		return 0;
+	}
+}
 
 /* ------------------------------------------------------------------ */
 /* Türler                                                              */
@@ -170,7 +213,9 @@ export interface Puan {
 export interface SeoRaporu {
 	/** `dist/` var mı — yoksa rapor üretilemiyor, kullanıcıya "derleyin" deniyor. */
 	ciktiVar: boolean;
-	/** Derlemenin ne zaman yapıldığı (dist/index.html'in dosya tarihi). */
+	/** Hangi çıktı klasörü ölçüldü — panelde yazılı, belirsizlik kalmasın. */
+	ciktiKlasoru: string;
+	/** Derlemenin ne zaman yapıldığı (ölçülen index.html'in dosya tarihi). */
 	derlemeAni: Date | null;
 	/** Kaynak dosyalardan biri derlemeden yeni mi — rapor eskimiş demektir. */
 	kaynakDahaYeni: boolean;
@@ -602,7 +647,8 @@ export function puanHesapla(
 
 export async function seoRaporu(): Promise<SeoRaporu> {
 	const kok = process.cwd();
-	const ciktiKoku = join(kok, CIKTI_KLASORU);
+	const ciktiKlasoru = ciktiKlasorunuSec(kok) ?? CIKTI_ADAYLARI.at(-1)!;
+	const ciktiKoku = join(kok, ciktiKlasoru);
 	const alanlar = await seoAlanlariniOku();
 
 	const tumDosyalar = await dosyalariTopla(ciktiKoku);
@@ -610,6 +656,7 @@ export async function seoRaporu(): Promise<SeoRaporu> {
 
 	const bos: SeoRaporu = {
 		ciktiVar: false,
+		ciktiKlasoru,
 		derlemeAni: null,
 		kaynakDahaYeni: false,
 		siteKoku: '',
@@ -640,7 +687,7 @@ export async function seoRaporu(): Promise<SeoRaporu> {
 	for (const gorel of dosyalar.sort()) {
 		hamSayfalar.push({
 			rota: ciktiRotasi(gorel),
-			dosya: `${CIKTI_KLASORU}/${gorel}`,
+			dosya: `${ciktiKlasoru}/${gorel}`,
 			html: await readFile(join(ciktiKoku, gorel), 'utf8'),
 		});
 	}
@@ -953,22 +1000,25 @@ export async function seoRaporu(): Promise<SeoRaporu> {
 	*/
 	let kaynakDahaYeni = false;
 	if (derlemeAni) {
+		/*
+		  İzlenen yollar KLASÖR, tek tek dosya değil. Önce `metinler-tr.json`
+		  ve `metinler-en.json` yazılıydı; panel 19 ayrı bölüm dosyasına
+		  bölününce o iki dosya ortadan kalktı ve karşılaştırma sessizce hep
+		  "kaynak eski" demeye başladı. Yani bayat bir raporun bayat olduğu
+		  söylenmiyordu — bu kontrolün tek işi buydu.
+		*/
 		const izlenen = [
-			join(kok, 'src', 'icerik', 'metinler-tr.json'),
-			join(kok, 'src', 'icerik', 'metinler-en.json'),
+			join(kok, 'src', 'icerik'),
+			join(kok, 'src', 'content'),
 			join(kok, 'src', 'layouts', 'BaseLayout.astro'),
 		];
-		for (const yol of izlenen) {
-			try {
-				if (statSync(yol).mtime > derlemeAni) kaynakDahaYeni = true;
-			} catch {
-				// Dosya yoksa karşılaştıracak bir şey de yok.
-			}
-		}
+		const esik = derlemeAni.getTime();
+		kaynakDahaYeni = izlenen.some((yol) => enYeniDegisiklik(yol) > esik);
 	}
 
 	return {
 		ciktiVar: true,
+		ciktiKlasoru,
 		derlemeAni,
 		kaynakDahaYeni,
 		siteKoku: koku,

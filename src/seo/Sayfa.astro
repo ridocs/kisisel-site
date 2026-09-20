@@ -144,6 +144,15 @@ const derlemeMetni = rapor.derlemeAni
 	: 'derleme yok';
 
 /*
+  Hangi çıktının ölçüldüğü yazılı duruyor. İki kaynak var — panelden yapılan
+  yayının kopyası ve elle `astro build` çıktısı — ve hangisine bakıldığı
+  bilinmezse rapordaki bir uyarının güncel olup olmadığı anlaşılmıyor.
+*/
+const kaynakAdi = rapor.ciktiKlasoru.includes('yayin-derleme')
+	? 'yayın kopyası'
+	: rapor.ciktiKlasoru;
+
+/*
   Yazma uç noktasının adresi ÖNEKTEN geçiyor, sabit yazılmıyor: `Kabuk.astro`
   içindeki bağlantılar da aynı sebeple öyle. Adres HTML'e bir `data-` niteliği
   olarak basılıp betikte oradan okunuyor — satır içi betikler derleyiciden
@@ -160,7 +169,7 @@ const enAlanlari = rapor.alanlar.filter((a) => a.dil === 'en');
 	baslik="SEO yönetimi"
 	aktif="seo"
 	not={rapor.ciktiVar
-		? `${rapor.sayfalar.length} sayfa ölçüldü · derleme: ${derlemeMetni} · ${olcumAni}`
+		? `${rapor.sayfalar.length} sayfa ölçüldü · ${kaynakAdi}, ${derlemeMetni} · ${olcumAni}`
 		: `Derlenmiş çıktı yok · ${olcumAni}`}
 >
 	<div class="p-yigin">
