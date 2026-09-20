@@ -20,7 +20,7 @@ const { proje } = Astro.props;
 ---
 
 <BaseLayout
-	title={`${proje.data.ad} — Mustafa Eybek`}
+	title={proje.data.sayfaBasligi?.trim() || proje.data.ad}
 	description={proje.data.ozetEn}
 >
 	<ProjeDetayIcerik proje={proje} />

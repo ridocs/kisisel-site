@@ -91,6 +91,17 @@ const projeler = defineCollection({
 	schema: z.object({
 		ad: z.string(),
 		/*
+		  Arama sonucunda ve tarayıcı sekmesinde görünen başlık.
+
+		  Boş bırakılırsa PROJE ADININ KENDİSİ kullanılıyor — site adı
+		  eklenmiyor. Önce "Ad — Mustafa Eybek" biçimindeydi; proje adı zaten
+		  sayfanın konusu ve marka eki 60 karakterlik alandan yiyordu.
+
+		  Yazılardaki `sayfaBasligi` ile aynı iş: `ad` sayfanın H1'i ve kart
+		  başlığı, bu ise arama sonucundaki satır.
+		*/
+		sayfaBasligi: z.string().optional(),
+		/*
 		  Bir proje hem site hem uygulama olabiliyor (TwinShare öyle), bu yüzden
 		  tek seçim değil liste. En az bir tür zorunlu: türü olmayan bir kayıt
 		  sayfada hangi başlığın altına gireceğini bilemez.

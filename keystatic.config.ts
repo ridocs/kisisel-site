@@ -484,6 +484,17 @@ const projelerKoleksiyonu = collection({
 			name: { label: 'Proje adı' },
 			slug: { label: 'Adres (dosya adı)' },
 		}),
+
+		/*
+		  Arama sonucundaki satır. Boş bırakılınca proje adının kendisi
+		  kullanılıyor; yazılardaki alanla aynı davranış.
+		*/
+		sayfaBasligi: fields.text({
+			label: 'Sayfa başlığı (arama sonucu)',
+			description:
+				'Boş bırakırsan proje adının kendisi kullanılır. 60 karakteri aşmamaya çalış, Google fazlasını kırpıyor.',
+		}),
+
 		tur: fields.multiselect({
 			label: 'Tür',
 			description: 'Bir proje hem site hem uygulama olabilir.',
