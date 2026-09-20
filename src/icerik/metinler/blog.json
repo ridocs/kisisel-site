@@ -6,7 +6,7 @@
   },
   "en": {
     "baslik": "Blog",
-    "sayfaBasligi": "Blog: notes on software and infrastructure — Mustafa Eybek",
+    "sayfaBasligi": "Blog",
     "aciklama": "A record of problems I ran into and how I solved them: short, measured notes on web development, CSS, infrastructure and automation."
   }
 }
