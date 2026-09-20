@@ -363,6 +363,16 @@ const iletisimSingletonu = singleton({
 			label: 'Telefon (görünen biçim)',
 			description: 'Ekranda böyle yazıyor: +90 533 479 80 49',
 		}),
+		whatsappMesaj: fields.text({
+			label: 'WhatsApp hazır mesajı (Türkçe)',
+			description:
+				'Düğmeye basınca WhatsApp bu metin yazılmış hâlde açılır; kişi isterse silip kendi yazar. Boş bırakılırsa sohbet boş açılır.',
+			multiline: true,
+		}),
+		whatsappMesajEn: fields.text({
+			label: 'WhatsApp hazır mesajı (İngilizce)',
+			multiline: true,
+		}),
 		konum: fields.text({ label: 'Konum (Türkçe)' }),
 		konumEn: fields.text({ label: 'Konum (İngilizce)' }),
 		github: fields.url({ label: 'GitHub' }),

@@ -31,6 +31,21 @@ export const EPOSTA = veri.eposta;
  */
 export const WHATSAPP = (veri.whatsapp ?? '').replace(/\D/g, '');
 
+/**
+ * WhatsApp açıldığında yazı kutusunda HAZIR BEKLEYEN mesaj.
+ *
+ * `wa.me/<numara>?text=…` ile gönderiliyor; kişi düğmeye bastığında sohbet
+ * bu metin yazılmış hâlde açılıyor, isterse silip kendi yazıyor. Boş
+ * bırakılırsa sohbet boş açılıyor.
+ *
+ * İki dilde ayrı: İngilizce sayfadan gelen kişiye Türkçe bir taslak
+ * göndermek istenmiyor.
+ */
+export const WHATSAPP_MESAJ = {
+	tr: (veri.whatsappMesaj ?? '').trim(),
+	en: (veri.whatsappMesajEn ?? '').trim(),
+} as const;
+
 /** İnsan tarafından okunacak biçim; bağlantı yukarıdaki ham numaradan kuruluyor. */
 export const TELEFON_GORUNEN = veri.telefonGorunen;
 

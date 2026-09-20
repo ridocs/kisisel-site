@@ -7,7 +7,7 @@ import { cevirici, dilBul, taban } from '@/i18n/ceviriler';
   Hakkımda sayfasındaki kanal listesi de kullanıyor ve iki kopya kaçınılmaz
   olarak birbirinden ayrı düşerdi. Yer tutucuların açıklaması o dosyada.
 */
-import { EPOSTA, KONUM, QR_ICERIK, WHATSAPP } from '@/lib/iletisim';
+import { EPOSTA, KONUM, QR_ICERIK, WHATSAPP, WHATSAPP_MESAJ } from '@/lib/iletisim';
 
 const dil = dilBul(Astro.url);
 const m = cevirici(dil);
@@ -28,6 +28,21 @@ const m = cevirici(dil);
   ağ bilgisi ya da düz metin de kodlanabilir. Matris her derlemede yeniden
   üretiliyor, yani içerik değişince kod da değişiyor.
 */
+/*
+  WhatsApp bağlantısı, panelde yazılan hazır mesajla birlikte.
+
+  `?text=` ile gönderilen metin sohbet açıldığında yazı kutusunda hazır
+  bekliyor; kişi isterse silip kendi yazıyor. Mesaj boşsa parametre hiç
+  eklenmiyor — boş bir `?text=` adresi uzatmaktan başka bir işe yaramıyor.
+
+  `encodeURIComponent` şart: boşluk, soru işareti ve Türkçe harfler
+  kodlanmadan gönderilirse bağlantı bozuluyor.
+*/
+const whatsappMesaji = WHATSAPP_MESAJ[dil];
+const whatsappBaglantisi = `https://wa.me/${WHATSAPP}${
+	whatsappMesaji ? `?text=${encodeURIComponent(whatsappMesaji)}` : ''
+}`;
+
 const qrIcerik = QR_ICERIK || new URL(`${taban}/`, Astro.site).href;
 
 /*
@@ -179,17 +194,16 @@ const qrYuzYolu = pathVerisi(0);
 								<span class="ayrac" aria-hidden="true">·</span>
 								<span>{KONUM[dil]}</span>
 							</p>
+							{/*
+							  Adres ad ve rolle AYNI SÜTUNDA: kimlik metninin içinde
+							  duruyor. Kimliğin dışındayken baş harf dairesinin altına
+							  düşüyor ve soldan hizası kayıyordu.
+							*/}
+							<p class="adres">
+								<a href={`mailto:${EPOSTA}`}>{EPOSTA}</a>
+							</p>
 						</div>
 					</div>
-
-					{/*
-					  Adres kimliğin hemen altında: ad, rol ve konumdan sonra
-					  "buradan ulaşılır" bilgisi geliyor. Düğmelerin altındayken
-					  eylemlerden sonra kalıyordu ve kimlikle bağı kopuyordu.
-					*/}
-					<p class="adres">
-						<a href={`mailto:${EPOSTA}`}>{EPOSTA}</a>
-					</p>
 
 					<div class="dugmeler">
 						<a class="dugme birincil" href={`mailto:${EPOSTA}`}>
@@ -201,7 +215,7 @@ const qrYuzYolu = pathVerisi(0);
 						{WHATSAPP && (
 							<a
 								class="dugme whatsapp"
-								href={`https://wa.me/${WHATSAPP}`}
+								href={whatsappBaglantisi}
 								rel="noopener"
 								target="_blank"
 							>
@@ -478,10 +492,9 @@ const qrYuzYolu = pathVerisi(0);
 	}
 
 	.adres {
-		/* Kimlikle arasında dar bir boşluk: ikisi tek bir blok gibi okunuyor.
-		   Düğmelerin altındayken 1rem'di, orada eylemlerden ayrılması
-		   gerekiyordu. */
-		margin-top: 0.75rem;
+		/* Rolün hemen altında, aynı sütunda. Kimlik metninin parçası olduğu
+		   için soldan hizası ad ve rolle aynı. */
+		margin-top: 0.35rem;
 		font-size: 0.8125rem;
 		color: oklch(0.7 0 0);
 	}
@@ -511,6 +524,9 @@ const qrYuzYolu = pathVerisi(0);
 		display: none;
 		flex-direction: column;
 		align-items: center;
+		/* Kod ve notu bölmenin dikey ortasına al: sol sütun daha uzun olduğu
+		   için üste yapışık duruyordu. */
+		justify-content: center;
 		gap: 0.625rem;
 		flex: none;
 	}
