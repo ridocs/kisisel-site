@@ -1,7 +1,8 @@
 ---
 import { Icon } from 'astro-icon/components';
 import { cevirici, dilBul } from '@/i18n/ceviriler';
-import { EPOSTA, WHATSAPP } from '@/lib/iletisim';
+import { EPOSTA, WHATSAPP, WHATSAPP_MESAJ } from '@/lib/iletisim';
+import AkanDugme from './AkanDugme.astro';
 
 /*
   HİZMETLER SAYFASININ GÖVDESİ — iki dil de bu bileşeni kullanıyor.
@@ -71,7 +72,14 @@ const adimlar = [
   düğmenin hiç olmamasından kötü.
 */
 const epostaBaglantisi = `mailto:${EPOSTA}`;
-const whatsappBaglantisi = WHATSAPP ? `https://wa.me/${WHATSAPP}` : undefined;
+/*
+  Hazır mesaj iletişim kartındakiyle aynı kaynaktan: iki yerde farklı bir
+  taslakla açılması istenmiyor.
+*/
+const whatsappMesaji = WHATSAPP_MESAJ[dil];
+const whatsappBaglantisi = WHATSAPP
+	? `https://wa.me/${WHATSAPP}${whatsappMesaji ? `?text=${encodeURIComponent(whatsappMesaji)}` : ''}`
+	: undefined;
 ---
 
 {/*
@@ -164,25 +172,27 @@ const whatsappBaglantisi = WHATSAPP ? `https://wa.me/${WHATSAPP}` : undefined;
 	<h2 class="baslik" data-belir-oge style="--sira: 1">{m('hizmet.kapanisBaslik')}</h2>
 	<p class="bolum-metin" data-belir-oge style="--sira: 2">{m('hizmet.kapanisMetin')}</p>
 
+	{/*
+	  Sitedeki öbür düğmelerle aynı akan düğme: üzerine gelince ortadaki daire
+	  büyüyüp düğmeyi dolduruyor, yazı kayıyor, oklar yer değiştiriyor.
+
+	  Adresin kendisi ARTIK BURADA YAZILI DEĞİL. Düğmenin altında ikinci kez
+	  durmasına gerek yok: aynı adres iletişim kartında ve altbilgide açıkça
+	  yazıyor, yani posta istemcisi açılmayan biri onu yine kopyalayabiliyor.
+	*/}
 	<div class="dugmeler" data-belir-oge style="--sira: 3">
-		<a class="dugme birincil" href={epostaBaglantisi}>
-			<Icon name="lucide:mail" class="size-4" aria-hidden="true" />
-			<span>{m('hizmet.kapanisEposta')}</span>
-		</a>
+		<AkanDugme href={epostaBaglantisi} agirlik="dolu">
+			{m('hizmet.kapanisEposta')}
+		</AkanDugme>
 
 		{
 			whatsappBaglantisi && (
-				<a class="dugme ikincil" href={whatsappBaglantisi} rel="noopener" target="_blank">
-					<Icon name="lucide:message-circle" class="size-4" aria-hidden="true" />
-					<span>{m('hizmet.kapanisWhatsapp')}</span>
-				</a>
+				<AkanDugme href={whatsappBaglantisi} disBaglanti yeniSekmeMetni={m('hero.yeniSekme')}>
+					{m('hizmet.kapanisWhatsapp')}
+				</AkanDugme>
 			)
 		}
 	</div>
-
-	{/* Adresin kendisi de yazılı duruyor: düğmeye basamayan ya da başka bir
-	    posta istemcisi kullanan biri adresi kopyalayabilmeli. */}
-	<p class="adres" data-belir-oge style="--sira: 4">{EPOSTA}</p>
 </section>
 
 <style>
@@ -266,8 +276,7 @@ const whatsappBaglantisi = WHATSAPP ? `https://wa.me/${WHATSAPP}` : undefined;
 	.paragraf,
 	.bolum-metin,
 	.kalem-metin,
-	.adim-metin,
-	.adres {
+	.adim-metin {
 		overflow-wrap: break-word;
 	}
 
@@ -396,31 +405,6 @@ const whatsappBaglantisi = WHATSAPP ? `https://wa.me/${WHATSAPP}` : undefined;
 		margin-top: 1.5rem;
 	}
 
-	.dugme {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.5rem;
-		padding: 0.625rem 1.125rem;
-		border-radius: 9999px;
-		font-size: 0.9375rem;
-		font-weight: 600;
-		text-decoration: none;
-		border: 1px solid transparent;
-		transition:
-			background-color 220ms ease-out,
-			border-color 220ms ease-out,
-			translate 260ms cubic-bezier(0.22, 1, 0.36, 1);
-	}
-
-	.dugme:focus-visible {
-		outline: 2px solid var(--ring);
-		outline-offset: 2px;
-	}
-
-	.dugme:hover {
-		translate: 0 -2px;
-	}
-
 	.birincil {
 		background: var(--color-marka-600);
 		color: #fff;
@@ -440,12 +424,6 @@ const whatsappBaglantisi = WHATSAPP ? `https://wa.me/${WHATSAPP}` : undefined;
 	.ikincil:hover {
 		border-color: color-mix(in oklab, var(--foreground) 35%, transparent);
 		background: color-mix(in oklab, var(--foreground) 4%, transparent);
-	}
-
-	.adres {
-		margin-top: 1rem;
-		font-size: 0.8125rem;
-		color: var(--muted-foreground);
 	}
 
 	@media (min-width: 640px) {
@@ -472,13 +450,4 @@ const whatsappBaglantisi = WHATSAPP ? `https://wa.me/${WHATSAPP}` : undefined;
 		}
 	}
 
-	@media (prefers-reduced-motion: reduce) {
-		.dugme {
-			transition: none;
-		}
-
-		.dugme:hover {
-			translate: none;
-		}
-	}
 </style>
