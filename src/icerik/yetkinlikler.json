@@ -2,8 +2,8 @@
   "kalemler": [
     {
       "teknoloji": "javascript",
-      "sure": "3 yıl",
-      "sureEn": "3 years",
+      "sure": "6 Ay",
+      "sureEn": "6 Month",
       "kullanim": "Arayüz tarafında olmazsa olmazlardan. Bu sitedeki kaydırma, menü ve etkileşim betikleri, herhangi bir kütüphane kullanılmadan saf JavaScript ile yazıldı.",
       "kullanimEn": "A must-have for the frontend. The scrolling, menu, and interaction scripts on this website were built with vanilla JavaScript, without relying on any libraries.\n"
     },
@@ -16,8 +16,8 @@
     },
     {
       "teknoloji": "typescript",
-      "sure": "2 yıl",
-      "sureEn": "2 years",
+      "sure": "6 Ay",
+      "sureEn": "6 Month",
       "kullanim": "Büyüyen web projelerinde tercihim. Hatta bu sitenin çeviri katmanı ve bileşen arayüzleri TypeScript ile yazıldı.",
       "kullanimEn": "My preferred choice for growing web projects. In fact, the translation layer and component interfaces of this website were built with TypeScript.\n"
     },
