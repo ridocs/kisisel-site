@@ -357,7 +357,7 @@ const iletisimSingletonu = singleton({
 		eposta: fields.text({ label: 'E-posta', validation: { isRequired: true } }),
 		whatsapp: fields.text({
 			label: 'WhatsApp numarası',
-			description: 'Başında + ve boşluk OLMADAN, ülke koduyla: 905334798049. Boş bırakılırsa WhatsApp düğmesi hiç basılmıyor.',
+			description: 'Ülke koduyla yaz. Boşluk ve + serbest — bağlantı kurulurken temizleniyor. Boş bırakılırsa WhatsApp düğmesi hiç basılmıyor.',
 		}),
 		telefonGorunen: fields.text({
 			label: 'Telefon (görünen biçim)',

@@ -16,13 +16,20 @@ import veri from '@/icerik/iletisim-bilgisi.json';
 export const EPOSTA = veri.eposta;
 
 /**
- * WhatsApp numarası. Uluslararası biçimde, başında + ve boşluk olmadan —
- * wa.me adresi başka biçim kabul etmiyor (+90 533 479 80 49 → 905334798049).
+ * WhatsApp numarası — `wa.me` bağlantısı için.
+ *
+ * `wa.me` yalnızca rakam kabul ediyor: `+90 533 479 80 49` yazılırsa bağlantı
+ * bozuluyor ve düğme hiçbir yere gitmiyor. Panelde bunu "boşluksuz yaz" diye
+ * bir kurala bağlamak yerine RAKAM DIŞINDAKİ HER ŞEY BURADA TEMİZLENİYOR:
+ * numarayı okunur biçimde yazmak serbest, bağlantı yine çalışıyor.
+ *
+ * (Bu koruma, panelde numara boşluklu yazıldığında bağlantının sessizce
+ * bozulduğu görüldükten sonra eklendi.)
  *
  * Boş bırakılırsa düğme ve kanal satırı hiç basılmıyor: çalışmayan bir
  * WhatsApp bağlantısı, düğmenin hiç olmamasından kötü.
  */
-export const WHATSAPP = veri.whatsapp;
+export const WHATSAPP = (veri.whatsapp ?? '').replace(/\D/g, '');
 
 /** İnsan tarafından okunacak biçim; bağlantı yukarıdaki ham numaradan kuruluyor. */
 export const TELEFON_GORUNEN = veri.telefonGorunen;
