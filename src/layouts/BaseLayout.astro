@@ -197,7 +197,17 @@ const yapilandirilmisVeri = JSON.stringify({
 	<head>
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		{/*
+		  Site simgesi. Üç dosya, üç ayrı gerekçe:
+		    - .svg  modern tarayıcılar; her ölçekte net
+		    - .ico  SVG desteklemeyen eskiler ve Windows kısayolları
+		    - apple-touch-icon  iOS ana ekranı; yoksa iOS sayfanın ekran
+		      görüntüsünü koyuyor ve simge okunmaz oluyor
+		  Sıra önemli: tarayıcı desteklediği ilk biçimi seçiyor.
+		*/}
 		<link rel="icon" type="image/svg+xml" href={`${taban}/favicon.svg`} />
+		<link rel="icon" href={`${taban}/favicon.ico`} sizes="32x32" />
+		<link rel="apple-touch-icon" href={`${taban}/apple-touch-icon.png`} />
 		{/*
 		  Yazı tipini önden istiyoruz. Aksi hâlde sıra şöyle işliyordu:
 		  HTML in → CSS in → CSS ayrıştır → yazı tipini iste. Üç ardışık
