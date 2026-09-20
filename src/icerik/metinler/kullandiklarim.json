@@ -17,11 +17,11 @@
     "sunucuMetin": "Yayına çıkan tarafta çalışanlar."
   },
   "en": {
-    "sayfaBasligi": "Uses: hardware, software and tools",
-    "aciklama": "The hardware, software and tools I use day to day (editor, languages, this site’s own stack and the server side), each with a short reason.",
+    "sayfaBasligi": "Uses",
+    "aciklama": "The hardware, software and tools I use day to day: editor, languages, this site's own stack and the server side, each with a short reason.",
     "ustBaslik": "USES",
     "baslik": "What I use",
-    "giris": "The things within arm’s reach while I work. Not just a list: each item says why I picked it. That is where the useful part is.",
+    "giris": "The things within arm's reach while I work. Not just a list: each item says why I picked it, and that is where the useful part is.",
     "not": "Rows marked “placeholder” have not been filled in yet. Left empty rather than made up.",
     "yerTutucu": "placeholder",
     "donanimBaslik": "Hardware",

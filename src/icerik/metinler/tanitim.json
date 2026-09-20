@@ -8,10 +8,10 @@
     "gorselAlt": "Mustafa Eybek portre fotoğrafı"
   },
   "en": {
-    "ustBaslik": "WHAT I DO",
-    "paragraf1": "I build web applications, touching every end of the work: from the interface to the database, from deployment to automation.",
-    "paragraf2": "I like taking notes on what I learn. Most of the writing here is a record of problems I ran into and how I solved them.",
-    "paragraf3": "Write to me for a new role, a shared project, or just a conversation.",
+    "ustBaslik": "WHO AM I?",
+    "paragraf1": "I was born in Kayseri in 2005 and finished OSB Vocational and Technical Anatolian High School in 2023. I spent three years working as a machine technician, and alongside that I kept teaching myself network infrastructure and mobile development with Flutter.",
+    "paragraf2": "I like taking notes on what I learn. The writing here is where those notes end up, along with the fixes that came out of my own mistakes. Honestly, I enjoy making mistakes; that is how I get better.",
+    "paragraf3": "Get in touch about a new job or a project we could work on together.",
     "dugme": "Read more",
     "gorselAlt": "Portrait photo of Mustafa Eybek"
   }
