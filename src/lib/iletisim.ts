@@ -30,6 +30,19 @@ export const TELEFON_GORUNEN = veri.telefonGorunen;
 /** Konum. Çevrilmiyor ama iki dilde ayrı yazılabilsin diye sözlük. */
 export const KONUM = { tr: veri.konum, en: veri.konumEn } as const;
 
+/**
+ * İletişim kartındaki kare kodun içeriği.
+ *
+ * Boş bırakılırsa sitenin kendi adresi kodlanıyor (bileşen dolduruyor) —
+ * en sık istenen davranış bu: masaüstünde siteyi gösterirken karşıdaki
+ * telefonuyla okutup açıyor.
+ *
+ * Dolu bırakılırsa ne yazıldıysa o kodlanıyor. Adres olmak zorunda değil:
+ * telefon (`tel:+90…`), e-posta (`mailto:…`), kablosuz ağ bilgisi ya da düz
+ * metin de olabilir. Kod her derlemede yeniden üretiliyor.
+ */
+export const QR_ICERIK = veri.qrIcerik?.trim() ?? '';
+
 /** GitHub profili. Ana sayfadaki hero düğmesi de aynı adrese gidiyor. */
 export const GITHUB = veri.github;
 
