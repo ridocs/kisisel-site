@@ -30,7 +30,7 @@ const govdeVar = (proje.body ?? '').trim().length > 0;
 ---
 
 <BaseLayout
-	title={`${proje.data.ad} — Mustafa Eybek`}
+	title={proje.data.sayfaBasligi?.trim() || proje.data.ad}
 	description={proje.data.ozet}
 >
 	<ProjeDetayIcerik proje={proje} Icerik={govdeVar ? <Content /> : null} />
