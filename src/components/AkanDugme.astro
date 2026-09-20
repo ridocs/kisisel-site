@@ -3,8 +3,14 @@
  * Akan düğme.
  *
  * Üzerine gelince ortadaki daire büyüyüp düğmeyi dolduruyor, köşeler
- * yuvarlaktan köşeliye geçiyor, yazı sağa kayıyor ve iki ok yer değiştiriyor:
- * soldaki kadrajın dışından içeri giriyor, sağdaki dışarı çıkıyor.
+ * yuvarlaktan köşeliye geçiyor, yazı sağa kayıyor ve iki simge yer
+ * değiştiriyor: soldaki kadrajın dışından içeri giriyor, sağdaki dışarı
+ * çıkıyor.
+ *
+ * İki simge de seçilebilir. Varsayılan ikisinde de sağ ok — "git" anlamı.
+ * Ama simgeler ayrılabildiği için düğme iki şey birden anlatabiliyor:
+ * durağan hâlde NE YAPACAĞIN (yazmak), üzerine gelince NEREDE olacağı
+ * (WhatsApp, posta kutusu). Hizmetler kapanışındaki iki düğme bunu kullanıyor.
  *
  * Önce yalnızca 404 sayfasında duruyordu; hero de aynı düğmeyi isteyince
  * stil kopyalanmak yerine buraya taşındı. İki yerde duran bir animasyon
@@ -25,6 +31,24 @@ interface Props {
 	 * ikisini de dolu yapmak hangisinin asıl eylem olduğunu siliyor.
 	 */
 	agirlik?: 'hatli' | 'dolu';
+	/**
+	 * Renk ailesi.
+	 *
+	 * `notr` (varsayılan): metin rengi — sayfanın geri kalanıyla aynı dil.
+	 * `marka`: site mavisi. Sayfadaki tek bir eylemi öne çıkarmak için;
+	 * her düğme mavi olursa hiçbiri öne çıkmıyor.
+	 */
+	ton?: 'notr' | 'marka';
+	/**
+	 * Durağan hâlde sağda duran simge (astro-icon adı).
+	 * Kullanıcı düğmeye basmadan önce gördüğü şey.
+	 */
+	simge?: string;
+	/**
+	 * Üzerine gelince soldan giren simge.
+	 * Verilmezse durağan simgenin aynısı kullanılıyor.
+	 */
+	simgeUzerinde?: string;
 	/** Yeni sekmede açılacaksa; `rel` ve ekran okuyucu notu buna bağlı. */
 	disBaglanti?: boolean;
 	/** Ekran okuyucuya "yeni sekmede açılır" bilgisini veren çeviri metni. */
@@ -44,6 +68,9 @@ interface Props {
 const {
 	href,
 	agirlik = 'hatli',
+	ton = 'notr',
+	simge = 'lucide:arrow-right',
+	simgeUzerinde,
 	disBaglanti = false,
 	yeniSekmeMetni,
 	class: ekSinif,
@@ -53,19 +80,27 @@ const {
 const disOzellikler = disBaglanti
 	? { target: '_blank', rel: 'noopener noreferrer' }
 	: {};
+
+/* Tek simge verildiyse iki tarafta da o duruyor: eski davranış bozulmasın. */
+const girenSimge = simgeUzerinde ?? simge;
 ---
 
 <a
-	class:list={['akan-dugme', agirlik === 'dolu' && 'dolu', ekSinif]}
+	class:list={[
+		'akan-dugme',
+		agirlik === 'dolu' && 'dolu',
+		ton === 'marka' && 'marka',
+		ekSinif,
+	]}
 	href={href}
 	{...disOzellikler}
 	{...kalanOzellikler}
 >
-	{/* Soldaki ok normalde kadrajın dışında; üzerine gelince içeri kayıyor. */}
-	<Icon name="lucide:arrow-right" class="ok ok-sol" aria-hidden="true" />
+	{/* Soldaki simge normalde kadrajın dışında; üzerine gelince içeri kayıyor. */}
+	<Icon name={girenSimge} class="simge simge-sol" aria-hidden="true" />
 	<span class="etiket"><slot /></span>
 	<span class="daire" aria-hidden="true"></span>
-	<Icon name="lucide:arrow-right" class="ok ok-sag" aria-hidden="true" />
+	<Icon name={simge} class="simge simge-sag" aria-hidden="true" />
 	{disBaglanti && yeniSekmeMetni && <span class="sr-only"> {yeniSekmeMetni}</span>}
 </a>
 
@@ -171,7 +206,7 @@ const disOzellikler = disBaglanti
 		opacity: 1;
 	}
 
-	.ok {
+	.simge {
 		position: absolute;
 		z-index: 9;
 		width: 1rem;
@@ -183,35 +218,104 @@ const disOzellikler = disBaglanti
 			color 800ms cubic-bezier(0.34, 1.56, 0.64, 1);
 	}
 
-	.dolu .ok {
+	.dolu .simge {
 		color: var(--background);
 	}
 
-	.ok-sol {
+	.simge-sol {
 		left: -25%;
 	}
 
-	.ok-sag {
+	.simge-sag {
 		right: 1rem;
 	}
 
-	.akan-dugme:hover .ok-sol,
-	.akan-dugme:focus-visible .ok-sol {
+	.akan-dugme:hover .simge-sol,
+	.akan-dugme:focus-visible .simge-sol {
 		left: 1rem;
 		color: var(--background);
 	}
 
-	.akan-dugme:hover .ok-sag,
-	.akan-dugme:focus-visible .ok-sag {
+	.akan-dugme:hover .simge-sag,
+	.akan-dugme:focus-visible .simge-sag {
 		right: -25%;
 		color: var(--background);
 	}
 
-	.dolu:hover .ok-sol,
-	.dolu:focus-visible .ok-sol,
-	.dolu:hover .ok-sag,
-	.dolu:focus-visible .ok-sag {
+	.dolu:hover .simge-sol,
+	.dolu:focus-visible .simge-sol,
+	.dolu:hover .simge-sag,
+	.dolu:focus-visible .simge-sag {
 		color: var(--foreground);
+	}
+
+	/* ------------------------------------------------------------------ *
+	 * MARKA TONU
+	 *
+	 * Nötr metin rengi yerine site mavisi. Hareket birebir aynı; yalnızca
+	 * iki renk değişiyor: zemin `--primary`, üzerindeki her şey
+	 * `--primary-foreground`. Açık/koyu temada ikisi birlikte dönüyor,
+	 * dolayısıyla kontrast iki temada da korunuyor.
+	 *
+	 * Bu kurallar nötr olanlardan SONRA geliyor: eşit özgüllükteki
+	 * `:hover` kurallarını sıra belirliyor.
+	 * ------------------------------------------------------------------ */
+	.marka {
+		border-color: color-mix(in oklab, var(--primary) 55%, transparent);
+		color: var(--primary);
+	}
+
+	/*
+	  Kenarlık üzerine gelindiğinde de duruyor — nötr varyanttan bilerek
+	  farklı. Açılan daire `--primary-foreground` renginde, yani sayfa
+	  zeminine çok yakın; kenarlık da kalksaydı düğme fare üzerine gelince
+	  zeminde eriyip kaybolurdu. Ölçüldü: koyu temada ikisi neredeyse aynı
+	  renk çıkıyor.
+	*/
+	.marka.dolu {
+		background: var(--primary);
+		border-color: var(--primary);
+		color: var(--primary-foreground);
+	}
+
+	.marka .daire {
+		background: var(--primary);
+	}
+
+	.marka.dolu .daire {
+		background: var(--primary-foreground);
+	}
+
+	.marka:hover,
+	.marka:focus-visible {
+		color: var(--primary-foreground);
+	}
+
+	.marka.dolu:hover,
+	.marka.dolu:focus-visible {
+		color: var(--primary);
+	}
+
+	.marka .simge {
+		color: var(--primary);
+	}
+
+	.marka.dolu .simge {
+		color: var(--primary-foreground);
+	}
+
+	.marka:hover .simge-sol,
+	.marka:focus-visible .simge-sol,
+	.marka:hover .simge-sag,
+	.marka:focus-visible .simge-sag {
+		color: var(--primary-foreground);
+	}
+
+	.marka.dolu:hover .simge-sol,
+	.marka.dolu:focus-visible .simge-sol,
+	.marka.dolu:hover .simge-sag,
+	.marka.dolu:focus-visible .simge-sag {
+		color: var(--primary);
 	}
 
 	/*
@@ -222,7 +326,7 @@ const disOzellikler = disBaglanti
 		.akan-dugme,
 		.etiket,
 		.daire,
-		.ok {
+		.simge {
 			transition: none;
 		}
 

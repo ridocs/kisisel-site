@@ -180,14 +180,36 @@ const whatsappBaglantisi = WHATSAPP
 	  durmasına gerek yok: aynı adres iletişim kartında ve altbilgide açıkça
 	  yazıyor, yani posta istemcisi açılmayan biri onu yine kopyalayabiliyor.
 	*/}
+	{/*
+	  İki düğmede de simgeler ok DEĞİL, iki ayrı şey:
+
+	  - durağan hâlde kalem — düğmeye basınca yazacaksın;
+	  - üzerine gelince hedefin kendisi — posta kutusu ya da WhatsApp.
+
+	  Ok "bir yere gidiyorsun" diyordu, oysa burada gidilen yer belli ve
+	  söylenmeye değer. Marka simgesi yalnızca fare üzerine gelince açılıyor:
+	  durağan hâlde iki düğme de aynı dili konuşuyor, ayrışma hareketle geliyor.
+	*/}
 	<div class="dugmeler" data-belir-oge style="--sira: 3">
-		<AkanDugme href={epostaBaglantisi} agirlik="dolu">
+		<AkanDugme
+			href={epostaBaglantisi}
+			agirlik="dolu"
+			ton="marka"
+			simge="lucide:square-pen"
+			simgeUzerinde="lucide:mail"
+		>
 			{m('hizmet.kapanisEposta')}
 		</AkanDugme>
 
 		{
 			whatsappBaglantisi && (
-				<AkanDugme href={whatsappBaglantisi} disBaglanti yeniSekmeMetni={m('hero.yeniSekme')}>
+				<AkanDugme
+					href={whatsappBaglantisi}
+					simge="lucide:square-pen"
+					simgeUzerinde="whatsapp"
+					disBaglanti
+					yeniSekmeMetni={m('hero.yeniSekme')}
+				>
 					{m('hizmet.kapanisWhatsapp')}
 				</AkanDugme>
 			)
@@ -403,27 +425,6 @@ const whatsappBaglantisi = WHATSAPP
 		flex-wrap: wrap;
 		gap: 0.625rem;
 		margin-top: 1.5rem;
-	}
-
-	.birincil {
-		background: var(--color-marka-600);
-		color: #fff;
-	}
-
-	.birincil:hover {
-		background: var(--color-marka-500);
-	}
-
-	/* İkincil düğme çerçeveli: iki dolu düğme yan yana durunca hangisinin
-	   asıl eylem olduğu okunmuyordu. */
-	.ikincil {
-		border-color: var(--border);
-		color: var(--foreground);
-	}
-
-	.ikincil:hover {
-		border-color: color-mix(in oklab, var(--foreground) 35%, transparent);
-		background: color-mix(in oklab, var(--foreground) 4%, transparent);
 	}
 
 	@media (min-width: 640px) {
