@@ -26,7 +26,11 @@ export interface Surum {
 /** Günlükteki tek bir değişiklik. */
 export interface Degisiklik {
 	kimlik: string;
-	/** Commit başlığının ilk satırı — zaten Türkçe ve tam cümle yazılıyor. */
+	/**
+	 * Commit başlığının ilk satırı, Türkçe ve tam cümle. Sayfaya basılmadan
+	 * önce `gorunenBaslik()` süzgecinden geçiyor; İngilizce sayfada ayrıca
+	 * `src/lib/degisiklik-ceviri.ts` sözlüğünden geçiriliyor.
+	 */
 	baslik: string;
 	/** Bu değişiklikle EKLENEN yazıların adresleri (dosya adından gelen kimlik). */
 	yeniYazilar: string[];
@@ -170,6 +174,40 @@ export function surumBul(): Surum | null {
 	return surumOnbellek;
 }
 
+/**
+ * Commit başlığının GÖRÜNEN hâli: uzun tire (—) taşımayan sürümü.
+ *
+ * NEDEN GÖRÜNTÜLEME KATMANINDA, NEDEN GİT GEÇMİŞİNDE DEĞİL
+ *
+ * Sitenin yazım kuralı net: görünen hiçbir metinde uzun tire yok. Ama bu
+ * listenin kaynağı commit başlıkları; onlar bir kez yazıldı, gönderildi ve
+ * başka kopyalara gitti. Geçmişi yeniden yazmak tek bir noktalama işareti
+ * için her commit kimliğini değiştirirdi: altbilgideki sürüm kimliği, bu
+ * sayfadaki kayıtlar ve klonlanmış her kopya birden geçersiz olurdu. Kaynak
+ * olduğu gibi duruyor, kural basarken uygulanıyor.
+ *
+ * NEDEN KISA ÇİZGİ — NEDEN VİRGÜL, İKİ NOKTA YA DA SİLMEK DEĞİL
+ *
+ * Geçmişte uzun tirenin TEK geçişi şu başlıkta:
+ *
+ *     Sayfa başlıklarından "— Mustafa Eybek" eki kalktı
+ *
+ * Tire burada ara söz ayıracı ya da açıklama girişi değil; tırnağın içinde,
+ * kaldırılan ekin kendisinin parçası. Yani cümle tirenin kendisinden söz
+ * ediyor. Virgül ya da iki nokta koymak alıntıyı tahrif ederdi; büsbütün
+ * silmek ise eki yanlış aktarırdı, çünkü kalkan ek "Mustafa Eybek" değil
+ * tireli hâliydi. Kısa çizgi alıntıyı olduğu gibi taşıyor ve kuralı da
+ * çiğnemiyor.
+ *
+ * Tırnak dışında, ara söz ya da açıklama konumunda bir geçiş bugün yok.
+ * Olmayan bir cümle biçimi için şimdiden noktalama kuralı yazmak tahminde
+ * bulunmak olurdu; ilk gerçek örnek çıktığında bu fonksiyon o örneğe
+ * bakılarak genişletilir.
+ */
+export function gorunenBaslik(baslik: string): string {
+	return baslik.replaceAll('—', '-');
+}
+
 let gunlukOnbellek: DegisiklikGunu[] | undefined;
 
 /**
@@ -204,7 +242,7 @@ export function siteGunlugu(): DegisiklikGunu[] {
 		const [kimlik, tarih, ...baslikParcalari] = satirlar[0].split(ALAN_AYIRACI);
 		// Başlıkta ayıraç geçme ihtimali yok ama geçerse başlık kesilmesin diye
 		// kalan parçalar geri birleştiriliyor.
-		const baslik = baslikParcalari.join(ALAN_AYIRACI).trim();
+		const baslik = gorunenBaslik(baslikParcalari.join(ALAN_AYIRACI).trim());
 		if (!kimlik || !tarih || !baslik) continue;
 
 		let siteyiEtkiliyor = false;
