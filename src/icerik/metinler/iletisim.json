@@ -13,14 +13,14 @@
   },
   "en": {
     "ustBaslik": "CONTACT",
-    "baslik": "Got an idea? Let us talk",
-    "durum": "Available for work",
-    "rol": "Software developer",
-    "yaz": "Write to me",
+    "baslik": "If You Need Me",
+    "durum": "Reachable 24/7",
+    "rol": "Technical Solutions Developer",
+    "yaz": "Send an Email",
     "kopyala": "Copy email",
-    "kopyalandi": "Copied",
+    "kopyalandi": "Ready to Paste!",
     "qrAlt": "Square code containing the address of this site",
     "qrNot": "Scan it and the site opens on your phone.",
-    "serit": "I usually reply the same day"
+    "serit": "I love pitching in on all kinds of projects."
   }
 }

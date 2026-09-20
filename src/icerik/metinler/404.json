@@ -8,11 +8,11 @@
     "hayaletAlt": "Şaşkın bir hayalet çizimi"
   },
   "en": {
-    "sayfaBasligi": "Page not found",
-    "baslik": "Boo! Page missing.",
-    "metin": "The page you are looking for isn't here — it must be a ghost.",
-    "dugme": "Back to home",
-    "ikincilBag": "Browse the posts",
+    "sayfaBasligi": "Oops! Page not found.",
+    "baslik": "Whoa! This page is missing.",
+    "metin": "The page you are after is not around here. It seems to have turned into a ghost.",
+    "dugme": "Back to Home",
+    "ikincilBag": "How About a Look at My Blog?",
     "hayaletAlt": "Drawing of a puzzled ghost"
   }
 }
