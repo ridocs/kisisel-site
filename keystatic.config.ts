@@ -368,6 +368,12 @@ const iletisimSingletonu = singleton({
 		github: fields.url({ label: 'GitHub' }),
 		linkedin: fields.url({ label: 'LinkedIn' }),
 		instagram: fields.url({ label: 'Instagram' }),
+		qrIcerik: fields.text({
+			label: 'Kare kod içeriği',
+			description:
+				'İletişim kartındaki QR kodun içine ne yazılacağı. BOŞ BIRAKILIRSA sitenin adresi kodlanır — en sık istenen bu. Adres olmak zorunda değil: tel:+905334798049, mailto:…, düz metin de olur. Kod her yayında yeniden üretilir.',
+			multiline: true,
+		}),
 	},
 });
 

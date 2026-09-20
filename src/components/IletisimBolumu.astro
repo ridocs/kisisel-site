@@ -7,25 +7,28 @@ import { cevirici, dilBul, taban } from '@/i18n/ceviriler';
   Hakkımda sayfasındaki kanal listesi de kullanıyor ve iki kopya kaçınılmaz
   olarak birbirinden ayrı düşerdi. Yer tutucuların açıklaması o dosyada.
 */
-import { EPOSTA, KONUM, WHATSAPP } from '@/lib/iletisim';
+import { EPOSTA, KONUM, QR_ICERIK, WHATSAPP } from '@/lib/iletisim';
 
 const dil = dilBul(Astro.url);
 const m = cevirici(dil);
 
 /*
-  QR'ın ne işe yaradığı.
+  QR'ın ne işe yaradığı ve içeriğinin nereden geldiği.
 
-  Sitenin kendi adresi kodlanıyor: masaüstünde siteyi gösterirken karşıdaki
-  telefonuyla okutup açabiliyor.
+  İçerik PANELDEN geliyor ("İletişim bilgileri" → Kare kod içeriği). Boş
+  bırakılırsa sitenin kendi adresi kodlanıyor — en sık istenen davranış bu:
+  masaüstünde siteyi gösterirken karşıdaki telefonuyla okutup açıyor.
 
-  Adres ELLE YAZILMIYOR, `Astro.site` + `base` üzerinden türetiliyor. Elle
-  yazılmış hâli site başka bir alan adına taşındığında sessizce eski adrese
-  işaret etmeye devam ederdi — kod okunur, doğru görünür, yanlış yere gider.
+  Yedek adres ELLE YAZILMIYOR, `Astro.site` + `base` üzerinden türetiliyor.
+  Elle yazılmış hâli site başka bir alan adına taşındığında sessizce eski
+  adrese işaret etmeye devam ederdi — kod okunur, doğru görünür, yanlış yere
+  gider.
 
-  Gerçek bir kartvizit (vCard) istenirse `QR_ICERIK` bir vCard dizesine
-  çevrilebilir; gerisi aynı kalır.
+  Panelde yazılan içerik adres olmak zorunda değil: telefon, e-posta, kablosuz
+  ağ bilgisi ya da düz metin de kodlanabilir. Matris her derlemede yeniden
+  üretiliyor, yani içerik değişince kod da değişiyor.
 */
-const QR_ICERIK = new URL(`${taban}/`, Astro.site).href;
+const qrIcerik = QR_ICERIK || new URL(`${taban}/`, Astro.site).href;
 
 /*
   Matris derleme sırasında üretiliyor: tarayıcıya ne kütüphane ne de görsel
@@ -36,7 +39,7 @@ const QR_ICERIK = new URL(`${taban}/`, Astro.site).href;
   çıkarıyor ve aynı kutuda modüller 4.3 pikselden 3.6 piksele düşüp
   bulanıklaşıyordu — okunmayan ama sağlam bir kod işe yaramaz.
 */
-const qr = QRCode.create(QR_ICERIK, { errorCorrectionLevel: 'M' });
+const qr = QRCode.create(qrIcerik, { errorCorrectionLevel: 'M' });
 const boyut = qr.modules.size;
 
 /*
@@ -62,12 +65,26 @@ const SESSIZ_ALAN = 4;
 */
 const DERINLIK = 0.26;
 /*
-  Boşluk küçük: bitişik modüller birleşip tek bir kabartma kütle oluştursun.
-  Geniş boşluk her modülü ayrı bir noktaya çeviriyordu; kod hem konfeti gibi
-  görünüyor hem de koyu alan küçüldüğü için okunması zorlaşıyordu.
+  MODÜLLER BİTİŞİK — aralarında boşluk YOK.
+
+  Önceden her modül biraz küçültülüyordu (0.035 birim pay) ve aralarında ince
+  beyaz çizgiler kalıyordu. Göze hoş görünüyordu ama KOD OKUNMUYORDU: aynı
+  içerikten üretilen üç çizim jsQR ile tek tek denendi —
+
+    boşluklu (+ kabartmalı)  okunamadı
+    boşluklu, kabartmasız    okunamadı
+    bitişik                  okundu
+    bitişik + kabartmalı     okundu
+
+  Yani suçlu boşluktu, kabartma değil. Okuyucu modül ızgarasını örnekleyerek
+  buluyor; modüller birbirine değmeyince ızgara adımı kayıyor ve matris
+  çözülemiyor.
+
+  Kabartma bu yüzden olduğu gibi kaldı: bitişik hâliyle de okunuyor, üstelik
+  gövde katmanı üst yüzün arkasından taşarak derinliği veriyor.
 */
-const BOSLUK = 0.035;
-const YUZ = 1 - BOSLUK * 2;
+const BOSLUK = 0;
+const YUZ = 1;
 
 /*
   İKİ PATH, 858 DİKDÖRTGEN DEĞİL.
@@ -165,6 +182,15 @@ const qrYuzYolu = pathVerisi(0);
 						</div>
 					</div>
 
+					{/*
+					  Adres kimliğin hemen altında: ad, rol ve konumdan sonra
+					  "buradan ulaşılır" bilgisi geliyor. Düğmelerin altındayken
+					  eylemlerden sonra kalıyordu ve kimlikle bağı kopuyordu.
+					*/}
+					<p class="adres">
+						<a href={`mailto:${EPOSTA}`}>{EPOSTA}</a>
+					</p>
+
 					<div class="dugmeler">
 						<a class="dugme birincil" href={`mailto:${EPOSTA}`}>
 							<Icon name="lucide:mail" class="size-4" />
@@ -201,9 +227,6 @@ const qrYuzYolu = pathVerisi(0);
 						</button>
 					</div>
 
-					<p class="adres">
-						<a href={`mailto:${EPOSTA}`}>{EPOSTA}</a>
-					</p>
 				</div>
 
 				<div class="kart-sag">
@@ -455,7 +478,10 @@ const qrYuzYolu = pathVerisi(0);
 	}
 
 	.adres {
-		margin-top: 1rem;
+		/* Kimlikle arasında dar bir boşluk: ikisi tek bir blok gibi okunuyor.
+		   Düğmelerin altındayken 1rem'di, orada eylemlerden ayrılması
+		   gerekiyordu. */
+		margin-top: 0.75rem;
 		font-size: 0.8125rem;
 		color: oklch(0.7 0 0);
 	}
