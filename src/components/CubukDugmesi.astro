@@ -1,26 +1,52 @@
 ---
 /**
- * Gezinme çubuğundaki "İletişim" düğmesi — sıvı metal görünümü.
+ * Gezinme çubuğundaki vurgulu düğme — sıvı metal görünümü.
  *
  * Önceki sürüm React + WebGL shader ile çiziliyordu ve sitenin tarayıcıya inen
  * JavaScript'inin tamamını (≈79 KB) tek başına bu düğme oluşturuyordu. Görünüm
  * burada saf CSS ile üretiliyor: dönen konik gradyan metal akışını, üstteki
  * yumuşak parlama cam hissini veriyor. Böylece sayfada hiç JavaScript kalmıyor.
  *
- * Ayrıca artık bir bağlantı: JavaScript çalışmasa da, orta tıklama ve "yeni
- * sekmede aç" ile de çalışır — React sürümündeki <button> bunu yapamıyordu.
+ * Bir zamanlar yalnızca "İletişim" içindi, adı da oydu. Çubuktaki yeri
+ * 2026-09-20'de "Giriş Yap"a geçince ad genelleşti: çubuğun vurgulu tek
+ * düğmesi ne olursa olsun bu bileşen çiziyor.
+ *
+ * `hedef` verilirse bağlantı, verilmezse pasif bir düğme oluyor.
  */
 interface Props {
 	etiket: string;
-	hedef: string;
+	/**
+	 * Gidilecek adres. Verilmezse düğme pasif: henüz bir yere gitmiyor
+	 * ama çubuktaki yerini tutuyor.
+	 */
+	hedef?: string;
+	/**
+	 * Pasif hâlde ekran okuyucuya durumu anlatan ek not
+	 * ("yakında" gibi). Gözle görünmüyor.
+	 */
+	pasifNotu?: string;
 }
 
-const { etiket, hedef } = Astro.props;
+const { etiket, hedef, pasifNotu } = Astro.props;
 ---
 
-<a class="sivi-metal" href={hedef}>
-	<span class="sivi-metal-yazi">{etiket}</span>
-</a>
+{
+	hedef ? (
+		<a class="sivi-metal" href={hedef}>
+			<span class="sivi-metal-yazi">{etiket}</span>
+		</a>
+	) : (
+		/*
+		  Gerçekten `disabled` bir <button>: `aria-disabled` yalnızca duyurur,
+		  tıklamayı ve sekme sırasını engellemez. Hiçbir yere gitmeyen bir
+		  şeye odaklanmak, klavyeyle gezen için boşa bir durak.
+		*/
+		<button class="sivi-metal pasif" type="button" disabled>
+			<span class="sivi-metal-yazi">{etiket}</span>
+			{pasifNotu && <span class="sr-only"> ({pasifNotu})</span>}
+		</button>
+	)
+}
 
 <style>
 	/*
@@ -124,6 +150,33 @@ const { etiket, hedef } = Astro.props;
 		to {
 			transform: rotate(360deg);
 		}
+	}
+
+	/* ------------------------------------------------------------------ *
+	 * PASİF HÂL
+	 *
+	 * Düğme çubuktaki yerini tutuyor ama hiçbir yere gitmiyor. İki şey
+	 * birlikte söylüyor bunu: solukluk ve DURAN metal. Akan bir yüzey
+	 * "buraya bas" diyor; pasif düğmede akış sürseydi görsel vaat ile
+	 * davranış çelişirdi.
+	 * ------------------------------------------------------------------ */
+	.pasif {
+		/* <button> kendi çerçevesini ve yazı tipini getiriyor; <a> sürümüyle
+		   aynı görünmesi için ikisi de sıfırlanıyor. */
+		border: 0;
+		font: inherit;
+		opacity: 0.55;
+		cursor: not-allowed;
+		/* Basılı hâl taklidi yok: basılamıyor. */
+		transform: none;
+	}
+
+	.pasif::before {
+		animation: none;
+	}
+
+	.pasif:hover {
+		transform: none;
 	}
 
 	/* Hareketi azaltılmış tercihte metal duruyor; düğme yine de metalik kalıyor. */

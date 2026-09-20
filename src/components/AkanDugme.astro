@@ -168,13 +168,13 @@ const girenSimge = simgeUzerinde ?? simge;
 	.etiket {
 		position: relative;
 		z-index: 1;
-		transform: translateX(-0.75rem);
+		transform: translateX(-0.875rem);
 		transition: transform 800ms ease-out;
 	}
 
 	.akan-dugme:hover .etiket,
 	.akan-dugme:focus-visible .etiket {
-		transform: translateX(0.75rem);
+		transform: translateX(0.875rem);
 	}
 
 	.daire {
@@ -212,10 +212,19 @@ const girenSimge = simgeUzerinde ?? simge;
 		width: 1rem;
 		height: 1rem;
 		color: var(--foreground);
+		/*
+		  Yay katsayısı 1.56 değil 1.35.
+
+		  1.56 ile simge durak yerini %10 aşıyordu: 59 pikselin 6'sı fazladan
+		  yol demek. Geçişin ortasında — etiket henüz tam kaymamışken — simge
+		  ile yazı arasında 1 piksel kalıyor, kalın yazıda ikisi birbirine
+		  değmiş görünüyordu. 1.35'te aşma 2,4 piksele iniyor; yay hissi
+		  duruyor, çarpışma kalkıyor. Ölçüldü, göz kararı değil.
+		*/
 		transition:
-			left 800ms cubic-bezier(0.34, 1.56, 0.64, 1),
-			right 800ms cubic-bezier(0.34, 1.56, 0.64, 1),
-			color 800ms cubic-bezier(0.34, 1.56, 0.64, 1);
+			left 800ms cubic-bezier(0.34, 1.35, 0.64, 1),
+			right 800ms cubic-bezier(0.34, 1.35, 0.64, 1),
+			color 800ms cubic-bezier(0.34, 1.35, 0.64, 1);
 	}
 
 	.dolu .simge {
@@ -227,12 +236,12 @@ const girenSimge = simgeUzerinde ?? simge;
 	}
 
 	.simge-sag {
-		right: 1rem;
+		right: 0.875rem;
 	}
 
 	.akan-dugme:hover .simge-sol,
 	.akan-dugme:focus-visible .simge-sol {
-		left: 1rem;
+		left: 0.875rem;
 		color: var(--background);
 	}
 

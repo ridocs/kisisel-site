@@ -370,14 +370,9 @@ const yapilandirilmisVeri = JSON.stringify({
 			)
 		}
 
-		{
-			altbilgi && (
-				<Altbilgi
-					dilBagi={dilBagi === undefined ? undefined : oteki ? oteki.pathname : null}
-					sayfa={altbilgiSayfa}
-				/>
-			)
-		}
+		{/* Altbilginin dil bağlantısı kalktı; `dilBagi` artık yalnızca üst
+		    çubuğa gidiyor. */}
+		{altbilgi && <Altbilgi sayfa={altbilgiSayfa} />}
 
 		{/* Bölümler görünür alana girdikçe belirir. Bir kez göründükten sonra
 		    izleme bırakılıyor; aşağı-yukarı kaydırmada tekrar tekrar oynamıyor. */}

@@ -1,25 +1,20 @@
 ---
 import { Icon } from 'astro-icon/components';
-import { cevirici, dilBul, digerDilYolu, taban, yol } from '@/i18n/ceviriler';
+import { cevirici, dilBul, taban, yol } from '@/i18n/ceviriler';
 import { EPOSTA, KONUM, SOSYAL, TELEFON_GORUNEN, WHATSAPP } from '@/lib/iletisim';
 import { surumBul } from '@/lib/surum';
 
 const dil = dilBul(Astro.url);
 const m = cevirici(dil);
-const digerDil = dil === 'tr' ? 'en' : 'tr';
 /*
-  Dil bağlantısı düzenden geliyor; `digerDilYolu` yalnızca yedek.
+  DİL DEĞİŞTİRİCİ BURADA YOK (2026-09-20'de kaldırıldı).
 
-  O yardımcı adresi öteki dile çevirerek buluyor ve durağan sayfalarda doğru
-  çalışıyor, ama yazılarda çalışmıyor: çeviri adları farklı ve bazı yazının
-  çevirisi hiç yok. Dart yazısında altbilgideki EN bağlantısı var olmayan bir
-  adrese gidiyordu — üst çubuktakiyle aynı kusur.
-
-  `null` gelirse bağlantı hiç basılmıyor.
+  Aynı düğme üst çubukta da duruyordu; sayfa başında ve sonunda iki ayrı
+  yerde aynı işi yapıyordu. Üst çubuktaki her sayfada, kaydırırken de
+  görünür durumda — altbilgiye inmek gerekmiyor. Yeniden eklenecekse
+  ikisinden biri seçilsin, ikisi birden değil.
 */
 interface Props {
-	/** Düzen veriyor: yazılarda gerçek çeviri adresi, çevirisi yoksa null. */
-	dilBagi?: string | null;
 	/**
 	 * Altbilgi kendi ekranını alsın mı.
 	 *
@@ -34,9 +29,7 @@ interface Props {
 	sayfa?: boolean;
 }
 
-const { dilBagi, sayfa = false } = Astro.props;
-const digerDilBaglantisi =
-	dilBagi !== undefined ? dilBagi : digerDilYolu(Astro.url, digerDil);
+const { sayfa = false } = Astro.props;
 
 const baglantilar = [
 	{ etiket: m('nav.anasayfa'), yol: yol(dil, '') },
@@ -223,16 +216,6 @@ const iletisimKalemleri = [
 							<span>{KONUM[dil]}</span>
 						</li>
 					</ul>
-
-					{/* Çevirisi olmayan yazıda hiç basılmıyor: 404'e giden bir
-					    bağlantı, olmayan bağlantıdan kötü. */}
-					{digerDilBaglantisi && (
-						<div class="yan">
-							<a class="dil" href={digerDilBaglantisi} hreflang={digerDil}>
-								{digerDil.toUpperCase()}
-							</a>
-						</div>
-					)}
 				</div>
 			</div>
 		</div>
@@ -525,18 +508,9 @@ const iletisimKalemleri = [
 		translate: 3px 0;
 	}
 
-	/* Dil değiştirici, iletişim listesinin altında kendi satırında. */
-	.yan {
-		display: flex;
-		align-items: center;
-		gap: 0.375rem;
-		margin-top: 0.75rem;
-	}
-
 	/* Dokunma hedefi 40 piksel: WCAG 2.2 web için 24 istiyor, dokunmatikte
 	   bu aralık isabet hatasını belirgin azaltıyor. */
-	.simge,
-	.dil {
+	.simge {
 		display: grid;
 		place-items: center;
 		min-width: 2.5rem;
@@ -550,21 +524,12 @@ const iletisimKalemleri = [
 			color 200ms ease-out;
 	}
 
-	.dil {
-		padding-inline: 0.6rem;
-		font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-		font-size: 0.75rem;
-		font-weight: 600;
-	}
-
-	.simge:hover,
-	.dil:hover {
+	.simge:hover {
 		background: color-mix(in oklab, var(--foreground) 6%, transparent);
 		color: var(--foreground);
 	}
 
 	.simge:focus-visible,
-	.dil:focus-visible,
 	.baglantilar a:focus-visible {
 		outline: 2px solid var(--ring);
 		outline-offset: 2px;
@@ -663,7 +628,6 @@ const iletisimKalemleri = [
 		.baglantilar a,
 		.ok,
 		.simge,
-		.dil,
 		.surum {
 			transition: none;
 		}

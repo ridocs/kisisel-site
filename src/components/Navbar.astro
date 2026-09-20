@@ -1,6 +1,6 @@
 ---
 import { Icon } from 'astro-icon/components';
-import IletisimDugmesi from './IletisimDugmesi.astro';
+import CubukDugmesi from './CubukDugmesi.astro';
 import { cevirici, digerDilYolu, dilBul, taban, yol } from '@/i18n/ceviriler';
 
 const dil = dilBul(Astro.url);
@@ -39,6 +39,12 @@ const masaustuBaglantilari = [
 	{ ad: m('nav.projeler'), yol: yol(dil, dil === 'en' ? 'projects' : 'projeler') },
 	{ ad: m('nav.blog'), yol: yol(dil, 'blog') },
 	{ ad: m('nav.hakkimda'), yol: yol(dil, hakkimdaParcasi) },
+	/*
+	  İletişim 2026-09-20'de buraya girdi. Önce çubuğun sağındaki vurgulu
+	  düğmeydi; orayı "Giriş Yap" alınca iletişimin menüde bir yeri olması
+	  gerekti — yoksa üst çubuktan hiç erişilemiyordu.
+	*/
+	{ ad: m('nav.iletisim'), yol: `${yol(dil, hakkimdaParcasi)}${iletisimCapasi}` },
 ];
 
 const mobilBaglantilar = [
@@ -119,9 +125,9 @@ const bagPasifMobil =
 const eylemDugmesi =
 	'grid size-10 cursor-pointer place-items-center rounded-lg text-slate-600 transition-colors hover:bg-slate-900/5 hover:text-slate-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current md:size-9 dark:text-neutral-300 dark:hover:bg-white/10 dark:hover:text-white';
 
-// Not: İletişim düğmesinin görünümü burada değil, IletisimDugmesi.astro
-// içinde tanımlı (sıvı metal kapsül). Burada bir zamanlar duran düz düğme
-// sınıfı kullanılmadığı için kaldırıldı.
+// Not: Vurgulu düğmenin görünümü burada değil, CubukDugmesi.astro içinde
+// tanımlı (sıvı metal kapsül). Burada bir zamanlar duran düz düğme sınıfı
+// kullanılmadığı için kaldırıldı.
 ---
 
 {/*
@@ -221,13 +227,15 @@ const eylemDugmesi =
 					</a>
 					)}
 
-					{/* Sıvı metal düğme; dar ekranda gizlenip yerini mobil menüdeki
-					    düz bağlantıya bırakıyor. */}
+					{/*
+					  Sıvı metal düğme; dar ekranda gizlenip yerini mobil menüdeki
+					  karşılığına bırakıyor.
+
+					  `hedef` YOK: giriş henüz kurulmadı, düğme pasif duruyor.
+					  Adres belli olunca tek yapılacak şey `hedef` vermek.
+					*/}
 					<div class="hidden md:block">
-						<IletisimDugmesi
-							etiket={m('nav.iletisim')}
-							hedef={`${yol(dil, hakkimdaParcasi)}${iletisimCapasi}`}
-						/>
+						<CubukDugmesi etiket={m('nav.girisYap')} pasifNotu={m('nav.yakinda')} />
 					</div>
 
 					<button
@@ -268,13 +276,19 @@ const eylemDugmesi =
 						))
 					}
 					<li>
-						{/* Masaüstündeki "İletişim" düğmesi dar ekranda gizlendiği için buraya taşınıyor. */}
-						<a
-							href={`${yol(dil, hakkimdaParcasi)}${iletisimCapasi}`}
-							class="mt-2 grid h-11 place-items-center rounded-lg bg-slate-900 text-[15px] leading-5 font-medium text-white transition-colors hover:bg-slate-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current dark:bg-white dark:text-neutral-900 dark:hover:bg-white/85"
+						{/*
+						  Masaüstündeki vurgulu düğmenin dar ekran karşılığı. O da pasif:
+						  iki yerde aynı düğmenin farklı davranması, hangisinin doğru
+						  olduğunu belirsizleştirirdi.
+						*/}
+						<button
+							type="button"
+							disabled
+							class="mt-2 grid h-11 w-full cursor-not-allowed place-items-center rounded-lg bg-slate-900 text-[15px] leading-5 font-medium text-white opacity-55 dark:bg-white dark:text-neutral-900"
 						>
-							{m('nav.iletisim')}
-						</a>
+							{m('nav.girisYap')}
+							<span class="sr-only"> ({m('nav.yakinda')})</span>
+						</button>
 					</li>
 				</ul>
 			</div>
