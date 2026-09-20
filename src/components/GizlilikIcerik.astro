@@ -2,6 +2,7 @@
 import { Icon } from 'astro-icon/components';
 import { cevirici, dilBul, taban } from '@/i18n/ceviriler';
 import { EPOSTA } from '@/lib/iletisim';
+import AkanDugme from './AkanDugme.astro';
 
 /*
   GİZLİLİK VE ÇEREZ POLİTİKASININ GÖVDESİ — iki dil de bu bileşeni kullanıyor.
@@ -219,23 +220,40 @@ const epostaBaglantisi = `mailto:${EPOSTA}`;
 </section>
 
 {/* 8) Kapanış. Hizmetler sayfasındaki kapanışla aynı kalıp: bir başlık, bir
-    cümle, bir düğme ve adresin yazılı hâli. */}
+    cümle ve bir düğme. */}
 <section class="bolum kapanis" data-belir data-parcali>
 	<p class="ust-baslik" data-belir-oge style="--sira: 0">{m('gizlilik.kapanisUstBaslik')}</p>
 	<h2 class="baslik" data-belir-oge style="--sira: 1">{m('gizlilik.kapanisBaslik')}</h2>
 	<p class="bolum-metin" data-belir-oge style="--sira: 2">{m('gizlilik.kapanisMetin')}</p>
 
-	<div class="dugmeler" data-belir-oge style="--sira: 3">
-		<a class="dugme birincil" href={epostaBaglantisi}>
-			<Icon name="lucide:mail" class="size-4" aria-hidden="true" />
-			<span>{m('gizlilik.kapanisEposta')}</span>
-		</a>
-	</div>
+	{/*
+	  Hizmetler kapanışındaki düğmenin aynısı: üzerine gelince ortadaki daire
+	  büyüyüp düğmeyi dolduruyor, yazı kayıyor, simgeler yer değiştiriyor.
+	  Burada önce düz bir kapsül vardı; iki sayfanın kapanışı aynı kalıbı
+	  kullanırken düğmelerinin farklı davranması tutarsızdı.
 
-	{/* Adres yazılı da duruyor: düğmeye basamayan ya da başka bir posta
-	    istemcisi kullanan biri kopyalayabilmeli. Hak talebinin gideceği yer
-	    burası, çalışmayan tek bir bağlantıya bırakılamaz. */}
-	<p class="adres" data-belir-oge style="--sira: 4">{EPOSTA}</p>
+	  Simgeler ok DEĞİL: durağan hâlde kalem (basınca yazacaksın), üzerine
+	  gelince posta kutusu (nereye gideceği). Hizmetler sayfasıyla birebir
+	  aynı dil.
+
+	  `dolu` + `marka`: bu sayfadaki TEK eylem bu. Vurgu rengi sayfanın geri
+	  kalanıyla zaten aynı (anahtar adları ve hak sıraları `--color-marka-500`).
+
+	  Adresin yazılı hâli ARTIK YOK. Düğmenin altında ikinci kez durmasına
+	  gerek yok: aynı adres iletişim kartında ve altbilgide açıkça yazıyor,
+	  yani posta istemcisi açılmayan biri onu yine kopyalayabiliyor.
+	*/}
+	<div class="dugmeler" data-belir-oge style="--sira: 3">
+		<AkanDugme
+			href={epostaBaglantisi}
+			agirlik="dolu"
+			ton="marka"
+			simge="lucide:square-pen"
+			simgeUzerinde="lucide:mail"
+		>
+			{m('gizlilik.kapanisEposta')}
+		</AkanDugme>
+	</div>
 </section>
 
 <style>
@@ -326,8 +344,7 @@ const epostaBaglantisi = `mailto:${EPOSTA}`;
 	.kalem-metin,
 	.hak-metin,
 	.ozet-liste li,
-	.kunye dd,
-	.adres {
+	.kunye dd {
 		overflow-wrap: break-word;
 	}
 
@@ -512,44 +529,10 @@ const epostaBaglantisi = `mailto:${EPOSTA}`;
 		margin-top: 1.5rem;
 	}
 
-	.dugme {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.5rem;
-		padding: 0.625rem 1.125rem;
-		border-radius: 9999px;
-		font-size: 0.9375rem;
-		font-weight: 600;
-		text-decoration: none;
-		border: 1px solid transparent;
-		transition:
-			background-color 220ms ease-out,
-			translate 260ms cubic-bezier(0.22, 1, 0.36, 1);
-	}
-
-	.dugme:focus-visible {
-		outline: 2px solid var(--ring);
-		outline-offset: 2px;
-	}
-
-	.dugme:hover {
-		translate: 0 -2px;
-	}
-
-	.birincil {
-		background: var(--color-marka-600);
-		color: #fff;
-	}
-
-	.birincil:hover {
-		background: var(--color-marka-500);
-	}
-
-	.adres {
-		margin-top: 1rem;
-		font-size: 0.8125rem;
-		color: var(--muted-foreground);
-	}
+	/* `.dugme`, `.birincil` ve `.adres` kuralları kalktı: kapanıştaki düz
+	   kapsül yerini `AkanDugme` bileşenine bıraktı, altındaki yazılı adres
+	   satırı da silindi. Kendi stilini taşıyan bir bileşen burada ölü CSS
+	   bırakıyordu. */
 
 	@media (min-width: 640px) {
 		.kalemler {
@@ -563,13 +546,7 @@ const epostaBaglantisi = `mailto:${EPOSTA}`;
 		}
 	}
 
-	@media (prefers-reduced-motion: reduce) {
-		.dugme {
-			transition: none;
-		}
-
-		.dugme:hover {
-			translate: none;
-		}
-	}
+	/* Hareketi azaltılmış tercih artık burada ele alınmıyor: kapanıştaki tek
+	   hareketli öğe `AkanDugme` ve o kendi `prefers-reduced-motion` kuralını
+	   taşıyor. */
 </style>
