@@ -12,7 +12,8 @@
     "yeniYazi": "Yeni yazı",
     "dilNotu": "Notlar sitenin kendi geçmişinden, yazıldıkları hâliyle alınıyor.",
     "bosBaslik": "Günlük bu derlemede okunamadı",
-    "bosMetin": "Değişiklik listesi sitenin geçmişinden üretiliyor ve bu derlemede o geçmişe ulaşılamadı. Sayfanın geri kalanı yerinde; liste bir sonraki yayında geri gelir."
+    "bosMetin": "Değişiklik listesi sitenin geçmişinden üretiliyor ve bu derlemede o geçmişe ulaşılamadı. Sayfanın geri kalanı yerinde; liste bir sonraki yayında geri gelir.",
+    "agacBaslik": "Tarihe göre"
   },
   "en": {
     "sayfaBasligi": "What's Changed — Mustafa Eybek",
@@ -27,6 +28,7 @@
     "yeniYazi": "New post",
     "dilNotu": "Notes come straight from the site's own history, in the author's own words — so they are written in Turkish.",
     "bosBaslik": "The log could not be read for this build",
-    "bosMetin": "The list is generated from the site's history, and that history was not reachable during this build. The rest of the page is intact; the list comes back with the next release."
+    "bosMetin": "The list is generated from the site's history, and that history was not reachable during this build. The rest of the page is intact; the list comes back with the next release.",
+    "agacBaslik": "By date"
   }
 }

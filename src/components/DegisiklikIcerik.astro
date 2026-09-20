@@ -52,6 +52,74 @@ function gunAdi(tarih: string): string {
 	return new Date(`${tarih}T00:00:00`).toLocaleDateString(yerel, { weekday: 'long' });
 }
 
+/*
+  TARİH AĞACI — soldaki gezinme.
+
+  Günler yıla ve aya göre kümeleniyor: liste uzadıkça "eylülde ne oldu"
+  sorusunun cevabı aşağı kaydırmadan bulunabilsin. Kayıt sayısı her ayın
+  yanında duruyor; yoğun bir ayı seyrek bir aydan ayırt etmek için tek
+  başına yeterli.
+
+  Ay anahtarı `2026-09` biçiminde: sıralama metin karşılaştırmasıyla doğru
+  çalışıyor, ayrıca ay adı diле göre buradan üretiliyor.
+*/
+interface AgacAyi {
+	anahtar: string;
+	ad: string;
+	gunler: { tarih: string; sayi: number; gun: string }[];
+	sayi: number;
+}
+
+interface AgacYili {
+	yil: string;
+	aylar: AgacAyi[];
+	sayi: number;
+}
+
+/** Bir güne çapa kimliği. `id` rakamla başlayamayacağı için önek var. */
+function gunCapa(tarih: string): string {
+	return `gun-${tarih}`;
+}
+
+function agacKur(): AgacYili[] {
+	const yillar: AgacYili[] = [];
+
+	for (const gun of gunler) {
+		const [yil, ay] = gun.tarih.split('-');
+		const ayAnahtari = `${yil}-${ay}`;
+
+		let yilKaydi = yillar.find((y) => y.yil === yil);
+		if (!yilKaydi) {
+			yilKaydi = { yil, aylar: [], sayi: 0 };
+			yillar.push(yilKaydi);
+		}
+
+		let ayKaydi = yilKaydi.aylar.find((a) => a.anahtar === ayAnahtari);
+		if (!ayKaydi) {
+			ayKaydi = {
+				anahtar: ayAnahtari,
+				ad: new Date(`${gun.tarih}T00:00:00`).toLocaleDateString(yerel, { month: 'long' }),
+				gunler: [],
+				sayi: 0,
+			};
+			yilKaydi.aylar.push(ayKaydi);
+		}
+
+		const gunSayisi = gun.kayitlar.length;
+		ayKaydi.gunler.push({
+			tarih: gun.tarih,
+			sayi: gunSayisi,
+			gun: new Date(`${gun.tarih}T00:00:00`).toLocaleDateString(yerel, { day: 'numeric' }),
+		});
+		ayKaydi.sayi += gunSayisi;
+		yilKaydi.sayi += gunSayisi;
+	}
+
+	return yillar;
+}
+
+const agac = agacKur();
+
 function uzunTarih(tarih: string): string {
 	return new Date(`${tarih}T00:00:00`).toLocaleDateString(yerel, {
 		day: 'numeric',
@@ -108,11 +176,69 @@ function uzunTarih(tarih: string): string {
 	<p class="not" data-belir-oge style="--sira: 6">{m('degisiklik.dilNotu')}</p>
 </section>
 
+{/*
+  2) Günler, solunda tarih ağacıyla.
+
+  Ağaç yalnızca gezinme: her bağlantı aynı sayfadaki bir güne çapa atıyor.
+  Betik YOK — açılıp kapanmayı `<details>`, yumuşak kaydırmayı CSS yapıyor.
+
+  Geniş ekranda ağaç solda sabit duruyor (`position: sticky`), dar ekranda
+  içeriğin üstünde kapalı bir açılır liste oluyor: telefonda yirmi günlük bir
+  listeyi baştan açmak, asıl içeriği ekranın çok aşağısına itiyordu.
+*/}
+<div class="gunluk-duzen">
+	{
+		agac.length > 0 && (
+			<nav class="agac" aria-label={m('degisiklik.agacBaslik')}>
+				<p class="agac-baslik">{m('degisiklik.agacBaslik')}</p>
+
+				<div class="agac-govde">
+					{agac.map((yil, yilSirasi) => (
+						<section class="agac-yil">
+							<p class="yil-baslik">
+								<span>{yil.yil}</span>
+								<span class="sayi">{yil.sayi}</span>
+							</p>
+
+							{yil.aylar.map((ay, aySirasi) => (
+								/*
+								  En yeni ay açık geliyor, öbürleri kapalı: ziyaretçi
+								  çoğunlukla son değişikliklere bakıyor ve hepsi açık
+								  olduğunda ağaç sayfadan uzun oluyordu.
+								*/
+								<details class="agac-ay" open={yilSirasi === 0 && aySirasi === 0}>
+									<summary>
+										<Icon name="lucide:chevron-right" class="ay-ok" aria-hidden="true" />
+										<span class="ay-ad">{ay.ad}</span>
+										<span class="sayi">{ay.sayi}</span>
+									</summary>
+
+									<ul class="ay-gunler">
+										{ay.gunler.map((gun) => (
+											<li>
+												<a href={`#${gunCapa(gun.tarih)}`}>
+													<span class="gun-sayi">{gun.gun}</span>
+													<span class="gun-ad">{gunAdi(gun.tarih)}</span>
+													<span class="sayi">{gun.sayi}</span>
+												</a>
+											</li>
+										))}
+									</ul>
+								</details>
+							))}
+						</section>
+					))}
+				</div>
+			</nav>
+		)
+	}
+
+	<div class="gunluk-akis">
 {
 	/*
-	  2) Günler. git okunamadıysa liste boş kalıyor ve sayfa bunu kendi
-	  söylüyor. Sessizce boş bir sayfa göstermek, ziyaretçiye "hiç değişiklik
-	  olmadı" demekle aynı kapıya çıkardı — oysa olan şey başka.
+	  git okunamadıysa liste boş kalıyor ve sayfa bunu kendi söylüyor.
+	  Sessizce boş bir sayfa göstermek, ziyaretçiye "hiç değişiklik olmadı"
+	  demekle aynı kapıya çıkardı — oysa olan şey başka.
 	*/
 	gunler.length === 0 ? (
 		<section class="bolum" data-belir data-parcali>
@@ -125,7 +251,7 @@ function uzunTarih(tarih: string): string {
 		</section>
 	) : (
 		gunler.map((gun) => (
-			<section class="bolum" data-belir data-parcali>
+			<section class="bolum" id={gunCapa(gun.tarih)} data-belir data-parcali>
 				<p class="ust-baslik" data-belir-oge style="--sira: 0">
 					{gunAdi(gun.tarih)}
 				</p>
@@ -162,8 +288,203 @@ function uzunTarih(tarih: string): string {
 		))
 	)
 }
+	</div>
+</div>
 
 <style>
+	/* ------------------------------------------------------------------ *
+	 * Tarih ağacı ve iki sütunlu yerleşim
+	 * ------------------------------------------------------------------ */
+
+	/*
+	  Dar ekranda tek sütun: ağaç üstte, günler altında. 1024 pikselden
+	  itibaren ağaç sola geçiyor. Eşik burada, çünkü ağaç 15rem'lik bir sütun
+	  istiyor ve daha dar ekranda içeriğe kalan genişlik okunaklı satır
+	  uzunluğunun altına düşüyordu.
+	*/
+	.gunluk-duzen {
+		display: grid;
+		gap: 1.5rem;
+	}
+
+	@media (min-width: 1024px) {
+		.gunluk-duzen {
+			grid-template-columns: 15rem minmax(0, 1fr);
+			gap: 3rem;
+			align-items: start;
+		}
+	}
+
+	.agac {
+		font-size: 0.875rem;
+	}
+
+	@media (min-width: 1024px) {
+		/*
+		  Sayfa boyunca yanda duruyor. Üstteki boşluk gezinme çubuğunun
+		  yüksekliği kadar; olmasaydı ağacın başlığı çubuğun altında kalırdı.
+		*/
+		.agac {
+			position: sticky;
+			top: calc(var(--cubuk-yuksekligi, 4rem) + 1.5rem);
+			/* Ağaç ekrandan uzunsa kendi içinde kayıyor; sayfayı uzatmıyor. */
+			max-height: calc(100svh - var(--cubuk-yuksekligi, 4rem) - 3rem);
+			overflow-y: auto;
+			padding-inline-end: 0.5rem;
+		}
+	}
+
+	.agac-baslik {
+		font-size: 0.6875rem;
+		font-weight: 700;
+		letter-spacing: 0.16em;
+		text-transform: uppercase;
+		color: var(--muted-foreground);
+		margin-bottom: 0.75rem;
+	}
+
+	/* Dar ekranda ağaç bir kutunun içinde: içerikten görsel olarak ayrılıyor. */
+	@media (max-width: 1023px) {
+		.agac {
+			border: 1px solid var(--border);
+			border-radius: 0.75rem;
+			padding: 0.875rem 1rem;
+		}
+	}
+
+	.agac-yil + .agac-yil {
+		margin-top: 1rem;
+		padding-top: 0.75rem;
+		border-top: 1px solid var(--border);
+	}
+
+	.yil-baslik {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.5rem;
+		font-weight: 700;
+		color: var(--foreground);
+		margin-bottom: 0.35rem;
+	}
+
+	/* Kayıt sayısı: yoğun ayı seyrek aydan ayırmak için tek başına yeterli. */
+	.sayi {
+		font-size: 0.6875rem;
+		font-variant-numeric: tabular-nums;
+		color: var(--muted-foreground);
+		background: color-mix(in oklab, var(--foreground) 7%, transparent);
+		border-radius: 9999px;
+		padding: 0.05rem 0.4rem;
+		flex: none;
+	}
+
+	.agac-ay > summary {
+		display: flex;
+		align-items: center;
+		gap: 0.4rem;
+		/* Dokunma hedefi: satırlar birbirine değmesin. */
+		min-height: 2rem;
+		padding-inline: 0.15rem;
+		border-radius: 0.4rem;
+		cursor: pointer;
+		color: var(--muted-foreground);
+		list-style: none;
+	}
+
+	/* Safari kendi üçgenini basıyor; ok simgesi zaten var. */
+	.agac-ay > summary::-webkit-details-marker {
+		display: none;
+	}
+
+	.agac-ay > summary:hover {
+		color: var(--foreground);
+		background: color-mix(in oklab, var(--foreground) 5%, transparent);
+	}
+
+	.agac-ay > summary:focus-visible {
+		outline: 2px solid var(--ring);
+		outline-offset: 2px;
+	}
+
+	.ay-ad {
+		flex: 1;
+		text-transform: capitalize;
+	}
+
+	.ay-ok {
+		width: 0.875rem;
+		height: 0.875rem;
+		flex: none;
+		transition: rotate 200ms ease-out;
+	}
+
+	.agac-ay[open] > summary .ay-ok {
+		rotate: 90deg;
+	}
+
+	.ay-gunler {
+		list-style: none;
+		padding: 0;
+		margin: 0.15rem 0 0.5rem;
+		/* Ay adının altında hizalı bir sütun; soldaki çizgi ağaç dalı gibi. */
+		margin-inline-start: 0.6rem;
+		padding-inline-start: 0.7rem;
+		border-inline-start: 1px solid var(--border);
+	}
+
+	.ay-gunler a {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		min-height: 2rem;
+		padding-inline: 0.35rem;
+		border-radius: 0.4rem;
+		color: var(--muted-foreground);
+		text-decoration: none;
+		transition: color 150ms ease-out, background-color 150ms ease-out;
+	}
+
+	.ay-gunler a:hover {
+		color: var(--foreground);
+		background: color-mix(in oklab, var(--foreground) 5%, transparent);
+	}
+
+	.ay-gunler a:focus-visible {
+		outline: 2px solid var(--ring);
+		outline-offset: 2px;
+	}
+
+	.gun-sayi {
+		font-variant-numeric: tabular-nums;
+		font-weight: 600;
+		color: var(--foreground);
+		min-width: 1.4rem;
+	}
+
+	.gun-ad {
+		flex: 1;
+		text-transform: capitalize;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	/*
+	  Çapaya gidildiğinde gün başlığı gezinme çubuğunun altında kalmasın.
+	  `scroll-margin-top` sayfa kaydırmasını o kadar aşağıda durduruyor.
+	*/
+	.gunluk-akis .bolum {
+		scroll-margin-top: calc(var(--cubuk-yuksekligi, 4rem) + 1rem);
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.ay-ok,
+		.ay-gunler a {
+			transition: none;
+		}
+	}
+
 	/* Bölüm ölçüleri Gizlilik ve Hizmetler sayfalarıyla aynı: üç sayfa aynı
 	   ailede, farklı bir dikey ritim sayfayı yabancılaştırırdı. */
 	.bolum {
