@@ -41,7 +41,7 @@ const dakika = Math.max(1, Math.round(kelime / 200));
 ---
 
 <BaseLayout
-	title={post.data.sayfaBasligi?.trim() || `${post.data.title} — Mustafa Eybek`}
+	title={post.data.sayfaBasligi?.trim() || post.data.title}
 	description={post.data.description}
 	dilBagi={post.data.ceviri ? `${taban}/en/blog/${post.data.ceviri}/` : null}
 	makale={{
