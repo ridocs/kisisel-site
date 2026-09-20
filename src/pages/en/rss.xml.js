@@ -21,7 +21,7 @@ export async function GET(context) {
 	).sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
 
 	return rss({
-		title: 'Mustafa Eybek — Blog',
+		title: 'Mustafa Eybek Blog',
 		description: 'Posts from my personal blog.',
 		site: new URL(taban + '/', context.site),
 		items: yazilar.map((yazi) => ({

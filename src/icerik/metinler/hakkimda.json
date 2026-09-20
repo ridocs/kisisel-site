@@ -50,7 +50,7 @@
     "ilkeBaslik": "Three things I hold on to",
     "ilkeMetin": "Habits, not claims. This site was built on the same three rules.",
     "ilke1Baslik": "The simplest solution first",
-    "ilke1Metin": "I write the least code that solves the problem. If a library is not genuinely needed, it does not go in — no framework code is shipped to the browser on this page.",
+    "ilke1Metin": "I write the least code that solves the problem. If a library is not genuinely needed, it does not go in. No framework code is shipped to the browser on this page.",
     "ilke2Baslik": "Accessibility is not bolted on",
     "ilke2Metin": "Keyboard navigation, contrast and motion preferences are part of the design. An interface patched afterwards never quite settles.",
     "ilke3Baslik": "No “it works” without measuring",

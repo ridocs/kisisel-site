@@ -36,11 +36,11 @@
   },
   "en": {
     "sayfaBasligi": "Services: web development and infrastructure",
-    "aciklama": "The work I take on: web application development, interface implementation, infrastructure and deployment, automation — clearly scoped work.",
+    "aciklama": "The work I take on: web application development, interface implementation, infrastructure and deployment, automation. All of it clearly scoped work.",
     "ustBaslik": "SERVICES",
     "baslik": "The kind of work I take on",
-    "giris": "I build web applications, touching every end of the work — from the interface to the database, from deployment to automation.",
-    "metin": "I prefer work with a clearly drawn scope. The four headings below are things I build with the same tools this site runs on — there is no point where one piece has to be handed to someone else.",
+    "giris": "I build web applications, touching every end of the work: from the interface to the database, from deployment to automation.",
+    "metin": "I prefer work with a clearly drawn scope. The four headings below are things I build with the same tools this site runs on. There is no point where one piece has to be handed to someone else.",
     "kalemUstBaslik": "WHAT I OFFER",
     "kalemBaslik": "Four headings",
     "kapsam": "SCOPE",
@@ -65,7 +65,7 @@
     "adim4Metin": "The working version goes live, and the setup and maintenance steps are handed over in writing. The code is yours.",
     "kapanisUstBaslik": "GETTING STARTED",
     "kapanisBaslik": "Tell me what you have in mind",
-    "kapanisMetin": "A few sentences are enough. I will look and tell you plainly whether it is work I can do — and say so if it is not.",
+    "kapanisMetin": "A few sentences are enough. I will look and tell you plainly whether it is work I can do, and say so if it is not.",
     "kapanisEposta": "Send an email",
     "kapanisWhatsapp": "Message on WhatsApp"
   }

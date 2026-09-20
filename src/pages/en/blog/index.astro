@@ -23,13 +23,22 @@ const posts = (await getCollection('blog', ({ data }) => !data.draft && data.dil
 	>
 	</div>
 
-	<ul class="blog-izgara">
-		{posts.map((post) => (
-			<li>
-				<YaziKarti yazi={post} />
-			</li>
-		))}
-	</ul>
+	{
+		posts.length === 0 ? (
+			/* Dürüst boş durum: uydurma bir liste göstermektense sayfanın neden
+			   boş olduğunu söylemek doğru. Ana sayfadaki Son yazılar bölümü de
+			   aynı metni kullanıyor: iki yüzey aynı cümleyi kursun. */
+			<p class="bos">{m('yazi.bos')}</p>
+		) : (
+			<ul class="blog-izgara">
+				{posts.map((post) => (
+					<li>
+						<YaziKarti yazi={post} />
+					</li>
+				))}
+			</ul>
+		)
+	}
 
 	<style>
 		/* Ana sayfadaki Son yazılar ile aynı ızgara: iki yerde farklı bir kart
@@ -41,6 +50,16 @@ const posts = (await getCollection('blog', ({ data }) => !data.draft && data.dil
 			display: grid;
 			gap: 1rem;
 			grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr));
+		}
+
+		/* Boş durum kutusu: ana sayfadaki Son yazılar bölümündekiyle aynı
+		   kesik çerçeve, aynı ölçü. */
+		.bos {
+			margin-top: 2rem;
+			padding: 1.5rem;
+			border: 1px dashed var(--border);
+			border-radius: 1rem;
+			color: var(--muted-foreground);
 		}
 	</style>
 </BaseLayout>
