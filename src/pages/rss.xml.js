@@ -21,7 +21,7 @@ export async function GET(context) {
 	).sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
 
 	return rss({
-		title: 'Mustafa Eybek — Blog',
+		title: 'Mustafa Eybek Blog',
 		description: 'Kişisel blog yazıları.',
 		// Kanalın kendi bağlantısı da alt dizini göstermeli; context.site
 		// yalnızca alan adının kökünü verir.
