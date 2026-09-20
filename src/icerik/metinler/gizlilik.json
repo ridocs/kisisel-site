@@ -1,7 +1,7 @@
 {
   "tr": {
-    "sayfaBasligi": "Gizlilik ve Çerez Politikası — Mustafa Eybek",
-    "aciklama": "Bu site çerez kullanmıyor, izleme betiği çalıştırmıyor. Hangi veri neden işleniyor, ne kadar saklanıyor ve KVKK kapsamındaki haklarını nasıl kullanırsın — sade bir dille.",
+    "sayfaBasligi": "Gizlilik ve Çerez Politikası",
+    "aciklama": "Bu site çerez kullanmıyor, izleme betiği çalıştırmıyor.",
     "ustBaslik": "GİZLİLİK",
     "baslik": "Gizlilik ve Çerez Politikası",
     "giris": "Bu sayfa, siteyi açtığında hangi verinin nereye gittiğini anlatıyor. Kısa, çünkü anlatılacak çok şey yok.",
@@ -65,7 +65,7 @@
     "kapanisEposta": "E-posta gönder"
   },
   "en": {
-    "sayfaBasligi": "Privacy and Cookie Policy — Mustafa Eybek",
+    "sayfaBasligi": "Privacy and Cookie Policy",
     "aciklama": "This site sets no cookies and runs no tracking scripts. What data is processed and why, how long it is kept, and how to exercise your rights — in plain language.",
     "ustBaslik": "PRIVACY",
     "baslik": "Privacy and Cookie Policy",
