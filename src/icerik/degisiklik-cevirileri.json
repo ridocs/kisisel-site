@@ -1,0 +1,496 @@
+{
+  "kayitlar": [
+    {
+      "tr": "Astro + Tailwind ile kişisel site ve blog iskeletini kur",
+      "en": "Set up the personal site and blog skeleton with Astro and Tailwind"
+    },
+    {
+      "tr": "Profesyonel navbar bileşeni ekle",
+      "en": "Add a proper navbar component"
+    },
+    {
+      "tr": "Navbar'ı kaydırmaya duyarlı yüzen kapsüle dönüştür",
+      "en": "Turn the navbar into a floating capsule that responds to scrolling"
+    },
+    {
+      "tr": "Navbar'ı bir kademe genişlet",
+      "en": "Widen the navbar by one step"
+    },
+    {
+      "tr": "Navbar tasarımını sertleştir ve bir kademe daha genişlet",
+      "en": "Sharpen the navbar design and widen it one more step"
+    },
+    {
+      "tr": "Menüye yatay gooey hover göstergesi ekle",
+      "en": "Add a gooey horizontal hover indicator to the menu"
+    },
+    {
+      "tr": "Gezinme çubuğunu verilen tasarım ölçülerine göre yeniden kur",
+      "en": "Rebuild the navigation bar to the supplied design measurements"
+    },
+    {
+      "tr": "Gezinme çubuğunu UI/UX kurallarına göre yeniden tasarla",
+      "en": "Redesign the navigation bar along UI/UX guidelines"
+    },
+    {
+      "tr": "Ana sayfa hero'sunu React adacığı olarak değiştir",
+      "en": "Rework the home page hero as a React island"
+    },
+    {
+      "tr": "Hero'ya dil ve DevOps logolarını ekle, gezinme vurgusunu nötrle",
+      "en": "Add language and DevOps logos to the hero, neutralise the navigation highlight"
+    },
+    {
+      "tr": "Logo kartlarını küçült, yazılı logoları simge varyantına çevir",
+      "en": "Shrink the logo cards, switch wordmarks to their icon variants"
+    },
+    {
+      "tr": "Logolara ad balonu ekle, kaçma etkisini güçlendir",
+      "en": "Add name bubbles to the logos, strengthen the repel effect"
+    },
+    {
+      "tr": "Hero'ya ikinci düğme ekle ve tanıtım metnini güncelle",
+      "en": "Add a second button to the hero and update the intro copy"
+    },
+    {
+      "tr": "Logo kartlarını koyu temaya uyarla, gezinme vurgusunu koyulaştır",
+      "en": "Adapt the logo cards to the dark theme, darken the navigation highlight"
+    },
+    {
+      "tr": "İletişim düğmesini sıvı metal tasarımına geçir, başlığa parıltı ekle",
+      "en": "Give the contact button a liquid metal finish, add a shimmer to the heading"
+    },
+    {
+      "tr": "Düğme renklerini düzelt, çubuğu görünür kıl, kaçma hesabını hızlandır",
+      "en": "Fix the button colours, make the bar visible, speed up the repel calculation"
+    },
+    {
+      "tr": "Ekran genişliğine göre ölçekle, düğme gölgesini kaldır",
+      "en": "Scale with the viewport width, drop the button shadow"
+    },
+    {
+      "tr": "Siteyi Türkçe ve İngilizce olarak iki dilli yap",
+      "en": "Make the site bilingual: Turkish and English"
+    },
+    {
+      "tr": "Gezinme vurgusunu opak yap, çeviri sonrası hizayı düzelt",
+      "en": "Make the navigation highlight opaque, fix the alignment after translation"
+    },
+    {
+      "tr": "Hero'nun ardına tanıtım bölümü ekle",
+      "en": "Add an intro section after the hero"
+    },
+    {
+      "tr": "Tanıtım görselinin maskesini iki dikdörtgen birleşimine çevir",
+      "en": "Rebuild the intro image mask as the union of two rectangles"
+    },
+    {
+      "tr": "Maske köşelerini yuvarlat, mobil menüyü düzelt, mobilde logo sayısını artır",
+      "en": "Round the mask corners, fix the mobile menu, show more logos on mobile"
+    },
+    {
+      "tr": "Mobil menüye zemin ver, logoları merkeze yaklaştır",
+      "en": "Give the mobile menu a background, pull the logos towards the centre"
+    },
+    {
+      "tr": "Mobil logo dağılımını seyrelt, bölümlere belirme efekti ve hero'ya renk ekle",
+      "en": "Thin out the logo spread on mobile, fade the sections in, add colour to the hero"
+    },
+    {
+      "tr": "Mobilde içeriğin gizli kalmasını düzelt, yükü azalt, görseli küçült",
+      "en": "Fix content staying hidden on mobile, cut the payload, shrink the image"
+    },
+    {
+      "tr": "Sayfa sayfa kaydırma ve sıfır JavaScript",
+      "en": "Section-by-section scrolling, with zero JavaScript"
+    },
+    {
+      "tr": "Alt dizin altında yayın için base ayarı",
+      "en": "Set the base path for publishing under a subdirectory"
+    },
+    {
+      "tr": "Bağlantılara sondaki eğik çizgi",
+      "en": "Trailing slashes on links"
+    },
+    {
+      "tr": "Logo giriş animasyonunu kısalt",
+      "en": "Shorten the logo entrance animation"
+    },
+    {
+      "tr": "Mobil (iOS Safari) takılmasının kaynağı: GPU maliyeti",
+      "en": "The source of the mobile (iOS Safari) stutter: GPU cost"
+    },
+    {
+      "tr": "İkon hareketi, bölgeli arka plan, dokunmatikte sayfa sayfa kaydırma",
+      "en": "Icon motion, a zoned background, section-by-section scrolling on touch"
+    },
+    {
+      "tr": "Bölüm geçişi yavaşlatıldı; menü açıkken simgeler tepki vermiyor",
+      "en": "Slower section transitions; icons no longer react while the menu is open"
+    },
+    {
+      "tr": "Bölüm varışına yumuşak giriş animasyonu",
+      "en": "A soft entrance animation as each section arrives"
+    },
+    {
+      "tr": "Giriş animasyonundan dolgu kipini kaldır",
+      "en": "Drop the fill mode from the entrance animation"
+    },
+    {
+      "tr": "Hakkımda bölümünde görsel ve metin sırayla beliriyor",
+      "en": "Image and text now appear one after the other in the About section"
+    },
+    {
+      "tr": "Dokunmatikte belirme animasyonunu yavaşlat",
+      "en": "Slow the fade-in animation down on touch devices"
+    },
+    {
+      "tr": "Dokunmatikte kayar geçiş; Hakkımda animasyonu daha yavaş",
+      "en": "A sliding transition on touch; a slower About animation"
+    },
+    {
+      "tr": "404 sayfası: hayaletli tasarım, Astro ve saf CSS ile",
+      "en": "404 page: a ghost design, built with Astro and plain CSS"
+    },
+    {
+      "tr": "Hero düzeni, zaman çizelgesi, 404 iyileştirmeleri ve modern kaydırma çubuğu",
+      "en": "Hero layout, a timeline, 404 improvements and a modern scrollbar"
+    },
+    {
+      "tr": "Zaman ağı çizelgesi, yeni 404 hayaleti, koyu temada lacivert kaldırıldı",
+      "en": "A network timeline, a new 404 ghost, navy removed from the dark theme"
+    },
+    {
+      "tr": "Yolculuk bölümü yerine yetkinlik çubukları",
+      "en": "Skill bars in place of the journey section"
+    },
+    {
+      "tr": "Yetkinlik bölümünde tasarım geliştirmeleri",
+      "en": "Design improvements in the skills section"
+    },
+    {
+      "tr": "Yetkinlikler: ortalanmış düzen ve tıklanabilir ayrıntı paneli",
+      "en": "Skills: a centred layout and a clickable detail panel"
+    },
+    {
+      "tr": "Yetkinlikler: yüzde çubukları yerine logo kartları ızgarası",
+      "en": "Skills: a grid of logo cards instead of percentage bars"
+    },
+    {
+      "tr": "Ölçeği ekran yüksekliğine bağla, üst çubuğu incelt",
+      "en": "Tie the scale to the viewport height, slim down the top bar"
+    },
+    {
+      "tr": "İletişim düğmesini çubuğun ölçüsüne getir",
+      "en": "Match the contact button to the bar's proportions"
+    },
+    {
+      "tr": "Sayfa boyunca inen yazı sarmaşığı",
+      "en": "A vine of text winding down the page"
+    },
+    {
+      "tr": "Sarmaşık: viraj okunabilirliği, metin çakışması ve sürekli akış",
+      "en": "The vine: legibility around bends, overlapping text and a continuous flow"
+    },
+    {
+      "tr": "Sarmaşık sabit dursun, yazı yörüngede aksın",
+      "en": "Hold the vine still and let the text flow along its path"
+    },
+    {
+      "tr": "Yetkinlikler'den sonra \"Seçilmiş çalışmalar\" bölümü",
+      "en": "A \"Selected work\" section after Skills"
+    },
+    {
+      "tr": "Yazılar ve İletişim bölümleri, altbilgi, kenar şeridi",
+      "en": "Posts and Contact sections, a footer and a side rail"
+    },
+    {
+      "tr": "Navbar aktif bağlantı hatası, yazılımcı altbilgisi, altbilgi her sayfada",
+      "en": "Fix the active navbar link, a developer footer, the footer on every page"
+    },
+    {
+      "tr": "QR'ı kabartmalı bloklara çevir, okunurluğu ölçerek doğrula",
+      "en": "Rebuild the QR code from raised blocks, verify by measurement that it still scans"
+    },
+    {
+      "tr": "Yazılara kapak görseli ve editoryal yazı sayfası",
+      "en": "Cover images for posts and an editorial post page"
+    },
+    {
+      "tr": "Blog sola yaslı, WhatsApp, sosyal ray, renkli pencere noktaları, sonraki yazı",
+      "en": "Left-aligned blog, WhatsApp, a social rail, coloured window dots, next post"
+    },
+    {
+      "tr": "Altbilgi alt satırı mobilde ortalı, lisans cümlesi gizli",
+      "en": "Centre the footer's bottom line on mobile, hide the licence sentence"
+    },
+    {
+      "tr": "Mobilde sayfa sayfa kaydırma Tanıtım'dan sonra ölüyordu",
+      "en": "Section-by-section scrolling died after the intro on mobile"
+    },
+    {
+      "tr": "Hero iOS'ta alt araç çubuğunun arkasından taşıyordu",
+      "en": "The hero overflowed behind the bottom toolbar on iOS"
+    },
+    {
+      "tr": "Mobilde sayfa sayfa kaydırma kaldırıldı, belirme yavaşlatıldı",
+      "en": "Section-by-section scrolling dropped on mobile, the fade-in slowed down"
+    },
+    {
+      "tr": "Altbilgi sütunları yan yana, iki yeni yazı, Hakkımda sayfası",
+      "en": "Footer columns side by side, two new posts, an About page"
+    },
+    {
+      "tr": "Gerçek portre ve yazı yönetim paneli (Keystatic)",
+      "en": "A real portrait and a writing panel (Keystatic)"
+    },
+    {
+      "tr": "Altbilgi sütunları mobilde de yan yana",
+      "en": "Footer columns side by side on mobile too"
+    },
+    {
+      "tr": "Altbilgi: bağlantı düğmeleri alt alta, iki sütun ortalı",
+      "en": "Footer: link buttons stacked, the two columns centred"
+    },
+    {
+      "tr": "Altbilgi sütunları kenarlara yaslandı, Blog başlığına çizgi",
+      "en": "Footer columns pushed out to the edges, a rule under the Blog heading"
+    },
+    {
+      "tr": "Iletişim bilgileri gerçek değerlerle değiştirildi",
+      "en": "Contact details replaced with the real ones"
+    },
+    {
+      "tr": "Hizmetler ve Kullandıklarım sayfaları",
+      "en": "The Services and Uses pages"
+    },
+    {
+      "tr": "Kullandıklarım mobil menüye eklendi",
+      "en": "Uses added to the mobile menu"
+    },
+    {
+      "tr": "SEO: yapılandırılmış veri, paylaşım kartı, robots ve meta denetimi",
+      "en": "SEO: structured data, share cards, robots and a meta audit"
+    },
+    {
+      "tr": "Koyu temada üst çubuk lacivertti, nötr griye alındı",
+      "en": "The top bar was navy in the dark theme; moved to neutral grey"
+    },
+    {
+      "tr": "Sosyal profiller tek kaynağa alındı, kimlik bağı şemaya bağlandı",
+      "en": "Social profiles moved to a single source, identity links wired into the schema"
+    },
+    {
+      "tr": "Hakkımda başlığının altındaki çizgiyi elle çekilmiş bir darbe yap",
+      "en": "Turn the rule under the About heading into a hand-drawn stroke"
+    },
+    {
+      "tr": "Hakkımda'daki izi kurşun kalem darbesine çevir",
+      "en": "Turn that mark in About into a pencil stroke"
+    },
+    {
+      "tr": "Gizlilik ve Çerez Politikası sayfasını iki dilde ekle",
+      "en": "Add the Privacy and Cookie Policy page in both languages"
+    },
+    {
+      "tr": "Blog ve yazı sayfalarındaki okuma sütununu ortala",
+      "en": "Centre the reading column on the blog and post pages"
+    },
+    {
+      "tr": "Dart dili yazısını ekle",
+      "en": "Add the post on the Dart language"
+    },
+    {
+      "tr": "Dart yazısında tekrar eden başlığı kaldır",
+      "en": "Remove the duplicated heading in the Dart post"
+    },
+    {
+      "tr": "Site metinlerini panelden düzenlenebilir yap, görsel yönetimi ekle",
+      "en": "Make the site's copy editable from the panel, add image management"
+    },
+    {
+      "tr": "Altbilgideki RSS bağlantısını ve Dart yazısındaki iki kusuru düzelt",
+      "en": "Fix the RSS link in the footer and two flaws in the Dart post"
+    },
+    {
+      "tr": "İçerik panelden güncellendi (1 dosya)",
+      "en": "Content updated from the panel (1 file)"
+    },
+    {
+      "tr": "Altbilgiye sürüm bilgisi ve \"Neler değişti\" sayfası ekle",
+      "en": "Add version info to the footer and a \"What's changed\" page"
+    },
+    {
+      "tr": "Dil bağlarını gerçek çevirilere bağla, olmayanı hiç gösterme",
+      "en": "Point language links at real translations, hide the ones that do not exist"
+    },
+    {
+      "tr": "Altbilgi menüsüne \"Neler değişti\" ve alt şeride sürüm satırı ekle",
+      "en": "Add \"What's changed\" to the footer menu and a version line to the bottom strip"
+    },
+    {
+      "tr": "LinkedIn ve Instagram'ı ekle, X hesabını kaldır",
+      "en": "Add LinkedIn and Instagram, drop the X account"
+    },
+    {
+      "tr": "Bulguları gider: RSS dili, salt-okur denetimi, ölü React kalıntısı",
+      "en": "Clear the findings: RSS language, the read-only check, dead React leftovers"
+    },
+    {
+      "tr": "Aktif projeler sayfası ve panelden proje yönetimi ekle",
+      "en": "Add an active projects page and project management from the panel"
+    },
+    {
+      "tr": "Havadar ve RailMentor'ü kendi kaynaklarından doldur",
+      "en": "Fill in Havadar and RailMentor from their own sources"
+    },
+    {
+      "tr": "PageSpeed analizine gore ARIA, etiket ve SEO iyilestirmeleri",
+      "en": "ARIA, label and SEO improvements from the PageSpeed analysis"
+    },
+    {
+      "tr": "İletişim kartını dengele, altbilgiyi kendi sayfası yap, portreyi optimize et",
+      "en": "Balance the contact card, give the footer its own page, optimise the portrait"
+    },
+    {
+      "tr": "Açılıştaki zorunlu yeniden düzenlemeleri kaldır",
+      "en": "Remove the forced reflows on first paint"
+    },
+    {
+      "tr": "LCP'yi gerçek içeriğe bağla, stilleri satır içine al",
+      "en": "Tie LCP to real content, inline the styles"
+    },
+    {
+      "tr": "İngilizce sayfalarda gereksiz yazı tipi indirmesini kaldır",
+      "en": "Stop downloading an unnecessary font on the English pages"
+    },
+    {
+      "tr": "404 sayfa basligini panelden guncelle",
+      "en": "Update the 404 page title from the panel"
+    },
+    {
+      "tr": "Hero düğmelerini akan düğme yap, stili ortak bileşene taşı",
+      "en": "Give the hero buttons the flowing style, move that style into a shared component"
+    },
+    {
+      "tr": "Panelden metin duzenlemeleri: baslik, aciklama ve 404 metinleri",
+      "en": "Copy edits from the panel: titles, descriptions and the 404 texts"
+    },
+    {
+      "tr": "Projelere detay sayfası ekle: anlatım, teknolojiler, katkı verenler",
+      "en": "Add a detail page for projects: the story, the technologies, the contributors"
+    },
+    {
+      "tr": "Panelden metin duzenlemeleri: unvan ve tanitim paragraflari",
+      "en": "Copy edits from the panel: the job title and the intro paragraphs"
+    },
+    {
+      "tr": "Tanıtım bölümünün düğmesini de akan düğme yap",
+      "en": "Give the intro section's button the flowing style too"
+    },
+    {
+      "tr": "Yetkinlikleri panele taşı: teknoloji seçiliyor, tanım hazır geliyor",
+      "en": "Move skills into the panel: pick a technology and its description comes ready"
+    },
+    {
+      "tr": "Panelden metin duzenlemesi",
+      "en": "A copy edit from the panel"
+    },
+    {
+      "tr": "Paneldeki metinleri bölüm bölüm ayır, sol menüyü sitenin yapısına benzet",
+      "en": "Split the panel's copy section by section, shape the side menu like the site itself"
+    },
+    {
+      "tr": "Kodda kalan içerik listelerini de panele taşı",
+      "en": "Move the content lists still living in code into the panel as well"
+    },
+    {
+      "tr": "İletişim: adresi mesleğin altına al, QR içeriğini panele aç, QR'ı okunur yap",
+      "en": "Contact: move the address under the job title, open the QR content to the panel, make the QR scannable"
+    },
+    {
+      "tr": "Panelden metin duzenlemeleri: iletisim ve yetkinlik metinleri",
+      "en": "Copy edits from the panel: the contact and skills texts"
+    },
+    {
+      "tr": "WhatsApp numarasını bağlantıya çevirirken temizle",
+      "en": "Clean up the WhatsApp number when turning it into a link"
+    },
+    {
+      "tr": "İletişim kartı: WhatsApp hazır mesajı, e-posta hizası, QR ortalaması",
+      "en": "Contact card: the prefilled WhatsApp message, e-mail alignment, QR centring"
+    },
+    {
+      "tr": "Panelden hizmet metinleri duzenlemesi",
+      "en": "Service copy edited from the panel"
+    },
+    {
+      "tr": "Site simgesini değiştir: Astro logosu yerine M monogramı",
+      "en": "Change the site icon: an M monogram in place of the Astro logo"
+    },
+    {
+      "tr": "Panelden icerik: hizmet metinleri ve whatsapp hazir mesaji",
+      "en": "Content from the panel: service copy and the prefilled WhatsApp message"
+    },
+    {
+      "tr": "Sürüm günlüğüne tarih ağacı ekle",
+      "en": "Add a date tree to the release log"
+    },
+    {
+      "tr": "Hizmetler kapanışı: düğmeleri akan düğme yap, adres satırını kaldır",
+      "en": "The Services closing: give the buttons the flowing style, drop the address line"
+    },
+    {
+      "tr": "Panelden metin duzenlemeleri",
+      "en": "Copy edits from the panel"
+    },
+    {
+      "tr": "Hizmetler düğmeleri: mavi e-posta, kalem/marka simgeleri",
+      "en": "Services buttons: a blue e-mail button, pencil and brand icons"
+    },
+    {
+      "tr": "Çubuğa Giriş Yap, altbilgiden dil düğmesi kalktı",
+      "en": "A Sign In button in the bar, the language switch gone from the footer"
+    },
+    {
+      "tr": "Panelden metin düzenlemeleri",
+      "en": "Copy edits from the panel"
+    },
+    {
+      "tr": "Panelden içerik: blog/dart-dili, blog, görseller",
+      "en": "Content from the panel: blog/dart-dili, the blog and images"
+    },
+    {
+      "tr": "Yazıya sayfa başlığı alanı; eksik kapak metni paneli kilitlemiyor",
+      "en": "A page title field for posts; a missing cover caption no longer locks the panel"
+    },
+    {
+      "tr": "Dart yazısından kapak satırını kaldır",
+      "en": "Remove the cover line from the Dart post"
+    },
+    {
+      "tr": "Panelden içerik: blog/dart-dili",
+      "en": "Content from the panel: blog/dart-dili"
+    },
+    {
+      "tr": "Projelere de sayfa başlığı alanı; varsayılan proje adının kendisi",
+      "en": "A page title field for projects too; it defaults to the project's own name"
+    },
+    {
+      "tr": "Sayfa başlıklarından \"- Mustafa Eybek\" eki kalktı",
+      "en": "The \"- Mustafa Eybek\" suffix is gone from page titles"
+    },
+    {
+      "tr": "Panelden içerik: calismalar",
+      "en": "Content from the panel: the work entries"
+    },
+    {
+      "tr": "Panelden içerik: görseller, blog/dart-dili, site, yetkinlikler",
+      "en": "Content from the panel: images, blog/dart-dili, site texts and skills"
+    },
+    {
+      "tr": "Panelden içerik: yetkinlikler",
+      "en": "Content from the panel: skills"
+    }
+  ]
+}

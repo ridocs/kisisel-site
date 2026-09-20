@@ -620,6 +620,54 @@ const yetkinliklerSingletonu = singleton({
 	},
 });
 
+/*
+  DEĞİŞİKLİK GÜNLÜĞÜ ÇEVİRİLERİ — "Neler değişti" sayfasındaki kayıtların
+  İngilizcesi.
+
+  O sayfadaki başlıklar sitenin kendi geçmişinden okunuyor ve Türkçe yazılıyor.
+  İngilizce sayfada da Türkçe görünmesinler diye bu sözlükten geçiriliyorlar;
+  işleyişin tamamı ve neden böyle kurulduğu `src/lib/degisiklik-ceviri.ts`
+  başında yazılı.
+
+  BURASI NEDEN PANELDE: sözlüğün bakımı süreklilik isteyen bir iş. Sayfaya her
+  yeni kayıt düştüğünde karşılığının da yazılması gerekiyor ve bu, kod
+  düzenlemeyi gerektirmeyecek kadar sıradan bir yazı işi.
+
+  NASIL DOLDURULUR: "Neler değişti" sayfasını aç, çevirisi eksik satırı
+  (yanında "TR" rozeti olanı) olduğu gibi kopyala, sol kutuya yapıştır, sağ
+  kutuya İngilizcesini yaz. Türkçe kutuya commit kimliği değil, ziyaretçinin
+  gördüğü cümlenin kendisi yazılıyor.
+
+  Karşılığı yazılmayan kayıt kaybolmuyor: İngilizce sayfada Türkçe hâliyle,
+  dil rozetiyle işaretlenmiş olarak duruyor. Yani bu liste eksik kalırsa sayfa
+  eksilmiyor, yalnızca o satır çevrilmemiş görünüyor.
+*/
+const degisiklikCevirileriSingletonu = singleton({
+	label: 'Değişiklik günlüğü çevirileri',
+	path: 'src/icerik/degisiklik-cevirileri',
+	format: { data: 'json' },
+	schema: {
+		kayitlar: fields.array(
+			fields.object({
+				tr: fields.text({
+					label: 'Türkçe başlık',
+					description: '"Neler değişti" sayfasında göründüğü gibi. Baştaki/sondaki boşluk ve büyük-küçük harf farkı eşleşmeyi bozmuyor.',
+					multiline: true,
+				}),
+				en: fields.text({
+					label: 'İngilizce karşılığı',
+					description: 'Kelime kelime çevirme; cümle Türkçesiyle aynı şeyi anlatsın. Boş bırakılırsa kayıt İngilizce sayfada Türkçe kalır.',
+					multiline: true,
+				}),
+			}),
+			{
+				label: 'Başlıklar',
+				itemLabel: (props) => props.fields.tr.value || 'Başlık',
+			},
+		),
+	},
+});
+
 export default config({
 	storage: { kind: 'local' },
 
@@ -633,6 +681,7 @@ export default config({
 				'calismalar',
 				'kullandiklarim',
 				'iletisimBilgisi',
+				'degisiklikCevirileri',
 			],
 			...Object.fromEntries(
 				Object.entries(METIN_AGACI).map(([baslik, adlar]) => [
@@ -650,6 +699,7 @@ export default config({
 		calismalar: calismalarSingletonu,
 		iletisimBilgisi: iletisimSingletonu,
 		kullandiklarim: kullandiklarimSingletonu,
+		degisiklikCevirileri: degisiklikCevirileriSingletonu,
 	},
 
 	collections: {

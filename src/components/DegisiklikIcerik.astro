@@ -1,7 +1,8 @@
 ---
 import { getCollection } from 'astro:content';
 import { Icon } from 'astro-icon/components';
-import { cevirici, dilBul, yol } from '@/i18n/ceviriler';
+import { ceviriler, cevirici, dilBul, yol } from '@/i18n/ceviriler';
+import { degisiklikCevirisi } from '@/lib/degisiklik-ceviri';
 import { siteGunlugu, surumBul } from '@/lib/surum';
 
 /*
@@ -119,6 +120,36 @@ function agacKur(): AgacYili[] {
 }
 
 const agac = agacKur();
+
+/*
+  ÇERÇEVE METNİNİ ESNEK OKUMA.
+
+  Aşağıdaki dil rozeti için `degisiklik` bölümünde henüz bir anahtar
+  olmayabilir — o dosya ayrı bir iş olarak düzenleniyor. Anahtar gelince
+  kendiliğinden kullanılsın, gelmediği sürece de sayfa derlensin diye metin
+  sözlükten esnek okunuyor: yoksa ya da boşsa yedek metin basılıyor.
+
+  `cevirici` burada kullanılamıyor, çünkü tipi yalnızca var olan anahtarları
+  kabul ediyor; olmayan bir anahtar derlemeyi durdururdu.
+*/
+function esnekMetin(anahtar: string, yedek: string): string {
+	const deger = (ceviriler[dil] as Record<string, string | undefined>)[anahtar];
+	return deger && deger.trim() !== '' ? deger : yedek;
+}
+
+/*
+  KAYIT BAŞLIĞININ SAYFANIN DİLİNDEKİ HÂLİ.
+
+  Başlıklar git'ten geliyor ve Türkçe yazılıyor. İngilizce sayfada
+  `src/icerik/degisiklik-cevirileri.json` sözlüğünden geçiyorlar; sözlükte
+  karşılığı olmayan başlık Türkçe kalıyor ve dil kodu bunu söylüyor.
+  Gerekçesi `src/lib/degisiklik-ceviri.ts` başında.
+*/
+function kayitBasligi(baslik: string): { metin: string; dilKodu: 'tr' | 'en' } {
+	if (dil !== 'en') return { metin: baslik, dilKodu: 'tr' };
+	const ceviri = degisiklikCevirisi(baslik);
+	return ceviri ? { metin: ceviri, dilKodu: 'en' } : { metin: baslik, dilKodu: 'tr' };
+}
 
 function uzunTarih(tarih: string): string {
 	return new Date(`${tarih}T00:00:00`).toLocaleDateString(yerel, {
@@ -265,24 +296,43 @@ function uzunTarih(tarih: string): string {
 				  bir buçuk saniye geciktirirdi.
 				*/}
 				<ul class="kayitlar" data-belir-oge style="--sira: 2">
-					{gun.kayitlar.map((kayit) => (
-						<li class="kayit">
-							<span class="im" aria-hidden="true" />
-							<div class="kayit-govde">
-								<p class="kayit-baslik">{kayit.baslik}</p>
-								{kayit.yeniYazilar
-									.map((adres) => yazilar.get(adres))
-									.filter((yazi) => yazi !== undefined)
-									.map((yazi) => (
-										<a class="yazi" href={yazi.adres}>
-											<Icon name="lucide:file-text" class="size-4 yazi-simge" aria-hidden="true" />
-											<span class="yazi-etiket">{m('degisiklik.yeniYazi')}</span>
-											<span class="yazi-baslik">{yazi.baslik}</span>
-										</a>
-									))}
-							</div>
-						</li>
-					))}
+					{gun.kayitlar.map((kayit) => {
+						const govde = kayitBasligi(kayit.baslik);
+						// Sayfanın dilinden başka bir dilde kalan başlık işaretleniyor:
+						// `lang` ekran okuyucunun doğru sesletmesi için (WCAG 3.1.2),
+						// rozet de ziyaretçinin metnin neden yabancı olduğunu görmesi
+						// için. Aynı dildeyse ikisi de basılmıyor.
+						const yabanci = govde.dilKodu !== dil;
+
+						return (
+							<li class="kayit">
+								<span class="im" aria-hidden="true" />
+								<div class="kayit-govde">
+									<p class="kayit-baslik" lang={yabanci ? govde.dilKodu : undefined}>
+										{govde.metin}
+										{yabanci && (
+											/* Rozet ekran okuyucudan gizli: aynı bilgi `lang`
+											   özniteliğiyle zaten veriliyor, iki kez duyurmak
+											   başlığı gürültüye boğardı. */
+											<span class="dil-rozeti" aria-hidden="true">
+												{esnekMetin('degisiklik.cevrilmedi', govde.dilKodu.toUpperCase())}
+											</span>
+										)}
+									</p>
+									{kayit.yeniYazilar
+										.map((adres) => yazilar.get(adres))
+										.filter((yazi) => yazi !== undefined)
+										.map((yazi) => (
+											<a class="yazi" href={yazi.adres}>
+												<Icon name="lucide:file-text" class="size-4 yazi-simge" aria-hidden="true" />
+												<span class="yazi-etiket">{m('degisiklik.yeniYazi')}</span>
+												<span class="yazi-baslik">{yazi.baslik}</span>
+											</a>
+										))}
+								</div>
+							</li>
+						);
+					})}
 				</ul>
 			</section>
 		))
@@ -656,6 +706,31 @@ function uzunTarih(tarih: string): string {
 		font-size: 0.9375rem;
 		line-height: 1.6;
 		color: var(--foreground);
+	}
+
+	/*
+	  Çevirisi olmayan başlığın dil rozeti. Sessiz kalmak, ziyaretçiye
+	  İngilizce bir sayfada sebepsiz bir Türkçe cümle göstermek olurdu; rozet
+	  o cümlenin çevrilmemiş bir alıntı olduğunu söylüyor.
+
+	  Vurgusu bilinçli olarak zayıf: asıl okunacak şey başlığın kendisi,
+	  rozet yalnızca bir künye. Satır içinde duruyor ki başlık kısa olduğunda
+	  boşlukta asılı kalmasın.
+	*/
+	.dil-rozeti {
+		display: inline-block;
+		margin-inline-start: 0.5rem;
+		padding: 0.05rem 0.3rem;
+		border: 1px solid var(--border);
+		border-radius: 0.25rem;
+		font-size: 0.625rem;
+		font-weight: 700;
+		letter-spacing: 0.08em;
+		line-height: 1.4;
+		color: var(--muted-foreground);
+		/* Başlık satırının tabanından biraz yukarı: rakam/büyük harf
+		   yüksekliği küçük olduğu için taban hizası düşük görünüyordu. */
+		vertical-align: 0.08em;
 	}
 
 	/* --- Eklenen yazı --- */
