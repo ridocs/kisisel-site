@@ -1,15 +1,15 @@
 {
   "tr": {
     "ustBaslik": "İLETİŞİM",
-    "baslik": "Bir fikrin mi var, konuşalım",
-    "durum": "Yeni işlere açığım",
-    "rol": "Yazılım geliştirici",
-    "yaz": "Bana yaz",
+    "baslik": "Bana İhtiyacın Varsa",
+    "durum": "7/24 Ulaşabilirsiniz",
+    "rol": "Technical Solutions Developer",
+    "yaz": "Mail Gönder",
     "kopyala": "E-postayı kopyala",
-    "kopyalandi": "Kopyalandı",
-    "qrAlt": "Sitenin adresini içeren kare kod",
+    "kopyalandi": "Yapıştırmak İçin Hazırsın!",
+    "qrAlt": "Sitenin adresini içeren kare kod.",
     "qrNot": "Telefonunla okut, site cebinde açılsın.",
-    "serit": "Genelde aynı gün dönüyorum"
+    "serit": "Farklı projelere katkı sağlamaya bayılıyorum."
   },
   "en": {
     "ustBaslik": "CONTACT",

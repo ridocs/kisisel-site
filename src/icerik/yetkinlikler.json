@@ -34,13 +34,6 @@
       "sureEn": "2 years",
       "kullanim": "Geliştirme ortamlarını ve küçük servisleri kapsayıcıya aldım; dağıtımda tekrarlanabilirliği buradan sağlıyorum.",
       "kullanimEn": "I containerise development environments and small services; this is where deployment repeatability comes from."
-    },
-    {
-      "teknoloji": "postgresql",
-      "sure": "2 yıl",
-      "sureEn": "2 years",
-      "kullanim": "Şema tasarımı, indeksleme ve sorgu iyileştirme üzerine çalıştım; projelerde ana veri deposu olarak kullanıyorum.",
-      "kullanimEn": "I have worked on schema design, indexing and query tuning; it is the main data store in my projects."
     }
   ]
 }
