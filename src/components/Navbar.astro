@@ -33,18 +33,30 @@ const iletisimCapasi = dil === 'en' ? '#contact' : '#iletisim';
   sayfalar için, mobil menü sitenin tamamı için. Altıncı bağlantıdan önce
   ölçüm yap; genişletmenin de bir sınırı var.
 */
-const masaustuBaglantilari = [
+/** `rol` isteğe bağlı: yalnızca aynı sayfayı paylaşan iki bağlantı taşıyor. */
+type GezinmeBaglantisi = { ad: string; yol: string; rol?: 'hakkimda' | 'iletisim' };
+
+const masaustuBaglantilari: GezinmeBaglantisi[] = [
 	{ ad: m('nav.anasayfa'), yol: yol(dil, '') },
 	{ ad: m('nav.hizmetler'), yol: yol(dil, dil === 'en' ? 'services' : 'hizmetler') },
 	{ ad: m('nav.projeler'), yol: yol(dil, dil === 'en' ? 'projects' : 'projeler') },
 	{ ad: m('nav.blog'), yol: yol(dil, 'blog') },
-	{ ad: m('nav.hakkimda'), yol: yol(dil, hakkimdaParcasi) },
+	/*
+	  `rol` YALNIZCA bu iki bağlantıda var ve betiğin onları metne bakmadan
+	  bulması için. İkisi de aynı sayfaya gidiyor, dolayısıyla hangisinin
+	  vurgulanacağı adresten çıkarılamıyor; kaydırma konumuna bağlı.
+	*/
+	{ ad: m('nav.hakkimda'), yol: yol(dil, hakkimdaParcasi), rol: 'hakkimda' },
 	/*
 	  İletişim 2026-09-20'de buraya girdi. Önce çubuğun sağındaki vurgulu
 	  düğmeydi; orayı "Giriş Yap" alınca iletişimin menüde bir yeri olması
 	  gerekti — yoksa üst çubuktan hiç erişilemiyordu.
 	*/
-	{ ad: m('nav.iletisim'), yol: `${yol(dil, hakkimdaParcasi)}${iletisimCapasi}` },
+	{
+		ad: m('nav.iletisim'),
+		yol: `${yol(dil, hakkimdaParcasi)}${iletisimCapasi}`,
+		rol: 'iletisim',
+	},
 ];
 
 const mobilBaglantilar = [
@@ -125,6 +137,25 @@ const bagPasifMobil =
 const eylemDugmesi =
 	'grid size-10 cursor-pointer place-items-center rounded-lg text-slate-600 transition-colors hover:bg-slate-900/5 hover:text-slate-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current md:size-9 dark:text-neutral-300 dark:hover:bg-white/10 dark:hover:text-white';
 
+/*
+  KAYDIRMAYA BAĞLI AKTİFLİK — yalnızca hakkımda sayfasında.
+
+  "Hakkımda" ve "İletişim" aynı sayfaya gidiyor; ikincisi bir çapa. Adrese
+  bakan `aktifMi` bu yüzden hep "Hakkımda"yı işaretliyor ve bu SUNUCU TARAFI
+  varsayılanı doğru: betik hiç çalışmazsa sayfa yine kullanılabilir, aktif
+  işareti tek bir bağlantıda duruyor.
+
+  Betik çalışırsa iletişim bölümü ekranın ortasına geldiğinde işaret
+  "İletişim"e geçiyor. Kurulumun gerekip gerekmediği SUNUCUDA belli oluyor:
+  aşağıdaki öznitelik yalnızca hakkımda sayfasında basılıyor, öbür sayfalarda
+  betik hiç gözlemci kurmuyor.
+
+  Değer çapanın kimliği ('#' olmadan) çünkü betik `getElementById` ile
+  arayacak.
+*/
+const hakkimdaSayfasindaMi = aktifMi(yol(dil, hakkimdaParcasi));
+const iletisimBolumuKimligi = hakkimdaSayfasindaMi ? iletisimCapasi.slice(1) : undefined;
+
 // Not: Vurgulu düğmenin görünümü burada değil, CubukDugmesi.astro içinde
 // tanımlı (sıvı metal kapsül). Burada bir zamanlar duran düz düğme sınıfı
 // kullanılmadığı için kaldırıldı.
@@ -136,7 +167,21 @@ const eylemDugmesi =
   - "true"  (aşağı kaydırılmış): ortada yüzen, dar, yuvarlatılmış, bulanık zeminli kapsül
   Alt öğeler bu duruma `group-data-[kaydirildi=true]:` ile tepki verir.
 */}
-<header id="ust-cubuk" data-kaydirildi="false" class="group fixed inset-x-0 top-0 z-50">
+{/*
+  Sınıf dizileri betiğe öznitelikle taşınıyor, betiğin içine ikinci kez
+  YAZILMIYOR. İki yerde duran bir sınıf listesi kaçınılmaz olarak ayrışır:
+  renk değiştiğinde biri güncellenip öbürü unutulur.
+*/}
+<header
+	id="ust-cubuk"
+	data-kaydirildi="false"
+	data-iletisim-bolumu={iletisimBolumuKimligi}
+	data-sinif-masaustu-aktif={bagAktifMasaustu}
+	data-sinif-masaustu-pasif={bagPasifMasaustu}
+	data-sinif-mobil-aktif={bagAktifMobil}
+	data-sinif-mobil-pasif={bagPasifMobil}
+	class="group fixed inset-x-0 top-0 z-50"
+>
 	<div
 		class="mx-auto w-full max-w-[1480px] px-4 transition-all duration-200 ease-out group-data-[kaydirildi=true]:max-w-[1340px] motion-reduce:transition-none sm:px-6 group-data-[kaydirildi=true]:sm:px-4"
 	>
@@ -188,6 +233,7 @@ const eylemDugmesi =
 								<a
 									href={baglanti.yol}
 									data-menu-bag
+									data-bag-rol={baglanti.rol}
 									aria-current={aktifMi(baglanti.yol) ? 'page' : undefined}
 									class:list={[
 										bagTemel,
@@ -262,6 +308,7 @@ const eylemDugmesi =
 							<li>
 								<a
 									href={baglanti.yol}
+									data-bag-rol={baglanti.rol}
 									aria-current={aktifMi(baglanti.yol) ? 'page' : undefined}
 									class:list={[
 										// Dar ekranda parmakla kullanıldığı için 44px'lik rahat bir hedef.
@@ -482,7 +529,15 @@ const eylemDugmesi =
 	const menuBaglantilari = menuListesi
 		? [...menuListesi.querySelectorAll<HTMLAnchorElement>('a[data-menu-bag]')]
 		: [];
-	const aktifBaglanti = menuListesi?.querySelector<HTMLAnchorElement>('a[aria-current="page"]');
+	/*
+	  Aktif bağlantı DEĞİŞKENDE TUTULMUYOR, her seferinde yeniden aranıyor.
+
+	  Önce açılışta bir kez okunuyordu. Hakkımda sayfasında aktiflik artık
+	  kaydırmaya göre "Hakkımda" ile "İletişim" arasında geçiyor; tek seferlik
+	  okuma göstergeyi eski bağlantıda bırakıyordu.
+	*/
+	const aktifBaglantiyiBul = () =>
+		menuListesi?.querySelector<HTMLAnchorElement>('a[aria-current="page"]') ?? null;
 
 	function gostergeyiTasi(hedef: HTMLElement, akitMi = true) {
 		if (!menuListesi || !gosterge) return;
@@ -508,6 +563,7 @@ const eylemDugmesi =
 
 	function gostergeyiAktifeAl(akitMi = true) {
 		if (!gosterge) return;
+		const aktifBaglanti = aktifBaglantiyiBul();
 		if (aktifBaglanti) {
 			gostergeyiTasi(aktifBaglanti, akitMi);
 		} else {
@@ -590,5 +646,127 @@ const eylemDugmesi =
 
 		// İlk yerleşim zaten `document.fonts.ready` üzerinden yapılıyor
 		// (yukarıda); ayrıca bir kez daha ölçmek gereksizdi.
+	}
+
+	// --- Hakkımda / İletişim aktifliği --------------------------------------
+	/*
+	  "Hakkımda" ve "İletişim" aynı sayfaya gidiyor, ikincisi bir çapa. Adrese
+	  bakarak hangisinin aktif olduğunu söylemek imkânsız; cevap kaydırma
+	  konumunda.
+
+	  Sunucu varsayılanı "Hakkımda" ve betik hiç çalışmazsa öyle kalıyor:
+	  sayfa yine kullanılabilir, `aria-current` yine tek bir bağlantıda.
+
+	  Öznitelik yalnızca hakkımda sayfasında basıldığı için gözlemci öbür
+	  sayfalarda hiç kurulmuyor.
+	*/
+	const iletisimBolumuKimligi = ustCubuk?.dataset.iletisimBolumu;
+	const iletisimBolumu = iletisimBolumuKimligi
+		? document.getElementById(iletisimBolumuKimligi)
+		: null;
+
+	if (iletisimBolumu && 'IntersectionObserver' in window) {
+		// Masaüstü ve mobil menüdeki eşleri birlikte dönüyor: iki listede
+		// farklı bağlantının vurgulu olması ziyaretçiye çelişki gösterirdi.
+		const rolBaglari = (rol: string) => [
+			...document.querySelectorAll<HTMLAnchorElement>(`a[data-bag-rol="${rol}"]`),
+		];
+		const hakkimdaBaglari = rolBaglari('hakkimda');
+		const iletisimBaglari = rolBaglari('iletisim');
+
+		/*
+		  Sınıf dizileri sunucudan geliyor (bkz. `data-sinif-*`). Betiğin içine
+		  elle yazılsalardı renk değiştiğinde iki yerin ayrışması an meselesiydi.
+		*/
+		const sinif = (ad: string) => (ustCubuk?.dataset[ad] ?? '').split(' ').filter(Boolean);
+		const masaustuAktif = sinif('sinifMasaustuAktif');
+		const masaustuPasif = sinif('sinifMasaustuPasif');
+		const mobilAktif = sinif('sinifMobilAktif');
+		const mobilPasif = sinif('sinifMobilPasif');
+
+		function aktifligiUygula(bag: HTMLAnchorElement, aktif: boolean) {
+			const mobilMi = bag.closest('#mobil-menu') !== null;
+			const eklenecek = aktif
+				? mobilMi
+					? mobilAktif
+					: masaustuAktif
+				: mobilMi
+					? mobilPasif
+					: masaustuPasif;
+			const cikarilacak = aktif
+				? mobilMi
+					? mobilPasif
+					: masaustuPasif
+				: mobilMi
+					? mobilAktif
+					: masaustuAktif;
+			// Önce çıkar sonra ekle: iki dizinin ortak sınıfları varsa
+			// (örn. `data-vurgulu:text-white`) bu sırada kaybolmuyor.
+			if (cikarilacak.length) bag.classList.remove(...cikarilacak);
+			if (eklenecek.length) bag.classList.add(...eklenecek);
+			if (aktif) bag.setAttribute('aria-current', 'page');
+			else bag.removeAttribute('aria-current');
+		}
+
+		let iletisimdeyiz: boolean | null = null;
+
+		function iletisimeGec(yeni: boolean) {
+			if (iletisimdeyiz === yeni) return;
+			/*
+			  İlk değerlendirmede gösterge ELLENMİYOR. Gözlemcinin ilk geri
+			  çağrısı sayfa açılırken hemen düşüyor; göstergeyi orada
+			  konumlandırmak, açılış ölçümünü `load` + `fonts.ready` sonrasına
+			  erteleyen düzeni bozup vurgunun sol kenardan süzülmesine yol
+			  açıyordu. O ölçüm zaten aktif bağlantıyı yeniden arıyor,
+			  dolayısıyla buradaki işareti kendiliğinden görüyor.
+			*/
+			const ilkDegerlendirme = iletisimdeyiz === null;
+			iletisimdeyiz = yeni;
+			// `aria-current` AYNI ANDA TEK bağlantıda: önce hepsi pasife
+			// çekiliyor, sonra kazanan işaretleniyor.
+			hakkimdaBaglari.forEach((bag) => aktifligiUygula(bag, !yeni));
+			iletisimBaglari.forEach((bag) => aktifligiUygula(bag, yeni));
+			// Kayan gösterge aktif bağlantıyı her çağrıda yeniden arıyor,
+			// dolayısıyla burada tek yapılacak şey onu yeniden konumlandırmak.
+			if (!ilkDegerlendirme) gostergeyiAktifeAl();
+		}
+
+		/*
+		  TETİK ÇİZGİSİ GÖRÜŞ ALANININ ÜST %40'INDA — ölçülerek seçildi.
+
+		  Önce akla gelen "bölüm ekranın ortasını kesiyor mu" kuralı ölçümde
+		  çöktü: sayfa sonuna kadar kaydırıldığında iletişim bölümü orta
+		  çizginin ÜSTÜNDE kalıyor (1440x900'de üst kenarı -165 piksel), dar
+		  ekranda ise altbilgi yüzünden tamamen görüş alanının dışına çıkıyor
+		  (390x844'te alt kenarı -165). O kuralla ziyaretçi tam iletişime
+		  vardığında işaret "Hakkımda"ya geri dönüyordu.
+
+		  Bu yüzden soru "kesişiyor mu" değil, "bölümün ÜSTÜ çizgiyi geçti mi".
+		  `rootMargin` yüzde olduğu için tarayıcı pencere boyutu değişince
+		  yeniden hesaplıyor; gözlemciyi elle yeniden kurmak gerekmiyor.
+
+		  KÖK SIFIR YÜKSEKLİKTE, yani gerçek bir çizgi: `-40%` üstten,
+		  `-60%` alttan, toplamı 100%. İlk denemede yalnızca üst kenar
+		  kısılmıştı ve kök görüş alanının alt %60'ı kadar KOCAMAN bir
+		  bölgeydi; bölüm bir kez o bölgeye girince kesişme durumu bir daha
+		  değişmiyor, `IntersectionObserver` da yalnızca eşik geçişlerinde
+		  tetiklendiği için geri çağrı bir daha hiç çalışmıyordu. Tarayıcıda
+		  ölçüldü: bölümün üstü 559 pikselden -20 piksele inerken tek bir
+		  bildirim gelmedi.
+
+		  `isIntersecting` bilinçli olarak kullanılmıyor, yalnızca geri
+		  çağrının tetiklenmesine yarıyor: bölüm tamamen çizginin üstüne
+		  çıktığında kesişme biter ama biz hâlâ iletişimdeyizdir.
+		*/
+		const gozlemci = new IntersectionObserver(
+			(girdiler) => {
+				for (const girdi of girdiler) {
+					iletisimeGec(girdi.boundingClientRect.top <= window.innerHeight * 0.4);
+				}
+			},
+			{ rootMargin: '-40% 0px -60% 0px', threshold: 0 }
+		);
+
+		gozlemci.observe(iletisimBolumu);
 	}
 </script>
