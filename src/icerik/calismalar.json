@@ -1,31 +1,18 @@
 {
   "kalemler": [
     {
-      "ad": "Proje adı",
-      "adEn": "Project name",
-      "ozet": "Ne yaptığını ve senin payının ne olduğunu bir iki cümleyle anlat. Sayı verebiliyorsan ver.",
-      "ozetEn": "Describe what it does and what your part was, in a sentence or two. Give a number if you have one.",
-      "etiketler": ["Astro", "TypeScript", "PostgreSQL"],
+      "ad": "Metria",
+      "adEn": "Metria",
+      "ozet": "Hava durumu ve konum verilerini analiz ederek kullanıcıları çevresindeki işletmelerle buluşturan; işletmelerin belirlediği mesafeye göre kişiselleştirilmiş mesaj ve kampanyalarla müşteri çekme potansiyelini artıran, sıfırdan geliştirdiğim B2B mobil uygulama.",
+      "ozetEn": "A B2B mobile application I developed from scratch that analyzes weather and location data to connect users with nearby businesses, while helping businesses increase their customer acquisition potential through personalized messages and campaigns based on the distance they define.",
+      "etiketler": [
+        "Astro",
+        "TypeScript",
+        "Flutter",
+        "Dart"
+      ],
       "yil": "2026",
-      "baglanti": ""
-    },
-    {
-      "ad": "Proje adı",
-      "adEn": "Project name",
-      "ozet": "Çözdüğü sorunu yaz; teknolojiyi değil sonucu öne al.",
-      "ozetEn": "Write the problem it solved; lead with the outcome, not the stack.",
-      "etiketler": ["Flutter", "Dart"],
-      "yil": "2025",
-      "baglanti": ""
-    },
-    {
-      "ad": "Proje adı",
-      "adEn": "Project name",
-      "ozet": "Küçük ama iyi anlatılmış bir iş, uzun bir listeden daha çok şey söyler.",
-      "ozetEn": "One small piece of work, well told, says more than a long list.",
-      "etiketler": ["Python", "Docker"],
-      "yil": "2025",
-      "baglanti": ""
+      "baglanti": "d"
     }
   ]
 }
