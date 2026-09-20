@@ -472,17 +472,30 @@ export async function denetle(): Promise<Rapor> {
 	for (const yazi of yazilar) {
 		const dosya = yaziYolu(yazi.id);
 
-		// Kapak görseli: `alt` verilmezse bileşen boş bir alt basıyor.
-		if (yazi.data.kapak && !yazi.data.kapakAlt?.trim()) {
+		/*
+		  Kapak görseli alt metinsiz.
+
+		  Koşul `yazi.data.kapak` DEĞİL `kapakAltEksik`: şema bu durumda kapağı
+		  zaten `undefined` yapıyor (bkz. `content.config.ts`), yani eski koşul
+		  hiçbir zaman doğru olmuyor ve denetim sessizce ölüyordu.
+
+		  Önem `gozdenGecir`: yazar bir kapak seçti ve o kapak sayfada
+		  görünmüyor. Bu bir üslup önerisi değil, beklentiyle sonucun
+		  ayrıldığı bir yer.
+		*/
+		if (yazi.data.kapakAltEksik) {
 			bulgular.push({
-				onem: 'iyilestirme',
+				onem: 'gozdenGecir',
 				denetim: 'Görsel metin karşılığı',
 				dosya,
-				sorun: '`kapak` verilmiş ama `kapakAlt` yok.',
+				sorun: '`kapak` seçilmiş ama `kapakAlt` boş; kapak BASILMIYOR.',
 				neden:
-					'Kapak boş bir `alt` ile basılıyor. Ekran okuyucu görseli atlıyor, görsel ' +
-					'yüklenemediğinde de yerinde hiçbir şey yazmıyor.',
-				cozum: 'Frontmatter’a görselde ne görüldüğünü anlatan bir `kapakAlt` ekleyin.',
+					'Alt metni olmayan bir görsel ekran okuyucuda hiç karşılık bulmuyor ve ' +
+					'yüklenemediğinde yerinde bir şey yazmıyor. Bu yüzden yayına hiç ' +
+					'çıkarılmıyor — yazı şu an kapaksız görünüyor.',
+				cozum:
+					'Panelde yazının “Kapak metni” alanına görselde ne görüldüğünü yazın; ' +
+					'kapak o anda görünür hâle gelir. Kapak istenmiyorsa `kapak` alanını boşaltın.',
 			});
 		}
 
