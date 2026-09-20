@@ -5,6 +5,7 @@ import { promisify } from 'node:util';
 import { getCollection } from 'astro:content';
 
 import { canliSayfalar, canliYokla, sunucuDurumu } from './sunucu.mjs';
+import { PANEL_YOLLARI } from './yayinla.mjs';
 
 const calistir = promisify(execFile);
 
@@ -40,6 +41,14 @@ export interface Yazi {
 export interface GitDurumu {
 	/** Çalışma kopyasında kaydedilmemiş dosyalar. */
 	kaydedilmemis: string[];
+	/**
+	 * Kaydedilmemişlerin HEPSİ panelin yazdığı yollarda mı.
+	 *
+	 * Doğruysa bu bir arıza değil: yayın akışı bunları kendisi kaydedip
+	 * gönderiyor. Kod dosyası da bekliyorsa durum başka — onu yayın akışı
+	 * bilerek ellemiyor.
+	 */
+	yalnizcaIcerik: boolean;
 	/** Üst akışa gönderilmemiş commit sayısı; bilinmiyorsa null. */
 	gonderilmemis: number | null;
 	dal: string;
@@ -74,6 +83,7 @@ async function gitDurumu(): Promise<GitDurumu> {
 	} catch {
 		return {
 			kaydedilmemis: [],
+			yalnizcaIcerik: false,
 			gonderilmemis: null,
 			dal,
 			not: 'git çalıştırılamadı, bu klasör bir depo olmayabilir',
@@ -94,12 +104,25 @@ async function gitDurumu(): Promise<GitDurumu> {
 	  gönderilmemiş yerel bir dal. Sayı yerine ne olduğunu anlatan bir not
 	  dönüyor; "0 commit gönderilmemiş" demek yanıltıcı olurdu.
 	*/
+	/*
+	  Porcelain satırı `XY yol` biçiminde; yolu ayıklayıp panelin yazdığı
+	  klasörlerden birine düşüp düşmediğine bakıyoruz. Boş listede `every`
+	  true döndüğü için ayrıca uzunluk kontrolü var.
+	*/
+	const yalnizcaIcerik =
+		kaydedilmemis.length > 0 &&
+		kaydedilmemis.every((satir) => {
+			const yol = satir.slice(3).trim().replace(/^"|"$/g, '');
+			return PANEL_YOLLARI.some((kok) => yol.startsWith(`${kok}/`));
+		});
+
 	try {
 		const { stdout } = await calistir('git', ['rev-list', '--count', '@{u}..HEAD'], sec);
-		return { kaydedilmemis, gonderilmemis: Number(stdout.trim()), dal, not: null };
+		return { kaydedilmemis, yalnizcaIcerik, gonderilmemis: Number(stdout.trim()), dal, not: null };
 	} catch {
 		return {
 			kaydedilmemis,
+			yalnizcaIcerik,
 			gonderilmemis: null,
 			dal,
 			not: 'uzak karşılığı yok, gönderilmemiş commit sayılamıyor',

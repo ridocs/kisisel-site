@@ -58,6 +58,17 @@ export function kokuAyarla(kok) {
 */
 const YEREL_YAYIN = process.env.PANEL_YEREL_YAYIN === '1';
 
+/*
+  PANELİN YAZDIĞI YOLLAR
+
+  Keystatic yalnızca buralara yazıyor (`keystatic.config.ts` içindeki `path`
+  ve `directory` değerleri). Kaydetme adımı YALNIZCA bunları aşamalandırıyor:
+  bir yayın adımının, o sırada üzerinde çalışılan kodu da sessizce
+  commit'lemesi istenmez. Keystatic'e yeni bir koleksiyon eklenirse yolu
+  buraya da yazılmalı, yoksa o içerik depoya girmeden yayınlanır.
+*/
+export const PANEL_YOLLARI = ['src/icerik', 'src/content', 'public/yazi-gorselleri'];
+
 function kokuIste() {
 	if (!projeKoku) {
 		throw new Error(
@@ -151,6 +162,132 @@ export default {
  * frontmatter'ı bozuktur, bir bağlantı kırıktır). Panel çökmek yerine Astro'nun
  * kendi çıktısını göstermeli, bu yüzden hata bir değer olarak dönüyor.
  */
+/* Çıktısı panele akmayan komut: durum sorguları kayıt penceresini doldurmasın. */
+function sessizce(komut, argumanlar) {
+	return komutCalistir(komut, argumanlar, kokuIste(), () => {});
+}
+
+/*
+  Bir yolu commit mesajında görünecek kısa bir ada indiriyor:
+  `src/icerik/metinler/gizlilik.json` → `gizlilik`
+  `src/content/blog/dart-dili.mdx`    → `blog/dart-dili`
+*/
+function bolumAdi(yol) {
+	const parcalar = yol.split('/');
+	const adsiz = (a) => (a ?? '').replace(/\.[^.]+$/, '');
+	if (parcalar[1] === 'content') return `${parcalar[2]}/${adsiz(parcalar[3])}`;
+	if (parcalar[1] === 'yazi-gorselleri') return 'görseller';
+	return adsiz(parcalar.at(-1));
+}
+
+function commitMesaji(dosyalar) {
+	const adlar = [...new Set(dosyalar.map(bolumAdi))].filter(Boolean);
+	const gosterilen = adlar.slice(0, 5).join(', ');
+	const kalan = adlar.length > 5 ? ` ve ${adlar.length - 5} bölüm daha` : '';
+	return `Panelden içerik: ${gosterilen}${kalan}`;
+}
+
+/**
+ * Panelden yazılan içeriği depoya kaydediyor (commit; gönderme AYRI).
+ *
+ * NEDEN YAYININ İÇİNDE: panel içerik dosyalarını doğrudan diske yazıyor ve
+ * git'e hiç dokunmuyordu. Sonuç iki ayrı arıza veriyordu:
+ *
+ *   1. Depo ile yayın ayrışıyordu. Sunucudaki klon `main`'i çekiyor; depoya
+ *      girmemiş bir metin, sonraki bir yayında sessizce geri alınıyordu.
+ *   2. Aşağıdaki `git pull --rebase` kirli ağaçta çalışmıyor. Her yayında
+ *      "Depo çekilemedi" uyarısı verilip atlanıyordu — yani çekme adımı
+ *      aslında hiç işlemiyordu.
+ *
+ * Hata FIRLATMIYOR. Kaydedememek yayını durdurmak için yeterli bir sebep
+ * değil: metin zaten diskte duruyor ve bir sonraki yayında yine denenecek.
+ */
+export async function icerigiKaydet(bildir) {
+	const durum = await sessizce('git', ['status', '--porcelain', '--', ...PANEL_YOLLARI]);
+	if (durum.kod !== 0) {
+		bildir('uyari', 'git çalıştırılamadı; içerik depoya kaydedilmedi.');
+		return { kaydedildi: false, dosyalar: [] };
+	}
+
+	const satirlar = durum.cikti
+		.split('\n')
+		.map((satir) => satir.slice(3).trim())
+		.filter(Boolean);
+
+	if (satirlar.length === 0) return { kaydedildi: false, dosyalar: [] };
+
+	/*
+	  Aşamalandırma DİZİN değil dosya listesiyle yapılıyor. `git add -- <dizin>`
+	  var olmayan bir yol geçildiğinde tamamen başarısız oluyor ve
+	  `public/yazi-gorselleri` henüz hiç görsel yüklenmemişse yok — bu yüzden
+	  kaydetme adımının tamamı düşüyordu.
+
+	  Yeniden adlandırmada porcelain `eski -> yeni` yazıyor; iki taraf da
+	  ekleniyor, yoksa eskisi silinmiş olarak geride kalırdı. Özel karakterli
+	  adlar tırnak içinde geliyor, tırnaklar soyuluyor.
+	*/
+	const dosyalar = satirlar
+		.flatMap((yol) => (yol.includes(' -> ') ? yol.split(' -> ') : [yol]))
+		.map((yol) => yol.replace(/^"|"$/g, ''))
+		.filter(Boolean);
+
+	/*
+	  Dal uyarısı: yayınlanan sürüm `main`'e girmezse sunucudaki klon onu hiç
+	  görmüyor. Kaydetme yine de yapılıyor — yazılan metnin kaybolmaması,
+	  hangi dalda olduğundan önce gelir.
+	*/
+	const dal = await sessizce('git', ['rev-parse', '--abbrev-ref', 'HEAD']);
+	const dalAdi = dal.cikti.trim();
+	if (dal.kod === 0 && dalAdi && dalAdi !== 'main') {
+		bildir('uyari', `Depo "${dalAdi}" dalında, main değil. Bu içerik main'e girmeden yayınlanıyor.`);
+	}
+
+	bildir('adim', `${satirlar.length} içerik dosyası depoya kaydediliyor…`);
+	const ekle = await sessizce('git', ['add', '--', ...dosyalar]);
+	if (ekle.kod !== 0) {
+		bildir('uyari', 'İçerik aşamalandırılamadı; kaydetme atlandı.');
+		return { kaydedildi: false, dosyalar };
+	}
+
+	const kayit = await sessizce('git', ['commit', '-m', commitMesaji(dosyalar)]);
+	if (kayit.kod !== 0) {
+		bildir('uyari', `İçerik kaydedilemedi: ${kayit.cikti.trim().split('\n').at(-1) ?? ''}`);
+		return { kaydedildi: false, dosyalar };
+	}
+
+	bildir('bilgi', `Kaydedildi: ${commitMesaji(dosyalar)}`);
+	return { kaydedildi: true, dosyalar };
+}
+
+/**
+ * Yereldeki commit'leri GitHub'a gönderiyor.
+ *
+ * Yayının SONUNDA çağrılıyor, başında değil: gönderilen şey sunucuya gerçekten
+ * çıkmış olan sürüm oluyor. Başarısız olursa yayın başarısız SAYILMIYOR — site
+ * zaten güncellendi, eksik olan yalnızca deponun uzak kopyası ve bu bir sonraki
+ * yayında kendiliğinden kapanıyor.
+ */
+export async function depoyuGonder(bildir) {
+	const sayim = await sessizce('git', ['rev-list', '--count', '@{u}..HEAD']);
+	if (sayim.kod !== 0) {
+		bildir('uyari', "Dalın uzak karşılığı yok; GitHub'a gönderilmedi.");
+		return { gonderildi: false, adet: 0 };
+	}
+
+	const adet = Number(sayim.cikti.trim());
+	if (!Number.isFinite(adet) || adet === 0) return { gonderildi: false, adet: 0 };
+
+	bildir('adim', `${adet} commit GitHub'a gönderiliyor…`);
+	const itme = await komutCalistir('git', ['push'], kokuIste(), bildir);
+	if (itme.kod !== 0) {
+		bildir('uyari', "GitHub'a gönderilemedi; commit'ler yerelde duruyor.");
+		return { gonderildi: false, adet };
+	}
+
+	bildir('bilgi', `${adet} commit gönderildi.`);
+	return { gonderildi: true, adet };
+}
+
 export async function derle(bildir) {
 	const dizin = derlemeDizini();
 
@@ -163,6 +300,12 @@ export async function derle(bildir) {
 	  ağ sorunu yüzünden yayınlayamamak, bir tık eski içerik yayınlamaktan daha
 	  kötü. Uyarı kayıt panelinde görünüyor.
 	*/
+	/*
+	  Çekmeden ÖNCE kaydetmek şart: `git pull --rebase` kirli bir ağaçta
+	  çalışmıyor. Sıra tersken çekme her yayında sessizce atlanıyordu.
+	*/
+	await icerigiKaydet(bildir);
+
 	if (YEREL_YAYIN) {
 		bildir('adim', 'Depo güncelleniyor (git pull)…');
 		const cekme = await komutCalistir('git', ['pull', '--rebase', 'origin', 'main'], kokuIste(), bildir);
@@ -396,6 +539,12 @@ export async function gonder(bildir, { kuru = false } = {}) {
 				hata: `Devreye alma beklenen onayı vermedi. Sunucunun yanıtı:\n${cikti.trim()}`,
 			};
 		}
+
+		/*
+		  Site çıktı; şimdi depo. Sıra bu: gönderilen commit, sunucuda gerçekten
+		  duran sürümü gösteriyor.
+		*/
+		await depoyuGonder(bildir);
 
 		bildir('bitti', 'Yayınlandı. Önceki sürüm `web-sitem.eski` olarak duruyor.');
 		return { basarili: true };

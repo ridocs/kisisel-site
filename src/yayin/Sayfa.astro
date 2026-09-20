@@ -116,7 +116,7 @@ if (!durum.karsilastirilabildi) {
 
 /* 4 — GitHub'a gönderilmemiş değişiklik */
 {
-	const { kaydedilmemis, gonderilmemis, dal, not } = durum.git;
+	const { kaydedilmemis, yalnizcaIcerik, gonderilmemis, dal, not } = durum.git;
 	const parcalar: string[] = [];
 	if (kaydedilmemis.length > 0) parcalar.push(`${kaydedilmemis.length} dosya kaydedilmemiş`);
 	if (gonderilmemis !== null && gonderilmemis > 0) {
@@ -124,13 +124,26 @@ if (!durum.karsilastirilabildi) {
 	}
 	if (not) parcalar.push(not);
 
+	/*
+	  Bekleyenlerin hepsi panelde yazılmış içerikse bu bir arıza değil, akışın
+	  normal hâli: yayın adımı onları kendisi kaydedip gönderiyor. Kart bunu
+	  söylemezse her metin düzenlemesinden sonra çözülmesi gereken bir sorun
+	  varmış gibi duruyordu — oysa yapılacak tek şey yayınlamak.
+
+	  Kod dosyası da bekliyorsa ton yine "dikkat": yayın akışı koda bilerek
+	  dokunmuyor, onu kaydetmek gerçekten kullanıcının işi.
+	*/
+	const yalnizcaBekleyenIcerik = yalnizcaIcerik && !(gonderilmemis && gonderilmemis > 0) && !not;
+
 	satirlar.push({
 		baslik: 'GitHub',
 		metin:
 			parcalar.length === 0
 				? `${dal} dalı temiz; her şey gönderilmiş.`
-				: `${dal} dalı — ${parcalar.join(' · ')}.`,
-		ton: parcalar.length === 0 ? 'sakin' : 'dikkat',
+				: yalnizcaBekleyenIcerik
+					? `${kaydedilmemis.length} içerik dosyası yayın bekliyor. Yayınlarken kaydedilip ${dal} dalına gönderilecek.`
+					: `${dal} dalı — ${parcalar.join(' · ')}.`,
+		ton: parcalar.length === 0 || yalnizcaBekleyenIcerik ? 'sakin' : 'dikkat',
 		ayrinti: kaydedilmemis.slice(0, 12),
 	});
 }
