@@ -664,6 +664,16 @@ export default config({
 					},
 				}),
 
+				/*
+				  Arama sonucundaki satır. Boş bırakılınca başlığa site adı
+				  eklenerek kuruluyor; burada yazılan ise birebir basılıyor.
+				*/
+				sayfaBasligi: fields.text({
+					label: 'Sayfa başlığı (arama sonucu)',
+					description:
+						'Boş bırakırsan "Başlık — Mustafa Eybek" kullanılır. Yazarsan aynen o görünür. 60 karakteri aşmamaya çalış, Google fazlasını kırpıyor.',
+				}),
+
 				description: fields.text({
 					label: 'Açıklama',
 					description:

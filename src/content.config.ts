@@ -7,6 +7,18 @@ const blog = defineCollection({
 	schema: z
 		.object({
 			title: z.string(),
+			/*
+			  Arama sonucunda ve tarayıcı sekmesinde görünen başlık.
+
+			  Boş bırakılırsa `title` kullanılıp sonuna site adı ekleniyor
+			  ("Dart Programlama Dili — Mustafa Eybek"). Doluysa BİREBİR o
+			  yazılıyor: site adı da dahil her şey yazarın elinde kalsın.
+
+			  Ayrı bir alan, çünkü ikisinin işi farklı: `title` sayfanın
+			  içindeki H1 ve kart başlığı, bu ise arama sonucundaki satır.
+			  60 karakteri aşınca Google kırpıyor.
+			*/
+			sayfaBasligi: z.string().optional(),
 			description: z.string(),
 			pubDate: z.coerce.date(),
 			updatedDate: z.coerce.date().optional(),
@@ -42,17 +54,22 @@ const blog = defineCollection({
 			kapakAlt: z.string().optional(),
 		})
 		/*
-		  Kapak varsa metin karşılığı zorunlu.
+		  Kapak varsa metin karşılığı zorunlu — ama BU KURAL DERLEMEYİ DURDURMUYOR.
 
-		  Panel bunu tek başına güvenceye alamıyor: kapak alanı boş
-		  bırakılabildiği için "zorunlu" işareti konamıyor, ayrıca elle yazılmış
-		  bir yazı panelden hiç geçmiyor. Denetim burada olunca kaçacak yer
-		  kalmıyor — eksikse derleme, yazının adını vererek duruyor.
+		  Önce `.refine` ile hata fırlatılıyordu. Niyet doğruydu (alt metinsiz
+		  görsel yayına çıkmasın) ama sonuç kilitti: şema hatası yalnızca yayın
+		  derlemesini değil PANELİN KENDİSİNİ de düşürüyordu. Panelden kapak
+		  ekleyip alt metni boş bırakan kişi, düzeltmesi gereken ekrana bir daha
+		  giremiyordu. 20 Eylül'de tam bu yaşandı.
+
+		  Şimdi kural aynı ama yaptırımı başka: alt metni olmayan kapak
+		  BASILMIYOR. Erişilemez bir görsel hiçbir zaman yayına çıkmıyor,
+		  derleme de durmuyor. Eksik `kontrol` ekranında bulgu olarak
+		  görünüyor — `kapakAltEksik` bayrağı bunun için.
 		*/
-		.refine((veri) => !veri.kapak || (veri.kapakAlt ?? '').trim() !== '', {
-			message:
-				'Kapak görseli seçilmiş ama metin karşılığı (kapakAlt) boş. Görselin ne gösterdiğini yaz.',
-			path: ['kapakAlt'],
+		.transform((veri) => {
+			const kapakAltEksik = Boolean(veri.kapak) && (veri.kapakAlt ?? '').trim() === '';
+			return { ...veri, kapak: kapakAltEksik ? undefined : veri.kapak, kapakAltEksik };
 		}),
 });
 
