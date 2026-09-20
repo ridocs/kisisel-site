@@ -1,39 +1,46 @@
 {
   "kalemler": [
     {
-      "teknoloji": "python",
-      "sure": "4 yıl",
-      "sureEn": "4 years",
-      "kullanim": "En rahat olduğum dil. Otomasyon betikleri, veri dönüştürme işleri ve küçük servisler yazdım; bu sitenin yazı tipi alt kümeleme aracı da Python ile.",
-      "kullanimEn": "The language I am most at home in. Automation scripts, data transforms and small services — even this site's font-subsetting tool is Python."
-    },
-    {
       "teknoloji": "javascript",
       "sure": "3 yıl",
       "sureEn": "3 years",
-      "kullanim": "Arayüz tarafında günlük işim. Bu sitedeki kaydırma, menü ve etkileşim betikleri kütüphanesiz, saf JavaScript.",
-      "kullanimEn": "My daily work on the interface side. The scroll, menu and interaction scripts on this site are plain JavaScript, no libraries."
+      "kullanim": "Arayüz tarafında olmazsa olmazlardan. Bu sitedeki kaydırma, menü ve etkileşim betikleri, herhangi bir kütüphane kullanılmadan saf JavaScript ile yazıldı.",
+      "kullanimEn": "A must-have for the frontend. The scrolling, menu, and interaction scripts on this website were built with vanilla JavaScript, without relying on any libraries.\n"
     },
     {
       "teknoloji": "dart",
-      "sure": "2 yıl",
-      "sureEn": "2 years",
-      "kullanim": "Mobil tarafta kullandığım dil. Flutter ile arayüz kurup durum yönetimi ve platform kanalları üzerine çalıştım.",
-      "kullanimEn": "The language I use on mobile. I build interfaces with Flutter and have worked on state management and platform channels."
+      "sure": "1 Yıl",
+      "sureEn": "1 years",
+      "kullanim": "Mobil tarafta kendi materyallerimi yaparak mobil uygulama geliştirmekte kullanıyorum.",
+      "kullanimEn": "On the mobile side, I develop applications using my own custom-built components and materials to create tailored and efficient mobile experiences.\n"
     },
     {
       "teknoloji": "typescript",
       "sure": "2 yıl",
       "sureEn": "2 years",
-      "kullanim": "Büyüyen web projelerinde tercihim. Bu sitenin çeviri katmanı ve bileşen arayüzleri TypeScript ile yazıldı.",
-      "kullanimEn": "My choice on web projects as they grow. This site's translation layer and component interfaces are written in TypeScript."
+      "kullanim": "Büyüyen web projelerinde tercihim. Hatta bu sitenin çeviri katmanı ve bileşen arayüzleri TypeScript ile yazıldı.",
+      "kullanimEn": "My preferred choice for growing web projects. In fact, the translation layer and component interfaces of this website were built with TypeScript.\n"
     },
     {
       "teknoloji": "docker",
-      "sure": "2 yıl",
-      "sureEn": "2 years",
-      "kullanim": "Geliştirme ortamlarını ve küçük servisleri kapsayıcıya aldım; dağıtımda tekrarlanabilirliği buradan sağlıyorum.",
-      "kullanimEn": "I containerise development environments and small services; this is where deployment repeatability comes from."
+      "sure": "3 Ay",
+      "sureEn": "3 Month",
+      "kullanim": "Geliştirme ortamlarını ve küçük servisleri kapsayıcıya alarak; dağıtımda tekrarlanabilirliği burada sağlıyorum.",
+      "kullanimEn": "By containerizing development environments and small services, I ensure consistency and reproducibility throughout the deployment process.\n"
+    },
+    {
+      "teknoloji": "flutter",
+      "sure": "1 Yıl",
+      "sureEn": "1 Years",
+      "kullanim": "Mobil uygulamalarımda Material kütüphanesini kullanıyorum; özellikle Cupertino kütüphanesini daha yoğun kullanıyorum.",
+      "kullanimEn": "I use the Material library in my mobile applications, with a particular focus on the Cupertino library."
+    },
+    {
+      "teknoloji": "nginx",
+      "sure": "6 Ay",
+      "sureEn": "6 Month",
+      "kullanim": "Web projelerimde sunucu tarafında reverse proxy, HTTPS yönlendirmeleri ve farklı servislerin yönetimi için kullanıyorum.\n",
+      "kullanimEn": "I use it on the server side of my web projects for reverse proxying, HTTPS routing, and managing multiple services.\n"
     }
   ]
 }
