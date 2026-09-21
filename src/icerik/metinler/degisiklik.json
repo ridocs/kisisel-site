@@ -14,7 +14,9 @@
     "cevrilmedi": "TR",
     "bosBaslik": "Günlük bu derlemede okunamadı.",
     "bosMetin": "Değişiklik listesi sitenin geçmişinden üretiliyor ve bu derlemede o geçmişe ulaşılamadı. Sayfanın geri kalanı yerinde; liste bir sonraki yayında geri gelir.",
-    "agacBaslik": "Tarihe Göre"
+    "izgaraBaslik": "Günlük Yoğunluk",
+    "izgaraAz": "Az",
+    "izgaraCok": "Çok"
   },
   "en": {
     "sayfaBasligi": "What's Changed",
@@ -31,6 +33,8 @@
     "cevrilmedi": "TR",
     "bosBaslik": "The log could not be read for this build",
     "bosMetin": "The list is generated from the site's history, and that history was not reachable during this build. The rest of the page is intact; the list comes back with the next release.",
-    "agacBaslik": "By date"
+    "izgaraBaslik": "Daily Activity",
+    "izgaraAz": "Less",
+    "izgaraCok": "More"
   }
 }

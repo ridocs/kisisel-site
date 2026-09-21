@@ -54,27 +54,29 @@ function gunAdi(tarih: string): string {
 }
 
 /*
-  TARİH AĞACI — soldaki gezinme.
+  KATKI IZGARASI: sayfanın üstündeki yoğunluk haritası.
 
-  Günler yıla ve aya göre kümeleniyor: liste uzadıkça "eylülde ne oldu"
-  sorusunun cevabı aşağı kaydırmadan bulunabilsin. Kayıt sayısı her ayın
-  yanında duruyor; yoğun bir ayı seyrek bir aydan ayırt etmek için tek
-  başına yeterli.
+  Önce solda yıl/ay/gün ağacı vardı. Liste 130 kayda çıkınca sayfa çok
+  uzadı ve ağaç da onunla birlikte uzadı; ikisi aynı derdi paylaşıyordu.
+  Izgara aynı işi tek bakışta yapıyor: hangi gün ne kadar iş yapıldığı
+  renkten okunuyor, kareye basınca o günün kayıtlarına gidiliyor.
 
-  Ay anahtarı `2026-09` biçiminde: sıralama metin karşılaştırmasıyla doğru
-  çalışıyor, ayrıca ay adı diле göre buradan üretiliyor.
+  ARALIK VERİYE GÖRE BÜYÜYOR. Github bunu hep 52 haftada gösteriyor, ama
+  bu sitenin geçmişi henüz bir haftalık: 52 hafta çizmek 358 boş kare
+  demekti. Aralık en eski kayda göre hesaplanıyor, en az 26 hafta (daha
+  dar bir ızgara geniş ekranda pano değil ince bir şerit gibi duruyordu)
+  en çok 53 hafta (bir yıldan eskisi ilgi çekmiyor).
 */
-interface AgacAyi {
-	anahtar: string;
-	ad: string;
-	gunler: { tarih: string; sayi: number; gun: string }[];
-	sayi: number;
-}
+const IZGARA_EN_AZ_HAFTA = 26;
+const IZGARA_EN_COK_HAFTA = 53;
+const HAFTANIN_GUNU = 7;
 
-interface AgacYili {
-	yil: string;
-	aylar: AgacAyi[];
+interface IzgaraGunu {
+	/** Gelecekteki kareler boş kalıyor; onlarda tarih yok. */
+	tarih: string | null;
 	sayi: number;
+	/** 0 boş, 1..4 yoğunluk basamağı. */
+	seviye: number;
 }
 
 /** Bir güne çapa kimliği. `id` rakamla başlayamayacağı için önek var. */
@@ -82,44 +84,119 @@ function gunCapa(tarih: string): string {
 	return `gun-${tarih}`;
 }
 
-function agacKur(): AgacYili[] {
-	const yillar: AgacYili[] = [];
-
-	for (const gun of gunler) {
-		const [yil, ay] = gun.tarih.split('-');
-		const ayAnahtari = `${yil}-${ay}`;
-
-		let yilKaydi = yillar.find((y) => y.yil === yil);
-		if (!yilKaydi) {
-			yilKaydi = { yil, aylar: [], sayi: 0 };
-			yillar.push(yilKaydi);
-		}
-
-		let ayKaydi = yilKaydi.aylar.find((a) => a.anahtar === ayAnahtari);
-		if (!ayKaydi) {
-			ayKaydi = {
-				anahtar: ayAnahtari,
-				ad: new Date(`${gun.tarih}T00:00:00`).toLocaleDateString(yerel, { month: 'long' }),
-				gunler: [],
-				sayi: 0,
-			};
-			yilKaydi.aylar.push(ayKaydi);
-		}
-
-		const gunSayisi = gun.kayitlar.length;
-		ayKaydi.gunler.push({
-			tarih: gun.tarih,
-			sayi: gunSayisi,
-			gun: new Date(`${gun.tarih}T00:00:00`).toLocaleDateString(yerel, { day: 'numeric' }),
-		});
-		ayKaydi.sayi += gunSayisi;
-		yilKaydi.sayi += gunSayisi;
-	}
-
-	return yillar;
+function isoGun(d: Date): string {
+	const yil = d.getFullYear();
+	const ay = String(d.getMonth() + 1).padStart(2, '0');
+	const gun = String(d.getDate()).padStart(2, '0');
+	return `${yil}-${ay}-${gun}`;
 }
 
-const agac = agacKur();
+function gunEkle(d: Date, adet: number): Date {
+	const yeni = new Date(d);
+	yeni.setDate(yeni.getDate() + adet);
+	return yeni;
+}
+
+function izgaraKur() {
+	if (gunler.length === 0) return null;
+
+	const sayilar = new Map(gunler.map((g) => [g.tarih, g.kayitlar.length]));
+	const enEski = gunler[gunler.length - 1].tarih;
+
+	const bugun = new Date();
+	bugun.setHours(0, 0, 0, 0);
+
+	/*
+	  Son sütun içinde bulunulan haftanın tamamı: ızgara sağdan hizalı
+	  duruyor ve "bugün" her zaman en sağdaki sütunda oluyor. Hafta
+	  pazartesi başlıyor (ISO); `getDay()` pazarı 0 saydığı için kaydırma
+	  gerekiyor.
+	*/
+	const haftaninGunu = (bugun.getDay() + 6) % 7;
+	const sonPazar = gunEkle(bugun, 6 - haftaninGunu);
+
+	const gecenGun = Math.round(
+		(sonPazar.getTime() - new Date(`${enEski}T00:00:00`).getTime()) / 86_400_000,
+	);
+	const haftaSayisi = Math.min(
+		Math.max(Math.ceil((gecenGun + 1) / HAFTANIN_GUNU), IZGARA_EN_AZ_HAFTA),
+		IZGARA_EN_COK_HAFTA,
+	);
+
+	const ilkPazartesi = gunEkle(sonPazar, -(haftaSayisi * HAFTANIN_GUNU - 1));
+
+	const kareler: IzgaraGunu[] = [];
+	const ayEtiketleri: { sutun: number; ad: string }[] = [];
+	let oncekiAy = '';
+
+	for (let hafta = 0; hafta < haftaSayisi; hafta++) {
+		for (let gun = 0; gun < HAFTANIN_GUNU; gun++) {
+			const tarih = gunEkle(ilkPazartesi, hafta * HAFTANIN_GUNU + gun);
+			const ileride = tarih.getTime() > bugun.getTime();
+			const iso = isoGun(tarih);
+			kareler.push({
+				tarih: ileride ? null : iso,
+				sayi: ileride ? 0 : (sayilar.get(iso) ?? 0),
+				seviye: 0,
+			});
+		}
+
+		/*
+		  Ay etiketi sütunun ilk gününe bakıyor. Ay ortasında başlayan bir
+		  sütun bir öncekine yazılırsa etiket bir hafta erken görünüyordu.
+		*/
+		const sutunBasi = gunEkle(ilkPazartesi, hafta * HAFTANIN_GUNU);
+		const ayAnahtari = `${sutunBasi.getFullYear()}-${sutunBasi.getMonth()}`;
+		if (ayAnahtari !== oncekiAy) {
+			/*
+			  Ay adı sütundan geniş. İki etiket üç sütundan yakınsa ikincisi
+			  atlanıyor, yoksa yan yana yazılıp birbirine giriyorlar
+			  ("MarNis" diye okunuyordu).
+			*/
+			const sonEtiket = ayEtiketleri.at(-1);
+			/*
+			  İlk sütun neredeyse hiç ayın 1'ine denk gelmiyor: aralık bugüne
+			  göre geriye sayıldığı için ayın ortasından başlıyor. Oraya ay
+			  adı yazmak hem yanlış yeri işaret ediyor hem de bir sonraki
+			  gerçek ay başlangıcını aralık kuralına takılıp sildiriyordu.
+			*/
+			if (hafta > 0 && (!sonEtiket || hafta - sonEtiket.sutun >= 3)) {
+				ayEtiketleri.push({
+					sutun: hafta,
+					ad: sutunBasi.toLocaleDateString(yerel, { month: 'short' }),
+				});
+			}
+			oncekiAy = ayAnahtari;
+		}
+	}
+
+	/*
+	  Basamaklar EN YOĞUN GÜNE göre bölünüyor, sabit eşiklerle değil. Sabit
+	  eşik (1, 3, 6, 10 gibi) bu sitede her günü en koyu basamağa atardı:
+	  yedi günde 130 kayıt var, yani günde yaklaşık yirmi.
+	*/
+	const enCok = Math.max(0, ...sayilar.values());
+	for (const kare of kareler) {
+		if (kare.sayi > 0 && enCok > 0) {
+			kare.seviye = Math.min(4, Math.ceil((kare.sayi / enCok) * 4));
+		}
+	}
+
+	/* Satır etiketleri dilden geliyor: "Pzt" ile "Mon" aynı yerde durmuyor. */
+	const satirAdlari = Array.from({ length: HAFTANIN_GUNU }, (_, i) =>
+		gunEkle(ilkPazartesi, i).toLocaleDateString(yerel, { weekday: 'short' }),
+	);
+
+	return { kareler, ayEtiketleri, haftaSayisi, satirAdlari, enCok };
+}
+
+const izgara = izgaraKur();
+
+/** Kare ipucu: "14 Eylül 2026, 39 değişiklik". Ekran okuyucu da bunu okuyor. */
+function kareNotu(kare: IzgaraGunu): string {
+	if (!kare.tarih) return '';
+	return `${uzunTarih(kare.tarih)}, ${kare.sayi} ${m('degisiklik.kunyeKayit').toLocaleLowerCase(yerel)}`;
+}
 
 /*
   ÇERÇEVE METNİNİ ESNEK OKUMA.
@@ -208,62 +285,79 @@ function uzunTarih(tarih: string): string {
 </section>
 
 {/*
-  2) Günler, solunda tarih ağacıyla.
+  2) Katkı ızgarası: hangi gün ne kadar iş yapıldığı.
 
-  Ağaç yalnızca gezinme: her bağlantı aynı sayfadaki bir güne çapa atıyor.
-  Betik YOK — açılıp kapanmayı `<details>`, yumuşak kaydırmayı CSS yapıyor.
+  Betik YOK. Kareler `<a>`, hedefleri aynı sayfadaki gün çapaları; yumuşak
+  kaydırmayı CSS yapıyor. Kaydı olmayan gün `<span>` kalıyor, çünkü hiçbir
+  yere gitmeyen bir bağlantı klavyeyle gezene boşa durak.
 
-  Geniş ekranda ağaç solda sabit duruyor (`position: sticky`), dar ekranda
-  içeriğin üstünde kapalı bir açılır liste oluyor: telefonda yirmi günlük bir
-  listeyi baştan açmak, asıl içeriği ekranın çok aşağısına itiyordu.
+  Dar ekranda ızgara yatay kayıyor (`overflow-x`) ve sağdan başlıyor: en
+  yeni hafta ilk görünen sütun oluyor.
 */}
-<div class="gunluk-duzen">
-	{
-		agac.length > 0 && (
-			<nav class="agac" aria-label={m('degisiklik.agacBaslik')}>
-				<p class="agac-baslik">{m('degisiklik.agacBaslik')}</p>
+{
+	izgara && (
+		<section class="izgara-alan" data-belir data-parcali>
+			<p class="izgara-baslik" data-belir-oge style="--sira: 0">
+				{m('degisiklik.izgaraBaslik')}
+			</p>
 
-				<div class="agac-govde">
-					{agac.map((yil, yilSirasi) => (
-						<section class="agac-yil">
-							<p class="yil-baslik">
-								<span>{yil.yil}</span>
-								<span class="sayi">{yil.sayi}</span>
-							</p>
+			<div class="izgara-kart" data-belir-oge style="--sira: 1">
+			<div class="izgara-kaydir">
+				<div class="izgara" style={`--hafta: ${izgara.haftaSayisi}`}>
+					<div class="izgara-aylar" aria-hidden="true">
+						{izgara.ayEtiketleri.map((ay) => (
+							<span class="ay-etiket" style={`--sutun: ${ay.sutun + 1}`}>
+								{ay.ad}
+							</span>
+						))}
+					</div>
 
-							{yil.aylar.map((ay, aySirasi) => (
-								/*
-								  En yeni ay açık geliyor, öbürleri kapalı: ziyaretçi
-								  çoğunlukla son değişikliklere bakıyor ve hepsi açık
-								  olduğunda ağaç sayfadan uzun oluyordu.
-								*/
-								<details class="agac-ay" open={yilSirasi === 0 && aySirasi === 0}>
-									<summary>
-										<Icon name="lucide:chevron-right" class="ay-ok" aria-hidden="true" />
-										<span class="ay-ad">{ay.ad}</span>
-										<span class="sayi">{ay.sayi}</span>
-									</summary>
+					{/* Satır adları: yedi etiket bu boyutta üst üste bindiği için
+					    biri atlanarak basılıyor. Son satır (pazar) boş bırakıldı,
+					    etiketi ölçek satırına değiyordu. */}
+					<div class="izgara-satirlar" aria-hidden="true">
+						{izgara.satirAdlari.map((ad, sira) => (
+							<span class="satir-etiket" style={`--satir: ${sira + 1}`}>
+								{sira % 2 === 0 && sira < 6 ? ad : ''}
+							</span>
+						))}
+					</div>
 
-									<ul class="ay-gunler">
-										{ay.gunler.map((gun) => (
-											<li>
-												<a href={`#${gunCapa(gun.tarih)}`}>
-													<span class="gun-sayi">{gun.gun}</span>
-													<span class="gun-ad">{gunAdi(gun.tarih)}</span>
-													<span class="sayi">{gun.sayi}</span>
-												</a>
-											</li>
-										))}
-									</ul>
-								</details>
-							))}
-						</section>
-					))}
+					<div class="izgara-kareler">
+						{izgara.kareler.map((kare) =>
+							kare.tarih && kare.sayi > 0 ? (
+								<a
+									class="kare"
+									href={`#${gunCapa(kare.tarih)}`}
+									data-seviye={kare.seviye}
+									title={kareNotu(kare)}
+									aria-label={kareNotu(kare)}
+								/>
+							) : (
+								<span class="kare" data-seviye="0" aria-hidden="true" />
+							),
+						)}
+					</div>
 				</div>
-			</nav>
-		)
-	}
+			</div>
 
+			<p class="izgara-olcek">
+				<span>{m('degisiklik.izgaraAz')}</span>
+				<span class="olcek-kutulari" aria-hidden="true">
+					<span class="kare" data-seviye="0" />
+					<span class="kare" data-seviye="1" />
+					<span class="kare" data-seviye="2" />
+					<span class="kare" data-seviye="3" />
+					<span class="kare" data-seviye="4" />
+				</span>
+				<span>{m('degisiklik.izgaraCok')}</span>
+			</p>
+			</div>
+		</section>
+	)
+}
+
+<div class="gunluk-duzen">
 	<div class="gunluk-akis">
 {
 	/*
@@ -281,14 +375,28 @@ function uzunTarih(tarih: string): string {
 			</p>
 		</section>
 	) : (
-		gunler.map((gun) => (
-			<section class="bolum" id={gunCapa(gun.tarih)} data-belir data-parcali>
-				<p class="ust-baslik" data-belir-oge style="--sira: 0">
-					{gunAdi(gun.tarih)}
-				</p>
-				<h2 class="baslik" data-belir-oge style="--sira: 1">
-					<time datetime={gun.tarih}>{uzunTarih(gun.tarih)}</time>
-				</h2>
+		gunler.map((gun, sira) => (
+			/*
+			  Her gün katlanabilir. Yalnızca EN YENİ gün açık geliyor: yedi
+			  günde 130 kayıt var ve hepsi açıkken sayfa yirmi ekran
+			  sürüyordu. Kapalı günler ızgaradan ya da başlığa basılarak
+			  açılıyor.
+
+			  Çapa `<details>` üzerinde: tarayıcı çapaya giderken kapalı bir
+			  `<details>` içindeki hedefi kendiliğinden açıyor, ama hedefin
+			  kendisi kapalı öğeyse zaten görünür oluyor.
+			*/
+			<details class="bolum gun-kutusu" id={gunCapa(gun.tarih)} open={sira === 0} data-belir data-parcali>
+				<summary class="gun-ozet" data-belir-oge style="--sira: 0">
+					<Icon name="lucide:chevron-right" class="gun-ok" aria-hidden="true" />
+					<span class="gun-metin">
+						<span class="ust-baslik">{gunAdi(gun.tarih)}</span>
+						<span class="baslik">
+							<time datetime={gun.tarih}>{uzunTarih(gun.tarih)}</time>
+						</span>
+					</span>
+					<span class="gun-sayac">{gun.kayitlar.length}</span>
+				</summary>
 
 				{/*
 				  Basamaklı belirme listenin TAMAMINA bir kez uygulanıyor, kaleme
@@ -334,7 +442,7 @@ function uzunTarih(tarih: string): string {
 						);
 					})}
 				</ul>
-			</section>
+			</details>
 		))
 	)
 }
@@ -343,48 +451,43 @@ function uzunTarih(tarih: string): string {
 
 <style>
 	/* ------------------------------------------------------------------ *
-	 * Tarih ağacı ve iki sütunlu yerleşim
+	 * Katkı ızgarası
 	 * ------------------------------------------------------------------ */
 
+	.izgara-alan {
+		padding-block: 1.25rem 2rem;
+	}
+
 	/*
-	  Dar ekranda tek sütun: ağaç üstte, günler altında. 1024 pikselden
-	  itibaren ağaç sola geçiyor. Eşik burada, çünkü ağaç 15rem'lik bir sütun
-	  istiyor ve daha dar ekranda içeriğe kalan genişlik okunaklı satır
-	  uzunluğunun altına düşüyordu.
+	  Izgara çerçeveli bir kartın içinde. Çerçevesiz hâlde sayfanın geri
+	  kalanıyla aynı düzlemde duruyordu ve kareler başıboş görünüyordu;
+	  kart onları tek bir nesne yapıyor.
 	*/
-	.gunluk-duzen {
-		display: grid;
-		gap: 1.5rem;
-	}
-
-	@media (min-width: 1024px) {
-		.gunluk-duzen {
-			grid-template-columns: 15rem minmax(0, 1fr);
-			gap: 3rem;
-			align-items: start;
-		}
-	}
-
-	.agac {
-		font-size: 0.875rem;
-	}
-
-	@media (min-width: 1024px) {
+	.izgara-kart {
+		border: 1px solid var(--border);
+		border-radius: 0.75rem;
+		padding: 1rem;
+		background: color-mix(in oklab, var(--foreground) 2%, transparent);
 		/*
-		  Sayfa boyunca yanda duruyor. Üstteki boşluk gezinme çubuğunun
-		  yüksekliği kadar; olmasaydı ağacın başlığı çubuğun altında kalırdı.
+		  TAŞMA KESİCİ.
+
+		  `body` bir flex kapsayıcı ve `main` onun öğesi; flex öğesinin
+		  varsayılan `min-width: auto` değeri "içeriğin tamamı kadar geniş ol"
+		  demek. Izgara `max-content` genişliğinde olduğu için bu zincir
+		  yukarı doğru itiliyor ve dar ekranda SAYFANIN TAMAMI taşıyordu
+		  (390 piksellik ekranda belge 486 piksel ölçüldü).
+
+		  `min-width: 0` tek başına yetmedi. Kart bir ızgara kapsayıcısına
+		  çevrildi ve tek sütunu `minmax(0, 1fr)` oldu: sütunun en küçük
+		  genişliği açıkça sıfır olunca içerik onu genişletemiyor, taşma
+		  kaydırma kutusunun içinde kalıyor.
 		*/
-		.agac {
-			position: sticky;
-			top: calc(var(--cubuk-yuksekligi, 4rem) + 1.5rem);
-			/* Ağaç ekrandan uzunsa kendi içinde kayıyor; sayfayı uzatmıyor. */
-			max-height: calc(100svh - var(--cubuk-yuksekligi, 4rem) - 3rem);
-			overflow-y: auto;
-			padding-inline-end: 0.5rem;
-		}
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		min-width: 0;
 	}
 
-	.agac-baslik {
+	.izgara-baslik {
 		font-size: 0.6875rem;
 		font-weight: 700;
 		letter-spacing: 0.16em;
@@ -393,144 +496,225 @@ function uzunTarih(tarih: string): string {
 		margin-bottom: 0.75rem;
 	}
 
-	/* Dar ekranda ağaç bir kutunun içinde: içerikten görsel olarak ayrılıyor. */
-	@media (max-width: 1023px) {
-		.agac {
-			border: 1px solid var(--border);
-			border-radius: 0.75rem;
-			padding: 0.875rem 1rem;
+	/*
+	  Dar ekranda ızgara yatay kayıyor. `direction: rtl` ile kaydırma sağdan
+	  başlıyor (en yeni hafta ilk görünen sütun); içerik yönü `.izgara`
+	  üzerinde ltr'ye geri çevriliyor, yoksa kareler ters sıralanırdı.
+	*/
+	.izgara-kaydir {
+		overflow-x: auto;
+		direction: rtl;
+		padding-bottom: 0.25rem;
+		min-width: 0;
+		max-width: 100%;
+	}
+
+	.izgara {
+		direction: ltr;
+		/*
+		  Kaydırma kutusu `rtl` olduğu için içerik sığdığında sağa
+		  yaslanıyordu ve geniş ekranda solda kocaman bir boşluk kalıyordu.
+		  Fiziksel sağ kenar boşluğu `auto` olunca ızgara sola dönüyor,
+		  taşma hâlinde kaydırma yine sağdan başlıyor.
+		*/
+		margin-right: auto;
+		display: grid;
+		grid-template-columns: auto 1fr;
+		grid-template-rows: auto 1fr;
+		gap: 0.35rem;
+		width: max-content;
+	}
+
+	.izgara-aylar {
+		grid-column: 2;
+		grid-row: 1;
+		display: grid;
+		grid-template-columns: repeat(var(--hafta), var(--kare, 0.75rem));
+		gap: 0 3px;
+		font-size: 0.625rem;
+		color: var(--muted-foreground);
+	}
+
+	.ay-etiket {
+		grid-column-start: var(--sutun);
+		/* Etiket sütundan geniş; taşmasına izin veriliyor, kırpılmıyor. */
+		white-space: nowrap;
+		text-transform: capitalize;
+	}
+
+	.izgara-satirlar {
+		grid-column: 1;
+		grid-row: 2;
+		display: grid;
+		grid-template-rows: repeat(7, var(--kare, 0.75rem));
+		gap: 3px;
+		padding-inline-end: 0.35rem;
+		font-size: 0.625rem;
+		line-height: var(--kare, 0.75rem);
+		color: var(--muted-foreground);
+	}
+
+	.satir-etiket {
+		grid-row-start: var(--satir);
+		text-transform: capitalize;
+	}
+
+	/*
+	  Kareler tek bir düz liste; ızgara onları sütun sütun diziyor
+	  (`grid-auto-flow: column`). Hafta başına ayrı bir sarmalayıcı kurmak
+	  yedi kat daha fazla öğe demekti ve hizalama yine ızgaraya kalıyordu.
+	*/
+	.izgara-kareler {
+		grid-column: 2;
+		grid-row: 2;
+		display: grid;
+		grid-auto-flow: column;
+		grid-template-rows: repeat(7, var(--kare, 0.75rem));
+		grid-auto-columns: var(--kare, 0.75rem);
+		gap: 3px;
+	}
+
+	.kare {
+		width: var(--kare, 0.75rem);
+		height: var(--kare, 0.75rem);
+		border-radius: 2px;
+		background: var(--kare-zemin);
+		display: block;
+		transition: outline-color 120ms ease-out;
+		outline: 2px solid transparent;
+		outline-offset: 1px;
+	}
+
+	/*
+	  Basamak renkleri marka mavisinden türüyor. Koyu temada zemin nötr gri
+	  kalıyor; renk yalnızca dolu karelerde var, yani koyu bir mavi blok
+	  oluşmuyor.
+	*/
+	.kare[data-seviye='0'] {
+		--kare-zemin: color-mix(in oklab, var(--foreground) 8%, transparent);
+	}
+
+	.kare[data-seviye='1'] {
+		--kare-zemin: color-mix(in oklab, var(--primary) 28%, transparent);
+	}
+
+	.kare[data-seviye='2'] {
+		--kare-zemin: color-mix(in oklab, var(--primary) 50%, transparent);
+	}
+
+	.kare[data-seviye='3'] {
+		--kare-zemin: color-mix(in oklab, var(--primary) 72%, transparent);
+	}
+
+	.kare[data-seviye='4'] {
+		--kare-zemin: var(--primary);
+	}
+
+	a.kare:hover,
+	a.kare:focus-visible {
+		outline-color: var(--foreground);
+	}
+
+	.izgara-olcek {
+		display: flex;
+		align-items: center;
+		gap: 0.4rem;
+		margin-top: 0.75rem;
+		font-size: 0.6875rem;
+		color: var(--muted-foreground);
+	}
+
+	.olcek-kutulari {
+		display: inline-flex;
+		gap: 3px;
+	}
+
+	@media (min-width: 640px) {
+		.izgara {
+			--kare: 0.875rem;
 		}
 	}
 
-	.agac-yil + .agac-yil {
-		margin-top: 1rem;
-		padding-top: 0.75rem;
-		border-top: 1px solid var(--border);
+	/* ------------------------------------------------------------------ *
+	 * Gün listesi
+	 * ------------------------------------------------------------------ */
+
+	.gunluk-duzen {
+		display: grid;
+		gap: 1.5rem;
 	}
 
-	.yil-baslik {
+	/*
+	  KAPALI GÜN DAHA DAR.
+
+	  Bölüm dolgusu (2,5rem) açık bir gün için doğru, kapalı bir başlık için
+	  fazla: altı kapalı gün arka arkaya gelince aralarındaki boşluk
+	  başlıkların kendisinden uzun oluyordu. Kapalıyken dolgu üçte birine
+	  iniyor, açılınca normale dönüyor.
+	*/
+	.gun-kutusu:not([open]) {
+		padding-block: 0.85rem;
+	}
+
+	/*
+	  Gün başlığı artık bir `<summary>`. Tarayıcının kendi üçgeni kapatılıyor,
+	  yerine dönen bir ok konuyor: ağaçtaki ay başlıklarıyla aynı dil.
+	*/
+	.gun-ozet {
 		display: flex;
 		align-items: center;
-		justify-content: space-between;
-		gap: 0.5rem;
-		font-weight: 700;
-		color: var(--foreground);
-		margin-bottom: 0.35rem;
+		gap: 0.6rem;
+		cursor: pointer;
+		list-style: none;
+		padding-block: 0.35rem;
+		border-radius: 0.5rem;
 	}
 
-	/* Kayıt sayısı: yoğun ayı seyrek aydan ayırmak için tek başına yeterli. */
-	.sayi {
-		font-size: 0.6875rem;
+	.gun-ozet::-webkit-details-marker {
+		display: none;
+	}
+
+	.gun-ozet:focus-visible {
+		outline: 2px solid var(--ring);
+		outline-offset: 3px;
+	}
+
+	.gun-ok {
+		width: 1rem;
+		height: 1rem;
+		flex: none;
+		color: var(--muted-foreground);
+		transition: rotate 200ms ease-out;
+	}
+
+	.gun-kutusu[open] > .gun-ozet .gun-ok {
+		rotate: 90deg;
+	}
+
+	.gun-metin {
+		flex: 1;
+		min-width: 0;
+	}
+
+	.gun-ozet .ust-baslik,
+	.gun-ozet .baslik {
+		display: block;
+	}
+
+	/* Kapalı günün kaç kayıt taşıdığı açmadan okunuyor. */
+	.gun-sayac {
+		flex: none;
+		font-size: 0.75rem;
 		font-variant-numeric: tabular-nums;
 		color: var(--muted-foreground);
 		background: color-mix(in oklab, var(--foreground) 7%, transparent);
 		border-radius: 9999px;
-		padding: 0.05rem 0.4rem;
-		flex: none;
-	}
-
-	.agac-ay > summary {
-		display: flex;
-		align-items: center;
-		gap: 0.4rem;
-		/* Dokunma hedefi: satırlar birbirine değmesin. */
-		min-height: 2rem;
-		padding-inline: 0.15rem;
-		border-radius: 0.4rem;
-		cursor: pointer;
-		color: var(--muted-foreground);
-		list-style: none;
-	}
-
-	/* Safari kendi üçgenini basıyor; ok simgesi zaten var. */
-	.agac-ay > summary::-webkit-details-marker {
-		display: none;
-	}
-
-	.agac-ay > summary:hover {
-		color: var(--foreground);
-		background: color-mix(in oklab, var(--foreground) 5%, transparent);
-	}
-
-	.agac-ay > summary:focus-visible {
-		outline: 2px solid var(--ring);
-		outline-offset: 2px;
-	}
-
-	.ay-ad {
-		flex: 1;
-		text-transform: capitalize;
-	}
-
-	.ay-ok {
-		width: 0.875rem;
-		height: 0.875rem;
-		flex: none;
-		transition: rotate 200ms ease-out;
-	}
-
-	.agac-ay[open] > summary .ay-ok {
-		rotate: 90deg;
-	}
-
-	.ay-gunler {
-		list-style: none;
-		padding: 0;
-		margin: 0.15rem 0 0.5rem;
-		/* Ay adının altında hizalı bir sütun; soldaki çizgi ağaç dalı gibi. */
-		margin-inline-start: 0.6rem;
-		padding-inline-start: 0.7rem;
-		border-inline-start: 1px solid var(--border);
-	}
-
-	.ay-gunler a {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-		min-height: 2rem;
-		padding-inline: 0.35rem;
-		border-radius: 0.4rem;
-		color: var(--muted-foreground);
-		text-decoration: none;
-		transition: color 150ms ease-out, background-color 150ms ease-out;
-	}
-
-	.ay-gunler a:hover {
-		color: var(--foreground);
-		background: color-mix(in oklab, var(--foreground) 5%, transparent);
-	}
-
-	.ay-gunler a:focus-visible {
-		outline: 2px solid var(--ring);
-		outline-offset: 2px;
-	}
-
-	.gun-sayi {
-		font-variant-numeric: tabular-nums;
-		font-weight: 600;
-		color: var(--foreground);
-		min-width: 1.4rem;
-	}
-
-	.gun-ad {
-		flex: 1;
-		text-transform: capitalize;
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
-	}
-
-	/*
-	  Çapaya gidildiğinde gün başlığı gezinme çubuğunun altında kalmasın.
-	  `scroll-margin-top` sayfa kaydırmasını o kadar aşağıda durduruyor.
-	*/
-	.gunluk-akis .bolum {
-		scroll-margin-top: calc(var(--cubuk-yuksekligi, 4rem) + 1rem);
+		padding: 0.1rem 0.5rem;
 	}
 
 	@media (prefers-reduced-motion: reduce) {
-		.ay-ok,
-		.ay-gunler a {
+		.gun-ok,
+		.kare {
 			transition: none;
 		}
 	}
