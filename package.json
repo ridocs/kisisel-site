@@ -14,7 +14,7 @@
 		"panel": "electron --disable-backgrounding-occluded-windows masaustu/ana.mjs",
 		"yonetim": "electron --disable-backgrounding-occluded-windows yonetim/ana.mjs",
 		"musteri-paneli": "astro dev --config astro.config.panel.mjs",
-		"test": "node --test veri/veri.test.mjs src/musteri-paneli/**/*.test.mjs yonetim/**/*.test.mjs"
+		"test": "node --test veri/*.test.mjs yonetim/*.test.mjs src/musteri-paneli/*.test.mjs"
 	},
 	"dependencies": {
 		"@astrojs/markdown-satteri": "^0.4.1",
