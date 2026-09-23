@@ -250,6 +250,7 @@ test('kabukta anlam taşıyan karakterli ayar reddediliyor', () => {
 		yaz.run('esitleme.uzak_veri', '/opt/panel/veri; rm -rf /');
 		yaz.run('esitleme.uzak_vt', '/var/lib/panel/panel.db');
 		yaz.run('esitleme.ssh_anahtari', 'C:/anahtar');
+		yaz.run('esitleme.uzak_node', '/opt/node24/bin/node');
 		assert.throws(() => ayarlariOku(yerel), /yalnızca harf/);
 
 		yaz.run('esitleme.uzak_veri', '/opt/panel/veri');

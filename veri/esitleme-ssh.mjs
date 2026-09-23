@@ -28,6 +28,14 @@ export const AYAR_ANAHTARLARI = [
 	'esitleme.uzak_veri',
 	'esitleme.uzak_vt',
 	'esitleme.ssh_anahtari',
+	/*
+	  Uzaktaki Node'un TAM YOLU. Ayar olmasının sebebi ölçüldü: sunucuda
+	  PATH'teki node eski bir sürümdü ve `node:sqlite` orada hiç yok. Komut
+	  düz "node" diye çağrılsaydı eşitleme ilk denemede, panel çoktan
+	  yayındayken kırılırdı. Panelin servisi de aynı sebeple tam yol
+	  kullanıyor.
+	*/
+	'esitleme.uzak_node',
 ];
 
 /*
@@ -49,7 +57,7 @@ export function ayarlariOku(db) {
 	if (!GUVENLI_SUNUCU.test(ayar['esitleme.sunucu'])) {
 		throw new Error('Sunucu adresi "kullanici@makine" biçiminde olmalı');
 	}
-	for (const anahtar of ['esitleme.uzak_veri', 'esitleme.uzak_vt']) {
+	for (const anahtar of ['esitleme.uzak_veri', 'esitleme.uzak_vt', 'esitleme.uzak_node']) {
 		if (!GUVENLI_YOL.test(ayar[anahtar])) {
 			throw new Error(`${anahtar} değeri yalnızca harf, rakam, nokta, alt çizgi, eğik çizgi ve tire içerebilir`);
 		}
@@ -119,7 +127,7 @@ export async function gonder(db, { sinir = 500 } = {}) {
 	const paket = paketHazirla(satirlar);
 	const ham = await sshCalistir(
 		ayar,
-		['node', `${ayar['esitleme.uzak_veri']}/sunucu-ice-al.mjs`, ayar['esitleme.uzak_vt']],
+		[ayar['esitleme.uzak_node'], `${ayar['esitleme.uzak_veri']}/sunucu-ice-al.mjs`, ayar['esitleme.uzak_vt']],
 		JSON.stringify(paket),
 	);
 
@@ -150,7 +158,11 @@ export async function cek(db) {
 		.prepare("SELECT deger FROM ayar WHERE anahtar = 'esitleme.son_cekis'")
 		.get()?.deger;
 
-	const komut = ['node', `${ayar['esitleme.uzak_veri']}/sunucu-talep-ver.mjs`, ayar['esitleme.uzak_vt']];
+	const komut = [
+		ayar['esitleme.uzak_node'],
+		`${ayar['esitleme.uzak_veri']}/sunucu-talep-ver.mjs`,
+		ayar['esitleme.uzak_vt'],
+	];
 	if (sonCekis) komut.push(sonCekis);
 
 	const ham = await sshCalistir(ayar, komut);

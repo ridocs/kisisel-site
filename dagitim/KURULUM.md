@@ -139,10 +139,32 @@ de indirir.
 
 ## 7. Eşitleme ayarları
 
-Yönetim uygulamasını açın (`npm run yonetim`), Eşitleme ekranına dört değeri
-girin: sunucu adresi, uzak veri dizini, uzak veritabanı yolu, SSH özel
-anahtar yolu. Bu değerler yalnızca kendi bilgisayarınızdaki veritabanında
-durur, depoya yazılmaz.
+### Önce sunucuda: kullanıcı sarmalayıcısı
+
+SSH ile bağlanan sahip **root**. Root olarak açılan SQLite, yanına root
+sahipli `-wal` ve `-shm` dosyaları bırakır ve panel sürecinin o veritabanına
+yazma yetkisi kaybolur. Sorun sessizdir: panel açılır, yalnızca yazma anında
+patlar.
+
+Bu yüzden eşitleme betikleri panel kullanıcısıyla çalışmalı. Uzak veri
+dizinine çalıştırma izni olan küçük bir sarmalayıcı koyun:
+
+```sh
+#!/bin/sh
+exec setpriv --reuid=panel --regid=panel --clear-groups <node-yolu> "$@"
+```
+
+### Sonra yönetim uygulamasında
+
+`npm run yonetim`, Eşitleme ekranı, beş değer: sunucu adresi, uzak veri
+dizini, uzak veritabanı yolu, SSH özel anahtar yolu ve **uzak Node yolu**
+(yukarıdaki sarmalayıcı). Bu değerler yalnızca kendi bilgisayarınızdaki
+veritabanında durur, depoya yazılmaz.
+
+> Uzak Node yolunun ayar olmasının sebebi ölçüldü: sunucunun `PATH`
+> değişkenindeki Node eski bir sürümdü ve panelin kullandığı `node:sqlite`
+> orada yoktu. Komut düz `node` diye çağrılsaydı eşitleme ilk denemede,
+> panel çoktan yayındayken kırılırdı.
 
 "Eşitle" düğmesi önce kuyruğu gönderir, sonra destek taleplerini çeker.
 

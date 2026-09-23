@@ -281,6 +281,7 @@ test('ayar doğrulaması eksik değerde uyarıyor', () => {
 		'esitleme.uzak_veri': '/srv/panel/veri',
 		'esitleme.uzak_vt': '/srv/panel/panel.db',
 		'esitleme.ssh_anahtari': '   ',
+		'esitleme.uzak_node': '/opt/node24/bin/node',
 	});
 	assert.deepEqual(tekEksik, ['SSH özel anahtar yolu boş bırakılamaz.']);
 });
@@ -291,6 +292,7 @@ test('ayar doğrulaması kabuğa yem olacak değeri reddediyor', () => {
 		'esitleme.uzak_veri': '/srv/panel/veri',
 		'esitleme.uzak_vt': '/srv/panel/panel.db',
 		'esitleme.ssh_anahtari': 'C:\\Users\\ad\\.ssh\\id_ed25519',
+		'esitleme.uzak_node': '/opt/node24/bin/node',
 	};
 	assert.deepEqual(esitlemeAyariDogrula(temel), [], 'Windows anahtar yolu kabul edilmeli');
 
@@ -318,10 +320,14 @@ test('kaydedilen ayarları veri katmanı olduğu gibi kabul ediyor', () => {
 			'esitleme.uzak_veri': '/srv/panel/veri',
 			'esitleme.uzak_vt': '/srv/panel/panel.db',
 			'esitleme.ssh_anahtari': 'C:\\Users\\ad\\.ssh\\id_ed25519',
+			'esitleme.uzak_node': '/opt/node24/bin/node',
 		});
 		const ayar = ayarlariOku(db);
 		assert.equal(ayar['esitleme.sunucu'], 'panel@makine');
 		assert.equal(ayar['esitleme.uzak_vt'], '/srv/panel/panel.db');
+		// Uzak Node yolu ayar olmasaydı komut düz "node" diye çağrılır ve
+		// sunucudaki eski sürüme düşerdi.
+		assert.equal(ayar['esitleme.uzak_node'], '/opt/node24/bin/node');
 	} finally {
 		kapat();
 	}
@@ -396,6 +402,7 @@ test('eşitleme ayarları kuyruğa yazılmıyor', () => {
 			'esitleme.uzak_veri': '/srv/panel/veri',
 			'esitleme.uzak_vt': '/srv/panel/panel.db',
 			'esitleme.ssh_anahtari': '/home/ad/.ssh/id_ed25519',
+			'esitleme.uzak_node': '/opt/node24/bin/node',
 		});
 		assert.equal(
 			db.prepare('SELECT COUNT(*) AS adet FROM esitleme_kuyrugu').get().adet,

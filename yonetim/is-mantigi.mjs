@@ -502,6 +502,15 @@ export const ESITLEME_AYARLARI = [
 		ornek: 'C:\\Users\\ad\\.ssh\\id_ed25519',
 		ipucu: 'Bu bilgisayardaki özel anahtar dosyası. Anahtarın kendisi değil, yolu.',
 	},
+	{
+		anahtar: 'esitleme.uzak_node',
+		etiket: 'Uzak Node yolu',
+		ornek: '/opt/node24/bin/node',
+		ipucu:
+			'Sunucudaki Node çalıştırılabilirinin TAM yolu. Düz "node" yazmayın: ' +
+			'sunucunun PATH değişkenindeki sürüm eski olabilir ve panelin kullandığı ' +
+			'node:sqlite orada bulunmayabilir.',
+	},
 ];
 
 /*
