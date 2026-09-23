@@ -10,49 +10,103 @@
   Vurgu rengi yalnızca bağlantıda, odak halkasında ve birincil düğmede.
 */
 
+/*
+  YAZI TİPİ: sitenin kendi alt kümelenmiş Inter dosyaları.
+
+  Site `src/styles/global.css` içinde aynı iki dosyayı aynı aralıklarla
+  tanımlıyor. Panel ayrı bir Astro yapılandırmasından derlendiği için o
+  tanımı miras alamıyor; dosyalar buraya kopyalandı.
+
+  `ı` (U+0131) EK DOSYADA DEĞİL, temel dosyada. Sitede bu bir kez yanlış
+  yazılmıştı ve tek bir `ı` gören sayfa 15 KB'lık ek dosyayı boşuna
+  indiriyordu. Aralıklar oradaki düzeltilmiş hâliyle kopyalandı.
+*/
+@font-face {
+	font-family: "Inter Variable";
+	font-style: normal;
+	font-display: swap;
+	font-weight: 100 900;
+	src: url("./yazitipi/inter-temel.woff2") format("woff2-variations");
+	unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+		U+02DC, U+2000-206F, U+20AC, U+20BA, U+2122, U+2190-2193, U+2212, U+2215,
+		U+FEFF, U+FFFD;
+}
+
+@font-face {
+	font-family: "Inter Variable";
+	font-style: normal;
+	font-display: swap;
+	font-weight: 100 900;
+	src: url("./yazitipi/inter-ek.woff2") format("woff2-variations");
+	unicode-range: U+0100-0130, U+0132-017F, U+20BA;
+}
+
+/*
+  RENKLER SİTEDEN ALINDI, tahmin edilmedi.
+
+  Değerler sitenin `src/styles/global.css` dosyasındaki değişkenlerle birebir
+  aynı; kart ve kenarlık değerleri ayrıca canlı sayfada `getComputedStyle`
+  ile ölçüldü. İki yerde ayrı ayrı seçilmiş renkler zamanla ayrışır ve panel
+  siteye yabancı görünmeye başlar.
+
+  Koyu temada LACİVERT YOK: zeminlerin hepsi chroma sıfır.
+*/
 :root {
 	color-scheme: light;
 
-	--zemin: #ffffff;
-	--yuzey: #f5f5f5;
-	--yuzey-2: #ebebeb;
-	--kenar: #dcdcdc;
-	--metin: #171717;
-	--soluk: #5b5b5b;
-	--vurgu: #1d4ed8;
-	--vurgu-metin: #ffffff;
-	--uyari: #a3341f;
-	--basari: #1f6b3a;
+	--zemin: oklch(1 0 0);
+	--yuzey: oklch(0.208 0.042 265.755 / 0.02);
+	--yuzey-2: oklch(0.968 0.007 247.896);
+	--kenar: oklch(0.929 0.013 255.508);
+	--metin: oklch(0.208 0.042 265.755);
+	--soluk: oklch(0.446 0.03 256.802);
+	--vurgu: oklch(0.55 0.19 250);
+	--vurgu-metin: oklch(1 0 0);
+	--uyari: oklch(0.577 0.245 27.325);
+	--basari: oklch(0.52 0.12 155);
 
-	--dugme-zemin: #1f1f1f;
-	--dugme-metin: #ffffff;
+	/* Sitedeki vurgulu çubuk düğmesi: koyu dolgu, açık metin. */
+	--dugme-zemin: oklch(0.208 0.042 265.755);
+	--dugme-metin: oklch(1 0 0);
 
-	--yuvarlak: 10px;
-	--golge: 0 1px 2px rgb(0 0 0 / 6%), 0 4px 12px rgb(0 0 0 / 4%);
+	--yuvarlak: 16px;
+	--yuvarlak-kucuk: 10px;
+	/* Sitedeki gezinme düğmeleri tam yuvarlak uçlu. */
+	--yuvarlak-dugme: 100px;
+	--golge: none;
 	--olcu: 68rem;
+
+	/* Tipografi ölçeği de siteden ölçüldü. */
+	--baslik-buyuk: clamp(2rem, 1.6rem + 1.8vw, 2.75rem);
+	--baslik-orta: 1.75rem;
+	--ust-etiket-aralik: 0.22em;
 }
 
-@media (prefers-color-scheme: dark) {
-	:root {
-		color-scheme: dark;
+/*
+  Koyu tema `.dark` SINIFINA bağlı, `prefers-color-scheme` medya sorgusuna
+  değil. Sebebi siteyle aynı davranmak: site temayı localStorage'da tutuyor
+  ve seçimi `<html class="dark">` ile uyguluyor. Panel aynı ana bilgisayarda
+  olduğu için aynı localStorage'ı okuyabiliyor, yani sitede koyu tema seçen
+  bir ziyaretçi panele de koyu temada giriyor.
 
-		/* Hepsi chroma sıfır: kırmızı, yeşil ve mavi bileşenleri eşit. */
-		--zemin: #121212;
-		--yuzey: #1b1b1b;
-		--yuzey-2: #262626;
-		--kenar: #333333;
-		--metin: #f2f2f2;
-		--soluk: #a6a6a6;
-		--vurgu: #9ec1ff;
-		--vurgu-metin: #121212;
-		--uyari: #ef9a8a;
-		--basari: #8fd3a8;
+  Sistem tercihi yedekte: kullanıcı hiç seçim yapmamışsa betik onu okuyor.
+*/
+:root.dark {
+	color-scheme: dark;
 
-		--dugme-zemin: #ebebeb;
-		--dugme-metin: #121212;
+	--zemin: oklch(0.129 0 0);
+	--yuzey: oklch(0.208 0 0);
+	--yuzey-2: oklch(0.279 0 0);
+	--kenar: oklch(0.279 0 0);
+	--metin: oklch(0.984 0 0);
+	--soluk: oklch(0.704 0 0);
+	--vurgu: oklch(0.72 0.16 250);
+	--vurgu-metin: oklch(0.129 0 0);
+	--uyari: oklch(0.704 0.191 22.216);
+	--basari: oklch(0.72 0.14 155);
 
-		--golge: none;
-	}
+	--dugme-zemin: oklch(0.984 0 0);
+	--dugme-metin: oklch(0.129 0 0);
 }
 
 *,

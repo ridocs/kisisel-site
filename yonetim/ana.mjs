@@ -220,7 +220,37 @@ function kanallariKur() {
 			// koyu modül / açık zemin bekliyor, tersi bazı telefonlarda okunmuyor.
 			color: { dark: '#111111', light: '#ffffff' },
 		});
-		return { ...davet, qr };
+
+		/*
+		  ANAHTAR ÜRETİLİR ÜRETİLMEZ EŞİTLENİYOR.
+
+		  Elle eşitleme adımı unutulabilir bir adımdı ve unutulunca ortaya
+		  anlaşılması zor bir durum çıkıyor: anahtar sahibin elinde duruyor,
+		  müşteri onu giriyor ve "anahtar kabul edilmedi" hatası alıyor.
+		  Sebebi anahtarın yanlış olması değil, sunucuya hiç ulaşmamış olması.
+
+		  Eşitleme BAŞARISIZ OLSA BİLE anahtar yine dönüyor: metni ve QR'ı bu
+		  cevapta, ekranda bir kez gösteriliyor. Hata yutulmuyor, `esitleme`
+		  alanında geri veriliyor ve arayüz onu gösteriyor. Anahtarı
+		  kaybettirip sessizce başarısız olmak, iki kez denemekten kötüdür:
+		  kuyruk zaten duruyor, sonraki eşitlemede gidecek.
+		*/
+		let esitlemeSonucu = null;
+		if (esitlemeSuruyor) {
+			esitlemeSonucu = { tamam: false, hata: 'Eşitleme zaten sürüyordu, anahtar kuyrukta bekliyor.' };
+		} else {
+			esitlemeSuruyor = true;
+			try {
+				const sonuc = await esitle(db);
+				esitlemeSonucu = { tamam: true, ...sonuc };
+			} catch (hata) {
+				esitlemeSonucu = { tamam: false, hata: hata.message };
+			} finally {
+				esitlemeSuruyor = false;
+			}
+		}
+
+		return { ...davet, qr, esitleme: esitlemeSonucu };
 	});
 
 	kanal('pano:yaz', (metin) => {

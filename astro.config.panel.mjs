@@ -90,6 +90,27 @@ export default defineConfig({
 	  yetiyor, sunucuda ne package.json ne node_modules gerekiyor. Bedeli
 	  çıktının birkaç yüz kilobayt büyümesi.
 	*/
+	/*
+	  ASTRO'NUN KENDİ ORIGIN KONTROLÜ KAPALI, ama koruma kalkmadı.
+
+	  Astro `checkOrigin` ile POST isteklerinde `Origin` başlığını İSTEK
+	  URL'SİNDEN türettiği adresle karşılaştırıyor. Ters vekil arkasında o
+	  adres yanlış: süreç düz HTTP üzerinden 127.0.0.1'i dinliyor, ziyaretçi
+	  ise HTTPS ile alan adına bağlanıyor. Sonuç: doğru `Origin` ve
+	  `Sec-Fetch-Site` başlıklarını taşıyan meşru form gönderimleri bile
+	  "Cross-site POST form submissions are forbidden" ile 403 alıyordu.
+	  Canlıda ölçüldü; panelde talep açma, mesaj yazma ve çıkış çalışmıyordu.
+
+	  Yerine geçen koruma daha güçlü ve vekil farkındalığıyla yazılmış
+	  (sunucu/istek.mjs, sunucu/csrf.mjs):
+	    1. `Sec-Fetch-Site` same-origin olmalı, yoksa `Origin` başlığı
+	       ORTAM DEĞİŞKENİNDEKİ adresle karşılaştırılıyor (istek URL'siyle
+	       değil, yani vekil bunu bozamıyor).
+	    2. Durum değiştiren her istekte oturuma bağlı işlem anahtarı,
+	       sabit zamanlı karşılaştırmayla.
+	    3. Çerez `SameSite=Strict`.
+	*/
+	security: { checkOrigin: false },
 	vite: {
 		ssr: {
 			/*

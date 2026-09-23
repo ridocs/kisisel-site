@@ -19,18 +19,26 @@ const taban = Astro.locals.taban ?? '';
 
 <Kabuk baslik="Giriş" aciklama="Müşteri paneline giriş.">
 	<section class="giris" id="giris" data-taban={taban}>
-		<h1>Müşteri paneli</h1>
+		{/*
+		  Başlık düzeni siteden alındı: küçük harf aralıklı üst etiket, altında
+		  büyük ve sıkı harf aralıklı başlık, sonra gri açıklama. Sitenin her
+		  iç sayfası (hizmetler, hakkımda, projeler) bu üçlüyle açılıyor.
+		*/}
+		<p class="ust-etiket">MÜŞTERİ PANELİ</p>
+		<h1>Giriş yapın</h1>
 		<p class="acikli">
 			Destek taleplerinizi ve aldığınız hizmetleri buradan takip edebilirsiniz.
 		</p>
 
-		<p class="bildirim" data-bildirim role="status" aria-live="polite"></p>
+		<div class="kart giris-karti">
+			<p class="bildirim" data-bildirim role="status" aria-live="polite"></p>
 
-		<button class="dugme genis" type="button" data-giris>Giriş yap</button>
-		<p class="kucuk soluk bosluk-ust">
-			Kayıtlı cihazınızda parmak izi, yüz tanıma veya cihaz PIN'i sorulacak.
-			Panelde parola yok.
-		</p>
+			<button class="dugme birincil genis" type="button" data-giris>Giriş yap</button>
+			<p class="kucuk soluk bosluk-ust">
+				Kayıtlı cihazınızda parmak izi, yüz tanıma veya cihaz PIN'i sorulacak.
+				Panelde parola yok.
+			</p>
+		</div>
 
 		<p class="ayirac">İlk kez mi giriyorsunuz?</p>
 

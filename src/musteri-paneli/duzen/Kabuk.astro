@@ -12,6 +12,7 @@ const { baslik, aciklama, aktif } = Astro.props;
 const taban = Astro.locals.taban ?? '';
 const musteri = Astro.locals.musteri ?? null;
 const islemAnahtari = Astro.locals.islemAnahtari ?? '';
+const nonce = Astro.locals.nonce ?? '';
 
 const baglantilar = [
 	{ yol: '/pano', ad: 'Pano', anahtar: 'pano' },
@@ -28,6 +29,27 @@ const baglantilar = [
 		<title>{baslik}</title>
 		{aciklama && <meta name="description" content={aciklama} />}
 		<link rel="stylesheet" href={`${taban}/panel.css`} />
+		{/*
+		  Tema, sayfa boyanmadan ÖNCE uygulanıyor: koyu temada bir anlık beyaz
+		  parlama olmasın diye. Site de aynı yerde aynı işi yapıyor.
+
+		  `tema` anahtarı sitenin kullandığı anahtarın aynısı ve panel aynı ana
+		  bilgisayarda olduğu için aynı localStorage'ı okuyor: sitede koyu tema
+		  seçen ziyaretçi panele de koyu temada giriyor. Seçim yapılmamışsa
+		  işletim sisteminin tercihi kullanılıyor.
+
+		  Gizli sekmede localStorage erişimi hata fırlatabilir; o durumda açık
+		  tema kalıyor ve sayfa yine çalışıyor.
+		*/}
+		<script is:inline nonce={nonce}>
+			try {
+				const kayitliTema = localStorage.getItem('tema');
+				const koyu = kayitliTema
+					? kayitliTema === 'koyu'
+					: window.matchMedia('(prefers-color-scheme: dark)').matches;
+				if (koyu) document.documentElement.classList.add('dark');
+			} catch {}
+		</script>
 	</head>
 	<body>
 		<div class="kabuk">
