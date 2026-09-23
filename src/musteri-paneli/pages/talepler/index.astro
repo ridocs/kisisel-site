@@ -8,12 +8,25 @@
   CSRF: `SameSite=Strict` ve köken kontrolü ara katmanda; burada üçüncü
   katman, oturuma bağlı işlem anahtarı. Gövde ayrıştırıldıktan sonra sabit
   zamanlı karşılaştırılıyor.
+
+  HATADA YAZILAN METİN KAYBOLMUYOR: başarısız gönderimde alanlar müşterinin
+  yazdığı değerlerle yeniden basılıyor. Betiksiz bir formda tarayıcının geri
+  tuşu bunu garanti etmiyor ve dört yüz kelimelik bir mesajı bir doğrulama
+  hatası yüzünden yeniden yazdırmak kabul edilebilir değil.
 */
 import Kabuk from '../../duzen/Kabuk.astro';
 import { ayarlar } from '../../sunucu/ayarlar.mjs';
 import { islemAnahtariGecerliMi } from '../../sunucu/csrf.mjs';
 import { panelVt } from '../../sunucu/veritabani.mjs';
-import { isleriListele, talepAc, talepleriListele, talepDurumEtiketi } from '../../sunucu/talepler.mjs';
+import { makineZamani, tarih } from '../../sunucu/bicim.mjs';
+import {
+	BASLIK_EN_COK,
+	METIN_EN_COK,
+	isleriListele,
+	talepAc,
+	talepleriListele,
+	talepDurumEtiketi,
+} from '../../sunucu/talepler.mjs';
 
 export const prerender = false;
 
@@ -22,18 +35,30 @@ const musteri = Astro.locals.musteri;
 const db = panelVt();
 
 let hata = '';
+/* Hatada forma geri basılacak değerler. Başarıda buraya hiç düşülmüyor. */
+let yazilan = { baslik: '', metin: '', isId: '' };
+
+const metinAl = (form, ad) => {
+	const deger = form?.get(ad);
+	return typeof deger === 'string' ? deger : '';
+};
 
 if (Astro.request.method === 'POST') {
 	const form = await Astro.request.formData().catch(() => null);
 	const anahtar = form?.get('islem_anahtari');
+	yazilan = {
+		baslik: metinAl(form, 'baslik'),
+		metin: metinAl(form, 'metin'),
+		isId: metinAl(form, 'is_id'),
+	};
 	if (!islemAnahtariGecerliMi(Astro.locals.oturumKarmasi, ayarlar.gizli.csrf, typeof anahtar === 'string' ? anahtar : '')) {
 		hata = 'Form doğrulanamadı. Sayfayı tazeleyip yeniden deneyin.';
 	} else {
 		const sonuc = talepAc(db, {
 			musteriId: musteri.id,
-			baslik: form.get('baslik'),
-			metin: form.get('metin'),
-			isId: form.get('is_id') || null,
+			baslik: yazilan.baslik,
+			metin: yazilan.metin,
+			isId: yazilan.isId || null,
 		});
 		if (sonuc.tamam) return Astro.redirect(`${taban}/talepler/${sonuc.talepId}`, 303);
 		hata = sonuc.hata;
@@ -42,48 +67,96 @@ if (Astro.request.method === 'POST') {
 
 const talepler = talepleriListele(db, musteri.id);
 const isler = isleriListele(db, musteri.id);
+const acik = talepler.filter((talep) => talep.durum !== 'kapandi').length;
 
-const bicim = new Intl.DateTimeFormat('tr-TR', { dateStyle: 'medium' });
-const tarih = (iso) => (iso ? bicim.format(new Date(iso)) : '');
+const mesajSayisi = (sayi) => (sayi === 1 ? '1 mesaj' : `${sayi} mesaj`);
 ---
 
 <Kabuk baslik="Destek talepleri" aktif="talepler">
-	<h1>Destek talepleri</h1>
-	<p class="acikli">
-		Açtığınız talepleri ve yazışmaları burada görüyorsunuz. Yalnızca kendi
-		talepleriniz listeleniyor.
-	</p>
-
-	{hata && <p class="bildirim" data-tur="hata">{hata}</p>}
+	<div class="sayfa-bas">
+		<p class="ust-etiket">DESTEK</p>
+		<h1>Destek talepleri</h1>
+		<div class="cizgi" aria-hidden="true"></div>
+		<p class="acikli">
+			Açtığınız talepleri ve yazışmaları burada görüyorsunuz. Yalnızca kendi
+			talepleriniz listeleniyor.
+		</p>
+	</div>
 
 	{
-		talepler.length === 0 ? (
-			<p class="bos">Henüz bir talep açmadınız.</p>
-		) : (
-			<ul class="dizi">
-				{talepler.map((talep) => (
-					<li>
-						<a class="satir" href={`${taban}/talepler/${talep.id}`}>
-							<span class="satir-ad">{talep.baslik}</span>
-							{talep.is_adi && <span class="kucuk soluk">{talep.is_adi}</span>}
-							<span class="rozet" data-durum={talep.durum}>
-								{talepDurumEtiketi(talep.durum)}
-							</span>
-							<span class="kucuk soluk">{tarih(talep.guncellendi)}</span>
-						</a>
-					</li>
-				))}
-			</ul>
+		hata && (
+			<p class="bildirim" data-tur="hata" role="alert">
+				{hata}
+			</p>
 		)
 	}
 
-	<section class="kart bolum">
-		<h2>Yeni talep</h2>
+	<section class="bolum" aria-labelledby="liste-basligi">
+		<div class="bolum-bas">
+			<h2 id="liste-basligi">Talepleriniz</h2>
+			{
+				talepler.length > 0 && (
+					<p class="kucuk soluk">
+						{talepler.length} talep, {acik} tanesi açık
+					</p>
+				)
+			}
+		</div>
+
+		{
+			talepler.length === 0 ? (
+				<div class="bos">
+					<strong class="bos-baslik">Henüz bir talep açmadınız.</strong>
+					<p class="bos-metin">
+						Bir sorun, istek ya da soru için aşağıdaki formu doldurun.
+						Yanıtı yine burada görürsünüz; yazışma tek yerde durur.
+					</p>
+					<a class="dugme birincil" href="#yeni-talep">
+						Yeni talep açın
+					</a>
+				</div>
+			) : (
+				<ul class="dizi">
+					{talepler.map((talep) => (
+						<li>
+							<a class="satir" href={`${taban}/talepler/${talep.id}`}>
+								<span class="satir-ad">{talep.baslik}</span>
+								<span class="satir-bilgi">
+									{talep.is_adi && <span>{talep.is_adi}</span>}
+									<span class="rozet" data-durum={talep.durum}>
+										{talepDurumEtiketi(talep.durum)}
+									</span>
+									<span>{mesajSayisi(talep.mesaj_sayisi)}</span>
+									<time datetime={makineZamani(talep.guncellendi)}>
+										{tarih(talep.guncellendi)}
+									</time>
+								</span>
+							</a>
+						</li>
+					))}
+				</ul>
+			)
+		}
+	</section>
+
+	<section class="kart bolum dar" id="yeni-talep" aria-labelledby="yeni-basligi">
+		<h2 id="yeni-basligi">Yeni talep</h2>
 		<form method="post">
 			<input type="hidden" name="islem_anahtari" value={Astro.locals.islemAnahtari} />
 			<label class="alan">
 				<span>Başlık</span>
-				<input type="text" name="baslik" maxlength="120" required autocomplete="off" />
+				<input
+					type="text"
+					name="baslik"
+					maxlength={BASLIK_EN_COK}
+					required
+					autocomplete="off"
+					aria-describedby="baslik-yardim"
+					value={yazilan.baslik}
+				/>
+				<span class="alan-yardim" id="baslik-yardim">
+					Konuyu tek cümleyle özetleyin, en çok {BASLIK_EN_COK} karakter.
+				</span>
 			</label>
 			{
 				isler.length > 0 && (
@@ -92,17 +165,28 @@ const tarih = (iso) => (iso ? bicim.format(new Date(iso)) : '');
 						<select name="is_id">
 							<option value="">Seçilmedi</option>
 							{isler.map((is) => (
-								<option value={is.id}>{is.ad}</option>
+								<option value={is.id} selected={yazilan.isId === is.id}>
+									{is.ad}
+								</option>
 							))}
 						</select>
+						<span class="alan-yardim">
+							Talebi bir işe bağlarsanız yazışma o işin altında görünür.
+						</span>
 					</label>
 				)
 			}
 			<label class="alan">
 				<span>Mesajınız</span>
-				<textarea name="metin" maxlength="4000" required></textarea>
+				<textarea name="metin" maxlength={METIN_EN_COK} required aria-describedby="metin-yardim"
+					>{yazilan.metin}</textarea
+				>
+				<span class="alan-yardim" id="metin-yardim">
+					Ne olduğunu, ne beklediğinizi ve varsa hata metnini yazın. En çok {METIN_EN_COK}{' '}
+					karakter.
+				</span>
 			</label>
-			<button class="dugme" type="submit">Talebi gönder</button>
+			<button class="dugme birincil" type="submit">Talebi gönder</button>
 		</form>
 	</section>
 </Kabuk>

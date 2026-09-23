@@ -7,9 +7,15 @@
 
   Her sorgu müşteri kimliğiyle süzülüyor; süzgeç `sunucu/talepler.mjs`
   içindeki işlevlerin imzasında zorunlu.
+
+  Sayfanın üstündeki üç kutu YENİ SORGU AÇMIYOR: aşağıda zaten çekilen iki
+  listeden ve açık talep sayısından hesaplanıyor. Müşterinin ilk bakışta
+  sorduğu üç soru bunlar: bekleyen bir şey var mı, işim ne durumda, en son ne
+  zaman bir şey oldu.
 */
 import Kabuk from '../duzen/Kabuk.astro';
 import { panelVt } from '../sunucu/veritabani.mjs';
+import { gecenSure, makineZamani, tarih } from '../sunucu/bicim.mjs';
 import { acikTalepSayisi, isDurumEtiketi, isleriListele, talepleriListele, talepDurumEtiketi } from '../sunucu/talepler.mjs';
 
 export const prerender = false;
@@ -19,38 +25,105 @@ const musteri = Astro.locals.musteri;
 const db = panelVt();
 
 const isler = isleriListele(db, musteri.id);
-const talepler = talepleriListele(db, musteri.id).slice(0, 5);
+const talepler = talepleriListele(db, musteri.id);
+const sonTalepler = talepler.slice(0, 5);
 const acik = acikTalepSayisi(db, musteri.id);
 
-const bicim = new Intl.DateTimeFormat('tr-TR', { dateStyle: 'medium' });
-const tarih = (iso) => (iso ? bicim.format(new Date(iso)) : '');
+/* Kapanmış ve iptal edilmiş işler "devam eden" sayılmıyor. */
+const BITEN_IS = new Set(['kapandi', 'iptal']);
+const surenIsler = isler.filter((is) => !BITEN_IS.has(is.durum));
+
+/*
+  Son hareket iki listenin EN YENİ `guncellendi` değeri. Dize
+  karşılaştırması yeterli: değerler ISO 8601 ve ISO 8601 sözlük sırası
+  zaman sırasıyla aynı.
+*/
+const sonHareket = [...isler, ...talepler]
+	.map((satir) => satir.guncellendi)
+	.filter(Boolean)
+	.sort()
+	.at(-1);
+
+const acikCumle =
+	acik === 0
+		? 'Açık destek talebiniz yok.'
+		: acik === 1
+			? 'Bir destek talebiniz açık.'
+			: `${acik} destek talebiniz açık.`;
 ---
 
 <Kabuk baslik="Pano" aktif="pano">
-	<h1>Merhaba, {musteri.gorunen_ad}</h1>
-	<p class="acikli">
-		{
-			acik === 0
-				? 'Açık destek talebiniz yok.'
-				: acik === 1
-					? 'Bir destek talebiniz açık.'
-					: `${acik} destek talebiniz açık.`
-		}
-	</p>
+	<div class="sayfa-bas">
+		<p class="ust-etiket">PANO</p>
+		<h1>Merhaba, {musteri.gorunen_ad}</h1>
+		<div class="cizgi" aria-hidden="true"></div>
+		<p class="acikli">
+			{acikCumle} İşlerinizin durumunu ve yazışmalarınızı buradan takip
+			edebilirsiniz.
+		</p>
+	</div>
 
-	<section class="bolum">
-		<h2>Hizmetleriniz</h2>
+	<ul class="ozet">
+		<li class="ozet-kutu">
+			<span class="kucuk-etiket">AÇIK TALEP</span>
+			<span class="ozet-sayi">{acik}</span>
+			<span class="ozet-alt">
+				{acik === 0 ? 'Bekleyen bir konu yok.' : 'Henüz kapanmamış talep.'}
+			</span>
+		</li>
+		<li class="ozet-kutu">
+			<span class="kucuk-etiket">DEVAM EDEN İŞ</span>
+			<span class="ozet-sayi">{surenIsler.length}</span>
+			<span class="ozet-alt">
+				{
+					isler.length === 0
+						? 'Kayıtlı iş yok.'
+						: `Toplam ${isler.length} iş kaydınız var.`
+				}
+			</span>
+		</li>
+		<li class="ozet-kutu">
+			<span class="kucuk-etiket">SON HAREKET</span>
+			<span class="ozet-sayi">{sonHareket ? gecenSure(sonHareket) : 'Yok'}</span>
+			<span class="ozet-alt">
+				{
+					sonHareket ? (
+						<time datetime={makineZamani(sonHareket)}>{tarih(sonHareket)}</time>
+					) : (
+						'Henüz bir hareket olmadı.'
+					)
+				}
+			</span>
+		</li>
+	</ul>
+
+	<section class="bolum" aria-labelledby="hizmetler-basligi">
+		<div class="bolum-bas">
+			<h2 id="hizmetler-basligi">Hizmetleriniz</h2>
+		</div>
 		{
 			isler.length === 0 ? (
-				<p class="bos">Görüntülenecek bir iş kaydı yok.</p>
+				<div class="bos">
+					<strong class="bos-baslik">Henüz bir iş kaydınız yok.</strong>
+					<p class="bos-metin">
+						Bir iş başladığında burada adı ve durumu görünür. Durum
+						değiştikçe kayıt kendiliğinden güncellenir.
+					</p>
+				</div>
 			) : (
 				<ul class="dizi">
 					{isler.map((is) => (
 						<li>
 							<div class="satir">
 								<span class="satir-ad">{is.ad}</span>
-								<span class="rozet">{isDurumEtiketi(is.durum)}</span>
-								<span class="kucuk soluk">{tarih(is.guncellendi)}</span>
+								<span class="satir-bilgi">
+									<span class="rozet" data-is={is.durum}>
+										{isDurumEtiketi(is.durum)}
+									</span>
+									<time datetime={makineZamani(is.guncellendi)}>
+										{tarih(is.guncellendi)}
+									</time>
+								</span>
 							</div>
 						</li>
 					))}
@@ -59,31 +132,44 @@ const tarih = (iso) => (iso ? bicim.format(new Date(iso)) : '');
 		}
 	</section>
 
-	<section class="bolum">
-		<h2>Son destek talepleri</h2>
+	<section class="bolum" aria-labelledby="talepler-basligi">
+		<div class="bolum-bas">
+			<h2 id="talepler-basligi">Son destek talepleri</h2>
+			{talepler.length > 0 && (
+				<a href={`${taban}/talepler`}>Bütün talepler ({talepler.length})</a>
+			)}
+		</div>
 		{
-			talepler.length === 0 ? (
-				<p class="bos">
-					Henüz talep açmadınız. <a href={`${taban}/talepler`}>İlk talebinizi açın.</a>
-				</p>
+			sonTalepler.length === 0 ? (
+				<div class="bos">
+					<strong class="bos-baslik">Henüz talep açmadınız.</strong>
+					<p class="bos-metin">
+						Bir sorun, istek ya da soru için talep açın. Yazışma tek yerde
+						durur, e-postada kaybolmaz.
+					</p>
+					<a class="dugme birincil" href={`${taban}/talepler`}>
+						İlk talebinizi açın
+					</a>
+				</div>
 			) : (
 				<ul class="dizi">
-					{talepler.map((talep) => (
+					{sonTalepler.map((talep) => (
 						<li>
 							<a class="satir" href={`${taban}/talepler/${talep.id}`}>
 								<span class="satir-ad">{talep.baslik}</span>
-								<span class="rozet" data-durum={talep.durum}>
-									{talepDurumEtiketi(talep.durum)}
+								<span class="satir-bilgi">
+									<span class="rozet" data-durum={talep.durum}>
+										{talepDurumEtiketi(talep.durum)}
+									</span>
+									<time datetime={makineZamani(talep.guncellendi)}>
+										{tarih(talep.guncellendi)}
+									</time>
 								</span>
-								<span class="kucuk soluk">{tarih(talep.guncellendi)}</span>
 							</a>
 						</li>
 					))}
 				</ul>
 			)
 		}
-		<p class="bosluk-ust">
-			<a href={`${taban}/talepler`}>Bütün talepler</a>
-		</p>
 	</section>
 </Kabuk>

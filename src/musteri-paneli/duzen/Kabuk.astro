@@ -14,6 +14,13 @@ const musteri = Astro.locals.musteri ?? null;
 const islemAnahtari = Astro.locals.islemAnahtari ?? '';
 const nonce = Astro.locals.nonce ?? '';
 
+/*
+  Derleme damgası. `astro.config.panel.mjs` içindeki `define` bunu derleme
+  anında sabit bir değere çeviriyor. Geliştirmede de tanımlı, ama orada
+  önemi yok: dev sunucusu zaten önbelleklemiyor.
+*/
+const surum = typeof __PANEL_SURUM__ === 'undefined' ? 'gelistirme' : __PANEL_SURUM__;
+
 const baglantilar = [
 	{ yol: '/pano', ad: 'Pano', anahtar: 'pano' },
 	{ yol: '/talepler', ad: 'Destek talepleri', anahtar: 'talepler' },
@@ -28,7 +35,12 @@ const baglantilar = [
 		<meta name="robots" content="noindex, nofollow" />
 		<title>{baslik}</title>
 		{aciklama && <meta name="description" content={aciklama} />}
-		<link rel="stylesheet" href={`${taban}/panel.css`} />
+		{/*
+		  Stil bağlantısındaki sürüm sorgusu önbelleği kırıyor. Dosya adı sabit
+		  olduğu için onsuz eski sürüm yapışıp kalıyor; canlıda ölçüldü.
+		  Damga `astro.config.panel.mjs` içinde derleme anında yazılıyor.
+		*/}
+		<link rel="stylesheet" href={`${taban}/panel.css?s=${surum}`} />
 		{/*
 		  Tema, sayfa boyanmadan ÖNCE uygulanıyor: koyu temada bir anlık beyaz
 		  parlama olmasın diye. Site de aynı yerde aynı işi yapıyor.
@@ -53,6 +65,11 @@ const baglantilar = [
 	</head>
 	<body>
 		<div class="kabuk">
+			{/*
+			  Klavyeyle gelen biri üst çubuğun bağlantılarını her sayfada
+			  yeniden geçmek zorunda kalmasın. Odaklanmadan görünmüyor.
+			*/}
+			<a class="atla" href="#ana">İçeriğe atla</a>
 			<header class="ust">
 				<div class="ust-ic">
 					<a class="marka" href={musteri ? `${taban}/pano` : `${taban}/`}>Müşteri paneli</a>
@@ -82,7 +99,12 @@ const baglantilar = [
 				</div>
 			</header>
 
-			<main class="govde">
+			{/*
+			  `tabindex="-1"`: atla bağlantısı tıklandığında odak gerçekten
+			  buraya gelsin. Olmazsa tarayıcı yalnızca kaydırıyor, odak
+			  çubukta kalıyor ve sonraki sekme tuşu kullanıcıyı başa döndürüyor.
+			*/}
+			<main class="govde" id="ana" tabindex="-1">
 				<slot />
 			</main>
 

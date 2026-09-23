@@ -24,11 +24,15 @@ const taban = Astro.locals.taban ?? '';
 		  büyük ve sıkı harf aralıklı başlık, sonra gri açıklama. Sitenin her
 		  iç sayfası (hizmetler, hakkımda, projeler) bu üçlüyle açılıyor.
 		*/}
-		<p class="ust-etiket">MÜŞTERİ PANELİ</p>
-		<h1>Giriş yapın</h1>
-		<p class="acikli">
-			Destek taleplerinizi ve aldığınız hizmetleri buradan takip edebilirsiniz.
-		</p>
+		<div class="sayfa-bas">
+			<p class="ust-etiket">MÜŞTERİ PANELİ</p>
+			<h1>Giriş yapın</h1>
+			<div class="cizgi" aria-hidden="true"></div>
+			<p class="acikli">
+				Destek taleplerinizi ve aldığınız hizmetleri buradan takip
+				edebilirsiniz.
+			</p>
+		</div>
 
 		<div class="kart giris-karti">
 			<p class="bildirim" data-bildirim role="status" aria-live="polite"></p>
@@ -60,7 +64,7 @@ const taban = Astro.locals.taban ?? '';
 						required
 					/>
 				</label>
-				<button class="dugme genis" type="submit">Cihazımı kaydet</button>
+				<button class="dugme birincil genis" type="submit">Cihazımı kaydet</button>
 			</form>
 			<p class="kucuk soluk bosluk-ust">
 				Anahtar tek kullanımlık ve süreli. Kaybolursa yenisini isteyin; eski

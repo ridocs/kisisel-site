@@ -4,6 +4,15 @@ import node from '@astrojs/node';
 import { ayarlariDogrula } from './src/musteri-paneli/sunucu/ayarlar.mjs';
 
 /*
+  Derleme mi geliştirme mi: `vite.ssr.noExternal` kararı buna bağlı ve ikisi
+  zıt yönde. Gerekçe aşağıda, o ayarın yanında.
+
+  Astro'nun `vite` alanı düz bir nesne, Vite'ın kendi `({ command }) => …`
+  biçimini kabul etmiyor; bu yüzden komut argümandan okunuyor.
+*/
+const DERLEME_MI = process.argv.includes('build');
+
+/*
   MÜŞTERİ PANELİ: `twinshareapp.com/web-sitem/panel/`
 
   Bu dosya kasıtlı olarak `astro.config.mjs`'i MİRAS ALMIYOR.
@@ -111,16 +120,37 @@ export default defineConfig({
 	    3. Çerez `SameSite=Strict`.
 	*/
 	security: { checkOrigin: false },
+	/*
+	  BAĞIMLILIKLAR YALNIZCA DERLEMEDE ÇIKTIYA GÖMÜLÜYOR.
+
+	  Derlemede gerekli: sunucuda ne `package.json` var ne `node_modules`.
+	  Tek tek saymak denendi ve yanlış yoldu, önce `@oslojs/encoding` eksik
+	  çıktı, eklendi, sonra `zod` çıktı. Liste tutmak her bağımlılığın
+	  bağımlılığını elle takip etmek demek ve eksiği ancak sunucuda çöken bir
+	  servis gösteriyor.
+
+	  Geliştirmede ise zararlı: Vite'ın SSR modül çalıştırıcısı CJS
+	  bağımlılıkları gömmeye çalışınca dev sunucusu hiç açılmıyor.
+
+	  `ssr` nesnesi geliştirmede BOŞ BIRAKILIYOR, `noExternal: false`
+	  YAZILMIYOR. Vite bu alanda yalnızca `true` ya da dizi kabul ediyor;
+	  `false` verilince "Value is none of these types" ile düşüyor ve Astro
+	  bu hatayı yutup yalnızca "Dev server process exited before becoming
+	  ready" diyor. Gerçek sebep `.astro/dev.log` dosyasında görünüyor.
+	*/
 	vite: {
-		ssr: {
-			/*
-			  `true`, yani HEPSİ. Tek tek saymak denendi ve yanlış yoldu:
-			  önce `@oslojs/encoding` eksik çıktı, eklendi; sonra `zod` eksik
-			  çıktı. Liste tutmak, her bağımlılığın bağımlılığını elle takip
-			  etmek demek ve eksiği ancak sunucuda çöken bir servis gösteriyor.
-			*/
-			noExternal: true,
-		},
+		/*
+		  Derleme damgası: `panel.css` bağlantısına sorgu olarak ekleniyor.
+
+		  Panelin stil dosyası `public` klasöründen sabit adla servis ediliyor,
+		  yani Astro'nun içerik hash'i onu kapsamıyor. Canlıda ölçüldü: yeni
+		  CSS sunucuda duruyordu ama tarayıcı ve ara önbellek eski sürümü
+		  veriyordu, dolayısıyla yeni kurallar (atla bağlantısı, marka çizgisi)
+		  hiç uygulanmıyordu. Sorgu her derlemede değiştiği için önbellek
+		  kendiliğinden geçersizleşiyor.
+		*/
+		define: { __PANEL_SURUM__: JSON.stringify(Date.now().toString(36)) },
+		...(DERLEME_MI ? { ssr: { noExternal: true } } : {}),
 	},
 	/*
 	  Astro'nun kendi CSP desteği (security.csp) BURADA KULLANILMIYOR: o,
