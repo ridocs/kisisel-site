@@ -1,0 +1,1268 @@
+/*
+  ARAYÜZ
+
+  Bu dosya renderer'da çalışıyor: Node yok, dosya sistemi yok, ağ yok.
+  Elindeki tek kapı `window.yonetim`, o da `../onyukleme.cjs` içinde adı
+  tek tek yazılmış kanallardan ibaret.
+
+  İş mantığı burada YENİDEN YAZILMIYOR: para biçimi, durum adları ve form
+  doğrulaması `../is-mantigi.mjs` içinden geliyor. Aynı doğrulama ana
+  süreçte bir kez daha çalışıyor; buradaki hızlı geri bildirim için, oradaki
+  son söz için.
+
+  DOM elle kuruluyor, `innerHTML` kullanılmıyor. Müşteri adı, not ve iş
+  özeti kullanıcı metnidir; HTML olarak yorumlanmasının hiçbir faydası,
+  yanlış yorumlanmasının ise bilinen bir bedeli var.
+*/
+
+import {
+	IS_DURUMLARI,
+	MUSTERI_DURUMLARI,
+	ODEME_TURLERI,
+	buAy,
+	isGirdisiHazirla,
+	kurusBicimle,
+	kurusGirdiye,
+	musteriGirdisiHazirla,
+	odemeGirdisiHazirla,
+	revizeGirdisiHazirla,
+} from '../is-mantigi.mjs';
+
+const kapi = window.yonetim;
+
+/* ------------------------------------------------------------------ */
+/* Küçük yardımcılar                                                   */
+/* ------------------------------------------------------------------ */
+
+/** Etiket, özellikler ve çocuklardan DOM düğümü kurar. */
+function el(etiket, ozellikler = {}, cocuklar = []) {
+	const dugum = document.createElement(etiket);
+	for (const [ad, deger] of Object.entries(ozellikler)) {
+		if (deger === null || deger === undefined || deger === false) continue;
+		if (ad === 'sinif') dugum.className = deger;
+		else if (ad === 'metin') dugum.textContent = String(deger);
+		else if (ad === 'tikla') dugum.addEventListener('click', deger);
+		else if (ad === 'degisti') dugum.addEventListener('change', deger);
+		else if (ad === 'girdi') dugum.addEventListener('input', deger);
+		else if (ad === 'deger') dugum.value = deger;
+		else if (ad === 'isaretli') dugum.checked = Boolean(deger);
+		else if (ad === 'tip') dugum.type = deger;
+		/*
+		  Ölçü değerleri CSSOM üzerinden veriliyor, `style` NİTELİĞİ olarak
+		  değil. İçerik güvenlik politikasında 'unsafe-inline' yok; satır içi
+		  `style` niteliği engelleniyor ve sessizce uygulanmıyor. CSSOM
+		  ataması politikanın kapsamı dışında, bu yüzden çalışıyor.
+		*/
+		else if (ad === 'stil') Object.assign(dugum.style, deger);
+		else dugum.setAttribute(ad, deger === true ? '' : String(deger));
+	}
+	for (const cocuk of [].concat(cocuklar)) {
+		if (cocuk === null || cocuk === undefined || cocuk === false) continue;
+		dugum.append(typeof cocuk === 'string' ? document.createTextNode(cocuk) : cocuk);
+	}
+	return dugum;
+}
+
+const tl = (kurus) => kurusBicimle(kurus);
+
+/** "2026-09-12" -> "12.09.2026". Tarih nesnesine çevrilmiyor: `new Date`
+ *  saat dilimi yüzünden günü bir geri alabiliyor. */
+function gunBicim(deger) {
+	if (!deger) return '';
+	const [yil, ay, gun] = String(deger).slice(0, 10).split('-');
+	return gun ? `${gun}.${ay}.${yil}` : String(deger);
+}
+
+const AY_ADLARI = [
+	'Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran',
+	'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık',
+];
+
+function ayBicim(ay) {
+	const [yil, no] = String(ay).split('-');
+	return `${AY_ADLARI[Number(no) - 1] ?? no} ${yil}`;
+}
+
+const adiniBul = (liste, anahtar) =>
+	liste.find((k) => k.anahtar === anahtar)?.ad ?? anahtar ?? '';
+
+/* ------------------------------------------------------------------ */
+/* Durum                                                               */
+/* ------------------------------------------------------------------ */
+
+const durum = {
+	ekran: 'musteriler',
+	sifreleme: false,
+	musteriArama: '',
+	arsivDahil: false,
+	isArama: '',
+	isMusteriSuzgeci: '',
+	isDurumSuzgeci: '',
+	acikIsId: null,
+	odemeIsId: '',
+	revizeIsId: '',
+	ay: buAy(),
+	/*
+	  Üretilen davet anahtarı YALNIZCA burada, bellekte duruyor. Ne
+	  veritabanına yazılıyor ne de bir yere kaydediliyor; ekran değişince
+	  ya da uygulama kapanınca kayboluyor.
+	*/
+	davet: null,
+};
+
+const dugumler = {
+	baslik: document.getElementById('ekran-basligi'),
+	araclar: document.getElementById('ekran-araclari'),
+	icerik: document.getElementById('icerik'),
+	bildirim: document.getElementById('bildirim'),
+	gezinti: document.getElementById('gezinti'),
+	rozet: document.getElementById('sifreleme-rozeti'),
+};
+
+function bildir(mesaj, hataMi = false) {
+	dugumler.bildirim.textContent = mesaj ?? '';
+	dugumler.bildirim.hidden = !mesaj;
+	dugumler.bildirim.classList.toggle('hata', Boolean(hataMi));
+}
+
+/** Kanal çağrısını sarar: hata mesajı bildirim çubuğuna düşer. */
+async function guvenli(islev, basariMesaji) {
+	try {
+		const sonuc = await islev();
+		if (basariMesaji) bildir(basariMesaji);
+		return sonuc;
+	} catch (hata) {
+		bildir(hata.message, true);
+		return null;
+	}
+}
+
+/* ------------------------------------------------------------------ */
+/* Tablo kurucu                                                        */
+/* ------------------------------------------------------------------ */
+
+/**
+ * @param basliklar [{ ad, sinif }]
+ * @param satirlar  her biri hücre dizisi döndüren kayıtlar
+ */
+function tablo(basliklar, satirlar, bosMesaj) {
+	if (!satirlar.length) return el('p', { sinif: 'bos', metin: bosMesaj });
+	return el('table', {}, [
+		el('thead', {}, [
+			el(
+				'tr',
+				{},
+				basliklar.map((b) => el('th', { sinif: b.sinif ?? '', metin: b.ad })),
+			),
+		]),
+		el(
+			'tbody',
+			{},
+			satirlar.map((hucreler) => el('tr', {}, hucreler)),
+		),
+	]);
+}
+
+/* ------------------------------------------------------------------ */
+/* Form penceresi                                                      */
+/* ------------------------------------------------------------------ */
+
+const pencere = document.getElementById('form-penceresi');
+const pencereForm = document.getElementById('form-govdesi');
+const pencereBaslik = document.getElementById('form-basligi');
+const pencereHata = document.getElementById('form-hata');
+const pencereAlanlar = document.getElementById('form-alanlari');
+document.getElementById('form-vazgec').addEventListener('click', () => pencere.close());
+
+let acikFormIslevi = null;
+
+/**
+ * Alan tanımlarından form kurar ve pencereyi açar.
+ *
+ * `kaydet` bir hata dizisi döndürürse pencere KAPANMIYOR, hatalar üstte
+ * görünüyor. Yazdığı her şeyi kaybetmiş bir kullanıcı, hatayı ikinci kez
+ * yapmaktan daha çok sinirlenir.
+ */
+function formAc({ baslik, alanlar, kaydet, kaydetEtiketi = 'Kaydet' }) {
+	pencereBaslik.textContent = baslik;
+	pencereHata.hidden = true;
+	pencereHata.textContent = '';
+	pencereAlanlar.replaceChildren();
+	document.getElementById('form-kaydet').textContent = kaydetEtiketi;
+
+	for (const alan of alanlar) {
+		if (alan.tip === 'aciklama') {
+			pencereAlanlar.append(
+				el('p', { sinif: 'alan genis ipucu kucuk', metin: alan.metin }),
+			);
+			continue;
+		}
+
+		let girdi;
+		if (alan.tip === 'secim') {
+			girdi = el(
+				'select',
+				{ name: alan.ad, id: `alan-${alan.ad}`, disabled: alan.pasif },
+				alan.secenekler.map((s) =>
+					el('option', { value: s.deger, metin: s.ad, selected: s.deger === alan.deger }),
+				),
+			);
+			girdi.value = alan.deger ?? '';
+		} else if (alan.tip === 'metinalan') {
+			girdi = el('textarea', {
+				name: alan.ad,
+				id: `alan-${alan.ad}`,
+				rows: alan.satir ?? 3,
+				deger: alan.deger ?? '',
+				disabled: alan.pasif,
+			});
+		} else if (alan.tip === 'onay') {
+			girdi = el('input', {
+				tip: 'checkbox',
+				name: alan.ad,
+				id: `alan-${alan.ad}`,
+				isaretli: Boolean(alan.deger),
+				disabled: alan.pasif,
+			});
+		} else {
+			girdi = el('input', {
+				tip: alan.tip ?? 'text',
+				name: alan.ad,
+				id: `alan-${alan.ad}`,
+				deger: alan.deger ?? '',
+				placeholder: alan.ornek ?? '',
+				inputmode: alan.klavye ?? null,
+				disabled: alan.pasif,
+			});
+		}
+
+		const sarmal = el(
+			'label',
+			{
+				sinif: `alan${alan.genis ? ' genis' : ''}${alan.tip === 'onay' ? ' onay' : ''}`,
+				for: `alan-${alan.ad}`,
+			},
+			alan.tip === 'onay'
+				? [girdi, el('span', { metin: alan.etiket })]
+				: [
+						el('span', { metin: alan.etiket }),
+						girdi,
+						alan.ipucu ? el('span', { sinif: 'ipucu', metin: alan.ipucu }) : null,
+					],
+		);
+		pencereAlanlar.append(sarmal);
+	}
+
+	acikFormIslevi = kaydet;
+	pencere.showModal();
+	const ilk = pencereAlanlar.querySelector('input:not([disabled]), select, textarea');
+	ilk?.focus();
+}
+
+pencereForm.addEventListener('submit', async (olay) => {
+	olay.preventDefault();
+	if (!acikFormIslevi) return;
+
+	const degerler = {};
+	for (const girdi of pencereAlanlar.querySelectorAll('input, select, textarea')) {
+		degerler[girdi.name] = girdi.type === 'checkbox' ? (girdi.checked ? 1 : 0) : girdi.value;
+	}
+
+	const hatalar = await acikFormIslevi(degerler);
+	if (hatalar && hatalar.length) {
+		pencereHata.textContent = hatalar.join(' ');
+		pencereHata.hidden = false;
+		return;
+	}
+	pencere.close();
+});
+
+/* ------------------------------------------------------------------ */
+/* Ekran: Müşteriler                                                   */
+/* ------------------------------------------------------------------ */
+
+async function musteriFormuAc(id) {
+	const kayit = id ? await guvenli(() => kapi.musteri.getir(id)) : null;
+	if (id && !kayit) return;
+
+	const sifrelemeKapali = !durum.sifreleme;
+	const cozulemedi = (varMi, deger) => (varMi && deger === null ? 'Kayıtlı ama çözülemedi.' : null);
+
+	formAc({
+		baslik: id ? 'Müşteriyi düzenle' : 'Yeni müşteri',
+		alanlar: [
+			{ ad: 'ad_soyad', etiket: 'Ad soyad', deger: kayit?.ad_soyad ?? '', genis: true },
+			{ ad: 'telefon', etiket: 'Telefon', deger: kayit?.telefon ?? '', ornek: '0555 000 00 00' },
+			{
+				ad: 'durum',
+				etiket: 'Durum',
+				tip: 'secim',
+				deger: kayit?.durum ?? 'etkin',
+				secenekler: MUSTERI_DURUMLARI.map((d) => ({ deger: d.anahtar, ad: d.ad })),
+			},
+			{ ad: 'ilce', etiket: 'İlçe', deger: kayit?.ilce ?? '' },
+			{ ad: 'sehir', etiket: 'Şehir', deger: kayit?.sehir ?? '' },
+			sifrelemeKapali
+				? {
+						tip: 'aciklama',
+						metin:
+							'İşletim sisteminin anahtarlığı açılamadı. TC kimlik ve vergi numarası ' +
+							'şifrelenemeyeceği için bu iki alan kapalı. Düz metin olarak kaydedilmiyor.',
+					}
+				: null,
+			{
+				ad: 'tc',
+				etiket: 'TC kimlik numarası',
+				deger: kayit?.tc ?? '',
+				klavye: 'numeric',
+				pasif: sifrelemeKapali,
+				ipucu: cozulemedi(kayit?.tcVar, kayit?.tc) ?? 'Şifrelenerek saklanıyor.',
+			},
+			{
+				ad: 'vergi',
+				etiket: 'Vergi numarası',
+				deger: kayit?.vergi ?? '',
+				klavye: 'numeric',
+				pasif: sifrelemeKapali,
+				ipucu: cozulemedi(kayit?.vergiVar, kayit?.vergi) ?? 'Şifrelenerek saklanıyor.',
+			},
+			{ ad: 'not_metni', etiket: 'Not', tip: 'metinalan', deger: kayit?.not_metni ?? '', genis: true },
+		].filter(Boolean),
+		kaydet: async (degerler) => {
+			/*
+			  Şifreleme kapalıyken TC ve vergi alanları pasif, yani boş
+			  geliyor. `depo.mjs` boş gelen bu iki alan için sütuna hiç
+			  dokunmuyor, dolayısıyla daha önce şifrelenmiş değer burada
+			  kaybolmuyor.
+			*/
+			const form = { ...degerler, id: id ?? null };
+			const { hatalar } = musteriGirdisiHazirla(form);
+			if (hatalar.length) return hatalar;
+			const sonuc = await guvenli(() => kapi.musteri.kaydet(form));
+			if (!sonuc) return ['Kaydedilemedi.'];
+			bildir(sonuc.uyari ?? 'Müşteri kaydedildi.', Boolean(sonuc.uyari));
+			await ekraniCiz();
+			return null;
+		},
+	});
+}
+
+async function musterileriCiz() {
+	dugumler.araclar.replaceChildren(
+		el('input', {
+			tip: 'search',
+			sinif: 'ara',
+			placeholder: 'Ad, telefon, şehir, not…',
+			deger: durum.musteriArama,
+			'aria-label': 'Müşteri ara',
+			girdi: (o) => {
+				durum.musteriArama = o.target.value;
+				listeyiTazele();
+			},
+		}),
+		el('label', { sinif: 'satir' }, [
+			el('input', {
+				tip: 'checkbox',
+				isaretli: durum.arsivDahil,
+				degisti: (o) => {
+					durum.arsivDahil = o.target.checked;
+					listeyiTazele();
+				},
+			}),
+			'Arşivi göster',
+		]),
+		el('button', {
+			sinif: 'dugme birincil',
+			metin: 'Yeni müşteri',
+			tikla: () => musteriFormuAc(null),
+		}),
+	);
+
+	const kap = el('div', { id: 'musteri-liste' });
+	dugumler.icerik.replaceChildren(kap);
+	await listeyiTazele();
+
+	async function listeyiTazele() {
+		const liste =
+			(await guvenli(() =>
+				kapi.musteri.liste({ arama: durum.musteriArama, arsivDahil: durum.arsivDahil }),
+			)) ?? [];
+
+		kap.replaceChildren(
+			tablo(
+				[
+					{ ad: 'Ad soyad' },
+					{ ad: 'Telefon' },
+					{ ad: 'Yer' },
+					{ ad: 'İş', sinif: 'sayi' },
+					{ ad: 'Durum' },
+					{ ad: '', sinif: 'sayi' },
+				],
+				liste.map((m) => [
+					el('td', {}, [
+						el('strong', { metin: m.ad_soyad }),
+						m.not_metni ? el('span', { sinif: 'alt-metin', metin: m.not_metni }) : null,
+					]),
+					el('td', { metin: m.telefon ?? '' }),
+					el('td', { metin: [m.ilce, m.sehir].filter(Boolean).join(', ') }),
+					el('td', { sinif: 'sayi', metin: String(m.is_sayisi) }),
+					el('td', {}, [
+						el('span', { sinif: 'etiket', metin: adiniBul(MUSTERI_DURUMLARI, m.durum) }),
+					]),
+					el('td', { sinif: 'islem' }, [
+						el('button', {
+							sinif: 'dugme kucuk',
+							metin: 'İşleri',
+							tikla: () => {
+								durum.isMusteriSuzgeci = m.id;
+								ekranaGit('isler');
+							},
+						}),
+						el('button', {
+							sinif: 'dugme kucuk',
+							metin: 'Düzenle',
+							tikla: () => musteriFormuAc(m.id),
+						}),
+						el('button', {
+							sinif: 'dugme kucuk',
+							metin: m.durum === 'arsiv' ? 'Geri al' : 'Arşivle',
+							tikla: async () => {
+								const yeni = m.durum === 'arsiv' ? 'etkin' : 'arsiv';
+								await guvenli(
+									() => kapi.musteri.durum(m.id, yeni),
+									yeni === 'arsiv' ? 'Müşteri arşivlendi.' : 'Müşteri geri alındı.',
+								);
+								await listeyiTazele();
+							},
+						}),
+					]),
+				]),
+				durum.musteriArama ? 'Aramaya uyan müşteri yok.' : 'Henüz müşteri yok.',
+			),
+		);
+	}
+}
+
+/* ------------------------------------------------------------------ */
+/* Ekran: İşler                                                        */
+/* ------------------------------------------------------------------ */
+
+async function isFormuAc(id, musteriId = null) {
+	const musteriler = (await guvenli(() => kapi.musteri.liste({ arsivDahil: true }))) ?? [];
+	if (!musteriler.length) {
+		bildir('Önce en az bir müşteri eklemelisiniz.', true);
+		return;
+	}
+	const kayit = id ? await guvenli(() => kapi.is.getir(id)) : null;
+	if (id && !kayit) return;
+
+	formAc({
+		baslik: id ? 'İşi düzenle' : 'Yeni iş',
+		alanlar: [
+			{
+				ad: 'musteri_id',
+				etiket: 'Müşteri',
+				tip: 'secim',
+				genis: true,
+				deger: kayit?.musteri_id ?? musteriId ?? musteriler[0].id,
+				secenekler: musteriler.map((m) => ({ deger: m.id, ad: m.ad_soyad })),
+			},
+			{ ad: 'ad', etiket: 'İş adı', deger: kayit?.ad ?? '', genis: true },
+			{ ad: 'tur', etiket: 'Tür', deger: kayit?.tur ?? '', ornek: 'Web sitesi, CAD, bakım…' },
+			{
+				ad: 'durum',
+				etiket: 'Durum',
+				tip: 'secim',
+				deger: kayit?.durum ?? 'teklif',
+				secenekler: IS_DURUMLARI.map((d) => ({ deger: d.anahtar, ad: d.ad })),
+			},
+			{
+				ad: 'tutar',
+				etiket: 'Toplam tutar (TL)',
+				deger: kayit ? kurusGirdiye(kayit.tutar_kurus) : '',
+				ornek: '0,00',
+				ipucu: 'Revize ücretleri ayrıca eklenir.',
+			},
+			{
+				ad: 'on_odeme_orani',
+				etiket: 'Ön ödeme oranı (%)',
+				tip: 'number',
+				deger: kayit?.on_odeme_orani ?? '',
+				ornek: '50',
+				ipucu: 'Serbest. Tipik aralık 40 ile 60 arası.',
+			},
+			{ ad: 'baslangic', etiket: 'Başlangıç', tip: 'date', deger: kayit?.baslangic ?? '' },
+			{ ad: 'teslim', etiket: 'Teslim', tip: 'date', deger: kayit?.teslim ?? '' },
+			{ ad: 'tekrar_eden', etiket: 'Tekrar eden iş', tip: 'onay', deger: kayit?.tekrar_eden === 1 },
+			{ ad: 'ozet', etiket: 'Özet', tip: 'metinalan', deger: kayit?.ozet ?? '', genis: true },
+		],
+		kaydet: async (degerler) => {
+			const form = { ...degerler, id: id ?? null };
+			const { hatalar } = isGirdisiHazirla(form);
+			if (hatalar.length) return hatalar;
+			const sonuc = await guvenli(() => kapi.is.kaydet(form), 'İş kaydedildi.');
+			if (!sonuc) return ['Kaydedilemedi.'];
+			await ekraniCiz();
+			return null;
+		},
+	});
+}
+
+async function isleriCiz() {
+	const musteriler = (await guvenli(() => kapi.musteri.liste({ arsivDahil: true }))) ?? [];
+
+	dugumler.araclar.replaceChildren(
+		secim(
+			'Müşteri',
+			[{ deger: '', ad: 'Tüm müşteriler' }, ...musteriler.map((m) => ({ deger: m.id, ad: m.ad_soyad }))],
+			durum.isMusteriSuzgeci,
+			(deger) => {
+				durum.isMusteriSuzgeci = deger;
+				tazele();
+			},
+		),
+		secim(
+			'Durum',
+			[{ deger: '', ad: 'Tüm durumlar' }, ...IS_DURUMLARI.map((d) => ({ deger: d.anahtar, ad: d.ad }))],
+			durum.isDurumSuzgeci,
+			(deger) => {
+				durum.isDurumSuzgeci = deger;
+				tazele();
+			},
+		),
+		el('input', {
+			tip: 'search',
+			sinif: 'ara',
+			placeholder: 'İş adı, tür, özet…',
+			deger: durum.isArama,
+			'aria-label': 'İş ara',
+			girdi: (o) => {
+				durum.isArama = o.target.value;
+				tazele();
+			},
+		}),
+		el('button', {
+			sinif: 'dugme birincil',
+			metin: 'Yeni iş',
+			tikla: () => isFormuAc(null, durum.isMusteriSuzgeci || null),
+		}),
+	);
+
+	const kap = el('div');
+	dugumler.icerik.replaceChildren(kap);
+	await tazele();
+
+	async function tazele() {
+		const liste =
+			(await guvenli(() =>
+				kapi.is.liste({
+					musteriId: durum.isMusteriSuzgeci || null,
+					durum: durum.isDurumSuzgeci || null,
+					arama: durum.isArama,
+				}),
+			)) ?? [];
+
+		kap.replaceChildren(
+			tablo(
+				[
+					{ ad: 'İş' },
+					{ ad: 'Müşteri' },
+					{ ad: 'Durum' },
+					{ ad: 'Toplam', sinif: 'sayi' },
+					{ ad: 'Tahsil edilen', sinif: 'sayi' },
+					{ ad: 'Kalan', sinif: 'sayi' },
+					{ ad: 'Teslim' },
+					{ ad: '', sinif: 'sayi' },
+				],
+				liste.map((i) => [
+					el('td', {}, [
+						el('strong', { metin: i.ad }),
+						el('span', {
+							sinif: 'alt-metin',
+							metin: [i.tur, i.tekrar_eden === 1 ? 'tekrar eden' : null]
+								.filter(Boolean)
+								.join(' · '),
+						}),
+					]),
+					el('td', { metin: i.musteri_adi }),
+					el('td', {}, [el('span', { sinif: 'etiket', metin: adiniBul(IS_DURUMLARI, i.durum) })]),
+					el('td', { sinif: 'sayi', metin: tl(i.hesap.toplamKurus) }),
+					el('td', { sinif: 'sayi olumlu', metin: tl(i.hesap.tahsilEdilenKurus) }),
+					el('td', {
+						sinif: `sayi${i.hesap.kalanKurus > 0 ? ' bekleyen' : ''}`,
+						metin: tl(i.hesap.kalanKurus),
+					}),
+					el('td', { metin: gunBicim(i.teslim) }),
+					el('td', { sinif: 'islem' }, [
+						el('button', {
+							sinif: 'dugme kucuk',
+							metin: 'Aç',
+							tikla: () => {
+								durum.acikIsId = i.id;
+								ekranaGit('is-detay');
+							},
+						}),
+						el('button', { sinif: 'dugme kucuk', metin: 'Düzenle', tikla: () => isFormuAc(i.id) }),
+						el('button', {
+							sinif: 'dugme kucuk tehlike',
+							metin: 'Sil',
+							tikla: async () => {
+								const onay = await kapi.onaySor(
+									'İş silinsin mi?',
+									`"${i.ad}" işi, ödemeleri ve revizeleriyle birlikte silinecek. Bu geri alınamaz.`,
+								);
+								if (!onay) return;
+								await guvenli(() => kapi.is.sil(i.id), 'İş silindi.');
+								await tazele();
+							},
+						}),
+					]),
+				]),
+				'Bu süzgeçlere uyan iş yok.',
+			),
+		);
+	}
+}
+
+function secim(etiket, secenekler, deger, degisti) {
+	const kutu = el(
+		'select',
+		{
+			'aria-label': etiket,
+			degisti: (o) => degisti(o.target.value),
+		},
+		secenekler.map((s) => el('option', { value: s.deger, metin: s.ad })),
+	);
+	kutu.value = deger ?? '';
+	return kutu;
+}
+
+/* ------------------------------------------------------------------ */
+/* Ekran: İş detayı                                                    */
+/* ------------------------------------------------------------------ */
+
+async function isDetayiniCiz() {
+	if (!durum.acikIsId) {
+		ekranaGit('isler');
+		return;
+	}
+	const is = await guvenli(() => kapi.is.getir(durum.acikIsId));
+	if (!is) {
+		ekranaGit('isler');
+		return;
+	}
+
+	dugumler.baslik.textContent = is.ad;
+	dugumler.araclar.replaceChildren(
+		el('span', { sinif: 'etiket', metin: is.musteri_adi }),
+		el('button', { sinif: 'dugme', metin: 'Düzenle', tikla: () => isFormuAc(is.id) }),
+		el('button', {
+			sinif: 'dugme',
+			metin: 'Ödeme ekle',
+			tikla: () => odemeFormuAc(null, is.id),
+		}),
+		el('button', {
+			sinif: 'dugme',
+			metin: 'Revize ekle',
+			tikla: () => revizeFormuAc(null, is.id),
+		}),
+		el('button', { sinif: 'dugme sade', metin: 'Listeye dön', tikla: () => ekranaGit('isler') }),
+	);
+
+	const h = is.hesap;
+	const olcumler = el('dl', { sinif: 'olcum-izgara' }, [
+		olcum('İş bedeli', tl(h.temelKurus)),
+		olcum('Revizeler', tl(h.revizeKurus)),
+		olcum('Toplam', tl(h.toplamKurus)),
+		olcum('Tahsil edilen', tl(h.tahsilEdilenKurus), 'olumlu'),
+		olcum('Kalan', tl(h.kalanKurus), h.kalanKurus > 0 ? 'bekleyen' : 'olumlu'),
+		olcum(
+			is.on_odeme_orani === null ? 'Ön ödeme' : `Ön ödeme (%${is.on_odeme_orani})`,
+			h.onOdemeBeklenenKurus === null
+				? 'oran girilmemiş'
+				: `${tl(h.onOdemeAlinanKurus)} / ${tl(h.onOdemeBeklenenKurus)}`,
+			h.onOdemeTamamMi === null ? '' : h.onOdemeTamamMi ? 'olumlu' : 'bekleyen',
+		),
+	]);
+
+	const bilgi = el('div', { sinif: 'kart' }, [
+		el('h2', { metin: 'İş bilgisi' }),
+		el('p', { sinif: 'kucuk', metin: `Durum: ${adiniBul(IS_DURUMLARI, is.durum)}` }),
+		el('p', {
+			sinif: 'kucuk',
+			metin: `Tür: ${is.tur || 'belirtilmemiş'} · Başlangıç: ${gunBicim(is.baslangic) || '-'} · Teslim: ${gunBicim(is.teslim) || '-'} · ${is.tekrar_eden === 1 ? 'Tekrar eden' : 'Tek seferlik'}`,
+		}),
+		is.ozet ? el('p', { metin: is.ozet }) : null,
+	]);
+
+	dugumler.icerik.replaceChildren(
+		olcumler,
+		el('div', { sinif: 'bosluk' }),
+		bilgi,
+		el('div', { sinif: 'kart' }, [
+			el('h2', { metin: 'Ödemeler' }),
+			odemeTablosu(is.odemeler, () => ekraniCiz()),
+		]),
+		el('div', { sinif: 'kart' }, [
+			el('h2', { metin: 'Revizeler' }),
+			revizeTablosu(is.revizeler, () => ekraniCiz()),
+		]),
+	);
+}
+
+function olcum(baslik, deger, sinif = '') {
+	return el('div', { sinif: 'olcum' }, [
+		el('dt', { metin: baslik }),
+		el('dd', { sinif, metin: deger }),
+	]);
+}
+
+/* ------------------------------------------------------------------ */
+/* Ödemeler                                                            */
+/* ------------------------------------------------------------------ */
+
+async function odemeFormuAc(id, isId, mevcut = null) {
+	formAc({
+		baslik: id ? 'Ödemeyi düzenle' : 'Yeni ödeme',
+		alanlar: [
+			{
+				ad: 'tur',
+				etiket: 'Tür',
+				tip: 'secim',
+				deger: mevcut?.tur ?? 'ara_odeme',
+				secenekler: ODEME_TURLERI.map((t) => ({ deger: t.anahtar, ad: t.ad })),
+			},
+			{
+				ad: 'tutar',
+				etiket: 'Tutar (TL)',
+				deger: mevcut ? kurusGirdiye(mevcut.tutar_kurus) : '',
+				ornek: '0,00',
+			},
+			{
+				ad: 'tarih',
+				etiket: 'Tarih',
+				tip: 'date',
+				deger: mevcut?.tarih ?? new Date().toISOString().slice(0, 10),
+			},
+			{ ad: 'yontem', etiket: 'Yöntem', deger: mevcut?.yontem ?? '', ornek: 'Havale, nakit…' },
+			{ ad: 'not_metni', etiket: 'Not', tip: 'metinalan', deger: mevcut?.not_metni ?? '', genis: true },
+		],
+		kaydet: async (degerler) => {
+			const form = { ...degerler, id: id ?? null, is_id: isId };
+			const { hatalar } = odemeGirdisiHazirla(form);
+			if (hatalar.length) return hatalar;
+			const sonuc = await guvenli(() => kapi.odeme.kaydet(form), 'Ödeme kaydedildi.');
+			if (!sonuc) return ['Kaydedilemedi.'];
+			await ekraniCiz();
+			return null;
+		},
+	});
+}
+
+function odemeTablosu(odemeler, tazele, isSutunu = false) {
+	return tablo(
+		[
+			{ ad: 'Tarih' },
+			isSutunu ? { ad: 'İş' } : null,
+			{ ad: 'Tür' },
+			{ ad: 'Tutar', sinif: 'sayi' },
+			{ ad: 'Yöntem' },
+			{ ad: 'Not' },
+			{ ad: '', sinif: 'sayi' },
+		].filter(Boolean),
+		odemeler.map((o) =>
+			[
+				el('td', { metin: gunBicim(o.tarih) }),
+				isSutunu
+					? el('td', {}, [
+							el('strong', { metin: o.is_adi }),
+							el('span', { sinif: 'alt-metin', metin: o.musteri_adi }),
+						])
+					: null,
+				el('td', {}, [el('span', { sinif: 'etiket', metin: adiniBul(ODEME_TURLERI, o.tur) })]),
+				el('td', {
+					sinif: `sayi ${o.tur === 'iade' ? 'bekleyen' : 'olumlu'}`,
+					metin: `${o.tur === 'iade' ? '-' : ''}${tl(Math.abs(o.tutar_kurus))}`,
+				}),
+				el('td', { metin: o.yontem ?? '' }),
+				el('td', { metin: o.not_metni ?? '' }),
+				el('td', { sinif: 'islem' }, [
+					el('button', {
+						sinif: 'dugme kucuk',
+						metin: 'Düzenle',
+						tikla: () => odemeFormuAc(o.id, o.is_id, o),
+					}),
+					el('button', {
+						sinif: 'dugme kucuk tehlike',
+						metin: 'Sil',
+						tikla: async () => {
+							const onay = await kapi.onaySor(
+								'Ödeme silinsin mi?',
+								`${gunBicim(o.tarih)} tarihli ${tl(o.tutar_kurus)} TL tutarındaki kayıt silinecek.`,
+							);
+							if (!onay) return;
+							await guvenli(() => kapi.odeme.sil(o.id), 'Ödeme silindi.');
+							await tazele();
+						},
+					}),
+				]),
+			].filter(Boolean),
+		),
+		'Bu işe ait ödeme kaydı yok.',
+	);
+}
+
+async function odemeleriCiz() {
+	const isler = (await guvenli(() => kapi.is.liste({}))) ?? [];
+
+	dugumler.araclar.replaceChildren(
+		secim(
+			'İş',
+			[{ deger: '', ad: 'Tüm işler' }, ...isler.map((i) => ({ deger: i.id, ad: `${i.musteri_adi} · ${i.ad}` }))],
+			durum.odemeIsId,
+			(deger) => {
+				durum.odemeIsId = deger;
+				tazele();
+			},
+		),
+		el('button', {
+			sinif: 'dugme birincil',
+			metin: 'Yeni ödeme',
+			tikla: () => {
+				if (!durum.odemeIsId) {
+					bildir('Ödeme eklemek için önce bir iş seçin.', true);
+					return;
+				}
+				odemeFormuAc(null, durum.odemeIsId);
+			},
+		}),
+	);
+
+	const kap = el('div');
+	dugumler.icerik.replaceChildren(kap);
+	await tazele();
+
+	async function tazele() {
+		const liste =
+			(await guvenli(() => kapi.odeme.liste({ isId: durum.odemeIsId || null }))) ?? [];
+		kap.replaceChildren(odemeTablosu(liste, tazele, true));
+	}
+}
+
+/* ------------------------------------------------------------------ */
+/* Revizeler                                                           */
+/* ------------------------------------------------------------------ */
+
+async function revizeFormuAc(id, isId, mevcut = null) {
+	formAc({
+		baslik: id ? 'Revizeyi düzenle' : 'Yeni revize',
+		alanlar: [
+			{ ad: 'baslik', etiket: 'Başlık', deger: mevcut?.baslik ?? '', genis: true },
+			{
+				ad: 'tutar',
+				etiket: 'Tutar (TL)',
+				deger: mevcut ? kurusGirdiye(mevcut.tutar_kurus) : '',
+				ornek: '0,00',
+			},
+			{
+				ad: 'tarih',
+				etiket: 'Tarih',
+				tip: 'date',
+				deger: mevcut?.tarih ?? new Date().toISOString().slice(0, 10),
+			},
+			{
+				ad: 'ucretli',
+				etiket: 'Ücretli revize',
+				tip: 'onay',
+				deger: mevcut ? mevcut.ucretli === 1 : true,
+			},
+			{ ad: 'aciklama', etiket: 'Açıklama', tip: 'metinalan', deger: mevcut?.aciklama ?? '', genis: true },
+			{
+				tip: 'aciklama',
+				metin:
+					'Ücretsiz revize kayda geçer ama işin tutarına eklenmez. Yapılan işi ' +
+					'görmek için tutuluyor.',
+			},
+		],
+		kaydet: async (degerler) => {
+			const form = { ...degerler, id: id ?? null, is_id: isId };
+			const { hatalar } = revizeGirdisiHazirla(form);
+			if (hatalar.length) return hatalar;
+			const sonuc = await guvenli(() => kapi.revize.kaydet(form), 'Revize kaydedildi.');
+			if (!sonuc) return ['Kaydedilemedi.'];
+			await ekraniCiz();
+			return null;
+		},
+	});
+}
+
+function revizeTablosu(revizeler, tazele, isSutunu = false) {
+	return tablo(
+		[
+			{ ad: 'Tarih' },
+			isSutunu ? { ad: 'İş' } : null,
+			{ ad: 'Başlık' },
+			{ ad: 'Ücret' },
+			{ ad: 'Tutar', sinif: 'sayi' },
+			{ ad: '', sinif: 'sayi' },
+		].filter(Boolean),
+		revizeler.map((r) =>
+			[
+				el('td', { metin: gunBicim(r.tarih) }),
+				isSutunu
+					? el('td', {}, [
+							el('strong', { metin: r.is_adi }),
+							el('span', { sinif: 'alt-metin', metin: r.musteri_adi }),
+						])
+					: null,
+				el('td', {}, [
+					el('strong', { metin: r.baslik }),
+					r.aciklama ? el('span', { sinif: 'alt-metin', metin: r.aciklama }) : null,
+				]),
+				el('td', {}, [
+					el('span', { sinif: 'etiket', metin: r.ucretli === 1 ? 'Ücretli' : 'Ücretsiz' }),
+				]),
+				el('td', { sinif: 'sayi', metin: r.ucretli === 1 ? tl(r.tutar_kurus) : '-' }),
+				el('td', { sinif: 'islem' }, [
+					el('button', {
+						sinif: 'dugme kucuk',
+						metin: 'Düzenle',
+						tikla: () => revizeFormuAc(r.id, r.is_id, r),
+					}),
+					el('button', {
+						sinif: 'dugme kucuk tehlike',
+						metin: 'Sil',
+						tikla: async () => {
+							const onay = await kapi.onaySor('Revize silinsin mi?', `"${r.baslik}" kaydı silinecek.`);
+							if (!onay) return;
+							await guvenli(() => kapi.revize.sil(r.id), 'Revize silindi.');
+							await tazele();
+						},
+					}),
+				]),
+			].filter(Boolean),
+		),
+		'Bu işe ait revize kaydı yok.',
+	);
+}
+
+async function revizeleriCiz() {
+	const isler = (await guvenli(() => kapi.is.liste({}))) ?? [];
+
+	dugumler.araclar.replaceChildren(
+		secim(
+			'İş',
+			[{ deger: '', ad: 'Tüm işler' }, ...isler.map((i) => ({ deger: i.id, ad: `${i.musteri_adi} · ${i.ad}` }))],
+			durum.revizeIsId,
+			(deger) => {
+				durum.revizeIsId = deger;
+				tazele();
+			},
+		),
+		el('button', {
+			sinif: 'dugme birincil',
+			metin: 'Yeni revize',
+			tikla: () => {
+				if (!durum.revizeIsId) {
+					bildir('Revize eklemek için önce bir iş seçin.', true);
+					return;
+				}
+				revizeFormuAc(null, durum.revizeIsId);
+			},
+		}),
+	);
+
+	const kap = el('div');
+	dugumler.icerik.replaceChildren(kap);
+	await tazele();
+
+	async function tazele() {
+		const liste =
+			(await guvenli(() => kapi.revize.liste({ isId: durum.revizeIsId || null }))) ?? [];
+		kap.replaceChildren(revizeTablosu(liste, tazele, true));
+	}
+}
+
+/* ------------------------------------------------------------------ */
+/* Ekran: İstatistikler                                                */
+/* ------------------------------------------------------------------ */
+
+async function istatistikCiz() {
+	const aylar = (await guvenli(() => kapi.istatistik.aylar())) ?? [];
+	const liste = [...new Set([buAy(), durum.ay, ...aylar])].filter(Boolean).sort().reverse();
+
+	dugumler.araclar.replaceChildren(
+		secim(
+			'Ay',
+			liste.map((a) => ({ deger: a, ad: ayBicim(a) })),
+			durum.ay,
+			(deger) => {
+				durum.ay = deger;
+				tazele();
+			},
+		),
+	);
+
+	const kap = el('div');
+	dugumler.icerik.replaceChildren(kap);
+	await tazele();
+
+	async function tazele() {
+		const s = await guvenli(() => kapi.istatistik.ay(durum.ay));
+		if (!s) return;
+
+		const enCok = Math.max(1, ...s.turDagilimi.map((t) => t.adet));
+
+		kap.replaceChildren(
+			el('dl', { sinif: 'olcum-izgara' }, [
+				olcum('Müşteri', String(s.musteriSayisi)),
+				olcum('Açık destek talebi', String(s.acikTalepSayisi)),
+				olcum('Bu ay yapılan ön ödeme', `${tl(s.aylikYapilanOnOdemeKurus)} TL`, 'olumlu'),
+				olcum('Bu ay toplam alınacak', `${tl(s.aylikToplamAlinacakKurus)} TL`),
+				olcum(
+					'Bu ay kalan',
+					`${tl(s.aylikKalanKurus)} TL`,
+					s.aylikKalanKurus > 0 ? 'bekleyen' : 'olumlu',
+				),
+				olcum('Bu ay tahsil edilen', `${tl(s.aylikTahsilatKurus)} TL`, 'olumlu'),
+				olcum('Bu ayın işi', String(s.ayinIsSayisi)),
+				olcum('Tekrar eden iş', String(s.tekrarEdenSayisi)),
+				olcum('Bu ay eklenen müşteri', String(s.ayinYeniMusterisi)),
+				olcum('Arşivdeki müşteri', String(s.arsivMusteriSayisi)),
+			]),
+			el('div', { sinif: 'bosluk' }),
+			el('div', { sinif: 'kart' }, [
+				el('h2', { metin: 'Ağırlıkta yapılan işler' }),
+				s.turDagilimi.length
+					? el(
+							'div',
+							{},
+							s.turDagilimi.map((t) =>
+								el('div', { sinif: 'cubuk-satir' }, [
+									el('span', { metin: t.tur }),
+									el('div', { sinif: 'cubuk' }, [
+										el('span', { stil: { width: `${Math.round((t.adet / enCok) * 100)}%` } }),
+									]),
+									el('span', { sinif: 'sayi', metin: String(t.adet) }),
+								]),
+							),
+						)
+					: el('p', { sinif: 'bos', metin: 'Bu ayda iş kaydı yok.' }),
+			]),
+			el('p', {
+				sinif: 'kucuk',
+				metin:
+					'Bir iş, teslim tarihinin ayına sayılıyor; teslim girilmemişse başlangıcın ' +
+					'ayına. Ön ödeme ise ödemenin kendi tarihine sayılıyor. İptal edilen işler ' +
+					'toplamlara girmiyor. Bu sayıların hiçbiri sunucuya gitmiyor.',
+			}),
+		);
+	}
+}
+
+/* ------------------------------------------------------------------ */
+/* Ekran: Davetler                                                     */
+/* ------------------------------------------------------------------ */
+
+async function davetleriCiz() {
+	const musteriler = (await guvenli(() => kapi.musteri.liste({}))) ?? [];
+	let secilen = musteriler[0]?.id ?? '';
+
+	dugumler.araclar.replaceChildren(
+		secim(
+			'Müşteri',
+			musteriler.length
+				? musteriler.map((m) => ({ deger: m.id, ad: m.ad_soyad }))
+				: [{ deger: '', ad: 'Müşteri yok' }],
+			secilen,
+			(deger) => {
+				secilen = deger;
+			},
+		),
+		el('button', {
+			sinif: 'dugme birincil',
+			metin: 'Davet anahtarı üret',
+			disabled: !musteriler.length,
+			tikla: async () => {
+				if (!secilen) return;
+				const davet = await guvenli(() => kapi.davet.uret(secilen));
+				if (!davet) return;
+				durum.davet = davet;
+				bildir('Anahtar üretildi. Bu ekran kapanınca bir daha görülemez.');
+				await tazele();
+			},
+		}),
+	);
+
+	const kap = el('div');
+	dugumler.icerik.replaceChildren(kap);
+	await tazele();
+
+	async function tazele() {
+		const parcalar = [];
+
+		if (durum.davet) {
+			const d = durum.davet;
+			parcalar.push(
+				el('div', { sinif: 'kart' }, [
+					el('h2', { metin: `Davet anahtarı: ${d.musteriAdi}` }),
+					el('div', { sinif: 'uyari-kutusu' }, [
+						el('strong', { metin: 'Bu anahtar hiçbir yere kaydedilmedi. ' }),
+						'Ne bu bilgisayarda ne sunucuda duruyor; kaydedilen tek şey anahtarın ' +
+							'karması. Ekranı kapattığınızda ya da başka bir ekrana geçtiğinizde ' +
+							'anahtar kaybolur ve bir daha gösterilemez. Kaybolursa yenisini üretin.',
+					]),
+					el('div', { sinif: 'anahtar-kutusu' }, [
+						el('div', {}, [
+							el('p', { sinif: 'anahtar', metin: d.metin }),
+							el('div', { sinif: 'dugme-sirasi' }, [
+								el('button', {
+									sinif: 'dugme',
+									metin: 'Panoya kopyala',
+									tikla: async () => {
+										await guvenli(() => kapi.panoyaYaz(d.metin), 'Anahtar panoya kopyalandı.');
+									},
+								}),
+								el('button', {
+									sinif: 'dugme sade',
+									metin: 'Ekrandan sil',
+									tikla: async () => {
+										durum.davet = null;
+										bildir('Anahtar ekrandan silindi.');
+										await tazele();
+									},
+								}),
+							]),
+							el('p', {
+								sinif: 'kucuk',
+								sinif: 'kucuk ust-bosluk',
+								metin: `Son kullanma: ${gunBicim(d.sonKullanma)} (7 gün, tek kullanımlık)`,
+							}),
+						]),
+						el('div', { sinif: 'qr' }, [
+							el('img', { src: d.qr, alt: `${d.musteriAdi} için davet anahtarının QR kodu`, width: 190, height: 190 }),
+						]),
+					]),
+					el('p', {
+						sinif: 'kucuk',
+						metin:
+							'Anahtarı müşteriye kendi tanıdığınız kanaldan verin: telefonda okuyun, ' +
+							'mesajla yollayın ya da QR kodu gösterin. Harfler karışmasın diye I, L, ' +
+							'O ve U alfabede yok.',
+					}),
+				]),
+			);
+		} else {
+			parcalar.push(
+				el('p', {
+					sinif: 'bos',
+					metin: musteriler.length
+						? 'Müşteri seçip "Davet anahtarı üret" düğmesine basın.'
+						: 'Önce bir müşteri ekleyin.',
+				}),
+			);
+		}
+
+		const kuyruk = (await guvenli(() => kapi.kuyruk.bekleyen())) ?? [];
+		parcalar.push(
+			el('div', { sinif: 'kart' }, [
+				el('h2', { metin: 'Sunucuya gidecek kayıtlar' }),
+				el('p', {
+					sinif: 'kucuk',
+					metin:
+						'Eşitleme kuyruğunda bekleyenler. Bu listede tutar, TC kimlik numarası, ' +
+						'vergi numarası, telefon ve adres bulunmaz; bulunamaz da, kuyruğa yazan ' +
+						'kod izin verilen alanların dışını reddediyor.',
+				}),
+				tablo(
+					[{ ad: 'Zaman' }, { ad: 'İşlem' }, { ad: 'Gövde' }],
+					kuyruk.map((k) => [
+						el('td', { metin: gunBicim(k.olusturuldu) }),
+						el('td', {}, [el('span', { sinif: 'etiket', metin: k.islem })]),
+						el('td', { sinif: 'kuyruk-govde', metin: k.govde }),
+					]),
+					'Kuyruk boş.',
+				),
+			]),
+		);
+
+		kap.replaceChildren(...parcalar);
+	}
+}
+
+/* ------------------------------------------------------------------ */
+/* Yönlendirme                                                         */
+/* ------------------------------------------------------------------ */
+
+const EKRANLAR = {
+	musteriler: { baslik: 'Müşteriler', ciz: musterileriCiz },
+	isler: { baslik: 'İşler', ciz: isleriCiz },
+	'is-detay': { baslik: 'İş', ciz: isDetayiniCiz, gizli: true },
+	odemeler: { baslik: 'Ödemeler', ciz: odemeleriCiz },
+	revizeler: { baslik: 'Revizeler', ciz: revizeleriCiz },
+	istatistik: { baslik: 'İstatistikler', ciz: istatistikCiz },
+	davetler: { baslik: 'Davetler', ciz: davetleriCiz },
+};
+
+async function ekraniCiz() {
+	const ekran = EKRANLAR[durum.ekran] ?? EKRANLAR.musteriler;
+	dugumler.baslik.textContent = ekran.baslik;
+	dugumler.araclar.replaceChildren();
+	for (const dugme of dugumler.gezinti.querySelectorAll('button')) {
+		const secili = dugme.dataset.ekran === durum.ekran;
+		if (secili) dugme.setAttribute('aria-current', 'page');
+		else dugme.removeAttribute('aria-current');
+	}
+	await ekran.ciz();
+}
+
+async function ekranaGit(anahtar) {
+	if (anahtar === 'yenile') {
+		await ekraniCiz();
+		return;
+	}
+	if (!EKRANLAR[anahtar]) return;
+	/*
+	  Ekran değişince davet anahtarı bellekten siliniyor. Söz verilen şey
+	  buydu: anahtar yalnızca gösterildiği ekranda yaşıyor.
+	*/
+	if (durum.ekran === 'davetler' && anahtar !== 'davetler') durum.davet = null;
+	durum.ekran = anahtar;
+	bildir(null);
+	await ekraniCiz();
+	dugumler.icerik.scrollTop = 0;
+}
+
+dugumler.gezinti.addEventListener('click', (olay) => {
+	const dugme = olay.target.closest('button[data-ekran]');
+	if (dugme) ekranaGit(dugme.dataset.ekran);
+});
+
+kapi.ekranDinle((anahtar) => ekranaGit(anahtar));
+
+/* ------------------------------------------------------------------ */
+/* Açılış                                                              */
+/* ------------------------------------------------------------------ */
+
+async function baslat() {
+	const bilgi = await guvenli(() => kapi.durumOku());
+	durum.sifreleme = Boolean(bilgi?.sifreleme);
+
+	dugumler.rozet.textContent = durum.sifreleme
+		? 'Anahtarlık açık: TC ve vergi numarası şifreli.'
+		: 'Anahtarlık kapalı: TC ve vergi numarası kaydedilemiyor.';
+	dugumler.rozet.classList.add(durum.sifreleme ? 'iyi' : 'kotu');
+	dugumler.rozet.title = bilgi?.veritabani ?? '';
+
+	if (!durum.sifreleme) {
+		bildir(
+			'İşletim sisteminin anahtarlığı açılamadı. TC kimlik ve vergi numarası ' +
+				'alanları kapalı; düz metin olarak kaydedilmeyecek.',
+			true,
+		);
+	}
+
+	await ekraniCiz();
+}
+
+baslat();

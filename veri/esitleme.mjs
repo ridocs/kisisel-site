@@ -17,24 +17,14 @@
 */
 
 import { simdi } from './db.mjs';
+import { IZINLI_ALANLAR } from './izinli-alanlar.mjs';
 
 /*
   Sunucuya çıkmasına izin verilen alanlar. Bu listeyi genişletmeden önce
   şu soruyu cevapla: bu bilgi sunucu ele geçtiğinde sızsa ne olur?
   Tutar, TC, vergi numarası, telefon ve adres bilerek burada yok.
 */
-const IZINLI_ALANLAR = {
-	'musteri.kaydet': ['id', 'gorunen_ad', 'durum'],
-	'musteri.sil': ['id'],
-	'davet.ekle': ['id', 'musteri_id', 'anahtar_karmasi', 'son_kullanma'],
-	'davet.iptal': ['id'],
-	'is.kaydet': ['id', 'musteri_id', 'ad', 'durum'],
-	'is.sil': ['id'],
-	'talep.durum': ['id', 'durum'],
-	'talep.yanit': ['id', 'talep_id', 'metin', 'zaman'],
-};
-
-export const ISLEMLER = Object.keys(IZINLI_ALANLAR);
+export { IZINLI_ALANLAR, ISLEMLER, HASSAS_ALAN_DESENI } from './izinli-alanlar.mjs';
 
 /**
  * Bir eşitleme işlemini beyaz listeden geçirir.

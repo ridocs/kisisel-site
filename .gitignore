@@ -31,3 +31,14 @@ masaustu/cikti/
 release/
 dist-panel
 .claude/
+
+# müşteri paneli: sunucu kipi çıktısı.
+# `dist-panel` deseni yalnızca TAM O ADI eşliyor, bunu yakalamıyor.
+dist-panel-musteri/
+
+# Veritabanı dosyaları hiçbir dizinde commit edilmesin. Yukarıdaki dizin
+# desenleri bugünkü yolları kapatıyor; bu üç desen yarın başka bir yere
+# yazılan bir veritabanını da kapatır.
+*.db
+*.db-wal
+*.db-shm

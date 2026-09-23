@@ -11,7 +11,16 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import { yerelAc, simdi } from './db.mjs';
-import { suz, kuyrugaYaz, bekleyenler, gonderildiIsaretle, paketHazirla, talepleriIceAl } from './esitleme.mjs';
+import {
+	suz,
+	kuyrugaYaz,
+	bekleyenler,
+	gonderildiIsaretle,
+	paketHazirla,
+	talepleriIceAl,
+	IZINLI_ALANLAR,
+	HASSAS_ALAN_DESENI,
+} from './esitleme.mjs';
 
 function geciciYerel() {
 	const dizin = mkdtempSync(join(tmpdir(), 'esitleme-test-'));
@@ -26,7 +35,7 @@ function musteriEkle(db, id = 'm1') {
 }
 
 test('süzgeç hassas alanları düşürüyor', () => {
-	const cikti = suz('musteri.kaydet', {
+	const cikti = suz('musteri.yaz', {
 		id: 'm1',
 		gorunen_ad: 'Ali Veli',
 		durum: 'etkin',
@@ -42,7 +51,7 @@ test('süzgeç hassas alanları düşürüyor', () => {
 });
 
 test('iş kaydında tutar ve ödeme bilgisi süzülüyor', () => {
-	const cikti = suz('is.kaydet', {
+	const cikti = suz('is.yaz', {
 		id: 'i1',
 		musteri_id: 'm1',
 		ad: 'Web sitesi',
@@ -60,12 +69,30 @@ test('bilinmeyen işlem reddediliyor', () => {
 	assert.throws(() => suz('musteri.hepsiniVer', { id: 'x' }), /Tanınmayan/);
 });
 
+test('beyaz listenin kendisi hassas alana karşı korunuyor', () => {
+	// İkinci emniyet kemeri: beyaz listeye ileride hassas bir alan eklenirse
+	// modül yüklenirken patlamalı. Desenin o adları gerçekten tanıdığını
+	// burada doğruluyoruz, yoksa kemer takılı görünüp boşta durur.
+	for (const hassas of [
+		'tutar_kurus', 'tc_sifreli', 'vergi_sifreli', 'telefon', 'adres',
+		'ilce', 'sehir', 'iban', 'on_odeme_orani', 'odeme_turu', 'revize_tutari',
+	]) {
+		assert.ok(HASSAS_ALAN_DESENI.test(hassas), `${hassas} hassas sayılmalıydı`);
+	}
+	// İzin verilen alanların hiçbiri desene takılmamalı, yoksa liste kullanılamaz.
+	for (const alanlar of Object.values(IZINLI_ALANLAR)) {
+		for (const alan of alanlar) {
+			assert.ok(!HASSAS_ALAN_DESENI.test(alan), `${alan} yanlışlıkla hassas sayılıyor`);
+		}
+	}
+});
+
 test('id olmadan işlem geçmiyor', () => {
-	assert.throws(() => suz('musteri.kaydet', { gorunen_ad: 'Ali' }), /id zorunlu/);
+	assert.throws(() => suz('musteri.yaz', { gorunen_ad: 'Ali' }), /id zorunlu/);
 });
 
 test('bayt dizisi hex metne çevriliyor', () => {
-	const cikti = suz('davet.ekle', {
+	const cikti = suz('davet.yaz', {
 		id: 'd1',
 		musteri_id: 'm1',
 		anahtar_karmasi: Buffer.from([0xde, 0xad, 0xbe, 0xef]),
@@ -77,11 +104,11 @@ test('bayt dizisi hex metne çevriliyor', () => {
 test('kuyruk yazılıyor, okunuyor ve işaretleniyor', () => {
 	const { dizin, db } = geciciYerel();
 	try {
-		kuyrugaYaz(db, 'musteri.kaydet', { id: 'm1', gorunen_ad: 'Ali', durum: 'etkin' });
-		kuyrugaYaz(db, 'is.kaydet', { id: 'i1', musteri_id: 'm1', ad: 'Site', durum: 'suruyor' });
+		kuyrugaYaz(db, 'musteri.yaz', { id: 'm1', gorunen_ad: 'Ali', durum: 'etkin' });
+		kuyrugaYaz(db, 'is.yaz', { id: 'i1', musteri_id: 'm1', ad: 'Site', durum: 'suruyor' });
 		const bekleyen = bekleyenler(db);
 		assert.equal(bekleyen.length, 2);
-		assert.equal(bekleyen[0].islem, 'musteri.kaydet');
+		assert.equal(bekleyen[0].islem, 'musteri.yaz');
 		gonderildiIsaretle(db, [bekleyen[0].id]);
 		assert.equal(bekleyenler(db).length, 1);
 	} finally {
@@ -93,7 +120,7 @@ test('kuyruk yazılıyor, okunuyor ve işaretleniyor', () => {
 test('kuyruğa hassas alan yazılamıyor', () => {
 	const { dizin, db } = geciciYerel();
 	try {
-		kuyrugaYaz(db, 'musteri.kaydet', {
+		kuyrugaYaz(db, 'musteri.yaz', {
 			id: 'm1',
 			gorunen_ad: 'Ali',
 			durum: 'etkin',
@@ -110,7 +137,7 @@ test('kuyruğa hassas alan yazılamıyor', () => {
 
 test('paket tekrar uygulanabilir biçimde hazırlanıyor', () => {
 	const paket = paketHazirla([
-		{ id: 7, islem: 'musteri.kaydet', govde: { id: 'm1', gorunen_ad: 'Ali', durum: 'etkin' } },
+		{ id: 7, islem: 'musteri.yaz', govde: { id: 'm1', gorunen_ad: 'Ali', durum: 'etkin' } },
 	]);
 	assert.equal(paket.surum, 1);
 	assert.equal(paket.islemler[0].sira, 7);
