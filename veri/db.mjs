@@ -11,22 +11,25 @@
 */
 
 import { DatabaseSync } from 'node:sqlite';
-import { readFileSync, mkdirSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { mkdirSync } from 'node:fs';
+import { dirname } from 'node:path';
 
-const BURASI = dirname(fileURLToPath(import.meta.url));
+import { SEMA_YEREL, SEMA_PANEL } from './semalar.mjs';
 
-export const SEMA_YEREL = join(BURASI, 'sema-yerel.sql');
-export const SEMA_PANEL = join(BURASI, 'sema-panel.sql');
+export { SEMA_YEREL, SEMA_PANEL };
 
 /**
  * Veritabanını açar ve şemayı uygular.
  *
- * Şema dosyaları baştan sona `IF NOT EXISTS` ile yazıldı, yani her açılışta
+ * Şema DİSKTEN OKUNMUYOR, modülden geliyor. Bir süre .sql dosyası okunuyordu
+ * ve bu geliştirme sunucusunda çalışıyordu; üretim derlemesinde paketleyici
+ * modülü bir chunk'a taşıyıp .sql dosyasını taşımadığı için panel ilk
+ * istekte ENOENT alıp 500 veriyordu. Geliştirmede hiç görünmeyen bir hataydı.
+ *
+ * Şemalar baştan sona `IF NOT EXISTS` ile yazıldı, yani her açılışta
  * çalıştırmak zararsız. Sütun eklemek gerektiğinde `gocUygula` kullanılıyor.
  */
-export function veritabaniAc(dosyaYolu, semaYolu) {
+export function veritabaniAc(dosyaYolu, sema) {
 	mkdirSync(dirname(dosyaYolu), { recursive: true });
 	const db = new DatabaseSync(dosyaYolu);
 	db.exec('PRAGMA foreign_keys = ON');
@@ -34,7 +37,7 @@ export function veritabaniAc(dosyaYolu, semaYolu) {
 	// Güç kesintisinde WAL'in bozulmaması için. NORMAL, tam FULL'den hızlı
 	// ve WAL kipinde dayanıklılık açısından yeterli.
 	db.exec('PRAGMA synchronous = NORMAL');
-	db.exec(readFileSync(semaYolu, 'utf8'));
+	db.exec(sema);
 	return db;
 }
 
