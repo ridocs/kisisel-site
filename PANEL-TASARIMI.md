@@ -411,19 +411,28 @@ Giriş yayına girdiğinde şu ifadeler yanlış olur:
 
 ## 11. Sıra
 
-| # | İş | Bağımlılık |
+| # | İş | Durum |
 |---|---|---|
-| 0 | Sunucu bilgilerinin depodan çıkarılması, erişim anahtarının döndürülmesi | Müşteri verisi tutmadan **önce** |
-| 1 | İki veritabanının şeması ve göç düzeneği | |
-| 2 | Masaüstü uygulaması: iskelet, müşteri ve iş yönetimi, istatistikler | 1 |
-| 3 | Davet üretimi: masaüstünde üret, SSH ile karmasını yaz | 2 |
-| 4 | Web paneli: `astro.config.panel.mjs`, iskelet, yerelde çalışır durumda | 1 |
-| 5 | Davet doğrulama ve passkey kaydı | 3, 4 |
-| 6 | Giriş, oturum, çıkış | 5 |
-| 7 | Destek talepleri: panelde açma ve yazışma, yerele çekme | 6 |
-| 8 | Oran sınırlama, günlükleme, güvenlik başlıkları | 6 |
-| 9 | Sunucu kurulumu: ters vekil bloğu, servis tanımı, yedek | 8 |
-| 10 | Navbar düğmesine hedef, metin düzeltmeleri | 9 |
+| 0 | Sunucu bilgilerinin depodan çıkarılması, erişim anahtarının döndürülmesi | **Bekliyor**, karar kullanıcıda |
+| 1 | İki veritabanının şeması ve göç düzeneği | Bitti |
+| 2 | Masaüstü uygulaması: müşteri, iş, ödeme, revize, istatistikler | Bitti |
+| 3 | Davet üretimi: masaüstünde üret, karmasını kuyruğa yaz | Bitti |
+| 4 | Web paneli: `astro.config.panel.mjs`, iskelet | Bitti |
+| 5 | Davet doğrulama ve passkey kaydı | Bitti, tarayıcı tarafı elle denenmedi |
+| 6 | Giriş, oturum, çıkış | Bitti, tarayıcı tarafı elle denenmedi |
+| 7 | Destek talepleri: panelde açma ve yazışma | Bitti |
+| 8 | Oran sınırlama, günlükleme, güvenlik başlıkları | Bitti |
+| 9 | Eşitlemenin SSH tarafı: paketi gönder, talepleri çek | **Yapılmadı** |
+| 10 | Sunucu kurulumu: ters vekil bloğu, servis tanımı, yedek | **Yapılmadı** |
+| 11 | Navbar düğmesine hedef, §10'daki metin düzeltmeleri | **Yapılmadı** |
+
+### Gerçek cihazla denenmesi gerekenler
+
+Sunucu tarafı test edildi, ama passkey'in kendisi ancak gerçek bir cihazla
+denenir. Elle bakılacaklar: davet anahtarıyla ilk kayıt ve parmak izi istemi,
+kullanıcı adı yazmadan giriş, aynı cihazı ikinci kez kaydetme denemesi, iki
+ayrı cihaz kaydı, `#anahtar` çapalı bağlantıyla gelme, ve içerik güvenlik
+politikası altında tarayıcı konsolunun temiz kalması.
 
 0 numaralı madde ayrı bir karar bekliyor: çalışma ağacından silmek kolay,
 geçmişten silmek herkese açık bir depoda yıkıcı bir iştir ve tek başıma
