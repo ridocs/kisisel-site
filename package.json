@@ -3,7 +3,7 @@
 	"type": "module",
 	"version": "0.0.1",
 	"engines": {
-		"node": ">=22.12.0"
+		"node": ">=24.0.0"
 	},
 	"scripts": {
 		"dev": "astro dev",
@@ -11,7 +11,10 @@
 		"preview": "astro preview",
 		"astro": "astro",
 		"yazi": "node masaustu/sunucu-nobetcisi.mjs",
-		"panel": "electron --disable-backgrounding-occluded-windows masaustu/ana.mjs"
+		"panel": "electron --disable-backgrounding-occluded-windows masaustu/ana.mjs",
+		"yonetim": "electron --disable-backgrounding-occluded-windows yonetim/ana.mjs",
+		"musteri-paneli": "astro dev --config astro.config.panel.mjs",
+		"test": "node --test veri/veri.test.mjs src/musteri-paneli/**/*.test.mjs yonetim/**/*.test.mjs"
 	},
 	"dependencies": {
 		"@astrojs/markdown-satteri": "^0.4.1",
@@ -48,6 +51,8 @@
 		"@iconify-json/logos": "^1.2.14",
 		"@keystatic/astro": "^6.0.0",
 		"@keystatic/core": "^0.6.9",
+		"@simplewebauthn/browser": "^14.0.0",
+		"@simplewebauthn/server": "^14.0.2",
 		"@svgr/core": "^8.1.0",
 		"@svgr/plugin-jsx": "^8.1.0",
 		"electron": "^44.3.0",

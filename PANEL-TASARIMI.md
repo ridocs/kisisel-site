@@ -1,9 +1,10 @@
 # Müşteri paneli: kimlik doğrulama tasarımı
 
-**Durum:** taslak, onay bekliyor. Kod yazılmadı.
+**Durum:** onaylandı, uygulanıyor.
 **Tarih:** 23 Eylül 2026.
-**Kapsam:** giriş akışı ve oturum yönetimi. Panelin içi (destek talepleri
-ekranları) bu belgenin dışında, sonraki aşama.
+**Kapsam:** iki ayrı program. Müşterinin gördüğü **web paneli** (giriş ve
+destek talepleri) ve sahibin kullandığı **masaüstü uygulaması** (müşteri,
+iş ve istatistik yönetimi). İkisi de bu belgede.
 
 Bu belge `MIMARI.md`'yi tekrar etmez. Sunucu adresi, dizin yolu ve süreç adı
 burada **yok**: depo herkese açık, o değerler yerel notta duruyor.
@@ -42,7 +43,10 @@ ticari panelde yok.
 | Konum | `twinshareapp.com/web-sitem/panel/` | Kullanıcı kararı, 23 Eylül. Bedeli §9'da. |
 | Giriş | Passkey (WebAuthn) + 256 bitlik davet anahtarı | Parolasız, kimlik avına dirençli |
 | Veri | Sunucu okuyabilir | Arama ve bildirim çalışsın; uçtan uca şifreleme abartı |
-| İlk adım | Bu belge | Kod öncesi mutabakat |
+| Müşterinin gördüğü | Yalnızca destek talepleri ve kendi işlerinin özeti | Kullanıcı kararı |
+| Sahibin arayüzü | **Ayrı** bir masaüstü uygulaması | Kullanıcı kararı; internette yönetici arayüzü yok |
+| Kimlik ve mali veri | Sunucuya **hiç gitmiyor**, yalnızca yerelde | §4, veri asgariliği |
+| Hareketsizlik süresi | 1 saat | Kullanıcı kararı |
 
 ### Reddedilen seçenekler ve sebepleri
 
@@ -95,12 +99,46 @@ Bugün yayınlanan site tamamen statik: `dist/` içinde tek satır JavaScript yo
 sunucu yalnızca dosya servis ediyor. Giriş, tanımı gereği bir çalışma anı
 ister. Eklenen tek yeni parça bu.
 
+### İki program, iki veritabanı
+
+```
+   SAHİBİN BİLGİSAYARI                    SUNUCU
+   ────────────────────                   ──────
+   Masaüstü uygulaması                    Node süreci
+   (Electron, ayrı program)               (ters vekil arkasında)
+        |                                      |
+   yerel.db  ◄──── SSH ile eşitleme ────►  panel.db
+   tam müşteri kartı                      asgari veri
+   TC, vergi no, adres                    görünen ad
+   iş tutarları, ödemeler                 işin müşteriye görünen özeti
+   istatistikler                          passkey, oturum, destek talepleri
+```
+
+**Asıl defter yerelde.** Sahibin bilgisayarındaki veritabanı gerçeğin
+kaynağı. Sunucudaki veritabanı onun **kısıtlı bir kopyası**: yalnızca
+müşterinin panelde görmesi gereken şeyler.
+
+Sunucuya hiç gitmeyenler: **TC kimlik numarası, vergi numarası, açık adres,
+iş tutarları, ödeme durumu, ön ödeme oranları, revize ücretleri ve bütün
+istatistikler.** Sunucu ele geçse bile bu bilgilerin hiçbiri orada değil.
+
+Eşitleme SSH üzerinden ve tek yönlü ağırlıklı:
+
+- **Yerelden sunucuya:** müşteri kaydı (yalnızca görünen ad), davet anahtarı
+  karması, işin müşteriye gösterilecek özeti ve durumu.
+- **Sunucudan yerele:** müşterinin açtığı destek talepleri.
+
+Sunucu hiçbir zaman yerel veritabanına yazamaz; yerel uygulama çeker. Yani
+ele geçirilmiş bir sunucu sahibin defterini bozamaz.
+
+### Web tarafı
+
 ```
 tarayıcı
    |
    +-- /web-sitem/...        -> statik dosyalar (bugünkü site, değişmiyor)
    |
-   +-- /web-sitem/panel/...  -> ters vekil -> Node süreci -> SQLite
+   +-- /web-sitem/panel/...  -> ters vekil -> Node süreci -> panel.db
 ```
 
 - **Statik site olduğu gibi kalıyor.** `astro.config.mjs` değişmiyor, sıfır
@@ -216,13 +254,36 @@ tek cihaz kaybı olay olmaktan çıkar.
 
 ## 6. Veri modeli
 
-Yalnızca şekil; alan adları uygulamada kesinleşir.
+Yalnızca şekil; alan adları uygulamada kesinleşir. İki veritabanı ayrı
+tutuluyor, §4.
 
-**musteri**: kimlik, görünen ad, iletişim notu, durum (etkin, askıda),
-oluşturulma.
+### 6.1 Yerel veritabanı (sahibin bilgisayarı)
+
+**musteri**: kimlik, ad soyad, telefon, adres (ilçe ve şehir), **vergi
+numarası**, **TC kimlik numarası**, not, durum, oluşturulma.
+
+**is**: kimlik, müşteri, iş adı, özet, durum (teklif, ön ödeme alındı,
+sürüyor, teslim edildi, kapandı, iptal), toplam tutar, ön ödeme oranı, ön
+ödeme tutarı, tahsil edilen, kalan, para birimi, başlangıç, teslim, tekrar
+eden mi, oluşturulma.
+
+**odeme**: kimlik, iş, tür (ön ödeme, ara ödeme, son ödeme), tutar, tarih,
+yöntem, not.
+
+**revize**: kimlik, iş, başlık, açıklama, tutar, tarih, ücretli mi.
+
+**talep_kopyasi**: sunucudan çekilen destek taleplerinin yerel kopyası.
+
+### 6.2 Sunucu veritabanı (panel)
+
+**musteri**: kimlik, **yalnızca görünen ad**, durum, oluşturulma. Telefon,
+adres, TC ve vergi numarası **yok**.
+
+**is_ozeti**: kimlik, müşteri, iş adı, müşteriye gösterilecek durum,
+güncellenme. **Tutar ve ödeme bilgisi yok.**
 
 **davet**: kimlik, müşteri, **anahtar karması** (ham anahtar değil), son
-kullanma, kullanıldı mı, kullanıldığı an, üreten.
+kullanma, kullanıldı mı, kullanıldığı an.
 
 **kimlik_bilgisi** (passkey): kimlik, müşteri, credential id, açık anahtar,
 imza sayacı, aktarım türü, cihaz takma adı, oluşturulma, son kullanım.
@@ -230,11 +291,23 @@ imza sayacı, aktarım türü, cihaz takma adı, oluşturulma, son kullanım.
 **oturum**: **kimlik karması** (ham kimlik değil), müşteri, oluşturulma, son
 görülme, mutlak son kullanma, istemci izi (IP karması ve tarayıcı imzası).
 
+**talep**: kimlik, müşteri, iş (isteğe bağlı), başlık, durum, öncelik,
+oluşturulma, son güncelleme.
+
+**talep_mesaji**: kimlik, talep, yazan (müşteri veya sahip), metin, zaman.
+
 **deneme**: zaman, tür (davet, giriş), hedef müşteri, IP karması, sonuç. Oran
 sınırlama ve denetim izi bundan besleniyor.
 
 Ham hiçbir sır veritabanında durmuyor: ne davet anahtarı, ne oturum kimliği.
 Veritabanı sızsa bile bunlardan giriş yapılamaz.
+
+### 6.3 İstatistikler
+
+Hepsi **yerelde** hesaplanıyor, sunucunun bu sayılardan haberi yok: müşteri
+sayısı, açık destek talebi sayısı, aylık yapılan ön ödeme tutarı, aylık
+toplam alınacak ödeme, aylık kalan ödeme, ağırlıkta yapılan işler (tür
+dağılımı) ve tekrar eden işler.
 
 ---
 
@@ -254,8 +327,8 @@ __Secure-panel_oturum = <256 bit rastgele, base64url>
   değil. Asıl mesele §9.
 - **Oturum kimliği girişte yenilenir.** Oturum sabitleme saldırısına karşı
   zorunlu kural.
-- **Süreler:** 30 dakika hareketsizlik, 12 saat mutlak. İstemci izi (IP
-  karması, tarayıcı imzası) değişirse oturum düşer.
+- **Süreler:** 1 saat hareketsizlik, 12 saat mutlak. İstemci izi (IP karması,
+  tarayıcı imzası) değişirse oturum düşer.
 - **`SameSite=Strict` bedeli:** dışarıdan gelen bir bağlantıyla panele ilk
   girişte çerez gönderilmez, sayfa "giriş yapılmamış" görünür ve tazelenince
   düzelir. Panel için kabul edilebilir.
@@ -341,15 +414,16 @@ Giriş yayına girdiğinde şu ifadeler yanlış olur:
 | # | İş | Bağımlılık |
 |---|---|---|
 | 0 | Sunucu bilgilerinin depodan çıkarılması, erişim anahtarının döndürülmesi | Müşteri verisi tutmadan **önce** |
-| 1 | `astro.config.panel.mjs`, boş panel iskeleti, yerelde çalışır durumda | |
-| 2 | Veritabanı şeması ve göç düzeneği | 1 |
-| 3 | Davet üretimi: masaüstü paneline ekran, SSH ile yazma | 2 |
-| 4 | Davet doğrulama ve passkey kaydı | 3 |
-| 5 | Giriş, oturum, çıkış | 4 |
-| 6 | Oran sınırlama, günlükleme, güvenlik başlıkları | 5 |
-| 7 | Sunucu kurulumu: ters vekil bloğu, servis tanımı, yedek | 6 |
-| 8 | Navbar düğmesine hedef, metin düzeltmeleri | 7 |
-| 9 | Panelin içi: destek talepleri | ayrı aşama |
+| 1 | İki veritabanının şeması ve göç düzeneği | |
+| 2 | Masaüstü uygulaması: iskelet, müşteri ve iş yönetimi, istatistikler | 1 |
+| 3 | Davet üretimi: masaüstünde üret, SSH ile karmasını yaz | 2 |
+| 4 | Web paneli: `astro.config.panel.mjs`, iskelet, yerelde çalışır durumda | 1 |
+| 5 | Davet doğrulama ve passkey kaydı | 3, 4 |
+| 6 | Giriş, oturum, çıkış | 5 |
+| 7 | Destek talepleri: panelde açma ve yazışma, yerele çekme | 6 |
+| 8 | Oran sınırlama, günlükleme, güvenlik başlıkları | 6 |
+| 9 | Sunucu kurulumu: ters vekil bloğu, servis tanımı, yedek | 8 |
+| 10 | Navbar düğmesine hedef, metin düzeltmeleri | 9 |
 
 0 numaralı madde ayrı bir karar bekliyor: çalışma ağacından silmek kolay,
 geçmişten silmek herkese açık bir depoda yıkıcı bir iştir ve tek başıma
@@ -357,16 +431,23 @@ yapmam.
 
 ---
 
-## 12. Açık sorular
+## 12. Kararlaşanlar ve kalan sorular
 
-1. **Müşteri sayısı ve ne tutacağız?** Destek talebi metinleri dışında
-   dosya, fatura, kişisel veri girecek mi? Girerse gizlilik metni ve saklama
-   süresi buna göre yazılmalı.
-2. **Davet anahtarı hangi kanaldan gidecek?** WhatsApp pratik ama mesajı
-   WhatsApp görür. Tek kullanımlık ve süreli olduğu için kabul edilebilir;
-   yine de telefonda okumak en sağlamı.
-3. **Sahip panele nasıl bakacak?** Müşterinin gördüğü panelden mi, yoksa
-   masaüstü uygulamasından SSH ile mi? İkincisi internetteki saldırı yüzeyini
-   sıfırda tutar.
-4. **Oturum süreleri** (30 dakika hareketsizlik, 12 saat mutlak) iş akışına
-   uyuyor mu?
+23 Eylül'de cevaplandı:
+
+- Panelde **yalnızca destek talepleri** olacak.
+- Sahip **ayrı bir masaüstü uygulamasından** yönetecek.
+- Oturum hareketsizliği **1 saat**.
+- Müşteri, iş ve istatistik alanları PDF'te verildi, §6'ya işlendi.
+
+Kalan sorular:
+
+1. **Davet anahtarı hangi kanaldan gidecek?** WhatsApp pratik ama mesajı
+   WhatsApp da görür. Tek kullanımlık ve süreli olduğu için kabul edilebilir;
+   yine de telefonda okumak en sağlamı. Uygulama ikisini de destekleyecek.
+2. **Müşteri kendi iş özetini görsün mü?** Sitenin vaadi "destek taleplerinizi
+   **ve aldığınız hizmetleri** takip edebilirsiniz" diyor. Tutar olmadan,
+   yalnızca iş adı ve durum gösterilecek biçimde tasarlandı. İstenmezse bu
+   tablo sunucuya hiç gönderilmez.
+3. **Yasal metinler.** TC ve vergi numarası yalnızca yerelde tutulsa bile
+   toplanıyor. Gizlilik metninin bunu ve saklama süresini yazması gerekiyor.
