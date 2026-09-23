@@ -422,9 +422,35 @@ Giriş yayına girdiğinde şu ifadeler yanlış olur:
 | 6 | Giriş, oturum, çıkış | Bitti, tarayıcı tarafı elle denenmedi |
 | 7 | Destek talepleri: panelde açma ve yazışma | Bitti |
 | 8 | Oran sınırlama, günlükleme, güvenlik başlıkları | Bitti |
-| 9 | Eşitlemenin SSH tarafı: paketi gönder, talepleri çek | **Yapılmadı** |
-| 10 | Sunucu kurulumu: ters vekil bloğu, servis tanımı, yedek | **Yapılmadı** |
-| 11 | Navbar düğmesine hedef, §10'daki metin düzeltmeleri | **Yapılmadı** |
+| 9 | Eşitlemenin SSH tarafı: paketi gönder, talepleri çek | Bitti, gerçek sunucuya karşı denenmedi |
+| 10 | Sunucu kurulumu: ters vekil bloğu, servis tanımı | **Yayında**, 23 Eylül |
+| 11 | Navbar düğmesine hedef | Bitti, yayında |
+| 12 | §10'daki metin düzeltmeleri | **Yapılmadı**, artık gerçekten yanlışlar |
+| 13 | Yedekleme düzeni | **Yapılmadı** |
+
+### Yayına alınırken ölçülerek öğrenilenler
+
+- **Sunucudaki Node sürümü panelin istediğinden eskiydi.** Sistem Node'una
+  dokunulmadı, çünkü aynı makinede başka servisler ona bağlı; panel için
+  ayrı bir dizine kendi Node'u kuruldu ve servis tanımı onu tam yolla
+  çağırıyor. Sunucuda zaten aynı desenle kurulmuş başka bir Node vardı.
+- **`MemoryDenyWriteExecute=yes` Node'u çökertiyor.** V8'in JIT'i yazılabilir
+  ve çalıştırılabilir bellek istiyor; servis açılışta `V8_Fatal` veriyordu.
+  Sertleştirmenin geri kalanı duruyor, yalnızca bu kapalı.
+- **Astro'nun node çıktısı bağımlılıkları paketlemiyor.** Sunucuda önce
+  `@oslojs/encoding`, sonra `zod` eksik çıktı. Tek tek saymak yerine
+  `vite.ssr.noExternal = true` ile hepsi çıktıya gömüldü; sunucuda ne
+  `package.json` ne `node_modules` var.
+- **Üretim provası depo dışında yapılmalı.** İlk prova çıktıyı yerinde
+  çalıştırıyor ve depodaki `node_modules` klasörünü buluyordu, yani sunucu
+  koşulunu taklit etmiyordu: prova "çalışıyor" derken servis çöküyordu.
+- **nginx'te alt bloktaki tek bir `add_header` üsttekilerin hepsini iptal
+  ediyor.** Sunucu bloğunda CSP dahil sekiz başlık vardı; panel kendi CSP'sini
+  gönderdiği için ikisi çakışıp tarayıcıda kesişim olarak uygulanacaktı.
+  Panel bloğuna `X-Robots-Tag` konarak üsttekiler bilinçli olarak iptal edildi.
+- **Cloudflare siteye kendi betiğini enjekte ediyor** (e-posta gizleme).
+  Sunucudaki dosyada tek satır JavaScript yok ama tarayıcıya iki tane
+  `email-decode.min.js` iniyor. Panelde enjeksiyon yok.
 
 ### Gerçek cihazla denenmesi gerekenler
 
