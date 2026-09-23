@@ -1,0 +1,67 @@
+---
+/*
+  Giriş sayfası. Tek ve sade: bir düğme, bir alan, anlaşılır hata mesajı.
+
+  Düzen bilinçli olarak bu sırayla:
+  - ÜSTTE giriş. Müşteri buraya her gün gelecek, davet anahtarını ise
+    ömründe bir kez girecek.
+  - ALTTA davet. Kapalı bir `details` içinde; `#anahtar` çapalı bağlantıyla
+    gelindiğinde tarayıcı tarafı onu kendiliğinden açıyor.
+
+  Sunucu burada hiçbir şey bilmiyor: kimin kayıtlı olduğu, kaç müşteri olduğu
+  sayfadan okunamıyor. Hesap sayımına açık tek nokta uç noktalar ve onlar da
+  her durumda aynı cevabı veriyor.
+*/
+import Kabuk from '../duzen/Kabuk.astro';
+
+const taban = Astro.locals.taban ?? '';
+---
+
+<Kabuk baslik="Giriş" aciklama="Müşteri paneline giriş.">
+	<section class="giris" id="giris" data-taban={taban}>
+		<h1>Müşteri paneli</h1>
+		<p class="acikli">
+			Destek taleplerinizi ve aldığınız hizmetleri buradan takip edebilirsiniz.
+		</p>
+
+		<p class="bildirim" data-bildirim role="status" aria-live="polite"></p>
+
+		<button class="dugme genis" type="button" data-giris>Giriş yap</button>
+		<p class="kucuk soluk bosluk-ust">
+			Kayıtlı cihazınızda parmak izi, yüz tanıma veya cihaz PIN'i sorulacak.
+			Panelde parola yok.
+		</p>
+
+		<p class="ayirac">İlk kez mi giriyorsunuz?</p>
+
+		<details class="davet" data-davet-kutusu>
+			<summary>Davet anahtarım var</summary>
+			<form data-davet-formu novalidate>
+				<label class="alan">
+					<span>Davet anahtarı</span>
+					<input
+						type="text"
+						class="anahtar-alani"
+						data-davet-alani
+						name="anahtar"
+						autocomplete="off"
+						autocapitalize="characters"
+						spellcheck="false"
+						inputmode="text"
+						placeholder="XXXX-XXXX-XXXX-…"
+						required
+					/>
+				</label>
+				<button class="dugme genis" type="submit">Cihazımı kaydet</button>
+			</form>
+			<p class="kucuk soluk bosluk-ust">
+				Anahtar tek kullanımlık ve süreli. Kaybolursa yenisini isteyin; eski
+				anahtar yeniden kullanılamaz.
+			</p>
+		</details>
+	</section>
+</Kabuk>
+
+<script>
+	import '../istemci/giris.mjs';
+</script>

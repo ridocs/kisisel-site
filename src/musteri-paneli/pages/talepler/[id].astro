@@ -1,0 +1,92 @@
+---
+/*
+  Tek talebin yazışması.
+
+  `talepGetir` müşteri kimliği olmadan ÇAĞRILAMAZ: imzası iki argüman
+  istiyor ve sorgu `WHERE id = ? AND musteri_id = ?` diyor. Başka bir
+  müşterinin talep kimliği elle adres çubuğuna yazılsa bile buradan 404
+  dönüyor; "var ama göremezsin" bile denmiyor.
+*/
+import Kabuk from '../../duzen/Kabuk.astro';
+import { ayarlar } from '../../sunucu/ayarlar.mjs';
+import { islemAnahtariGecerliMi } from '../../sunucu/csrf.mjs';
+import { panelVt } from '../../sunucu/veritabani.mjs';
+import { mesajYaz, talepGetir, talepDurumEtiketi } from '../../sunucu/talepler.mjs';
+
+export const prerender = false;
+
+const taban = Astro.locals.taban ?? '';
+const musteri = Astro.locals.musteri;
+const db = panelVt();
+const { id } = Astro.params;
+
+let hata = '';
+
+if (Astro.request.method === 'POST') {
+	const form = await Astro.request.formData().catch(() => null);
+	const anahtar = form?.get('islem_anahtari');
+	if (!islemAnahtariGecerliMi(Astro.locals.oturumKarmasi, ayarlar.gizli.csrf, typeof anahtar === 'string' ? anahtar : '')) {
+		hata = 'Form doğrulanamadı. Sayfayı tazeleyip yeniden deneyin.';
+	} else {
+		const sonuc = mesajYaz(db, { musteriId: musteri.id, talepId: id, metin: form.get('metin') });
+		/*
+		  Başarıda yönlendirme (POST sonrası GET): tazelemede mesajın ikinci
+		  kez gönderilmesini engelliyor.
+		*/
+		if (sonuc.tamam) return Astro.redirect(`${taban}/talepler/${id}`, 303);
+		hata = sonuc.hata;
+	}
+}
+
+const talep = talepGetir(db, musteri.id, id);
+if (!talep) return new Response('Bulunamadı', { status: 404 });
+
+const bicim = new Intl.DateTimeFormat('tr-TR', { dateStyle: 'medium', timeStyle: 'short' });
+const zaman = (iso) => (iso ? bicim.format(new Date(iso)) : '');
+const kapali = talep.durum === 'kapandi';
+---
+
+<Kabuk baslik={talep.baslik} aktif="talepler">
+	<p class="geri"><a href={`${taban}/talepler`}>Bütün talepler</a></p>
+
+	<h1>{talep.baslik}</h1>
+	<p class="acikli">
+		<span class="rozet" data-durum={talep.durum}>{talepDurumEtiketi(talep.durum)}</span>
+		{talep.is_adi && <span class="kucuk soluk"> {talep.is_adi}</span>}
+		<span class="kucuk soluk"> Açılış: {zaman(talep.olusturuldu)}</span>
+	</p>
+
+	{hata && <p class="bildirim" data-tur="hata">{hata}</p>}
+
+	<ul class="mesajlar">
+		{
+			talep.mesajlar.map((mesaj) => (
+				<li class="mesaj" data-yazan={mesaj.yazan}>
+					<div class="mesaj-bas">
+						<strong>{mesaj.yazan === 'musteri' ? musteri.gorunen_ad : 'Mustafa Eybek'}</strong>
+						<span>{zaman(mesaj.zaman)}</span>
+					</div>
+					<p class="mesaj-metin">{mesaj.metin}</p>
+				</li>
+			))
+		}
+	</ul>
+
+	{
+		kapali ? (
+			<p class="bos">Bu talep kapandı. Yeni bir konu için yeni talep açabilirsiniz.</p>
+		) : (
+			<section class="kart">
+				<h2>Yanıt yazın</h2>
+				<form method="post">
+					<input type="hidden" name="islem_anahtari" value={Astro.locals.islemAnahtari} />
+					<label class="alan">
+						<span class="gizli">Mesajınız</span>
+						<textarea name="metin" maxlength="4000" required></textarea>
+					</label>
+					<button class="dugme" type="submit">Gönder</button>
+				</form>
+			</section>
+		)
+	}
+</Kabuk>

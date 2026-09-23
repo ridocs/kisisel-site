@@ -1,0 +1,89 @@
+---
+/*
+  Pano: müşterinin işleri ve destek taleplerinin özeti.
+
+  İş listesinde TUTAR YOK ve olamaz: `is_ozeti` tablosunda tutar sütunu
+  bulunmuyor (§4). Mali veri sunucuya hiç gitmiyor, burada gizlenmiyor.
+
+  Her sorgu müşteri kimliğiyle süzülüyor; süzgeç `sunucu/talepler.mjs`
+  içindeki işlevlerin imzasında zorunlu.
+*/
+import Kabuk from '../duzen/Kabuk.astro';
+import { panelVt } from '../sunucu/veritabani.mjs';
+import { acikTalepSayisi, isDurumEtiketi, isleriListele, talepleriListele, talepDurumEtiketi } from '../sunucu/talepler.mjs';
+
+export const prerender = false;
+
+const taban = Astro.locals.taban ?? '';
+const musteri = Astro.locals.musteri;
+const db = panelVt();
+
+const isler = isleriListele(db, musteri.id);
+const talepler = talepleriListele(db, musteri.id).slice(0, 5);
+const acik = acikTalepSayisi(db, musteri.id);
+
+const bicim = new Intl.DateTimeFormat('tr-TR', { dateStyle: 'medium' });
+const tarih = (iso) => (iso ? bicim.format(new Date(iso)) : '');
+---
+
+<Kabuk baslik="Pano" aktif="pano">
+	<h1>Merhaba, {musteri.gorunen_ad}</h1>
+	<p class="acikli">
+		{
+			acik === 0
+				? 'Açık destek talebiniz yok.'
+				: acik === 1
+					? 'Bir destek talebiniz açık.'
+					: `${acik} destek talebiniz açık.`
+		}
+	</p>
+
+	<section class="bolum">
+		<h2>Hizmetleriniz</h2>
+		{
+			isler.length === 0 ? (
+				<p class="bos">Görüntülenecek bir iş kaydı yok.</p>
+			) : (
+				<ul class="dizi">
+					{isler.map((is) => (
+						<li>
+							<div class="satir">
+								<span class="satir-ad">{is.ad}</span>
+								<span class="rozet">{isDurumEtiketi(is.durum)}</span>
+								<span class="kucuk soluk">{tarih(is.guncellendi)}</span>
+							</div>
+						</li>
+					))}
+				</ul>
+			)
+		}
+	</section>
+
+	<section class="bolum">
+		<h2>Son destek talepleri</h2>
+		{
+			talepler.length === 0 ? (
+				<p class="bos">
+					Henüz talep açmadınız. <a href={`${taban}/talepler`}>İlk talebinizi açın.</a>
+				</p>
+			) : (
+				<ul class="dizi">
+					{talepler.map((talep) => (
+						<li>
+							<a class="satir" href={`${taban}/talepler/${talep.id}`}>
+								<span class="satir-ad">{talep.baslik}</span>
+								<span class="rozet" data-durum={talep.durum}>
+									{talepDurumEtiketi(talep.durum)}
+								</span>
+								<span class="kucuk soluk">{tarih(talep.guncellendi)}</span>
+							</a>
+						</li>
+					))}
+				</ul>
+			)
+		}
+		<p class="bosluk-ust">
+			<a href={`${taban}/talepler`}>Bütün talepler</a>
+		</p>
+	</section>
+</Kabuk>

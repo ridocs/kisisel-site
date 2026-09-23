@@ -1,0 +1,78 @@
+---
+/*
+  Panelin ortak kabuğu.
+
+  Burada `<style>` bloğu YOK ve olmayacak: içerik güvenliği politikası
+  `style-src 'self'` ve Astro geliştirme sunucusu bileşen stillerini satır içi
+  basıyor. Bütün stil `genel/panel.css` içinde.
+
+  Sayfa başlığına site adı eklenmiyor; kullanıcının kesin kuralı.
+*/
+const { baslik, aciklama, aktif } = Astro.props;
+const taban = Astro.locals.taban ?? '';
+const musteri = Astro.locals.musteri ?? null;
+const islemAnahtari = Astro.locals.islemAnahtari ?? '';
+
+const baglantilar = [
+	{ yol: '/pano', ad: 'Pano', anahtar: 'pano' },
+	{ yol: '/talepler', ad: 'Destek talepleri', anahtar: 'talepler' },
+];
+---
+
+<!doctype html>
+<html lang="tr">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<meta name="robots" content="noindex, nofollow" />
+		<title>{baslik}</title>
+		{aciklama && <meta name="description" content={aciklama} />}
+		<link rel="stylesheet" href={`${taban}/panel.css`} />
+	</head>
+	<body>
+		<div class="kabuk">
+			<header class="ust">
+				<div class="ust-ic">
+					<a class="marka" href={musteri ? `${taban}/pano` : `${taban}/`}>Müşteri paneli</a>
+					{
+						musteri && (
+							<nav class="gezinme" aria-label="Panel">
+								{baglantilar.map((b) => (
+									<a
+										href={`${taban}${b.yol}`}
+										aria-current={aktif === b.anahtar ? 'page' : undefined}
+									>
+										{b.ad}
+									</a>
+								))}
+								{/*
+								  Çıkış bir FORM: bağlantı olsaydı, önceden getiren bir
+								  eklenti ya da tarayıcı sekmesi oturumu kendiliğinden
+								  kapatabilirdi. Durum değiştiren istek GET olmaz.
+								*/}
+								<form method="post" action={`${taban}/cikis`}>
+									<input type="hidden" name="islem_anahtari" value={islemAnahtari} />
+									<button class="dugme sade" type="submit">Çıkış</button>
+								</form>
+							</nav>
+						)
+					}
+				</div>
+			</header>
+
+			<main class="govde">
+				<slot />
+			</main>
+
+			<footer class="alt">
+				<div class="alt-ic">
+					{
+						musteri
+							? `${musteri.gorunen_ad} olarak giriş yapıldı. Bir saat hareketsiz kalırsanız oturum kendiliğinden kapanır.`
+							: 'Bu panele yalnızca davet anahtarıyla kaydedilmiş cihazlar girebilir.'
+					}
+				</div>
+			</footer>
+		</div>
+	</body>
+</html>

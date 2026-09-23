@@ -1,0 +1,108 @@
+---
+/*
+  Destek talepleri: liste ve yeni talep formu.
+
+  Form düz HTML ve POST: bu sayfa JavaScript olmadan da çalışıyor. Panelde
+  betik serbest ama gerekmediği yerde kullanmanın bir karşılığı yok.
+
+  CSRF: `SameSite=Strict` ve köken kontrolü ara katmanda; burada üçüncü
+  katman, oturuma bağlı işlem anahtarı. Gövde ayrıştırıldıktan sonra sabit
+  zamanlı karşılaştırılıyor.
+*/
+import Kabuk from '../../duzen/Kabuk.astro';
+import { ayarlar } from '../../sunucu/ayarlar.mjs';
+import { islemAnahtariGecerliMi } from '../../sunucu/csrf.mjs';
+import { panelVt } from '../../sunucu/veritabani.mjs';
+import { isleriListele, talepAc, talepleriListele, talepDurumEtiketi } from '../../sunucu/talepler.mjs';
+
+export const prerender = false;
+
+const taban = Astro.locals.taban ?? '';
+const musteri = Astro.locals.musteri;
+const db = panelVt();
+
+let hata = '';
+
+if (Astro.request.method === 'POST') {
+	const form = await Astro.request.formData().catch(() => null);
+	const anahtar = form?.get('islem_anahtari');
+	if (!islemAnahtariGecerliMi(Astro.locals.oturumKarmasi, ayarlar.gizli.csrf, typeof anahtar === 'string' ? anahtar : '')) {
+		hata = 'Form doğrulanamadı. Sayfayı tazeleyip yeniden deneyin.';
+	} else {
+		const sonuc = talepAc(db, {
+			musteriId: musteri.id,
+			baslik: form.get('baslik'),
+			metin: form.get('metin'),
+			isId: form.get('is_id') || null,
+		});
+		if (sonuc.tamam) return Astro.redirect(`${taban}/talepler/${sonuc.talepId}`, 303);
+		hata = sonuc.hata;
+	}
+}
+
+const talepler = talepleriListele(db, musteri.id);
+const isler = isleriListele(db, musteri.id);
+
+const bicim = new Intl.DateTimeFormat('tr-TR', { dateStyle: 'medium' });
+const tarih = (iso) => (iso ? bicim.format(new Date(iso)) : '');
+---
+
+<Kabuk baslik="Destek talepleri" aktif="talepler">
+	<h1>Destek talepleri</h1>
+	<p class="acikli">
+		Açtığınız talepleri ve yazışmaları burada görüyorsunuz. Yalnızca kendi
+		talepleriniz listeleniyor.
+	</p>
+
+	{hata && <p class="bildirim" data-tur="hata">{hata}</p>}
+
+	{
+		talepler.length === 0 ? (
+			<p class="bos">Henüz bir talep açmadınız.</p>
+		) : (
+			<ul class="dizi">
+				{talepler.map((talep) => (
+					<li>
+						<a class="satir" href={`${taban}/talepler/${talep.id}`}>
+							<span class="satir-ad">{talep.baslik}</span>
+							{talep.is_adi && <span class="kucuk soluk">{talep.is_adi}</span>}
+							<span class="rozet" data-durum={talep.durum}>
+								{talepDurumEtiketi(talep.durum)}
+							</span>
+							<span class="kucuk soluk">{tarih(talep.guncellendi)}</span>
+						</a>
+					</li>
+				))}
+			</ul>
+		)
+	}
+
+	<section class="kart bolum">
+		<h2>Yeni talep</h2>
+		<form method="post">
+			<input type="hidden" name="islem_anahtari" value={Astro.locals.islemAnahtari} />
+			<label class="alan">
+				<span>Başlık</span>
+				<input type="text" name="baslik" maxlength="120" required autocomplete="off" />
+			</label>
+			{
+				isler.length > 0 && (
+					<label class="alan">
+						<span>İlgili iş (isteğe bağlı)</span>
+						<select name="is_id">
+							<option value="">Seçilmedi</option>
+							{isler.map((is) => (
+								<option value={is.id}>{is.ad}</option>
+							))}
+						</select>
+					</label>
+				)
+			}
+			<label class="alan">
+				<span>Mesajınız</span>
+				<textarea name="metin" maxlength="4000" required></textarea>
+			</label>
+			<button class="dugme" type="submit">Talebi gönder</button>
+		</form>
+	</section>
+</Kabuk>

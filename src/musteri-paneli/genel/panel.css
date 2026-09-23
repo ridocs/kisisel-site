@@ -1,0 +1,525 @@
+/*
+  Panelin bütün stili. TEK DOSYA ve `public` klasöründen servis ediliyor.
+
+  Neden Astro `<style>` bloğu yok: panelin içerik güvenliği politikası
+  `style-src 'self'`. Astro geliştirme sunucusunda bileşen stillerini satır
+  içi `<style>` etiketiyle basıyor ve politika onu engellerdi. Politikayı
+  gevşetmek yerine stil dışarı alındı.
+
+  Renkler: koyu temada LACİVERT YOK. Bütün zeminler nötr gri, chroma sıfır.
+  Vurgu rengi yalnızca bağlantıda, odak halkasında ve birincil düğmede.
+*/
+
+:root {
+	color-scheme: light;
+
+	--zemin: #ffffff;
+	--yuzey: #f5f5f5;
+	--yuzey-2: #ebebeb;
+	--kenar: #dcdcdc;
+	--metin: #171717;
+	--soluk: #5b5b5b;
+	--vurgu: #1d4ed8;
+	--vurgu-metin: #ffffff;
+	--uyari: #a3341f;
+	--basari: #1f6b3a;
+
+	--dugme-zemin: #1f1f1f;
+	--dugme-metin: #ffffff;
+
+	--yuvarlak: 10px;
+	--golge: 0 1px 2px rgb(0 0 0 / 6%), 0 4px 12px rgb(0 0 0 / 4%);
+	--olcu: 68rem;
+}
+
+@media (prefers-color-scheme: dark) {
+	:root {
+		color-scheme: dark;
+
+		/* Hepsi chroma sıfır: kırmızı, yeşil ve mavi bileşenleri eşit. */
+		--zemin: #121212;
+		--yuzey: #1b1b1b;
+		--yuzey-2: #262626;
+		--kenar: #333333;
+		--metin: #f2f2f2;
+		--soluk: #a6a6a6;
+		--vurgu: #9ec1ff;
+		--vurgu-metin: #121212;
+		--uyari: #ef9a8a;
+		--basari: #8fd3a8;
+
+		--dugme-zemin: #ebebeb;
+		--dugme-metin: #121212;
+
+		--golge: none;
+	}
+}
+
+*,
+*::before,
+*::after {
+	box-sizing: border-box;
+}
+
+html {
+	-webkit-text-size-adjust: 100%;
+}
+
+body {
+	margin: 0;
+	background: var(--zemin);
+	color: var(--metin);
+	font-family: "Inter Variable", "Inter", ui-sans-serif, system-ui, -apple-system,
+		"Segoe UI", Roboto, sans-serif;
+	font-size: 16px;
+	line-height: 1.55;
+	-webkit-font-smoothing: antialiased;
+}
+
+a {
+	color: var(--vurgu);
+	text-decoration-thickness: 1px;
+	text-underline-offset: 2px;
+}
+
+:focus-visible {
+	outline: 2px solid var(--vurgu);
+	outline-offset: 2px;
+}
+
+/* ---------- Düzen ---------- */
+
+.kabuk {
+	min-height: 100dvh;
+	display: flex;
+	flex-direction: column;
+}
+
+.ust {
+	border-bottom: 1px solid var(--kenar);
+	background: var(--yuzey);
+}
+
+.ust-ic,
+.govde,
+.alt-ic {
+	width: 100%;
+	max-width: var(--olcu);
+	margin: 0 auto;
+	padding: 0 1.25rem;
+}
+
+.ust-ic {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.5rem 1.25rem;
+	min-height: 3.5rem;
+	padding-top: 0.5rem;
+	padding-bottom: 0.5rem;
+}
+
+.marka {
+	font-weight: 650;
+	letter-spacing: -0.01em;
+	color: var(--metin);
+	text-decoration: none;
+	margin-right: auto;
+}
+
+.gezinme {
+	display: flex;
+	gap: 1rem;
+	align-items: center;
+	flex-wrap: wrap;
+}
+
+.gezinme a {
+	color: var(--soluk);
+	text-decoration: none;
+	font-size: 0.9375rem;
+	padding: 0.25rem 0;
+	border-bottom: 2px solid transparent;
+}
+
+.gezinme a:hover {
+	color: var(--metin);
+}
+
+.gezinme a[aria-current="page"] {
+	color: var(--metin);
+	border-bottom-color: var(--metin);
+}
+
+.govde {
+	flex: 1;
+	padding-top: 2rem;
+	padding-bottom: 3rem;
+}
+
+.alt {
+	border-top: 1px solid var(--kenar);
+	color: var(--soluk);
+	font-size: 0.8125rem;
+}
+
+.alt-ic {
+	padding-top: 1rem;
+	padding-bottom: 1rem;
+}
+
+/* ---------- Tipografi ---------- */
+
+h1 {
+	font-size: 1.625rem;
+	line-height: 1.25;
+	letter-spacing: -0.02em;
+	margin: 0 0 0.5rem;
+}
+
+h2 {
+	font-size: 1.125rem;
+	letter-spacing: -0.01em;
+	margin: 0 0 0.75rem;
+}
+
+.acikli {
+	color: var(--soluk);
+	margin: 0 0 1.75rem;
+	max-width: 46ch;
+}
+
+.soluk {
+	color: var(--soluk);
+}
+
+.kucuk {
+	font-size: 0.8125rem;
+}
+
+/* ---------- Kart ve liste ---------- */
+
+.kart {
+	background: var(--yuzey);
+	border: 1px solid var(--kenar);
+	border-radius: var(--yuvarlak);
+	padding: 1.25rem;
+	box-shadow: var(--golge);
+}
+
+.kart + .kart,
+.kart + .bolum,
+.bolum + .bolum {
+	margin-top: 1.5rem;
+}
+
+.dizi {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	border: 1px solid var(--kenar);
+	border-radius: var(--yuvarlak);
+	overflow: hidden;
+	background: var(--yuzey);
+}
+
+.dizi li + li {
+	border-top: 1px solid var(--kenar);
+}
+
+.satir {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	gap: 0.25rem 0.75rem;
+	padding: 0.875rem 1.125rem;
+	text-decoration: none;
+	color: inherit;
+}
+
+a.satir:hover {
+	background: var(--yuzey-2);
+}
+
+.satir-ad {
+	font-weight: 550;
+	margin-right: auto;
+}
+
+.bos {
+	border: 1px dashed var(--kenar);
+	border-radius: var(--yuvarlak);
+	padding: 1.5rem;
+	color: var(--soluk);
+	text-align: center;
+}
+
+/* ---------- Rozet ---------- */
+
+.rozet {
+	display: inline-block;
+	font-size: 0.75rem;
+	font-weight: 550;
+	line-height: 1.4;
+	padding: 0.125rem 0.5rem;
+	border-radius: 999px;
+	border: 1px solid var(--kenar);
+	background: var(--yuzey-2);
+	color: var(--soluk);
+	white-space: nowrap;
+}
+
+.rozet[data-durum="acik"] {
+	color: var(--vurgu);
+	border-color: color-mix(in oklab, var(--vurgu) 40%, var(--kenar));
+}
+
+.rozet[data-durum="kapandi"] {
+	opacity: 0.75;
+}
+
+/* ---------- Form ---------- */
+
+.alan {
+	display: block;
+	margin-bottom: 1rem;
+}
+
+.alan > span {
+	display: block;
+	font-size: 0.875rem;
+	font-weight: 550;
+	margin-bottom: 0.375rem;
+}
+
+input[type="text"],
+textarea,
+select {
+	width: 100%;
+	font: inherit;
+	color: var(--metin);
+	background: var(--zemin);
+	border: 1px solid var(--kenar);
+	border-radius: 8px;
+	padding: 0.625rem 0.75rem;
+}
+
+textarea {
+	min-height: 8rem;
+	resize: vertical;
+}
+
+input[type="text"]::placeholder,
+textarea::placeholder {
+	color: var(--soluk);
+	opacity: 0.8;
+}
+
+.anahtar-alani {
+	font-family: ui-monospace, "SFMono-Regular", "Cascadia Mono", Consolas, monospace;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+}
+
+.dugme {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.5rem;
+	font: inherit;
+	font-weight: 550;
+	cursor: pointer;
+	border: 1px solid transparent;
+	border-radius: 8px;
+	padding: 0.625rem 1.125rem;
+	background: var(--dugme-zemin);
+	color: var(--dugme-metin);
+}
+
+.dugme:hover {
+	opacity: 0.9;
+}
+
+.dugme:disabled {
+	opacity: 0.55;
+	cursor: progress;
+}
+
+.dugme.genis {
+	width: 100%;
+}
+
+.dugme.sade {
+	background: transparent;
+	color: var(--metin);
+	border-color: var(--kenar);
+}
+
+/* ---------- Bildirim ---------- */
+
+.bildirim {
+	border: 1px solid var(--kenar);
+	border-left-width: 3px;
+	border-radius: 8px;
+	padding: 0.75rem 1rem;
+	margin: 0 0 1.25rem;
+	background: var(--yuzey);
+	font-size: 0.9375rem;
+}
+
+.bildirim[data-tur="hata"] {
+	border-left-color: var(--uyari);
+	color: var(--uyari);
+}
+
+.bildirim[data-tur="basari"] {
+	border-left-color: var(--basari);
+	color: var(--basari);
+}
+
+.bildirim:empty {
+	display: none;
+}
+
+/* ---------- Giriş sayfası ---------- */
+
+/*
+  Giriş sayfası tek bir kutudan ibaret, yani sayfanın geri kalanı boş kalıyor.
+  İçerik üste yapışınca ekranın alt yarısı bomboş duruyordu. Dikey ortalama
+  yalnızca BU sayfada: pano ve talepler listesi yukarıdan başlamalı, yoksa
+  liste uzayıp kısaldıkça başlık aşağı yukarı zıplar.
+
+  `margin: auto` esnek kutu içinde her iki yönde de ortalıyor, `min-height`
+  ise kısa ekranda taşmayı değil kaydırmayı seçiyor.
+*/
+.govde:has(> .giris) {
+	display: flex;
+	flex-direction: column;
+}
+
+.giris {
+	max-width: 27rem;
+	width: 100%;
+	margin: auto;
+	padding-block: 2rem;
+}
+
+.giris h1 {
+	text-align: center;
+}
+
+.giris .acikli {
+	text-align: center;
+	margin-inline: auto;
+}
+
+.ayirac {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+	color: var(--soluk);
+	font-size: 0.8125rem;
+	margin: 1.5rem 0;
+}
+
+.ayirac::before,
+.ayirac::after {
+	content: "";
+	flex: 1;
+	height: 1px;
+	background: var(--kenar);
+}
+
+details.davet {
+	border: 1px solid var(--kenar);
+	border-radius: var(--yuvarlak);
+	background: var(--yuzey);
+	padding: 0.875rem 1.125rem;
+}
+
+details.davet > summary {
+	cursor: pointer;
+	font-weight: 550;
+	font-size: 0.9375rem;
+}
+
+details.davet[open] > summary {
+	margin-bottom: 1rem;
+}
+
+/* ---------- Yazışma ---------- */
+
+.mesajlar {
+	list-style: none;
+	margin: 0 0 1.5rem;
+	padding: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 0.875rem;
+}
+
+.mesaj {
+	border: 1px solid var(--kenar);
+	border-radius: var(--yuvarlak);
+	padding: 0.875rem 1.125rem;
+	background: var(--yuzey);
+}
+
+.mesaj[data-yazan="musteri"] {
+	background: var(--yuzey-2);
+}
+
+.mesaj-bas {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem;
+	align-items: baseline;
+	font-size: 0.8125rem;
+	color: var(--soluk);
+	margin-bottom: 0.375rem;
+}
+
+.mesaj-metin {
+	margin: 0;
+	white-space: pre-wrap;
+	overflow-wrap: anywhere;
+}
+
+/* ---------- Yardımcılar ---------- */
+
+/*
+  Satır içi `style` niteliği KULLANILMIYOR: `style-src 'self'` politikası
+  `style-src-attr`a da düşüyor ve tarayıcı satır içi niteliği engelliyor.
+  Bir iki piksellik boşluk için bile sınıf açılıyor.
+*/
+.bosluk-ust {
+	margin-top: 0.875rem;
+}
+
+.gizli {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip-path: inset(50%);
+	white-space: nowrap;
+	border: 0;
+}
+
+.geri {
+	display: inline-block;
+	font-size: 0.875rem;
+	margin-bottom: 1rem;
+}
+
+@media (max-width: 40rem) {
+	.govde {
+		padding-top: 1.5rem;
+	}
+
+	h1 {
+		font-size: 1.375rem;
+	}
+}
