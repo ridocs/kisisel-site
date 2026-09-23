@@ -23,6 +23,7 @@ import { IZINLI_ALANLAR } from '../veri/izinli-alanlar.mjs';
 import { depoKur } from './depo.mjs';
 import {
 	ESITLEME_AYARLARI,
+	OTOMATIK_ARALIK,
 	esitlemeAyariDogrula,
 	talepDurumuEsitlemeKaydi,
 	talepYanitiDogrula,
@@ -36,12 +37,12 @@ const SAHTE_KASA = {
 	coz: (baytlar) => Buffer.from(baytlar).toString('utf8'),
 };
 
-function ortamKur() {
+function ortamKur({ kuyrukDinleyici = null } = {}) {
 	const dizin = mkdtempSync(join(tmpdir(), 'talep-test-'));
 	const db = yerelAc(join(dizin, 'yerel.db'));
 	return {
 		db,
-		depo: depoKur(db, SAHTE_KASA),
+		depo: depoKur(db, SAHTE_KASA, { kuyrukDinleyici }),
 		kapat() {
 			try {
 				db.close();
@@ -409,6 +410,183 @@ test('eşitleme ayarları kuyruğa yazılmıyor', () => {
 			0,
 			'sunucu bilgisi eşitleme kuyruğuna girmemeli',
 		);
+	} finally {
+		kapat();
+	}
+});
+
+/* ------------------------------------------------------------------ */
+/* Otomatik eşitleme tetiği                                            */
+/* ------------------------------------------------------------------ */
+
+/*
+  Otomatik eşitlemenin kancası kuyruğun TEK giriş kapısına takılı. Buradaki
+  soru şu: kuyruğa kayıt düşen yollardan biri o kapıdan geçmeyi atlıyor mu.
+  Atlayan bir yol, eşitlenmesi unutulan bir kayıt demek; bütün bu işin çıkış
+  sebebi de tam olarak oydu.
+
+  Gerçek eşitleme YOK: dinleyici yalnızca işlem adını bir diziye yazıyor.
+*/
+
+test('kuyruğa kayıt düşen her yol otomatik eşitlemeyi haberdar ediyor', () => {
+	const bildirilen = [];
+	const { db, depo, kapat } = ortamKur({ kuyrukDinleyici: (islem) => bildirilen.push(islem) });
+	try {
+		const { id: musteriId } = depo.musteriKaydet({ ad_soyad: 'Ayşe Yılmaz', durum: 'etkin' });
+		assert.deepEqual(bildirilen, ['musteri.yaz']);
+
+		depo.musteriDurumu(musteriId, 'arsiv');
+		depo.isKaydet({
+			musteri_id: musteriId,
+			ad: 'Katalog tasarımı',
+			durum: 'suruyor',
+			tutar_kurus: 100000,
+			tekrar_eden: 0,
+		});
+		depo.davetUret(musteriId);
+
+		const talepId = ornekTalep(db, { id: 't-oto' });
+		depo.talepYanitla(talepId, 'Bakıyorum.');
+		depo.talepDurumu(talepId, 'kapandi');
+
+		assert.deepEqual(bildirilen, [
+			'musteri.yaz',
+			'musteri.yaz',
+			'is.yaz',
+			'davet.yaz',
+			'talep.yanit',
+			'talep.durum',
+		]);
+		assert.equal(bildirilen.length, kuyruk(db).length, 'her kuyruk satırına bir bildirim');
+	} finally {
+		kapat();
+	}
+});
+
+test('dinleyicinin hatası kaydı geri almıyor', () => {
+	const { db, depo, kapat } = ortamKur({
+		kuyrukDinleyici: () => {
+			throw new Error('Dinleyici patladı.');
+		},
+	});
+	try {
+		depo.musteriKaydet({ ad_soyad: 'Mehmet Demir', durum: 'etkin' });
+		assert.equal(db.prepare('SELECT COUNT(*) AS adet FROM musteri').get().adet, 1);
+		assert.equal(kuyruk(db).length, 1, 'kayıt asıl iş, eşitleme tetiği yardımcı iş');
+	} finally {
+		kapat();
+	}
+});
+
+test('dinleyici verilmezse depo eskisi gibi çalışıyor', () => {
+	const { db, depo, kapat } = ortamKur();
+	try {
+		depo.musteriKaydet({ ad_soyad: 'Zeynep Kaya', durum: 'etkin' });
+		assert.equal(kuyruk(db).length, 1);
+	} finally {
+		kapat();
+	}
+});
+
+/* ------------------------------------------------------------------ */
+/* Otomatik eşitleme ayarı                                             */
+/* ------------------------------------------------------------------ */
+
+test('otomatik eşitleme varsayılan olarak açık, bağlantı ayarları eksik olsa bile', () => {
+	const { depo, kapat } = ortamKur();
+	try {
+		const ayar = depo.otomatikAyariOku();
+		assert.equal(ayar.otomatik, true, 'unutulabilir adımın varsayılanı otomatik olmalı');
+		assert.equal(ayar.aralikDk, OTOMATIK_ARALIK.varsayilanDk);
+		assert.equal(ayar.ayarTamam, false, 'bağlantı ayarları henüz girilmedi');
+		assert.ok(ayar.eksikler.length > 0);
+	} finally {
+		kapat();
+	}
+});
+
+test('otomatik eşitleme kapatılıp açılabiliyor', () => {
+	const { depo, kapat } = ortamKur();
+	try {
+		depo.otomatikAyariYaz({ otomatik: false, aralikDk: 9 });
+		let ayar = depo.otomatikAyariOku();
+		assert.equal(ayar.otomatik, false);
+		assert.equal(ayar.aralikDk, 9);
+
+		depo.otomatikAyariYaz({ otomatik: true, aralikDk: OTOMATIK_ARALIK.enCokDk });
+		ayar = depo.otomatikAyariOku();
+		assert.equal(ayar.otomatik, true);
+		assert.equal(ayar.aralikDk, OTOMATIK_ARALIK.enCokDk);
+	} finally {
+		kapat();
+	}
+});
+
+test('sınır dışı aralık reddediliyor', () => {
+	const { depo, kapat } = ortamKur();
+	try {
+		assert.throws(() => depo.otomatikAyariYaz({ otomatik: true, aralikDk: 0 }), /arasında olmalı/);
+		assert.throws(() => depo.otomatikAyariYaz({ otomatik: true, aralikDk: 999 }), /arasında olmalı/);
+		assert.throws(() => depo.otomatikAyariYaz({ otomatik: true, aralikDk: 'üç' }), /tam sayı/);
+		assert.throws(() => depo.otomatikAyariYaz({ otomatik: true, aralikDk: '' }), /boş bırakılamaz/);
+	} finally {
+		kapat();
+	}
+});
+
+test('otomatik ayar bağlantı ayarları eksikken de yazılabiliyor', () => {
+	const { depo, kapat } = ortamKur();
+	try {
+		/*
+		  Bağlantı ayarı hiç girilmemiş olsa bile kullanıcı otomatiği
+		  kapatabilmeli. Aksi hâlde kapatmak için önce sunucu adresi girmek
+		  gerekirdi ve bu saçma olurdu.
+		*/
+		depo.otomatikAyariYaz({ otomatik: false, aralikDk: 5 });
+		assert.equal(depo.otomatikAyariOku().otomatik, false);
+	} finally {
+		kapat();
+	}
+});
+
+test('bağlantı ayarları tamamlanınca ayarTamam doğruya dönüyor', () => {
+	const { depo, kapat } = ortamKur();
+	try {
+		depo.esitlemeAyariYaz({
+			'esitleme.sunucu': 'panel@makine',
+			'esitleme.uzak_veri': '/srv/panel/veri',
+			'esitleme.uzak_vt': '/srv/panel/panel.db',
+			'esitleme.ssh_anahtari': '/home/ad/.ssh/id_ed25519',
+			'esitleme.uzak_node': '/opt/node24/bin/node',
+		});
+		const ayar = depo.otomatikAyariOku();
+		assert.equal(ayar.ayarTamam, true);
+		assert.deepEqual(ayar.eksikler, []);
+	} finally {
+		kapat();
+	}
+});
+
+test('eşitleme özeti otomatik ayarı da taşıyor', () => {
+	const { depo, kapat } = ortamKur();
+	try {
+		depo.otomatikAyariYaz({ otomatik: true, aralikDk: 4 });
+		const ozet = depo.esitlemeOzeti();
+		assert.equal(ozet.otomatikAyari.otomatik, true);
+		assert.equal(ozet.otomatikAyari.aralikDk, 4);
+	} finally {
+		kapat();
+	}
+});
+
+test('kuyrukBekleyenSayisi yalnızca gönderilmeyenleri sayıyor', () => {
+	const { db, depo, kapat } = ortamKur();
+	try {
+		assert.equal(depo.kuyrukBekleyenSayisi(), 0);
+		depo.musteriKaydet({ ad_soyad: 'Ali Vural', durum: 'etkin' });
+		assert.equal(depo.kuyrukBekleyenSayisi(), 1);
+		db.prepare('UPDATE esitleme_kuyrugu SET gonderildi = ?').run(simdi());
+		assert.equal(depo.kuyrukBekleyenSayisi(), 0);
 	} finally {
 		kapat();
 	}

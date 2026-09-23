@@ -29,6 +29,7 @@ import {
 	odemeGirdisiHazirla,
 	revizeGirdisiHazirla,
 } from './is-mantigi.mjs';
+import { esitlemeYoneticisiKur } from './otomatik-esitleme.mjs';
 
 const gerek = createRequire(import.meta.url);
 /** QR üretimi ana süreçte yapılıyor: arayüze kütüphane indirmek yerine
@@ -49,9 +50,12 @@ app.setName('mustafa-yonetim');
 let pencere = null;
 let db = null;
 let depo = null;
-/** Aynı anda ikinci bir eşitleme başlamasın diye. Gerekçe `esitleme:calistir`
- *  kanalının başında. */
-let esitlemeSuruyor = false;
+/**
+ * Eşitlemenin tek sahibi. Elle düğme, davet üretimi, değişiklik tetiği ve
+ * düzenli dinleme hepsi buradan geçiyor; kilit, toplama ve geri çekilme
+ * `otomatik-esitleme.mjs` içinde.
+ */
+let esitlemeYoneticisi = null;
 
 /* ------------------------------------------------------------------ */
 /* Kasa: Electron safeStorage sarmalayıcısı                            */
@@ -173,8 +177,22 @@ function kanallariKur() {
 
 	kanal('kuyruk:bekleyen', () => depo.kuyrukBekleyenler());
 
-	kanal('esitleme:ozet', () => depo.esitlemeOzeti());
-	kanal('esitleme:ayar-yaz', (form) => depo.esitlemeAyariYaz(form ?? {}));
+	kanal('esitleme:ozet', () => ({
+		...depo.esitlemeOzeti(),
+		otomatik: esitlemeYoneticisi.durum(),
+	}));
+	kanal('esitleme:ayar-yaz', (form) => {
+		const sonuc = depo.esitlemeAyariYaz(form ?? {});
+		// Ayarlar tamamlandıysa otomatik eşitleme beklemeden uyanıyor.
+		esitlemeYoneticisi.ayarlariYenile();
+		return sonuc;
+	});
+	kanal('esitleme:otomatik-yaz', (form) => {
+		const sonuc = depo.otomatikAyariYaz(form ?? {});
+		esitlemeYoneticisi.ayarlariYenile();
+		return sonuc;
+	});
+	kanal('esitleme:durum', () => esitlemeDurumu());
 
 	/*
 	  Eşitleme uzun sürebilir ve ağ işi yapan tek kanal bu.
@@ -184,19 +202,14 @@ function kanallariKur() {
 	  ulaşılamadı, BatchMode parola istedi) kullanıcının görmesi gereken
 	  şeyler; "eşitlenemedi" demek onu karanlıkta bırakmak olurdu.
 
-	  İkinci bir çalıştırma reddediliyor: aynı kuyruk iki kez gönderilirse
-	  sonuç bozulmaz (sunucu tarafı tekrar uygulanabilir) ama gönderildi
-	  işaretlemesi ile çekiş birbirine girer.
+	  İkinci bir çalıştırma artık REDDEDİLMİYOR, sıraya giriyor. Eskiden
+	  "Eşitleme zaten sürüyor." hatası dönüyordu; arkada düzenli bir eşitleme
+	  varken düğmeye basan kullanıcının karşısına çıkacak bu hata, kendi
+	  isteğinin kaybolduğu izlenimini verirdi. İstek şimdi süren koşunun
+	  arkasına sıralanıyor ve sonucu bu cevapta dönüyor. Aynı kuyruğun iki kez
+	  gönderilmesi hâlâ imkânsız: koşular sırayla çalışıyor.
 	*/
-	kanal('esitleme:calistir', async () => {
-		if (esitlemeSuruyor) throw new Error('Eşitleme zaten sürüyor.');
-		esitlemeSuruyor = true;
-		try {
-			return await esitle(db);
-		} finally {
-			esitlemeSuruyor = false;
-		}
-	});
+	kanal('esitleme:calistir', () => esitlemeYoneticisi.elleCalistir());
 
 	kanal('talep:liste', (secenek) => depo.talepListesi(secenek ?? {}));
 	kanal('talep:getir', (id) => depo.talepGetir(String(id)));
@@ -236,18 +249,11 @@ function kanallariKur() {
 		  kuyruk zaten duruyor, sonraki eşitlemede gidecek.
 		*/
 		let esitlemeSonucu = null;
-		if (esitlemeSuruyor) {
-			esitlemeSonucu = { tamam: false, hata: 'Eşitleme zaten sürüyordu, anahtar kuyrukta bekliyor.' };
-		} else {
-			esitlemeSuruyor = true;
-			try {
-				const sonuc = await esitle(db);
-				esitlemeSonucu = { tamam: true, ...sonuc };
-			} catch (hata) {
-				esitlemeSonucu = { tamam: false, hata: hata.message };
-			} finally {
-				esitlemeSuruyor = false;
-			}
+		try {
+			const sonuc = await esitlemeYoneticisi.elleCalistir();
+			esitlemeSonucu = { tamam: true, ...sonuc };
+		} catch (hata) {
+			esitlemeSonucu = { tamam: false, hata: hata.message };
 		}
 
 		return { ...davet, qr, esitleme: esitlemeSonucu };
@@ -280,6 +286,56 @@ function kanallariKur() {
 /** Ekran değiştirme isteği arayüze gönderiliyor; yönlendirme orada. */
 function ekranaGit(anahtar) {
 	if (pencere && !pencere.isDestroyed()) pencere.webContents.send('ekran:git', anahtar);
+}
+
+/* ------------------------------------------------------------------ */
+/* Otomatik eşitleme                                                   */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Arayüzün gördüğü eşitleme durumu.
+ *
+ * Yöneticinin bildiklerine bekleyen kayıt sayısı ekleniyor: yönetici kuyruğu
+ * bilmiyor, bilmemeli de. Sayı her bildirimde veritabanından okunuyor, çünkü
+ * bu sorgu tek satırlık bir COUNT.
+ */
+function esitlemeDurumu() {
+	const temel = esitlemeYoneticisi ? esitlemeYoneticisi.durum() : null;
+	let bekleyenSayisi = 0;
+	try {
+		bekleyenSayisi = depo ? depo.kuyrukBekleyenSayisi() : 0;
+	} catch {
+		// Veritabanı kapanmış olabilir (uygulama kapanırken). Sayı sıfır kalsın.
+	}
+	return { ...temel, bekleyenSayisi };
+}
+
+/**
+ * Durum değişikliğini arayüze itiyor.
+ *
+ * Arayüz sormuyor, ana süreç söylüyor. Alternatif arayüzün saniyede bir
+ * sorması olurdu; eşitleme dakikalarca sessiz kalan bir iş, sürekli sormak
+ * hem boşuna hem de gecikmeli.
+ */
+function esitlemeDurumunuBildir() {
+	if (!pencere || pencere.isDestroyed()) return;
+	pencere.webContents.send('esitleme:durum', esitlemeDurumu());
+}
+
+function esitlemeYoneticisiniKur() {
+	return esitlemeYoneticisiKur({
+		esitle: () => esitle(db),
+		ayarlariOku: () => {
+			const ayar = depo.otomatikAyariOku();
+			return {
+				otomatik: ayar.otomatik,
+				aralikMs: ayar.aralikDk * 60 * 1000,
+				ayarTamam: ayar.ayarTamam,
+				eksikler: ayar.eksikler,
+			};
+		},
+		durumDegisti: esitlemeDurumunuBildir,
+	});
 }
 
 function menuyuKur() {
@@ -430,10 +486,29 @@ function pencereyiKur() {
 
 function baslat() {
 	db = yerelAc(join(app.getPath('userData'), 'yerel.db'));
-	depo = depoKur(db, kasa);
+
+	/*
+	  Sıra önemli: yönetici depodan ÖNCE kurulamıyor (depo ayarları okuyor),
+	  depo da yöneticiyi dinleyici olarak istiyor. Düğüm, dinleyicinin
+	  yöneticiyi değişken üzerinden çağırmasıyla çözülüyor; kuyruğa ilk kayıt
+	  düştüğünde yönetici çoktan kurulmuş oluyor.
+	*/
+	depo = depoKur(db, kasa, {
+		kuyrukDinleyici: (islem) => esitlemeYoneticisi?.degisiklikBildir(islem),
+	});
+	esitlemeYoneticisi = esitlemeYoneticisiniKur();
+
 	kanallariKur();
 	menuyuKur();
 	pencereyiKur();
+	esitlemeYoneticisi.baslat();
+
+	/*
+	  Önceki oturumdan gönderilmemiş kayıt kaldıysa açılışta eşitleniyor.
+	  Tam olarak bu işin çıkış senaryosu: anahtar üretilmiş, eşitlenmemiş,
+	  uygulama kapanmış. Aralığı beklemek o kaydı dakikalarca daha bekletirdi.
+	*/
+	if (depo.kuyrukBekleyenSayisi() > 0) esitlemeYoneticisi.degisiklikBildir('acilis');
 
 	if (!kasa.kullanilabilir()) {
 		console.warn(
@@ -443,6 +518,9 @@ function baslat() {
 }
 
 function kapat() {
+	// Zamanlayıcılar önce susuyor: kapanan veritabanına SSH sonucu yazmaya
+	// çalışan bir koşu, kapanışı hataya çevirirdi.
+	esitlemeYoneticisi?.durdur();
 	try {
 		db?.close();
 	} catch {

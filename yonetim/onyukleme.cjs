@@ -74,9 +74,20 @@ contextBridge.exposeInMainWorld('yonetim', {
 	esitleme: {
 		ozet: () => cagir('esitleme:ozet'),
 		ayarYaz: (form) => cagir('esitleme:ayar-yaz', form),
+		// Otomatik eşitlemenin açık/kapalı olması ve dinleme aralığı.
+		otomatikYaz: (form) => cagir('esitleme:otomatik-yaz', form),
+		durum: () => cagir('esitleme:durum'),
 		// Uzun sürebilir ve ağa çıkan tek çağrı bu. Hata metni olduğu gibi
 		// geliyor: SSH'ın söyledikleri kullanıcıya gösterilecek.
 		calistir: () => cagir('esitleme:calistir'),
+		/**
+		 * Otomatik eşitlemenin durumu değiştikçe ana süreç haber veriyor.
+		 * `ekranDinle` ile aynı kalıp: yalnızca dinleme yönü açık, arayüz bu
+		 * kanaldan ana sürece bir şey gönderemiyor, olay nesnesi geçmiyor.
+		 */
+		durumDinle: (islev) => {
+			ipcRenderer.on('esitleme:durum', (_olay, durum) => islev(durum));
+		},
 	},
 
 	talep: {

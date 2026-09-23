@@ -20,6 +20,7 @@ import {
 	IS_DURUMLARI,
 	MUSTERI_DURUMLARI,
 	ODEME_TURLERI,
+	OTOMATIK_ARALIK,
 	TALEP_DURUMLARI,
 	TALEP_ONCELIKLERI,
 	buAy,
@@ -29,6 +30,7 @@ import {
 	kurusGirdiye,
 	musteriGirdisiHazirla,
 	odemeGirdisiHazirla,
+	otomatikAyariDogrula,
 	revizeGirdisiHazirla,
 } from '../is-mantigi.mjs';
 
@@ -107,6 +109,18 @@ function gecenSure(damga) {
 	return `${Math.round(saat / 24)} gün önce`;
 }
 
+/** "3 dakika sonra" gibi kaba bir uzaklık. `gecenSure` geçmişe bakıyor,
+ *  bu geleceğe: planlanmış bir sonraki eşitleme için. */
+function kalanSure(damga) {
+	if (!damga) return '';
+	const an = new Date(damga).getTime();
+	if (Number.isNaN(an)) return '';
+	const dakika = Math.round((an - Date.now()) / 60000);
+	if (dakika <= 0) return 'birazdan';
+	if (dakika < 60) return `${dakika} dakika sonra`;
+	return `${Math.round(dakika / 60)} saat sonra`;
+}
+
 const AY_ADLARI = [
 	'Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran',
 	'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık',
@@ -152,6 +166,11 @@ const durum = {
 	esitlemeSuruyor: false,
 	esitlemeSonucu: null,
 	esitlemeHatasi: null,
+	/*
+	  Otomatik eşitlemenin son bildirdiği durum. Ana süreçten itiliyor,
+	  arayüz sormuyor.
+	*/
+	otomatik: null,
 };
 
 const dugumler = {
@@ -161,6 +180,7 @@ const dugumler = {
 	bildirim: document.getElementById('bildirim'),
 	gezinti: document.getElementById('gezinti'),
 	rozet: document.getElementById('sifreleme-rozeti'),
+	esitlemeRozeti: document.getElementById('esitleme-rozeti'),
 };
 
 function bildir(mesaj, hataMi = false) {
@@ -1238,6 +1258,185 @@ async function davetleriCiz() {
 /* Ekran: Eşitleme                                                     */
 /* ------------------------------------------------------------------ */
 
+/* ------------------------------------------------------------------ */
+/* Otomatik eşitlemenin durumu                                         */
+/* ------------------------------------------------------------------ */
+
+/*
+  Eşitleme tetiğinin sebebi ana süreçte bir tanımlayıcı: kuyruk işleminin
+  adı ya da koşunun cinsi. Ekranda tanımlayıcı değil cümle görünüyor.
+  Tanınmayan bir anahtar olduğu gibi yazılıyor: uydurma bir ad göstermektense
+  ham anahtarı göstermek yeğdir.
+*/
+const SEBEP_ADLARI = {
+	acilis: 'açılışta kalan kayıt',
+	elle: 'elle başlatıldı',
+	aralik: 'düzenli dinleme',
+	degisiklik: 'değişiklik sonrası',
+	'musteri.yaz': 'müşteri kaydı',
+	'musteri.sil': 'müşteri silme',
+	'is.yaz': 'iş kaydı',
+	'is.sil': 'iş silme',
+	'davet.yaz': 'davet anahtarı',
+	'davet.iptal': 'davet iptali',
+	'talep.yanit': 'talep yanıtı',
+	'talep.durum': 'talep durumu',
+};
+
+const sebepAdi = (anahtar) => SEBEP_ADLARI[anahtar] ?? String(anahtar ?? '');
+
+/** "3 kayıt bekliyor" / "kuyruk boş". */
+function bekleyenMetni(sayi) {
+	const adet = Number(sayi ?? 0);
+	return adet > 0 ? `${adet} kayıt bekliyor` : 'kuyruk boş';
+}
+
+/**
+ * Yan çubuktaki rozetin metni.
+ *
+ * Tek satıra sığan en önemli bilgi: eşitleme çalışıyor mu, çalışmıyorsa
+ * neden. Sessizce başarısız olmamanın en ucuz yolu bu satır.
+ */
+function otomatikRozetMetni(d) {
+	if (!d) return 'Eşitleme durumu okunuyor…';
+	const bekleyen = bekleyenMetni(d.bekleyenSayisi);
+	if (d.suruyor) return `Eşitleniyor (${bekleyen}).`;
+	if (d.beklemeSebebi === 'ayar-eksik') {
+		return `Otomatik eşitleme beklemede, bağlantı ayarları eksik (${bekleyen}).`;
+	}
+	if (d.sonHata) {
+		return `Eşitleme başarısız, ${d.ardArdaHata}. deneme (${bekleyen}).`;
+	}
+	if (d.beklemeSebebi === 'kapali') return `Otomatik eşitleme kapalı (${bekleyen}).`;
+	if (d.sonBasari) return `Son eşitleme ${anBicim(d.sonBasari)} (${bekleyen}).`;
+	return `Otomatik eşitleme açık, ${d.aralikDk} dakikada bir (${bekleyen}).`;
+}
+
+function otomatikRozetiCiz() {
+	const d = durum.otomatik;
+	const dugum = dugumler.esitlemeRozeti;
+	dugum.textContent = otomatikRozetMetni(d);
+	const kotu = Boolean(d && (d.sonHata || d.beklemeSebebi === 'ayar-eksik'));
+	const iyi = Boolean(d && !kotu && d.otomatik && d.ayarTamam);
+	dugum.classList.toggle('kotu', kotu);
+	dugum.classList.toggle('iyi', iyi);
+}
+
+/**
+ * Otomatik eşitleme bir şey yaptığında ekran kendiliğinden tazeleniyor.
+ *
+ * İki yerde tazeleniyor, hepsinde değil: Eşitleme ekranı (durumu gösteren
+ * ekran) ve destek talebi ekranları (çekilen taleplerin göründüğü yer).
+ * Kullanıcı bir alana yazıyorsa ya da form penceresi açıksa tazelenmiyor:
+ * altından çekilen bir form, gösterilen tazeliğe değmez.
+ */
+function otomatikTazelemeUygunMu() {
+	if (pencere.open) return false;
+	const etkin = document.activeElement;
+	if (etkin && ['INPUT', 'TEXTAREA', 'SELECT'].includes(etkin.tagName)) return false;
+	return ['esitleme', 'talepler', 'talep-detay'].includes(durum.ekran);
+}
+
+/** Eşitleme ekranındaki "Otomatik eşitleme" kartı. */
+function otomatikKarti(d) {
+	if (!d) {
+		return el('div', { sinif: 'kart' }, [
+			el('h2', { metin: 'Otomatik eşitleme' }),
+			el('p', { sinif: 'bos', metin: 'Durum henüz okunmadı.' }),
+		]);
+	}
+
+	const satirlar = [
+		[
+			'Durum',
+			d.beklemeSebebi === 'ayar-eksik'
+				? 'Beklemede, bağlantı ayarları eksik'
+				: d.beklemeSebebi === 'kapali'
+					? 'Kapalı'
+					: d.suruyor
+						? 'Eşitleme sürüyor'
+						: 'Açık',
+		],
+		['Dinleme aralığı', `${d.aralikDk} dakika`],
+		[
+			'Sonraki çalışma',
+			d.siradakiCalisma ? `${anBicim(d.siradakiCalisma)} (${kalanSure(d.siradakiCalisma)})` : 'planlanmadı',
+		],
+		['Bekleyen kayıt', String(d.bekleyenSayisi ?? 0)],
+		[
+			'Bekleyen değişiklik',
+			d.bekleyenSebepler?.length ? d.bekleyenSebepler.map(sebepAdi).join(', ') : 'yok',
+		],
+		['Art arda başarısız deneme', String(d.ardArdaHata ?? 0)],
+		['Son başarılı eşitleme', d.sonBasari ? anBicim(d.sonBasari) : 'hiç olmadı'],
+	];
+
+	const parcalar = [
+		el('h2', { metin: 'Otomatik eşitleme' }),
+		...satirlar.map(([etiket, deger]) =>
+			el('div', { sinif: 'ayar-satiri' }, [
+				el('span', { sinif: 'ayar-etiketi', metin: etiket }),
+				el('span', { sinif: 'ayar-degeri', metin: deger }),
+			]),
+		),
+	];
+
+	if (d.beklemeSebebi === 'ayar-eksik') {
+		parcalar.push(
+			el('p', {
+				sinif: 'kucuk ust-bosluk hata-metni',
+				metin:
+					'Bağlantı ayarları girilene kadar otomatik eşitleme denemiyor: ' +
+					'her aralıkta aynı hatayı üretmesinin kimseye faydası yok. ' +
+					`Eksik olanlar: ${(d.ayarEksikleri ?? []).join(' ')}`,
+			}),
+		);
+	}
+
+	if (d.sonHata) {
+		parcalar.push(
+			el('p', {
+				sinif: 'kucuk ust-bosluk',
+				metin: `Son hata ${anBicim(d.sonHata.an)} tarihinde, ${sebepAdi(d.sonHata.sebep)} koşusunda:`,
+			}),
+			el('pre', { sinif: 'ham-hata', metin: d.sonHata.mesaj }),
+			el('p', {
+				sinif: 'kucuk ust-bosluk',
+				metin:
+					'Kuyruktaki kayıtlar duruyor, hiçbiri kaybolmadı. Art arda ' +
+					'başarısızlıkta aralık ikiye katlanıyor (en çok yarım saat) ve ' +
+					'ilk başarılı eşitlemede normale dönüyor.',
+			}),
+		);
+	} else if (d.sonSonuc) {
+		parcalar.push(
+			el('p', {
+				sinif: 'kucuk ust-bosluk',
+				metin:
+					`Son koşuda ${d.sonSonuc.gonderilen} işlem gönderildi, ` +
+					`${d.sonSonuc.yazilan} talep yerel kopyaya yazıldı.`,
+			}),
+		);
+	}
+
+	return el('div', { sinif: 'kart' }, parcalar);
+}
+
+kapi.esitleme.durumDinle(async (yeni) => {
+	const onceki = durum.otomatik;
+	durum.otomatik = yeni;
+	otomatikRozetiCiz();
+	/*
+	  Yalnızca bir koşu BİTTİĞİNDE ekran çiziliyor. Durum bildirimi koşu
+	  başlarken de geliyor ve her bildirimde çizmek gereksiz iş olurdu.
+	  "Bitti" ölçüsü damganın değişmesi: son başarı ya da son hata anı.
+	*/
+	const bittiMi =
+		(yeni?.sonBasari && yeni.sonBasari !== (onceki?.sonBasari ?? null)) ||
+		(yeni?.sonHata?.an && yeni.sonHata.an !== (onceki?.sonHata?.an ?? null));
+	if (bittiMi && otomatikTazelemeUygunMu()) await ekraniCiz();
+});
+
 function esitlemeAyarFormuAc(ozet) {
 	formAc({
 		baslik: 'Eşitleme ayarları',
@@ -1273,12 +1472,69 @@ function esitlemeAyarFormuAc(ozet) {
 	});
 }
 
+function otomatikAyarFormuAc(ozet) {
+	const mevcut = ozet.otomatikAyari ?? { otomatik: true, aralikDk: OTOMATIK_ARALIK.varsayilanDk };
+	formAc({
+		baslik: 'Otomatik eşitleme',
+		kaydetEtiketi: 'Kaydet',
+		alanlar: [
+			{
+				tip: 'aciklama',
+				metin:
+					'Açıkken iki şey oluyor. Bir: müşteri, iş ya da talep kaydı değiştiğinde ' +
+					'eşitleme birkaç saniye içinde kendiliğinden başlıyor. İki: aşağıdaki ' +
+					'aralıkla sunucudaki destek talepleri çekiliyor. Kapalıyken yalnızca ' +
+					'"Eşitle" düğmesi çalışıyor.',
+			},
+			{
+				ad: 'otomatik',
+				etiket: 'Otomatik eşitleme',
+				tip: 'secim',
+				deger: mevcut.otomatik ? '1' : '0',
+				secenekler: [
+					{ deger: '1', ad: 'Açık' },
+					{ deger: '0', ad: 'Kapalı' },
+				],
+			},
+			{
+				ad: 'aralikDk',
+				etiket: 'Dinleme aralığı (dakika)',
+				deger: String(mevcut.aralikDk),
+				ornek: String(OTOMATIK_ARALIK.varsayilanDk),
+				ipucu:
+					`${OTOMATIK_ARALIK.enAzDk} ile ${OTOMATIK_ARALIK.enCokDk} arası. ` +
+					'Bağlantı kurulamazsa aralık kendiliğinden büyüyor ve ilk başarılı ' +
+					'eşitlemede normale dönüyor.',
+			},
+		],
+		kaydet: async (degerler) => {
+			const hatalar = otomatikAyariDogrula(degerler);
+			if (hatalar.length) return hatalar;
+			const sonuc = await guvenli(
+				() =>
+					kapi.esitleme.otomatikYaz({
+						otomatik: degerler.otomatik === '1',
+						aralikDk: degerler.aralikDk,
+					}),
+				'Otomatik eşitleme ayarı kaydedildi.',
+			);
+			if (!sonuc) return ['Kaydedilemedi.'];
+			await ekraniCiz();
+			return null;
+		},
+	});
+}
+
 async function esitlemeyiCalistir() {
 	if (durum.esitlemeSuruyor) return;
 	durum.esitlemeSuruyor = true;
 	durum.esitlemeSonucu = null;
 	durum.esitlemeHatasi = null;
-	bildir('Eşitleme sürüyor. Sunucuya bağlanılıyor, bu bir dakika sürebilir.');
+	bildir(
+		durum.otomatik?.suruyor
+			? 'Bir eşitleme zaten sürüyor. İsteğiniz sıraya alındı, onun arkasından çalışacak.'
+			: 'Eşitleme sürüyor. Sunucuya bağlanılıyor, bu bir dakika sürebilir.',
+	);
 	await ekraniCiz();
 
 	try {
@@ -1308,17 +1564,27 @@ async function esitlemeCiz() {
 	dugumler.araclar.replaceChildren(
 		el('button', {
 			sinif: 'dugme',
+			metin: 'Otomatik eşitleme',
+			tikla: () => otomatikAyarFormuAc(ozet),
+		}),
+		el('button', {
+			sinif: 'dugme',
 			metin: 'Ayarları düzenle',
 			disabled: durum.esitlemeSuruyor,
 			tikla: () => esitlemeAyarFormuAc(ozet),
 		}),
 		el('button', {
 			sinif: 'dugme birincil',
-			metin: durum.esitlemeSuruyor ? 'Eşitleniyor…' : 'Eşitle',
+			// Otomatik açıkken bile elle düğme duruyor: "şimdi gitsin" demek
+			// isteyen kullanıcıdan bu imkânı almanın sebebi yok.
+			metin: durum.esitlemeSuruyor ? 'Eşitleniyor…' : 'Şimdi eşitle',
 			disabled: durum.esitlemeSuruyor,
 			tikla: esitlemeyiCalistir,
 		}),
 	);
+
+	// Ana sürecin ittiği durum, henüz hiç bildirim gelmediyse özetten geliyor.
+	const oto = durum.otomatik ?? ozet.otomatik ?? null;
 
 	const parcalar = [
 		el('dl', { sinif: 'olcum-izgara' }, [
@@ -1332,6 +1598,7 @@ async function esitlemeCiz() {
 			olcum('Son çekilen talep damgası', ozet.sonCekis ? anBicim(ozet.sonCekis) : 'yok'),
 		]),
 		el('div', { sinif: 'bosluk' }),
+		otomatikKarti(oto),
 	];
 
 	if (durum.esitlemeSuruyor) {
@@ -1348,7 +1615,12 @@ async function esitlemeCiz() {
 		);
 	}
 
-	if (durum.esitlemeHatasi) {
+	/*
+	  Elle çalıştırmanın hatası, otomatik eşitleme kartındakiyle AYNI hataysa
+	  ikinci kez yazılmıyor: aynı SSH çıktısını üst üste iki kutuda görmek
+	  bilgi değil gürültü.
+	*/
+	if (durum.esitlemeHatasi && durum.esitlemeHatasi !== oto?.sonHata?.mesaj) {
 		parcalar.push(
 			el('div', { sinif: 'kart' }, [
 				el('h2', { metin: 'Son eşitleme hatası' }),
@@ -1731,6 +2003,10 @@ kapi.ekranDinle((anahtar) => ekranaGit(anahtar));
 async function baslat() {
 	const bilgi = await guvenli(() => kapi.durumOku());
 	durum.sifreleme = Boolean(bilgi?.sifreleme);
+
+	// İlk durum bir kez soruluyor; sonrası ana süreçten itiliyor.
+	durum.otomatik = await guvenli(() => kapi.esitleme.durum());
+	otomatikRozetiCiz();
 
 	dugumler.rozet.textContent = durum.sifreleme
 		? 'Anahtarlık açık: TC ve vergi numarası şifreli.'

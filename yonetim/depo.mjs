@@ -13,6 +13,7 @@ import { simdi } from '../veri/db.mjs';
 import { davetAnahtariUret, yeniKimlik } from '../veri/kimlik.mjs';
 import {
 	ESITLEME_AYARLARI,
+	OTOMATIK_ANAHTARLARI,
 	TALEP_DURUMLARI,
 	aramaEslesiyorMu,
 	davetEsitlemeKaydi,
@@ -22,6 +23,8 @@ import {
 	istatistikHesapla,
 	kuyrukGovdesiSuz,
 	musteriEsitlemeKaydi,
+	otomatikAralikDuzelt,
+	otomatikAyariDogrula,
 	talepDurumuEsitlemeKaydi,
 	talepYanitiDogrula,
 	talepYanitiEsitlemeKaydi,
@@ -45,7 +48,15 @@ export class SifrelemeYok extends Error {
 	}
 }
 
-export function depoKur(db, kasa) {
+/**
+ * @param db     açık SQLite bağlantısı
+ * @param kasa   şifreleme sarmalayıcısı (uygulamada safeStorage, testte sahte)
+ * @param secenekler.kuyrukDinleyici
+ *        Kuyruğa her kayıt düştüğünde çağrılıyor, işlem adıyla. Otomatik
+ *        eşitleme bunu dinliyor. Verilmezse hiçbir şey değişmiyor: depo
+ *        Electron'suz da, eşitlemesiz de çalışmaya devam ediyor.
+ */
+export function depoKur(db, kasa, { kuyrukDinleyici = null } = {}) {
 	/* -------------------------------------------------------------- */
 	/* Şifreli alanlar                                                 */
 	/* -------------------------------------------------------------- */
@@ -85,10 +96,28 @@ export function depoKur(db, kasa) {
 	 * Kuyruğa tek giriş noktası. Gövde önce `kuyrukGovdesiSuz` ile
 	 * süzülüyor: izin verilmeyen bir alan varsa buraya hiç gelmiyor, hata
 	 * fırlıyor. Kuyruğa hassas veri sızmamasının garantisi bu tek kapı.
+	 *
+	 * Dinleyici tek kapının burada olması sayesinde bir yere bağlanıyor:
+	 * kuyruğa kayıt düşen HER yol buradan geçtiği için, otomatik eşitlemeyi
+	 * tetiklemeyi unutmuş bir çağrı kalamıyor.
+	 *
+	 * Dinleyici işlemin İÇİNDEN çağrılıyor, COMMIT'ten önce. İşlem geri
+	 * alınırsa bildirim boşa gitmiş olur; bunun bedeli, gönderecek bir şey
+	 * bulamayan tek bir eşitleme koşusu. Bildirimi COMMIT'ten sonraya almak
+	 * altı ayrı çağrı yerini değiştirmeyi gerektirirdi ve asıl riski, yani
+	 * bir yolu atlamayı, geri getirirdi.
 	 */
 	function kuyrugaYaz({ islem, govde }) {
 		const temiz = kuyrukGovdesiSuz(islem, govde);
 		kuyrugaEkleSorgu.run(islem, JSON.stringify(temiz), simdi());
+		if (kuyrukDinleyici) {
+			try {
+				kuyrukDinleyici(islem);
+			} catch {
+				// Dinleyicinin hatası kaydı geri almamalı: kayıt asıl iş,
+				// eşitleme tetiği yardımcı iş.
+			}
+		}
 	}
 
 	/* -------------------------------------------------------------- */
@@ -531,6 +560,15 @@ export function depoKur(db, kasa) {
 			.all(sinir);
 	}
 
+	/** Yalnızca sayı. Durum göstergesi bunu saniyede bir sorabilmeli, gövde
+	 *  okumadan. */
+	function kuyrukBekleyenSayisi() {
+		return (
+			db.prepare('SELECT COUNT(*) AS adet FROM esitleme_kuyrugu WHERE gonderildi IS NULL').get()
+				?.adet ?? 0
+		);
+	}
+
 	/* -------------------------------------------------------------- */
 	/* Eşitleme ayarları ve özeti                                      */
 	/* -------------------------------------------------------------- */
@@ -569,6 +607,43 @@ export function depoKur(db, kasa) {
 	}
 
 	/**
+	 * Otomatik eşitleme ayarları.
+	 *
+	 * Varsayılan AÇIK. Sebebi bu işin çıkış noktası: elle eşitleme unutulunca
+	 * sessizce yanlış sonuç doğuruyordu. Varsayılanı kapalı yapmak, o hatayı
+	 * kullanıcının bir ayarı bulmasına bırakmak olurdu.
+	 */
+	function otomatikAyariOku() {
+		const ayar = ayarlariOkuHam();
+		const ham = ayar[OTOMATIK_ANAHTARLARI.acik];
+		return {
+			// Yalnızca açıkça "0" yazılmışsa kapalı; hiç yazılmamışsa açık.
+			otomatik: ham === undefined || ham === null ? true : String(ham) !== '0',
+			aralikDk: otomatikAralikDuzelt(ayar[OTOMATIK_ANAHTARLARI.aralikDk]),
+			// Bağlantı ayarları eksikse otomatik eşitleme boşuna denemesin.
+			ayarTamam: esitlemeAyariDogrula(ayar).length === 0,
+			eksikler: esitlemeAyariDogrula(ayar),
+		};
+	}
+
+	function otomatikAyariYaz(form) {
+		const hatalar = otomatikAyariDogrula(form ?? {});
+		if (hatalar.length) throw new Error(hatalar.join(' '));
+		const acik = Boolean(form.otomatik);
+		const aralikDk = otomatikAralikDuzelt(form.aralikDk);
+		db.exec('BEGIN');
+		try {
+			ayarYazSorgu.run(OTOMATIK_ANAHTARLARI.acik, acik ? '1' : '0');
+			ayarYazSorgu.run(OTOMATIK_ANAHTARLARI.aralikDk, String(aralikDk));
+			db.exec('COMMIT');
+		} catch (hata) {
+			db.exec('ROLLBACK');
+			throw hata;
+		}
+		return { otomatik: acik, aralikDk };
+	}
+
+	/**
 	 * Eşitleme ekranının ihtiyaç duyduğu her şey tek çağrıda.
 	 *
 	 * Kuyruk satırlarının GÖVDESİ dışarı verilmiyor, yalnızca işlem adı ve
@@ -602,6 +677,7 @@ export function depoKur(db, kasa) {
 				ESITLEME_AYARLARI.map((alan) => [alan.anahtar, ayar[alan.anahtar] ?? '']),
 			),
 			ayarHatalari: esitlemeAyariDogrula(ayar),
+			otomatikAyari: otomatikAyariOku(),
 			bekleyenSayisi: sayac.adet ?? 0,
 			enEski: sayac.en_eski ?? null,
 			sonCalisma: ayar['esitleme.son_calisma'] ?? null,
@@ -740,8 +816,11 @@ export function depoKur(db, kasa) {
 		aylar,
 		davetUret,
 		kuyrukBekleyenler,
+		kuyrukBekleyenSayisi,
 		esitlemeAyariYaz,
 		esitlemeOzeti,
+		otomatikAyariOku,
+		otomatikAyariYaz,
 		talepListesi,
 		talepGetir,
 		talepYanitla,

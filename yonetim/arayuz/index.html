@@ -41,6 +41,15 @@
 					<li><button type="button" data-ekran="talepler">Destek talepleri <kbd>8</kbd></button></li>
 				</ul>
 				<div class="yan-dip">
+					<!--
+						Eşitleme rozeti her ekranda görünüyor. Sebebi bu işin çıkış
+						noktası: eşitlemenin çalışıp çalışmadığı yalnızca Eşitleme
+						ekranında görünseydi, orayı açmayan kullanıcı yine karanlıkta
+						kalırdı.
+					-->
+					<p class="rozet" id="esitleme-rozeti" role="status" aria-live="polite">
+						Eşitleme durumu okunuyor…
+					</p>
 					<p class="rozet" id="sifreleme-rozeti">Anahtarlık denetleniyor…</p>
 					<p class="kucuk">Veriler yalnızca bu bilgisayarda.</p>
 				</div>

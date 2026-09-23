@@ -554,6 +554,56 @@ export function esitlemeAyariDogrula(ayar) {
 	return hatalar;
 }
 
+/*
+  OTOMATİK EŞİTLEME AYARLARI
+
+  Bu iki değer de `ayar` tablosunda duruyor, bağlantı ayarlarının yanında.
+  Ayrı tutulmalarının sebebi: bağlantı ayarları eksikken kayıt reddediliyor,
+  bunlar ise her zaman yazılabilir olmalı. Kullanıcı sunucu adresini hiç
+  girmeden de otomatik eşitlemeyi kapatabilmeli.
+*/
+export const OTOMATIK_ARALIK = { varsayilanDk: 3, enAzDk: 1, enCokDk: 60 };
+
+/** `ayar` tablosundaki anahtar adları. */
+export const OTOMATIK_ANAHTARLARI = {
+	acik: 'esitleme.otomatik',
+	aralikDk: 'esitleme.aralik_dk',
+};
+
+/**
+ * Aralığı sınırların içine çeker. Bozuk ya da boş değer varsayılana düşüyor:
+ * ayar tablosundaki tek bir yazım hatası yüzünden eşitleme saniyede bir
+ * çalışmamalı, sonsuza kadar da susmamalı.
+ */
+export function otomatikAralikDuzelt(deger, varsayilan = OTOMATIK_ARALIK.varsayilanDk) {
+	const metin = String(deger ?? '').trim();
+	// Boş dize `Number` için sıfır. Ayarı hiç girilmemiş bir değer sıfıra
+	// düşseydi alt sınıra çekilir ve varsayılan hiç geçerli olmazdı.
+	if (metin === '') return varsayilan;
+	const sayi = Number(metin.replace(',', '.'));
+	if (!Number.isFinite(sayi)) return varsayilan;
+	return Math.min(OTOMATIK_ARALIK.enCokDk, Math.max(OTOMATIK_ARALIK.enAzDk, Math.round(sayi)));
+}
+
+/** Otomatik eşitleme formunu doğrular. Dönen dizi boşsa değerler geçerli. */
+export function otomatikAyariDogrula(form) {
+	const hatalar = [];
+	const ham = String(form?.aralikDk ?? '').trim();
+	if (ham === '') {
+		hatalar.push('Dinleme aralığı boş bırakılamaz.');
+		return hatalar;
+	}
+	const sayi = Number(ham.replace(',', '.'));
+	if (!Number.isFinite(sayi) || !Number.isInteger(sayi)) {
+		hatalar.push('Dinleme aralığı tam sayı olmalı (dakika).');
+	} else if (sayi < OTOMATIK_ARALIK.enAzDk || sayi > OTOMATIK_ARALIK.enCokDk) {
+		hatalar.push(
+			`Dinleme aralığı ${OTOMATIK_ARALIK.enAzDk} ile ${OTOMATIK_ARALIK.enCokDk} dakika arasında olmalı.`,
+		);
+	}
+	return hatalar;
+}
+
 /* ------------------------------------------------------------------ */
 /* Doğrulama                                                           */
 /* ------------------------------------------------------------------ */
