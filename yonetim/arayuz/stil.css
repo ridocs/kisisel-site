@@ -548,6 +548,114 @@ td.islem .dugme + .dugme {
 }
 
 /* ---------------------------------------------------------------- */
+/* Eşitleme ekranı                                                   */
+/* ---------------------------------------------------------------- */
+
+.ayar-satiri {
+	display: grid;
+	grid-template-columns: 190px 1fr;
+	gap: 10px;
+	align-items: baseline;
+	padding: 5px 0;
+	border-bottom: 1px solid var(--cizgi);
+}
+
+.ayar-satiri:last-of-type {
+	border-bottom: none;
+}
+
+.ayar-etiketi {
+	color: var(--metin-3);
+	font-size: 11.5px;
+}
+
+.ayar-degeri {
+	font-family: 'Cascadia Mono', Consolas, ui-monospace, monospace;
+	font-size: 12px;
+	word-break: break-all;
+}
+
+.ayar-degeri.eksik {
+	font-family: inherit;
+	color: var(--bekleyen);
+}
+
+.hata-metni {
+	color: var(--tehlike);
+}
+
+/*
+  SSH'ın ham çıktısı. Çok satırlı ve boşlukları anlamlı olabiliyor, bu
+  yüzden olduğu gibi gösteriliyor: kısaltılan bir hata mesajı, hatayı
+  çözmesi gereken kişiden bilgi saklar.
+*/
+.ham-hata {
+	margin: 0;
+	padding: 11px 13px;
+	border-radius: 8px;
+	border: 1px solid color-mix(in oklch, var(--tehlike) 45%, var(--cizgi));
+	background: var(--zemin);
+	color: var(--metin);
+	font-family: 'Cascadia Mono', Consolas, ui-monospace, monospace;
+	font-size: 12px;
+	line-height: 1.5;
+	white-space: pre-wrap;
+	word-break: break-word;
+	max-height: 260px;
+	overflow: auto;
+}
+
+/* ---------------------------------------------------------------- */
+/* Destek talebi yazışması                                           */
+/* ---------------------------------------------------------------- */
+
+.yazisma {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+
+/*
+  Müşteri ile sahip iki şeyle ayrılıyor: zemin tonu ve kenar çizgisinin
+  yönü. Renkle ayırmıyoruz, zeminler nötr gri kalıyor; yön ve ton tek
+  başına yeterli, üstelik renk körlüğünden etkilenmiyor.
+*/
+.mesaj {
+	border: 1px solid var(--cizgi);
+	border-radius: 10px;
+	padding: 9px 12px;
+	max-width: 74ch;
+}
+
+.mesaj.musteri {
+	background: var(--zemin);
+	border-left: 3px solid var(--cizgi-keskin);
+}
+
+.mesaj.sahip {
+	background: var(--zemin-3);
+	border-right: 3px solid var(--metin-3);
+	margin-left: auto;
+}
+
+.mesaj-basligi {
+	margin: 0 0 4px;
+	font-size: 11px;
+	color: var(--metin-3);
+	letter-spacing: 0.02em;
+}
+
+.mesaj-govde {
+	margin: 0;
+	white-space: pre-wrap;
+	word-break: break-word;
+}
+
+.kart textarea {
+	width: 100%;
+}
+
+/* ---------------------------------------------------------------- */
 /* Pencere (dialog)                                                  */
 /* ---------------------------------------------------------------- */
 

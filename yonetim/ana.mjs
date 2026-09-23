@@ -20,6 +20,7 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
 import { yerelAc } from '../veri/db.mjs';
+import { esitle } from '../veri/esitleme-ssh.mjs';
 import { depoKur } from './depo.mjs';
 import {
 	buAy,
@@ -48,6 +49,9 @@ app.setName('mustafa-yonetim');
 let pencere = null;
 let db = null;
 let depo = null;
+/** Aynı anda ikinci bir eşitleme başlamasın diye. Gerekçe `esitleme:calistir`
+ *  kanalının başında. */
+let esitlemeSuruyor = false;
 
 /* ------------------------------------------------------------------ */
 /* Kasa: Electron safeStorage sarmalayıcısı                            */
@@ -169,6 +173,38 @@ function kanallariKur() {
 
 	kanal('kuyruk:bekleyen', () => depo.kuyrukBekleyenler());
 
+	kanal('esitleme:ozet', () => depo.esitlemeOzeti());
+	kanal('esitleme:ayar-yaz', (form) => depo.esitlemeAyariYaz(form ?? {}));
+
+	/*
+	  Eşitleme uzun sürebilir ve ağ işi yapan tek kanal bu.
+
+	  Hata YUTULMUYOR: `kanal` sarmalayıcısı hatanın metnini olduğu gibi
+	  arayüze veriyor. SSH'ın söyledikleri (anahtar bulunamadı, sunucuya
+	  ulaşılamadı, BatchMode parola istedi) kullanıcının görmesi gereken
+	  şeyler; "eşitlenemedi" demek onu karanlıkta bırakmak olurdu.
+
+	  İkinci bir çalıştırma reddediliyor: aynı kuyruk iki kez gönderilirse
+	  sonuç bozulmaz (sunucu tarafı tekrar uygulanabilir) ama gönderildi
+	  işaretlemesi ile çekiş birbirine girer.
+	*/
+	kanal('esitleme:calistir', async () => {
+		if (esitlemeSuruyor) throw new Error('Eşitleme zaten sürüyor.');
+		esitlemeSuruyor = true;
+		try {
+			return await esitle(db);
+		} finally {
+			esitlemeSuruyor = false;
+		}
+	});
+
+	kanal('talep:liste', (secenek) => depo.talepListesi(secenek ?? {}));
+	kanal('talep:getir', (id) => depo.talepGetir(String(id)));
+	kanal('talep:yanitla', (talepId, metin) =>
+		depo.talepYanitla(String(talepId), String(metin ?? '')),
+	);
+	kanal('talep:durum', (talepId, durum) => depo.talepDurumu(String(talepId), String(durum)));
+
 	/*
 	  Davet üretimi. Anahtarın metni ve QR'ı YALNIZCA bu cevapta var;
 	  veritabanına yazılan tek şey karması (depo.davetUret içinde kuyruğa).
@@ -229,6 +265,12 @@ function menuyuKur() {
 				{ label: 'Revizeler', accelerator: 'CmdOrCtrl+4', click: () => ekranaGit('revizeler') },
 				{ label: 'İstatistikler', accelerator: 'CmdOrCtrl+5', click: () => ekranaGit('istatistik') },
 				{ label: 'Davetler', accelerator: 'CmdOrCtrl+6', click: () => ekranaGit('davetler') },
+				{ label: 'Eşitleme', accelerator: 'CmdOrCtrl+7', click: () => ekranaGit('esitleme') },
+				{
+					label: 'Destek talepleri',
+					accelerator: 'CmdOrCtrl+8',
+					click: () => ekranaGit('talepler'),
+				},
 				{ type: 'separator' },
 				{ label: 'Yenile', accelerator: 'CmdOrCtrl+R', click: () => ekranaGit('yenile') },
 				{ type: 'separator' },

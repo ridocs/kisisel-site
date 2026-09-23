@@ -12,13 +12,19 @@
 import { simdi } from '../veri/db.mjs';
 import { davetAnahtariUret, yeniKimlik } from '../veri/kimlik.mjs';
 import {
+	ESITLEME_AYARLARI,
+	TALEP_DURUMLARI,
 	aramaEslesiyorMu,
 	davetEsitlemeKaydi,
+	esitlemeAyariDogrula,
 	isEsitlemeKaydi,
 	isHesabi,
 	istatistikHesapla,
 	kuyrukGovdesiSuz,
 	musteriEsitlemeKaydi,
+	talepDurumuEsitlemeKaydi,
+	talepYanitiDogrula,
+	talepYanitiEsitlemeKaydi,
 } from './is-mantigi.mjs';
 
 /** Davetin varsayılan geçerlilik süresi: 7 gün (PANEL-TASARIMI.md §5.1). */
@@ -525,6 +531,196 @@ export function depoKur(db, kasa) {
 			.all(sinir);
 	}
 
+	/* -------------------------------------------------------------- */
+	/* Eşitleme ayarları ve özeti                                      */
+	/* -------------------------------------------------------------- */
+
+	const ayarYazSorgu = db.prepare(
+		`INSERT INTO ayar (anahtar, deger) VALUES (?, ?)
+		 ON CONFLICT (anahtar) DO UPDATE SET deger = excluded.deger`,
+	);
+
+	function ayarlariOkuHam() {
+		const satirlar = db.prepare('SELECT anahtar, deger FROM ayar').all();
+		return Object.fromEntries(satirlar.map((s) => [s.anahtar, s.deger]));
+	}
+
+	/**
+	 * Eşitleme ayarlarını yazar.
+	 *
+	 * Bu dört değer YALNIZCA burada, yerel veritabanında duruyor. Depoya
+	 * yazılmıyor, dışarı gönderilmiyor, günlüğe düşmüyor. Depo herkese açık
+	 * ve sunucunun adresi orada işi olan bir bilgi değil.
+	 */
+	function esitlemeAyariYaz(form) {
+		const hatalar = esitlemeAyariDogrula(form ?? {});
+		if (hatalar.length) throw new Error(hatalar.join(' '));
+		db.exec('BEGIN');
+		try {
+			for (const alan of ESITLEME_AYARLARI) {
+				ayarYazSorgu.run(alan.anahtar, String(form[alan.anahtar]).trim());
+			}
+			db.exec('COMMIT');
+		} catch (hata) {
+			db.exec('ROLLBACK');
+			throw hata;
+		}
+		return { yazilan: ESITLEME_AYARLARI.length };
+	}
+
+	/**
+	 * Eşitleme ekranının ihtiyaç duyduğu her şey tek çağrıda.
+	 *
+	 * Kuyruk satırlarının GÖVDESİ dışarı verilmiyor, yalnızca işlem adı ve
+	 * kaydın kimliği. Gövdede zaten hassas alan olamaz (beyaz liste), ama
+	 * bu ekranın sorusu "ne bekliyor", "içinde ne var" değil.
+	 */
+	function esitlemeOzeti(sinir = 50) {
+		const ayar = ayarlariOkuHam();
+		const sayac = db
+			.prepare(
+				`SELECT COUNT(*) AS adet, MIN(olusturuldu) AS en_eski
+				 FROM esitleme_kuyrugu WHERE gonderildi IS NULL`,
+			)
+			.get();
+
+		const islemler = db
+			.prepare(
+				`SELECT id, islem, govde, olusturuldu FROM esitleme_kuyrugu
+				 WHERE gonderildi IS NULL ORDER BY id LIMIT ?`,
+			)
+			.all(sinir)
+			.map((satir) => ({
+				sira: satir.id,
+				islem: satir.islem,
+				olusturuldu: satir.olusturuldu,
+				kayitId: kuyrukKaydininKimligi(satir.govde),
+			}));
+
+		return {
+			ayar: Object.fromEntries(
+				ESITLEME_AYARLARI.map((alan) => [alan.anahtar, ayar[alan.anahtar] ?? '']),
+			),
+			ayarHatalari: esitlemeAyariDogrula(ayar),
+			bekleyenSayisi: sayac.adet ?? 0,
+			enEski: sayac.en_eski ?? null,
+			sonCalisma: ayar['esitleme.son_calisma'] ?? null,
+			sonCekis: ayar['esitleme.son_cekis'] ?? null,
+			islemler,
+		};
+	}
+
+	/* -------------------------------------------------------------- */
+	/* Destek talepleri                                                */
+	/* -------------------------------------------------------------- */
+
+	/*
+	  Bu iki tablo sunucudan ÇEKİLİYOR, yerelde üretilmiyor. Tek istisna
+	  sahibin yazdığı yanıt: o hem kuyruğa hem de yerel kopyaya düşüyor,
+	  yoksa sahip kendi yazdığını bir sonraki eşitlemeye kadar göremezdi.
+	*/
+
+	const TALEP_SECIMI = `SELECT t.id, t.musteri_id, t.is_id, t.baslik, t.durum, t.oncelik,
+	                             t.olusturuldu, t.guncellendi, t.cekildi,
+	                             m.ad_soyad AS musteri_adi, i.ad AS is_adi
+	                      FROM talep_kopyasi t
+	                      LEFT JOIN musteri m ON m.id = t.musteri_id
+	                      LEFT JOIN is_kaydi i ON i.id = t.is_id`;
+
+	function talepListesi({ arama = '', durum = null, kapaliDahil = true } = {}) {
+		const satirlar = db
+			.prepare(
+				`${TALEP_SECIMI}
+				 ORDER BY t.guncellendi DESC`,
+			)
+			.all()
+			.map((t) => ({
+				...t,
+				mesajSayisi: db
+					.prepare('SELECT COUNT(*) AS adet FROM talep_mesaj_kopyasi WHERE talep_id = ?')
+					.get(t.id).adet,
+			}));
+
+		return satirlar
+			.filter((t) => (durum ? t.durum === durum : true))
+			.filter((t) => (kapaliDahil ? true : t.durum !== 'kapandi'))
+			.filter((t) => aramaEslesiyorMu([t.baslik, t.musteri_adi, t.is_adi, t.durum], arama));
+	}
+
+	function talepGetir(id) {
+		const talep = db.prepare(`${TALEP_SECIMI} WHERE t.id = ?`).get(id);
+		if (!talep) return null;
+		const mesajlar = db
+			.prepare(
+				'SELECT id, talep_id, yazan, metin, zaman FROM talep_mesaj_kopyasi WHERE talep_id = ? ORDER BY zaman, id',
+			)
+			.all(id);
+		return { ...talep, mesajlar };
+	}
+
+	/**
+	 * Sahibin yanıtı.
+	 *
+	 * Yanıt doğrudan sunucuya GİTMİYOR: kuyruğa `talep.yanit` olarak
+	 * düşüyor ve bir sonraki eşitlemede gidiyor. Bu ekranın ağ işi yok.
+	 *
+	 * Yerel kopyaya yazılan mesajın kimliği, kuyruğa yazılanla AYNI. Yanıt
+	 * gönderildikten sonra sunucu onu geri verdiğinde `talep_mesaj_kopyasi`
+	 * üzerindeki `ON CONFLICT (id)` aynı satırı güncelliyor, yani aynı yanıt
+	 * iki kez görünmüyor.
+	 */
+	function talepYanitla(talepId, metin) {
+		const talep = db.prepare('SELECT id FROM talep_kopyasi WHERE id = ?').get(talepId);
+		if (!talep) throw new Error('Talep bulunamadı.');
+
+		const hatalar = talepYanitiDogrula({ talepId, metin });
+		if (hatalar.length) throw new Error(hatalar.join(' '));
+
+		const govde = String(metin).trim();
+		const id = yeniKimlik();
+		const zaman = simdi();
+
+		db.exec('BEGIN');
+		try {
+			db.prepare(
+				`INSERT INTO talep_mesaj_kopyasi (id, talep_id, yazan, metin, zaman)
+				 VALUES (?, ?, 'sahip', ?, ?)`,
+			).run(id, talepId, govde, zaman);
+			kuyrugaYaz(talepYanitiEsitlemeKaydi({ id, talepId, metin: govde, zaman }));
+			db.exec('COMMIT');
+		} catch (hata) {
+			db.exec('ROLLBACK');
+			throw hata;
+		}
+		return { id, talepId, zaman };
+	}
+
+	/**
+	 * Talebin durumunu değiştirir (kapatmak da bu yoldan).
+	 *
+	 * Yerel kopya da güncelleniyor ki sahip sonucu hemen görsün. Gerçeğin
+	 * kaynağı yine sunucu: bir sonraki çekişte oradaki değer buraya yazılır.
+	 * Sıra bunu güvenli kılıyor, `esitle()` önce gönderiyor sonra çekiyor.
+	 */
+	function talepDurumu(talepId, durum) {
+		const talep = db.prepare('SELECT durum FROM talep_kopyasi WHERE id = ?').get(talepId);
+		if (!talep) throw new Error('Talep bulunamadı.');
+		if (!TALEP_DURUMLARI.some((d) => d.anahtar === durum)) {
+			throw new Error('Bilinmeyen talep durumu.');
+		}
+
+		db.exec('BEGIN');
+		try {
+			db.prepare('UPDATE talep_kopyasi SET durum = ? WHERE id = ?').run(durum, talepId);
+			kuyrugaYaz(talepDurumuEsitlemeKaydi({ id: talepId, durum }));
+			db.exec('COMMIT');
+		} catch (hata) {
+			db.exec('ROLLBACK');
+			throw hata;
+		}
+		return { id: talepId, durum };
+	}
+
 	return {
 		musteriListesi,
 		musteriGetir,
@@ -544,8 +740,25 @@ export function depoKur(db, kasa) {
 		aylar,
 		davetUret,
 		kuyrukBekleyenler,
+		esitlemeAyariYaz,
+		esitlemeOzeti,
+		talepListesi,
+		talepGetir,
+		talepYanitla,
+		talepDurumu,
 		sifrelemeVarMi: () => Boolean(kasa?.kullanilabilir?.()),
 	};
+}
+
+/** Kuyruk satırının gövdesinden yalnızca kaydın kimliğini çıkarır. Gövde
+ *  bozuksa kimlik yok sayılıyor; bir gösterim satırı yüzünden ekran
+ *  çökmemeli. */
+function kuyrukKaydininKimligi(govde) {
+	try {
+		return JSON.parse(govde)?.id ?? null;
+	} catch {
+		return null;
+	}
 }
 
 /** Boş metni `null`a çeviriyor. SQLite'ta boş dize ile NULL ayrı şeyler ve

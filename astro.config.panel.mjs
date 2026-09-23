@@ -78,6 +78,30 @@ export default defineConfig({
 	*/
 	devToolbar: { enabled: false },
 	/*
+	  ÇALIŞMA ZAMANI BAĞIMLILIKLARI ÇIKTIYA GÖMÜLÜYOR.
+
+	  Astro'nun node adapteri paketleri varsayılan olarak dışarıda bırakıyor
+	  ve sunucuda `node_modules` bekliyor. Sunucuda ilk çalıştırmada bu
+	  kendini `Cannot find package '@oslojs/encoding'` diye gösterdi:
+	  SimpleWebAuthn'ın bağımlılığı orada yoktu.
+
+	  Sunucuda npm kurulumu yönetmek yerine paketleri çıktının içine alıyoruz.
+	  Böylece dağıtım tek parça: `server/` ve `client/` klasörlerini kopyalamak
+	  yetiyor, sunucuda ne package.json ne node_modules gerekiyor. Bedeli
+	  çıktının birkaç yüz kilobayt büyümesi.
+	*/
+	vite: {
+		ssr: {
+			/*
+			  `true`, yani HEPSİ. Tek tek saymak denendi ve yanlış yoldu:
+			  önce `@oslojs/encoding` eksik çıktı, eklendi; sonra `zod` eksik
+			  çıktı. Liste tutmak, her bağımlılığın bağımlılığını elle takip
+			  etmek demek ve eksiği ancak sunucuda çöken bir servis gösteriyor.
+			*/
+			noExternal: true,
+		},
+	},
+	/*
 	  Astro'nun kendi CSP desteği (security.csp) BURADA KULLANILMIYOR: o,
 	  `<meta http-equiv>` etiketi basıyor ve tarayıcı iki politikanın
 	  KESİŞİMİNİ uyguluyor. Politika ara katmanda, tek yerde ve başlık olarak

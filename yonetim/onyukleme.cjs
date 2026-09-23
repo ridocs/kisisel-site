@@ -71,6 +71,22 @@ contextBridge.exposeInMainWorld('yonetim', {
 		bekleyen: () => cagir('kuyruk:bekleyen'),
 	},
 
+	esitleme: {
+		ozet: () => cagir('esitleme:ozet'),
+		ayarYaz: (form) => cagir('esitleme:ayar-yaz', form),
+		// Uzun sürebilir ve ağa çıkan tek çağrı bu. Hata metni olduğu gibi
+		// geliyor: SSH'ın söyledikleri kullanıcıya gösterilecek.
+		calistir: () => cagir('esitleme:calistir'),
+	},
+
+	talep: {
+		liste: (secenek) => cagir('talep:liste', secenek),
+		getir: (id) => cagir('talep:getir', id),
+		// Yanıt sunucuya değil, eşitleme kuyruğuna gidiyor.
+		yanitla: (talepId, metin) => cagir('talep:yanitla', talepId, metin),
+		durum: (talepId, durum) => cagir('talep:durum', talepId, durum),
+	},
+
 	panoyaYaz: (metin) => cagir('pano:yaz', metin),
 	onaySor: (baslik, mesaj) => cagir('onay:sor', baslik, mesaj),
 

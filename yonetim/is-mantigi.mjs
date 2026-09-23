@@ -396,6 +396,156 @@ export function davetEsitlemeKaydi({ id, musteriId, anahtarKarmasiHex, sonKullan
 }
 
 /* ------------------------------------------------------------------ */
+/* Destek talepleri                                                    */
+/* ------------------------------------------------------------------ */
+
+/*
+  Talebin gerçeğin kaynağı SUNUCUDAKİ tablo; yereldeki `talep_kopyasi`
+  yalnızca çekilmiş bir kopya. Bu yüzden sahibin yazdığı yanıt doğrudan
+  sunucuya gitmiyor: kuyruğa `talep.yanit` işlemi olarak düşüyor ve bir
+  sonraki eşitlemede gidiyor. Aynısı durum değişikliği için de geçerli.
+*/
+
+/** Talep durumları. Sunucudan başka bir değer gelirse listede aranmıyor,
+ *  ham hâliyle gösteriliyor; sahibin seçebileceği durumlar bunlar. */
+export const TALEP_DURUMLARI = [
+	{ anahtar: 'acik', ad: 'Açık' },
+	{ anahtar: 'yanit_bekliyor', ad: 'Yanıt bekliyor' },
+	{ anahtar: 'islemde', ad: 'İşlemde' },
+	{ anahtar: 'kapandi', ad: 'Kapandı' },
+];
+
+/** Öncelik alanı sunucudan serbest metin geliyor; bilinenler çevriliyor. */
+export const TALEP_ONCELIKLERI = [
+	{ anahtar: 'dusuk', ad: 'Düşük' },
+	{ anahtar: 'normal', ad: 'Normal' },
+	{ anahtar: 'yuksek', ad: 'Yüksek' },
+];
+
+/*
+  `veri/esitleme.mjs` içindeki içe alma sınırıyla aynı sayı. Orada sunucudan
+  GELEN metin kırpılıyor, burada sahibin YAZDIĞI metin reddediliyor: sessizce
+  kırpılan bir yanıt, gönderildiğini sanılan yarım cümle demek olurdu.
+*/
+export const TALEP_METIN_SINIRI = 20000;
+
+/** Sahibin yazdığı yanıtı doğrular. Dönen dizi boşsa yanıt geçerli. */
+export function talepYanitiDogrula({ talepId, metin }) {
+	const hatalar = [];
+	if (!String(talepId ?? '').trim()) hatalar.push('Yanıt bir talebe bağlı olmalı.');
+	const govde = String(metin ?? '').trim();
+	if (govde === '') hatalar.push('Yanıt boş bırakılamaz.');
+	else if (govde.length > TALEP_METIN_SINIRI) {
+		hatalar.push(`Yanıt ${TALEP_METIN_SINIRI} karakteri aşamaz.`);
+	}
+	return hatalar;
+}
+
+/** Sahibin yanıtının sunucuya çıkan hâli. Yazan bilgisi gitmiyor: sunucu
+ *  bu kanaldan gelen her mesajı zaten sahibin yazdığını biliyor. */
+export function talepYanitiEsitlemeKaydi({ id, talepId, metin, zaman }) {
+	return {
+		islem: 'talep.yanit',
+		govde: kuyrukGovdesiSuz('talep.yanit', {
+			id,
+			talep_id: talepId,
+			metin,
+			zaman,
+		}),
+	};
+}
+
+/** Talebin yeni durumunun sunucuya çıkan hâli: kimlik ve durum, başka hiçbir şey. */
+export function talepDurumuEsitlemeKaydi({ id, durum }) {
+	return {
+		islem: 'talep.durum',
+		govde: kuyrukGovdesiSuz('talep.durum', { id, durum }),
+	};
+}
+
+/* ------------------------------------------------------------------ */
+/* Eşitleme ayarları                                                   */
+/* ------------------------------------------------------------------ */
+
+/*
+  SUNUCU BİLGİSİ DEPODA YOK. Adres, uzak yollar ve anahtar dosyasının yeri
+  yerel veritabanının `ayar` tablosunda duruyor; buraya yalnızca alanların
+  ADI ve etiketi yazılı, değerleri değil. Depo herkese açık.
+
+  Anahtar listesi `veri/esitleme-ssh.mjs` içindeki `AYAR_ANAHTARLARI` ile
+  birebir aynı olmak zorunda. O dosya SQLite ve alt süreç çağırıyor, bu
+  dosya ise saf kalmalı, bu yüzden içe aktarılmıyor; ikisinin aynı kaldığını
+  bir test bekçilik ediyor (`yonetim/talep-esitleme.test.mjs`).
+*/
+export const ESITLEME_AYARLARI = [
+	{
+		anahtar: 'esitleme.sunucu',
+		etiket: 'Sunucu adresi',
+		ornek: 'kullanici@makine',
+		ipucu: 'SSH ile bağlanılan kullanıcı ve makine.',
+	},
+	{
+		anahtar: 'esitleme.uzak_veri',
+		etiket: 'Uzak veri klasörü',
+		ornek: '/srv/panel/veri',
+		ipucu: 'Sunucudaki betiklerin (sunucu-ice-al.mjs) durduğu klasör.',
+	},
+	{
+		anahtar: 'esitleme.uzak_vt',
+		etiket: 'Uzak veritabanı yolu',
+		ornek: '/srv/panel/panel.db',
+		ipucu: 'Sunucudaki panel veritabanı dosyası.',
+	},
+	{
+		anahtar: 'esitleme.ssh_anahtari',
+		etiket: 'SSH özel anahtar yolu',
+		ornek: 'C:\\Users\\ad\\.ssh\\id_ed25519',
+		ipucu: 'Bu bilgisayardaki özel anahtar dosyası. Anahtarın kendisi değil, yolu.',
+	},
+];
+
+/*
+  Kabukta anlam taşıyan karakterler baştan reddediliyor: uzak yollar ve
+  sunucu adı SSH üzerinden uzakta bir kabuğa giriyor.
+
+  Bu iki desen `veri/esitleme-ssh.mjs` içindekilerle bilerek aynı. Son söz
+  ORADA: bu dosyadaki denetim, kullanıcı daha kaydete basmadan hatayı
+  göstermek için. Arayüzün doğrulamasına güvenip oradakini kaldırmak,
+  kapıyı içeriden kilitleyip anahtarı dışarıda bırakmak olurdu.
+
+  SSH anahtar yolu bu denetimden GEÇMİYOR, çünkü Windows'ta o yol ters eğik
+  çizgi ve iki nokta içeriyor. O değer uzakta bir kabuğa değil, yerel `ssh`
+  komutuna argüman olarak veriliyor.
+*/
+const AYAR_GUVENLI_YOL = /^[A-Za-z0-9._/-]+$/;
+const AYAR_GUVENLI_SUNUCU = /^[A-Za-z0-9._-]+@[A-Za-z0-9._-]+$/;
+
+/** Eşitleme ayarlarını doğrular. Dönen dizi boşsa ayarlar geçerli. */
+export function esitlemeAyariDogrula(ayar) {
+	const hatalar = [];
+	for (const alan of ESITLEME_AYARLARI) {
+		if (String(ayar?.[alan.anahtar] ?? '').trim() === '') {
+			hatalar.push(`${alan.etiket} boş bırakılamaz.`);
+		}
+	}
+	if (hatalar.length) return hatalar;
+
+	const sunucu = String(ayar['esitleme.sunucu']).trim();
+	if (!AYAR_GUVENLI_SUNUCU.test(sunucu)) {
+		hatalar.push('Sunucu adresi "kullanici@makine" biçiminde olmalı.');
+	}
+	for (const anahtar of ['esitleme.uzak_veri', 'esitleme.uzak_vt']) {
+		if (!AYAR_GUVENLI_YOL.test(String(ayar[anahtar]).trim())) {
+			const alan = ESITLEME_AYARLARI.find((a) => a.anahtar === anahtar);
+			hatalar.push(
+				`${alan.etiket} yalnızca harf, rakam, nokta, alt çizgi, eğik çizgi ve tire içerebilir.`,
+			);
+		}
+	}
+	return hatalar;
+}
+
+/* ------------------------------------------------------------------ */
 /* Doğrulama                                                           */
 /* ------------------------------------------------------------------ */
 

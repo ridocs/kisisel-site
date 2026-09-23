@@ -16,10 +16,14 @@
 */
 
 import {
+	ESITLEME_AYARLARI,
 	IS_DURUMLARI,
 	MUSTERI_DURUMLARI,
 	ODEME_TURLERI,
+	TALEP_DURUMLARI,
+	TALEP_ONCELIKLERI,
 	buAy,
+	esitlemeAyariDogrula,
 	isGirdisiHazirla,
 	kurusBicimle,
 	kurusGirdiye,
@@ -73,6 +77,36 @@ function gunBicim(deger) {
 	return gun ? `${gun}.${ay}.${yil}` : String(deger);
 }
 
+/**
+ * Tam ISO damgasını yerel saate çevirir: "12.09.2026 14:05".
+ *
+ * Gün alanlarında `gunBicim` kullanılıyor, çünkü orada `new Date` saat
+ * dilimi yüzünden günü bir geri alabiliyor. Burada o tuzak yok: damga
+ * saati ve dilimi kendi taşıyor, dönüştürülmesi gereken de tam olarak bu.
+ */
+function anBicim(deger) {
+	if (!deger) return '';
+	const metin = String(deger);
+	if (!metin.includes('T')) return gunBicim(metin);
+	const an = new Date(metin);
+	if (Number.isNaN(an.getTime())) return metin;
+	const iki = (sayi) => String(sayi).padStart(2, '0');
+	return `${iki(an.getDate())}.${iki(an.getMonth() + 1)}.${an.getFullYear()} ${iki(an.getHours())}:${iki(an.getMinutes())}`;
+}
+
+/** "3 saat önce" gibi kaba bir yaş. Kesin an zaten yanında yazıyor. */
+function gecenSure(damga) {
+	if (!damga) return '';
+	const an = new Date(damga).getTime();
+	if (Number.isNaN(an)) return '';
+	const dakika = Math.max(0, Math.round((Date.now() - an) / 60000));
+	if (dakika < 1) return 'az önce';
+	if (dakika < 60) return `${dakika} dakika önce`;
+	const saat = Math.round(dakika / 60);
+	if (saat < 24) return `${saat} saat önce`;
+	return `${Math.round(saat / 24)} gün önce`;
+}
+
 const AY_ADLARI = [
 	'Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran',
 	'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık',
@@ -108,6 +142,16 @@ const durum = {
 	  ya da uygulama kapanınca kayboluyor.
 	*/
 	davet: null,
+	talepArama: '',
+	talepDurumSuzgeci: '',
+	acikTalepId: null,
+	/*
+	  Eşitlemenin son çalışmasından kalanlar. Hata metni OLDUĞU GİBİ
+	  tutuluyor: SSH'ın söylediği şey kullanıcıya gösterilecek.
+	*/
+	esitlemeSuruyor: false,
+	esitlemeSonucu: null,
+	esitlemeHatasi: null,
 };
 
 const dugumler = {
@@ -1191,6 +1235,443 @@ async function davetleriCiz() {
 }
 
 /* ------------------------------------------------------------------ */
+/* Ekran: Eşitleme                                                     */
+/* ------------------------------------------------------------------ */
+
+function esitlemeAyarFormuAc(ozet) {
+	formAc({
+		baslik: 'Eşitleme ayarları',
+		kaydetEtiketi: 'Ayarları kaydet',
+		alanlar: [
+			{
+				tip: 'aciklama',
+				metin:
+					'Bu dört değer yalnızca bu bilgisayardaki veritabanında duruyor. Depoya ' +
+					'yazılmıyor, dışarı gönderilmiyor: depo herkese açık ve sunucunun adresi ' +
+					'orada işi olan bir bilgi değil.',
+			},
+			...ESITLEME_AYARLARI.map((alan) => ({
+				ad: alan.anahtar,
+				etiket: alan.etiket,
+				deger: ozet.ayar[alan.anahtar] ?? '',
+				ornek: alan.ornek,
+				ipucu: alan.ipucu,
+				genis: true,
+			})),
+		],
+		kaydet: async (degerler) => {
+			const hatalar = esitlemeAyariDogrula(degerler);
+			if (hatalar.length) return hatalar;
+			const sonuc = await guvenli(
+				() => kapi.esitleme.ayarYaz(degerler),
+				'Eşitleme ayarları kaydedildi.',
+			);
+			if (!sonuc) return ['Kaydedilemedi.'];
+			await ekraniCiz();
+			return null;
+		},
+	});
+}
+
+async function esitlemeyiCalistir() {
+	if (durum.esitlemeSuruyor) return;
+	durum.esitlemeSuruyor = true;
+	durum.esitlemeSonucu = null;
+	durum.esitlemeHatasi = null;
+	bildir('Eşitleme sürüyor. Sunucuya bağlanılıyor, bu bir dakika sürebilir.');
+	await ekraniCiz();
+
+	try {
+		durum.esitlemeSonucu = await kapi.esitleme.calistir();
+		const g = durum.esitlemeSonucu.gonderim;
+		const c = durum.esitlemeSonucu.cekis;
+		bildir(
+			`Eşitleme bitti: ${g.gonderilen} işlem gönderildi, ${c.yazilan} talep çekildi.`,
+		);
+	} catch (hata) {
+		/*
+		  Hata YUTULMUYOR. `guvenli` kullanılmadı çünkü bildirim çubuğu tek
+		  satır: SSH'ın çok satırlı çıktısı ekranda, olduğu gibi duruyor.
+		*/
+		durum.esitlemeHatasi = hata.message;
+		bildir('Eşitleme yapılamadı. Hatanın tamamı aşağıda.', true);
+	} finally {
+		durum.esitlemeSuruyor = false;
+		await ekraniCiz();
+	}
+}
+
+async function esitlemeCiz() {
+	const ozet = await guvenli(() => kapi.esitleme.ozet());
+	if (!ozet) return;
+
+	dugumler.araclar.replaceChildren(
+		el('button', {
+			sinif: 'dugme',
+			metin: 'Ayarları düzenle',
+			disabled: durum.esitlemeSuruyor,
+			tikla: () => esitlemeAyarFormuAc(ozet),
+		}),
+		el('button', {
+			sinif: 'dugme birincil',
+			metin: durum.esitlemeSuruyor ? 'Eşitleniyor…' : 'Eşitle',
+			disabled: durum.esitlemeSuruyor,
+			tikla: esitlemeyiCalistir,
+		}),
+	);
+
+	const parcalar = [
+		el('dl', { sinif: 'olcum-izgara' }, [
+			olcum(
+				'Bekleyen işlem',
+				String(ozet.bekleyenSayisi),
+				ozet.bekleyenSayisi > 0 ? 'bekleyen' : 'olumlu',
+			),
+			olcum('En eski bekleyen', ozet.enEski ? gecenSure(ozet.enEski) : 'yok'),
+			olcum('Son eşitleme', ozet.sonCalisma ? anBicim(ozet.sonCalisma) : 'hiç yapılmadı'),
+			olcum('Son çekilen talep damgası', ozet.sonCekis ? anBicim(ozet.sonCekis) : 'yok'),
+		]),
+		el('div', { sinif: 'bosluk' }),
+	];
+
+	if (durum.esitlemeSuruyor) {
+		parcalar.push(
+			el('div', { sinif: 'kart' }, [
+				el('h2', { metin: 'Eşitleme sürüyor' }),
+				el('p', {
+					sinif: 'kucuk',
+					metin:
+						'Önce kuyruktakiler gönderiliyor, sunucu onayladıktan sonra talepler ' +
+						'çekiliyor. Bağlantı kurulamazsa en geç bir dakikada hata döner.',
+				}),
+			]),
+		);
+	}
+
+	if (durum.esitlemeHatasi) {
+		parcalar.push(
+			el('div', { sinif: 'kart' }, [
+				el('h2', { metin: 'Son eşitleme hatası' }),
+				el('pre', { sinif: 'ham-hata', metin: durum.esitlemeHatasi }),
+				el('p', {
+					sinif: 'kucuk',
+					metin:
+						'Mesaj kısaltılmadı, SSH ne dediyse o. "Permission denied" anahtarın ' +
+						'kabul edilmediğini, "Host key verification failed" sunucunun ' +
+						'tanınmadığını, "Connection timed out" makineye ulaşılamadığını söyler. ' +
+						'Kuyruktaki işlemler duruyor, hiçbiri kaybolmadı.',
+				}),
+			]),
+		);
+	}
+
+	if (durum.esitlemeSonucu) {
+		const g = durum.esitlemeSonucu.gonderim;
+		const c = durum.esitlemeSonucu.cekis;
+		parcalar.push(
+			el('div', { sinif: 'kart' }, [
+				el('h2', { metin: 'Son eşitlemenin sonucu' }),
+				el('p', {
+					metin: g.bosKuyruk
+						? 'Gönderilecek işlem yoktu.'
+						: `${g.gonderilen} işlem gönderildi ve gönderildi olarak işaretlendi.`,
+				}),
+				el('p', {
+					metin: `${c.yazilan} talep yerel kopyaya yazıldı${c.atlanan ? `, ${c.atlanan} kayıt beklenen biçimde olmadığı için atlandı` : ''}.`,
+				}),
+			]),
+		);
+	}
+
+	const ayarSatirlari = ESITLEME_AYARLARI.map((alan) =>
+		el('div', { sinif: 'ayar-satiri' }, [
+			el('span', { sinif: 'ayar-etiketi', metin: alan.etiket }),
+			el('span', {
+				sinif: ozet.ayar[alan.anahtar] ? 'ayar-degeri' : 'ayar-degeri eksik',
+				metin: ozet.ayar[alan.anahtar] || 'girilmemiş',
+			}),
+		]),
+	);
+
+	parcalar.push(
+		el('div', { sinif: 'kart' }, [
+			el('h2', { metin: 'Bağlantı ayarları' }),
+			el('div', { sinif: 'uyari-kutusu' }, [
+				el('strong', { metin: 'Bu değerler depoya asla yazılmaz. ' }),
+				'Sunucu adresi, uzak yollar ve anahtar dosyasının yeri yalnızca bu ' +
+					'bilgisayardaki veritabanının ayar tablosunda duruyor. Depo herkese açık; ' +
+					'oraya yazılan bir adres bir daha geri alınamaz.',
+			]),
+			...ayarSatirlari,
+			ozet.ayarHatalari.length
+				? el('p', {
+						sinif: 'kucuk ust-bosluk hata-metni',
+						metin: `Eşitleme şu anda çalışmaz: ${ozet.ayarHatalari.join(' ')}`,
+					})
+				: el('p', {
+						sinif: 'kucuk ust-bosluk',
+						metin:
+							'SSH anahtarı parola istemeyecek biçimde hazır olmalı: bağlantı ' +
+							'BatchMode ile kuruluyor, parola sorulursa hata döner.',
+					}),
+		]),
+		el('div', { sinif: 'kart' }, [
+			el('h2', { metin: 'Kuyrukta bekleyenler' }),
+			el('p', {
+				sinif: 'kucuk',
+				metin:
+					'Sıradaki işlemler, eskiden yeniye. Gövdeleri burada gösterilmiyor; ' +
+					'içlerinde ne olduğu Davetler ekranında görülebilir.',
+			}),
+			tablo(
+				[
+					{ ad: 'Sıra', sinif: 'sayi' },
+					{ ad: 'İşlem' },
+					{ ad: 'Kayıt kimliği' },
+					{ ad: 'Eklendi' },
+				],
+				ozet.islemler.map((k) => [
+					el('td', { sinif: 'sayi', metin: String(k.sira) }),
+					el('td', {}, [el('span', { sinif: 'etiket', metin: k.islem })]),
+					el('td', { sinif: 'kuyruk-govde', metin: k.kayitId ?? '' }),
+					el('td', { metin: anBicim(k.olusturuldu) }),
+				]),
+				'Kuyruk boş, gönderilecek bir şey yok.',
+			),
+		]),
+	);
+
+	dugumler.icerik.replaceChildren(...parcalar);
+}
+
+/* ------------------------------------------------------------------ */
+/* Ekran: Destek talepleri                                             */
+/* ------------------------------------------------------------------ */
+
+const talepDurumAdi = (deger) => adiniBul(TALEP_DURUMLARI, deger);
+const talepOncelikAdi = (deger) => (deger ? adiniBul(TALEP_ONCELIKLERI, deger) : '');
+
+async function talepleriCiz() {
+	dugumler.araclar.replaceChildren(
+		secim(
+			'Durum',
+			[
+				{ deger: '', ad: 'Tüm durumlar' },
+				...TALEP_DURUMLARI.map((d) => ({ deger: d.anahtar, ad: d.ad })),
+			],
+			durum.talepDurumSuzgeci,
+			(deger) => {
+				durum.talepDurumSuzgeci = deger;
+				tazele();
+			},
+		),
+		el('input', {
+			tip: 'search',
+			sinif: 'ara',
+			placeholder: 'Başlık, müşteri, iş…',
+			deger: durum.talepArama,
+			'aria-label': 'Destek talebi ara',
+			girdi: (o) => {
+				durum.talepArama = o.target.value;
+				tazele();
+			},
+		}),
+		el('button', {
+			sinif: 'dugme',
+			metin: 'Eşitleme ekranı',
+			tikla: () => ekranaGit('esitleme'),
+		}),
+	);
+
+	const kap = el('div');
+	dugumler.icerik.replaceChildren(kap);
+	await tazele();
+
+	async function tazele() {
+		const liste =
+			(await guvenli(() =>
+				kapi.talep.liste({
+					arama: durum.talepArama,
+					durum: durum.talepDurumSuzgeci || null,
+				}),
+			)) ?? [];
+
+		kap.replaceChildren(
+			tablo(
+				[
+					{ ad: 'Müşteri' },
+					{ ad: 'Başlık' },
+					{ ad: 'Durum' },
+					{ ad: 'Öncelik' },
+					{ ad: 'Mesaj', sinif: 'sayi' },
+					{ ad: 'Son güncelleme' },
+					{ ad: '', sinif: 'sayi' },
+				],
+				liste.map((t) => [
+					el('td', {}, [
+						el('strong', { metin: t.musteri_adi ?? 'Bağlanmamış müşteri' }),
+						t.is_adi ? el('span', { sinif: 'alt-metin', metin: t.is_adi }) : null,
+					]),
+					el('td', { metin: t.baslik }),
+					el('td', {}, [el('span', { sinif: 'etiket', metin: talepDurumAdi(t.durum) })]),
+					el('td', { metin: talepOncelikAdi(t.oncelik) }),
+					el('td', { sinif: 'sayi', metin: String(t.mesajSayisi) }),
+					el('td', {}, [
+						el('span', { metin: anBicim(t.guncellendi) }),
+						el('span', { sinif: 'alt-metin', metin: gecenSure(t.guncellendi) }),
+					]),
+					el('td', { sinif: 'islem' }, [
+						el('button', {
+							sinif: 'dugme kucuk',
+							metin: 'Aç',
+							tikla: () => {
+								durum.acikTalepId = t.id;
+								ekranaGit('talep-detay');
+							},
+						}),
+					]),
+				]),
+				durum.talepArama || durum.talepDurumSuzgeci
+					? 'Bu süzgeçlere uyan talep yok.'
+					: 'Çekilmiş destek talebi yok. Eşitleme ekranından çekebilirsiniz.',
+			),
+			el('p', {
+				sinif: 'kucuk ust-bosluk',
+				metin:
+					'Talepler sunucudan çekiliyor ve burada yalnızca kopyası duruyor. Yazdığınız ' +
+					'yanıt doğrudan sunucuya gitmez, eşitleme kuyruğuna girer.',
+			}),
+		);
+	}
+}
+
+async function talepDetayiniCiz() {
+	if (!durum.acikTalepId) {
+		ekranaGit('talepler');
+		return;
+	}
+	const talep = await guvenli(() => kapi.talep.getir(durum.acikTalepId));
+	if (!talep) {
+		ekranaGit('talepler');
+		return;
+	}
+
+	const kapaliMi = talep.durum === 'kapandi';
+	const musteriAdi = talep.musteri_adi ?? 'Müşteri';
+
+	dugumler.baslik.textContent = talep.baslik;
+	dugumler.araclar.replaceChildren(
+		...[
+			el('span', { sinif: 'etiket', metin: musteriAdi }),
+			el('span', { sinif: 'etiket', metin: talepDurumAdi(talep.durum) }),
+			kapaliMi
+				? null
+				: el('button', {
+						sinif: 'dugme',
+						metin: 'Talebi kapat',
+						tikla: async () => {
+							const onay = await kapi.onaySor(
+								'Talep kapatılsın mı?',
+								`"${talep.baslik}" talebi kapatılacak. Bu değişiklik eşitleme kuyruğuna ` +
+									'yazılır ve bir sonraki eşitlemede sunucuya gider.',
+							);
+							if (!onay) return;
+							await guvenli(
+								() => kapi.talep.durum(talep.id, 'kapandi'),
+								'Talep kapatıldı. Değişiklik eşitleme kuyruğunda bekliyor.',
+							);
+							await ekraniCiz();
+						},
+					}),
+			el('button', {
+				sinif: 'dugme sade',
+				metin: 'Listeye dön',
+				tikla: () => ekranaGit('talepler'),
+			}),
+		].filter(Boolean),
+	);
+
+	const bilgi = el('div', { sinif: 'kart' }, [
+		el('h2', { metin: 'Talep bilgisi' }),
+		el('p', {
+			sinif: 'kucuk',
+			metin: [
+				`Durum: ${talepDurumAdi(talep.durum)}`,
+				talep.oncelik ? `Öncelik: ${talepOncelikAdi(talep.oncelik)}` : null,
+				talep.is_adi ? `İş: ${talep.is_adi}` : null,
+				`Açılış: ${anBicim(talep.olusturuldu)}`,
+				`Son güncelleme: ${anBicim(talep.guncellendi)}`,
+				`Çekilme: ${anBicim(talep.cekildi)}`,
+			]
+				.filter(Boolean)
+				.join(' · '),
+		}),
+	]);
+
+	const yazisma = el(
+		'div',
+		{ sinif: 'yazisma' },
+		talep.mesajlar.length
+			? talep.mesajlar.map((m) => {
+					const sahibinMi = m.yazan === 'sahip';
+					return el('article', { sinif: `mesaj ${sahibinMi ? 'sahip' : 'musteri'}` }, [
+						el('p', {
+							sinif: 'mesaj-basligi',
+							metin: `${sahibinMi ? 'Siz' : musteriAdi} · ${anBicim(m.zaman)}`,
+						}),
+						el('p', { sinif: 'mesaj-govde', metin: m.metin }),
+					]);
+				})
+			: [el('p', { sinif: 'bos', metin: 'Bu talepte henüz mesaj yok.' })],
+	);
+
+	const yanitAlani = el('textarea', {
+		rows: 4,
+		placeholder: kapaliMi ? 'Talep kapalı.' : 'Yanıtınız…',
+		'aria-label': 'Yanıt metni',
+		disabled: kapaliMi,
+	});
+
+	const yanitKarti = el('div', { sinif: 'kart' }, [
+		el('h2', { metin: 'Yanıt yaz' }),
+		yanitAlani,
+		el('div', { sinif: 'dugme-sirasi' }, [
+			el('button', {
+				sinif: 'dugme birincil',
+				metin: 'Yanıtı kuyruğa ekle',
+				disabled: kapaliMi,
+				tikla: async () => {
+					const metin = yanitAlani.value.trim();
+					if (metin === '') {
+						bildir('Yanıt boş bırakılamaz.', true);
+						return;
+					}
+					const sonuc = await guvenli(() => kapi.talep.yanitla(talep.id, metin));
+					if (!sonuc) return;
+					yanitAlani.value = '';
+					bildir('Yanıt eşitleme kuyruğuna eklendi. Bir sonraki eşitlemede gidecek.');
+					await ekraniCiz();
+				},
+			}),
+		]),
+		el('p', {
+			sinif: 'kucuk ust-bosluk',
+			metin: kapaliMi
+				? 'Kapalı talebe yanıt yazılmıyor. Müşteri yeniden yazarsa talep sunucuda açılır.'
+				: 'Yanıt doğrudan sunucuya gitmiyor: kuyruğa yazılıyor ve bir sonraki ' +
+					'eşitlemede gidiyor. Aşağıda kendi yazdığınızı hemen görürsünüz, çünkü ' +
+					'yerel kopyaya da eklendi.',
+		}),
+	]);
+
+	dugumler.icerik.replaceChildren(
+		bilgi,
+		el('div', { sinif: 'kart' }, [el('h2', { metin: 'Yazışma' }), yazisma]),
+		yanitKarti,
+	);
+}
+
+/* ------------------------------------------------------------------ */
 /* Yönlendirme                                                         */
 /* ------------------------------------------------------------------ */
 
@@ -1202,6 +1683,9 @@ const EKRANLAR = {
 	revizeler: { baslik: 'Revizeler', ciz: revizeleriCiz },
 	istatistik: { baslik: 'İstatistikler', ciz: istatistikCiz },
 	davetler: { baslik: 'Davetler', ciz: davetleriCiz },
+	esitleme: { baslik: 'Eşitleme', ciz: esitlemeCiz },
+	talepler: { baslik: 'Destek talepleri', ciz: talepleriCiz },
+	'talep-detay': { baslik: 'Destek talebi', ciz: talepDetayiniCiz, gizli: true },
 };
 
 async function ekraniCiz() {
