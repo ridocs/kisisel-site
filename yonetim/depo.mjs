@@ -16,14 +16,26 @@ import {
 	OTOMATIK_ANAHTARLARI,
 	TALEP_DURUMLARI,
 	aramaEslesiyorMu,
+	asamaDogrula,
+	asamaEsitlemeKaydi,
+	asamaSilmeKaydi,
 	davetEsitlemeKaydi,
+	dosyaEsitlemeKaydi,
+	dosyaSilmeKaydi,
 	esitlemeAyariDogrula,
 	isEsitlemeKaydi,
 	isHesabi,
+	isMesajiDogrula,
+	isMesajiEsitlemeKaydi,
+	isSilmeKaydi,
 	istatistikHesapla,
 	kuyrukGovdesiSuz,
 	musteriEsitlemeKaydi,
+	odemeEsitlemeKaydi,
+	odemeSilmeKaydi,
 	otomatikAralikDuzelt,
+	otomatikAsamaKimligi,
+	otomatikAsamaTanimi,
 	otomatikAyariDogrula,
 	talepDurumuEsitlemeKaydi,
 	talepYanitiDogrula,
@@ -55,8 +67,15 @@ export class SifrelemeYok extends Error {
  *        Kuyruğa her kayıt düştüğünde çağrılıyor, işlem adıyla. Otomatik
  *        eşitleme bunu dinliyor. Verilmezse hiçbir şey değişmiyor: depo
  *        Electron'suz da, eşitlemesiz de çalışmaya devam ediyor.
+ * @param secenekler.dosyaTasima
+ *        Dosya paylaşımının DIŞARIDAN verilen iki işlevi:
+ *        `incele(yerelYol)` ve `gonder(yerelYol, depoAdi)`. Kasa ile aynı
+ *        gerekçe: uygulamada gerçek `veri/dosya-gonder.mjs`, testte sahte.
+ *        Böylece "gönderim başarısızken künye kuyruğa yazılmıyor" kuralı
+ *        gerçek bir scp çağrılmadan sınanabiliyor. Verilmezse dosya
+ *        ekleme ve paylaşma çağrıları hata veriyor, ötekiler çalışıyor.
  */
-export function depoKur(db, kasa, { kuyrukDinleyici = null } = {}) {
+export function depoKur(db, kasa, { kuyrukDinleyici = null, dosyaTasima = null } = {}) {
 	/* -------------------------------------------------------------- */
 	/* Şifreli alanlar                                                 */
 	/* -------------------------------------------------------------- */
@@ -317,6 +336,15 @@ export function depoKur(db, kasa, { kuyrukDinleyici = null } = {}) {
 		const id = kayit.id || yeniKimlik();
 		const yeniMi = !kayit.id;
 
+		/*
+		  Önceki durum GÜNCELLEMEDEN ÖNCE okunuyor. Sonra okunsaydı yeni
+		  değeri bulur, "durum değişti mi" sorusu hep hayır cevabını verir ve
+		  otomatik aşama hiç düşmezdi.
+		*/
+		const oncekiDurum = yeniMi
+			? null
+			: (db.prepare('SELECT durum FROM is_kaydi WHERE id = ?').get(id)?.durum ?? null);
+
 		db.exec('BEGIN');
 		try {
 			if (yeniMi) {
@@ -361,13 +389,291 @@ export function depoKur(db, kasa, { kuyrukDinleyici = null } = {}) {
 					id,
 				);
 			}
-			// Sunucuya yalnızca ad ve durum gidiyor; tutar, oran ve özet burada kalıyor.
+			/*
+			  Sunucuya ad, durum, özet, tutar, para birimi ve hedef teslim
+			  tarihi gidiyor. Ön ödeme oranı, tür, başlangıç ve tekrar eden
+			  işaretçisi burada kalıyor (bkz. `isEsitlemeKaydi`).
+
+			  `teslim` sütunu hedef teslim tarihinin kendisi: şemada zaten
+			  duruyordu, müşteriye söylenen tarih olarak o kullanılıyor.
+			*/
 			kuyrugaYaz(
 				isEsitlemeKaydi({
 					id,
 					musteri_id: kayit.musteri_id,
 					ad: String(kayit.ad).trim(),
 					durum: kayit.durum,
+					ozet: kayit.ozet,
+					tutar_kurus: kayit.tutar_kurus,
+					para_birimi: 'TRY',
+					teslim_hedefi: kayit.teslim,
+				}),
+			);
+
+			/*
+			  Durum değiştiyse ilerleme ağacına otomatik bir aşama düşüyor.
+			  Yeni kayıtta "önceki durum" yok, yani ilk aşama da buradan
+			  geliyor: işin ağacı hiç boş başlamıyor.
+			*/
+			if (kayit.durum !== oncekiDurum) otomatikAsamaDus(id, kayit.durum, an);
+
+			db.exec('COMMIT');
+		} catch (hata) {
+			db.exec('ROLLBACK');
+			throw hata;
+		}
+		return { id };
+	}
+
+	/**
+	 * İşi siler.
+	 *
+	 * Ödeme, revize, aşama, dosya ve mesaj satırları yerelde ON DELETE
+	 * CASCADE ile gidiyor. Sunucuda da gitmesi için kuyruğa `is.sil`
+	 * yazılıyor: iş özeti oraya çıktığı için silinmesi de oraya bildirilmek
+	 * zorunda, yoksa müşterinin panelinde silinmiş bir iş ödemeleriyle
+	 * birlikte durmaya devam ederdi.
+	 */
+	function isSil(id) {
+		db.exec('BEGIN');
+		try {
+			db.prepare('DELETE FROM is_kaydi WHERE id = ?').run(id);
+			kuyrugaYaz(isSilmeKaydi(id));
+			db.exec('COMMIT');
+		} catch (hata) {
+			db.exec('ROLLBACK');
+			throw hata;
+		}
+		return { id };
+	}
+
+	/* -------------------------------------------------------------- */
+	/* İlerleme aşamaları                                              */
+	/* -------------------------------------------------------------- */
+
+	/*
+	  Ağaç iki kaynaktan besleniyor: işin durumu değiştikçe düşen otomatik
+	  aşamalar ve sahibin elle eklediği ara adımlar. İkisi de aynı tabloda
+	  duruyor ve aynı yoldan sunucuya gidiyor; ayıran tek şey `kaynak`.
+
+	  PAYLAŞILMAYAN AŞAMA KUYRUĞA HİÇ YAZILMIYOR. Gizlilik burada, sunucunun
+	  iyi niyetinde değil: gönderilmemiş bir satır sunucuda yok demektir.
+	  Paylaşılmış bir aşamanın işareti sonradan kaldırılırsa `asama.sil`
+	  yazılıyor, yoksa müşteri geri çekilen adımı görmeye devam ederdi.
+	*/
+
+	const asamaGetirSorgu = db.prepare('SELECT * FROM is_asama WHERE id = ?');
+
+	function asamaListesi(isId) {
+		return db
+			.prepare(
+				'SELECT * FROM is_asama WHERE is_id = ? ORDER BY sira, tarih, olusturuldu',
+			)
+			.all(isId);
+	}
+
+	/** Tek aşamayı yazar ve kuyruk kararını verir. AÇIK BİR İŞLEMİN İÇİNDEN
+	 *  çağrılıyor; kendi başına BEGIN açmıyor. */
+	function asamaSatiriYaz(kayit, an) {
+		const eski = asamaGetirSorgu.get(kayit.id);
+		const paylasildi = Number(kayit.paylasildi) === 1 ? 1 : 0;
+		/*
+		  Var olan bir aşamanın KAYNAĞI DEĞİŞMİYOR. Sahip otomatik bir
+		  aşamanın metnini düzeltebilir ama o aşama otomatik olmaya devam
+		  eder; aksi hâlde yereldeki satır "otomatik", sunucuya giden gövde
+		  "elle" derdi ve iki taraf ayrışırdı.
+		*/
+		const kaynak = eski
+			? eski.kaynak
+			: kayit.kaynak === 'otomatik'
+				? 'otomatik'
+				: 'elle';
+
+		if (eski) {
+			db.prepare(
+				`UPDATE is_asama SET sira = ?, baslik = ?, aciklama = ?, durum = ?,
+				        tarih = ?, paylasildi = ?, guncellendi = ?
+				 WHERE id = ?`,
+			).run(
+				Math.trunc(Number(kayit.sira) || 0),
+				String(kayit.baslik).trim(),
+				bosNull(kayit.aciklama),
+				kayit.durum,
+				kayit.tarih,
+				paylasildi,
+				an,
+				kayit.id,
+			);
+		} else {
+			db.prepare(
+				`INSERT INTO is_asama
+				 (id, is_id, sira, kaynak, baslik, aciklama, durum, tarih, paylasildi,
+				  olusturuldu, guncellendi)
+				 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+			).run(
+				kayit.id,
+				kayit.is_id,
+				Math.trunc(Number(kayit.sira) || 0),
+				kaynak,
+				String(kayit.baslik).trim(),
+				bosNull(kayit.aciklama),
+				kayit.durum,
+				kayit.tarih,
+				paylasildi,
+				an,
+				an,
+			);
+		}
+
+		if (paylasildi === 1) {
+			kuyrugaYaz(
+				asamaEsitlemeKaydi({
+					id: kayit.id,
+					is_id: kayit.is_id,
+					sira: kayit.sira,
+					kaynak,
+					baslik: String(kayit.baslik).trim(),
+					aciklama: kayit.aciklama,
+					durum: kayit.durum,
+					tarih: kayit.tarih,
+				}),
+			);
+		} else if (eski && Number(eski.paylasildi) === 1) {
+			// Paylaşımdan çıkarıldı: sunucudaki kopyası da gitmeli.
+			kuyrugaYaz(asamaSilmeKaydi(kayit.id));
+		}
+	}
+
+	/**
+	 * İşin durumu değiştiğinde düşen otomatik aşama.
+	 *
+	 * Önce eski otomatik "sürüyor" aşamaları tamamlandıya çekiliyor. Sebep:
+	 * "İş sürüyor" bir hâl, "Teslim edildi" ise ondan sonraki bir an. İkisi
+	 * birden sürüyor görünseydi müşterinin gördüğü ağaç yalan söylerdi.
+	 * Elle eklenen aşamalara DOKUNULMUYOR, onların hâline sahip karar veriyor.
+	 */
+	function otomatikAsamaDus(isId, isDurumu, an) {
+		const tanim = otomatikAsamaTanimi(isDurumu);
+		if (!tanim) return;
+		const id = otomatikAsamaKimligi(isId, isDurumu);
+
+		const surenler = db
+			.prepare(
+				`SELECT * FROM is_asama
+				 WHERE is_id = ? AND kaynak = 'otomatik' AND durum = 'suruyor' AND id <> ?`,
+			)
+			.all(isId, id);
+		for (const eski of surenler) {
+			asamaSatiriYaz({ ...eski, durum: 'tamamlandi' }, an);
+		}
+
+		asamaSatiriYaz(
+			{
+				id,
+				is_id: isId,
+				sira: tanim.sira,
+				kaynak: 'otomatik',
+				baslik: tanim.baslik,
+				aciklama: tanim.aciklama,
+				durum: tanim.durum,
+				// Damganın yalnızca gün kısmı: aşama tarihi bir gün alanı,
+				// saatin ağaçta işi yok.
+				tarih: String(an).slice(0, 10),
+				paylasildi: 1,
+			},
+			an,
+		);
+	}
+
+	/** Sahibin elle eklediği ya da düzenlediği aşama. */
+	function asamaKaydet(kayit) {
+		const hatalar = asamaDogrula(kayit);
+		if (hatalar.length) throw new Error(hatalar.join(' '));
+		if (!db.prepare('SELECT 1 FROM is_kaydi WHERE id = ?').get(kayit.is_id)) {
+			throw new Error('İş bulunamadı.');
+		}
+
+		const an = simdi();
+		const id = kayit.id || yeniKimlik();
+		db.exec('BEGIN');
+		try {
+			asamaSatiriYaz({ ...kayit, id, kaynak: kayit.kaynak ?? 'elle' }, an);
+			db.exec('COMMIT');
+		} catch (hata) {
+			db.exec('ROLLBACK');
+			throw hata;
+		}
+		return { id };
+	}
+
+	function asamaSil(id) {
+		const eski = asamaGetirSorgu.get(id);
+		if (!eski) throw new Error('Aşama bulunamadı.');
+		db.exec('BEGIN');
+		try {
+			db.prepare('DELETE FROM is_asama WHERE id = ?').run(id);
+			// Hiç paylaşılmamış aşamanın sunucuda karşılığı yok, silme
+			// bildirimi göndermenin de anlamı yok.
+			if (Number(eski.paylasildi) === 1) kuyrugaYaz(asamaSilmeKaydi(id));
+			db.exec('COMMIT');
+		} catch (hata) {
+			db.exec('ROLLBACK');
+			throw hata;
+		}
+		return { id };
+	}
+
+	/* -------------------------------------------------------------- */
+	/* Ödeme ve revize                                                 */
+	/* -------------------------------------------------------------- */
+
+	/*
+	  ÖDEME ARTIK SUNUCUYA GİDİYOR (24 Eylül 2026). Giden alanlar kimlik, iş,
+	  tür, tutar ve tarih. YÖNTEM VE İÇ NOT GİTMİYOR; beyaz liste onları
+	  kabul etmiyor, yani unutulsa bile sızamıyor.
+
+	  Revize gitmiyor ve bu bilinçli: revize ücreti işin iç muhasebesi,
+	  müşterinin gördüğü rakam işin toplam bedeli.
+	*/
+
+	function odemeKaydet(kayit) {
+		const an = simdi();
+		const id = kayit.id || yeniKimlik();
+		db.exec('BEGIN');
+		try {
+			if (kayit.id) {
+				db.prepare(
+					'UPDATE odeme SET tur = ?, tutar_kurus = ?, tarih = ?, yontem = ?, not_metni = ? WHERE id = ?',
+				).run(kayit.tur, kayit.tutar_kurus, kayit.tarih, bosNull(kayit.yontem), bosNull(kayit.not_metni), id);
+			} else {
+				db.prepare(
+					`INSERT INTO odeme (id, is_id, tur, tutar_kurus, tarih, yontem, not_metni, olusturuldu)
+					 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+				).run(
+					id,
+					kayit.is_id,
+					kayit.tur,
+					kayit.tutar_kurus,
+					kayit.tarih,
+					bosNull(kayit.yontem),
+					bosNull(kayit.not_metni),
+					an,
+				);
+			}
+			/*
+			  Düzenlemede `is_id` formdan gelmeyebilir: ödeme satırı başka bir
+			  işe taşınmıyor, yalnızca alanları değişiyor. Kuyruk gövdesi için
+			  bağlı olduğu iş gerekiyor, o yüzden satırdan okunuyor.
+			*/
+			const bagliIs =
+				kayit.is_id ?? db.prepare('SELECT is_id FROM odeme WHERE id = ?').get(id)?.is_id;
+			kuyrugaYaz(
+				odemeEsitlemeKaydi({
+					id,
+					is_id: bagliIs,
+					tur: kayit.tur,
+					tutar_kurus: kayit.tutar_kurus,
+					tarih: kayit.tarih,
 				}),
 			);
 			db.exec('COMMIT');
@@ -378,43 +684,16 @@ export function depoKur(db, kasa, { kuyrukDinleyici = null } = {}) {
 		return { id };
 	}
 
-	function isSil(id) {
-		// Ödeme ve revizeler ON DELETE CASCADE ile gidiyor.
-		db.prepare('DELETE FROM is_kaydi WHERE id = ?').run(id);
-		return { id };
-	}
-
-	/* -------------------------------------------------------------- */
-	/* Ödeme ve revize                                                 */
-	/* -------------------------------------------------------------- */
-
-	function odemeKaydet(kayit) {
-		const an = simdi();
-		const id = kayit.id || yeniKimlik();
-		if (kayit.id) {
-			db.prepare(
-				'UPDATE odeme SET tur = ?, tutar_kurus = ?, tarih = ?, yontem = ?, not_metni = ? WHERE id = ?',
-			).run(kayit.tur, kayit.tutar_kurus, kayit.tarih, bosNull(kayit.yontem), bosNull(kayit.not_metni), id);
-		} else {
-			db.prepare(
-				`INSERT INTO odeme (id, is_id, tur, tutar_kurus, tarih, yontem, not_metni, olusturuldu)
-				 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-			).run(
-				id,
-				kayit.is_id,
-				kayit.tur,
-				kayit.tutar_kurus,
-				kayit.tarih,
-				bosNull(kayit.yontem),
-				bosNull(kayit.not_metni),
-				an,
-			);
-		}
-		return { id };
-	}
-
 	function odemeSil(id) {
-		db.prepare('DELETE FROM odeme WHERE id = ?').run(id);
+		db.exec('BEGIN');
+		try {
+			db.prepare('DELETE FROM odeme WHERE id = ?').run(id);
+			kuyrugaYaz(odemeSilmeKaydi(id));
+			db.exec('COMMIT');
+		} catch (hata) {
+			db.exec('ROLLBACK');
+			throw hata;
+		}
 		return { id };
 	}
 
@@ -475,6 +754,230 @@ export function depoKur(db, kasa, { kuyrukDinleyici = null } = {}) {
 			)
 			.all(sinir);
 		return isId ? satirlar.filter((r) => r.is_id === isId) : satirlar;
+	}
+
+	/* -------------------------------------------------------------- */
+	/* Dosya paylaşımı                                                 */
+	/* -------------------------------------------------------------- */
+
+	/*
+	  DOSYANIN İÇERİĞİ KUYRUKTAN GİTMİYOR, künyesi gidiyor. İçerik `scp` ile
+	  ayrıca kopyalanıyor (`veri/dosya-gonder.mjs`); gerekçe orada yazılı.
+
+	  SIRA BURADA KURALIN KENDİSİ: önce incele, sonra gönder, EN SON kuyruğa
+	  yaz. Künye önce yazılsaydı ve gönderim düşseydi, panelde indirilmek
+	  istendiğinde var olmayan bir dosya görünürdü. Gönderim hata verirse bu
+	  işlev fırlatıyor ve kuyruğa tek satır girmiyor.
+
+	  `depo_adi` diskteki ad ve dosyanın KENDİ KİMLİĞİNDEN türetiliyor
+	  (rastgele 16 bayt onaltılık) artı izinli uzantı. Rastgele ve
+	  tahmin edilemez olması `dosyayiIncele`nin ürettiğiyle aynı; türetilmiş
+	  olmasının sebebi paylaşımın geri alınıp yeniden yapılabilmesi. Her
+	  paylaşımda yeni bir ad üretilseydi sunucuda öksüz kopyalar birikir ve
+	  `is_dosya.depo_adi` üzerindeki UNIQUE kısıtı çakışırdı.
+	*/
+
+	function dosyaAraci() {
+		if (!dosyaTasima?.incele || !dosyaTasima?.gonder) {
+			throw new Error('Dosya paylaşımı bu oturumda kurulmadı.');
+		}
+		return dosyaTasima;
+	}
+
+	/** Diskteki ad: dosyanın kimliği artı izinli uzantı. Uzantı
+	 *  `dosyayiIncele`nin ürettiği addan alınıyor, yani beyaz listeden
+	 *  geçmiş hâli; kullanıcının yazdığı ad dosya sistemine hiç değmiyor. */
+	function depoAdiKur(id, kunye) {
+		const nokta = String(kunye.depo_adi).lastIndexOf('.');
+		return `${id}${nokta >= 0 ? String(kunye.depo_adi).slice(nokta) : ''}`;
+	}
+
+	function dosyaListesi(isId) {
+		return db
+			.prepare('SELECT * FROM dosya WHERE is_id = ? ORDER BY olusturuldu DESC')
+			.all(isId)
+			.map((d) => ({ ...d, sha256: Buffer.from(d.sha256).toString('hex') }));
+	}
+
+	function dosyaGetir(id) {
+		const satir = db.prepare('SELECT * FROM dosya WHERE id = ?').get(id);
+		if (!satir) return null;
+		return { ...satir, sha256: Buffer.from(satir.sha256).toString('hex') };
+	}
+
+	/**
+	 * İşe dosya ekler. Bu adımda HİÇBİR ŞEY GÖNDERİLMİYOR ve kuyruğa
+	 * yazılmıyor: dosya sahibin defterine giriyor, paylaşmak ayrı bir karar.
+	 *
+	 * Tür ve boyut denetimi burada yapılıyor, yani reddedilecek bir dosya
+	 * için ağ hiç kullanılmıyor.
+	 */
+	async function dosyaEkle({ isId, yerelYol, asamaId = null }) {
+		const arac = dosyaAraci();
+		if (!db.prepare('SELECT 1 FROM is_kaydi WHERE id = ?').get(isId)) {
+			throw new Error('İş bulunamadı.');
+		}
+		const kunye = await arac.incele(yerelYol);
+		const id = yeniKimlik();
+		db.prepare(
+			`INSERT INTO dosya
+			 (id, is_id, asama_id, gosterilen_ad, yerel_yol, tur, boyut, sha256,
+			  gorsel_mi, paylasildi, gonderildi, olusturuldu)
+			 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, NULL, ?)`,
+		).run(
+			id,
+			isId,
+			asamaId || null,
+			kunye.gosterilen_ad,
+			yerelYol,
+			kunye.tur,
+			kunye.boyut,
+			Buffer.from(kunye.sha256),
+			Number(kunye.gorsel_mi) === 1 ? 1 : 0,
+			simdi(),
+		);
+		return { id };
+	}
+
+	/**
+	 * Dosyayı sunucuya gönderir ve künyesini kuyruğa yazar.
+	 *
+	 * Yeniden inceleniyor, çünkü dosya eklendikten sonra diskte değişmiş ya
+	 * da silinmiş olabilir; gönderilen şeyin özeti kuyruğa yazılanla aynı
+	 * olmak zorunda.
+	 */
+	async function dosyaPaylas(id) {
+		const arac = dosyaAraci();
+		const satir = db.prepare('SELECT * FROM dosya WHERE id = ?').get(id);
+		if (!satir) throw new Error('Dosya bulunamadı.');
+
+		const kunye = await arac.incele(satir.yerel_yol);
+		const depoAdi = depoAdiKur(id, kunye);
+
+		// Gönderim burada. Fırlatırsa aşağısı hiç çalışmıyor: ne veritabanı
+		// satırı paylaşıldı olur ne de kuyruğa künye düşer.
+		await arac.gonder(satir.yerel_yol, depoAdi);
+
+		const an = simdi();
+		db.exec('BEGIN');
+		try {
+			db.prepare(
+				`UPDATE dosya SET tur = ?, boyut = ?, sha256 = ?, gorsel_mi = ?,
+				        paylasildi = 1, gonderildi = ?
+				 WHERE id = ?`,
+			).run(
+				kunye.tur,
+				kunye.boyut,
+				Buffer.from(kunye.sha256),
+				Number(kunye.gorsel_mi) === 1 ? 1 : 0,
+				an,
+				id,
+			);
+			kuyrugaYaz(
+				dosyaEsitlemeKaydi({
+					id,
+					is_id: satir.is_id,
+					asama_id: satir.asama_id,
+					gosterilen_ad: satir.gosterilen_ad,
+					depo_adi: depoAdi,
+					tur: kunye.tur,
+					boyut: kunye.boyut,
+					sha256: kunye.sha256,
+					gorsel_mi: kunye.gorsel_mi,
+				}),
+			);
+			db.exec('COMMIT');
+		} catch (hata) {
+			db.exec('ROLLBACK');
+			throw hata;
+		}
+		return { id, depoAdi, gonderildi: an };
+	}
+
+	/**
+	 * Paylaşımı geri alır: künye sunucudan siliniyor, dosya sahibin
+	 * defterinde kalıyor.
+	 *
+	 * Sunucudaki KOPYA dosya diskte kalabiliyor; künye gidince panel onu
+	 * listelemiyor ve indirilemiyor. Dosyanın kendisini uzaktan silmek için
+	 * ikinci bir SSH çağrısı gerekirdi ve o çağrı, paylaşımı geri alma
+	 * işlemini ağa bağımlı kılardı. Bu bilinçli bir sınır, raporda yazılı.
+	 */
+	function dosyaPaylasimiGeriAl(id) {
+		const satir = db.prepare('SELECT paylasildi FROM dosya WHERE id = ?').get(id);
+		if (!satir) throw new Error('Dosya bulunamadı.');
+		db.exec('BEGIN');
+		try {
+			db.prepare('UPDATE dosya SET paylasildi = 0, gonderildi = NULL WHERE id = ?').run(id);
+			if (Number(satir.paylasildi) === 1) kuyrugaYaz(dosyaSilmeKaydi(id));
+			db.exec('COMMIT');
+		} catch (hata) {
+			db.exec('ROLLBACK');
+			throw hata;
+		}
+		return { id };
+	}
+
+	/** Dosyayı defterden siler. Paylaşılmışsa sunucudaki künyesi de gidiyor. */
+	function dosyaSil(id) {
+		const satir = db.prepare('SELECT paylasildi FROM dosya WHERE id = ?').get(id);
+		if (!satir) throw new Error('Dosya bulunamadı.');
+		db.exec('BEGIN');
+		try {
+			db.prepare('DELETE FROM dosya WHERE id = ?').run(id);
+			if (Number(satir.paylasildi) === 1) kuyrugaYaz(dosyaSilmeKaydi(id));
+			db.exec('COMMIT');
+		} catch (hata) {
+			db.exec('ROLLBACK');
+			throw hata;
+		}
+		return { id };
+	}
+
+	/* -------------------------------------------------------------- */
+	/* İş bazlı yazışma                                                */
+	/* -------------------------------------------------------------- */
+
+	/*
+	  Destek talebi yanıtıyla AYNI desen. Gerçeğin kaynağı sunucudaki tablo,
+	  yereldeki `is_mesaj_kopyasi` bir kopya. Sahibin yazdığı mesaj hem
+	  kuyruğa hem yerel kopyaya düşüyor; ikisinde de AYNI kimlik kullanılıyor,
+	  böylece mesaj sunucudan geri geldiğinde `ON CONFLICT (id)` aynı satırı
+	  güncelliyor ve ekranda iki kez görünmüyor.
+	*/
+
+	function isMesajlari(isId) {
+		return db
+			.prepare(
+				'SELECT id, is_id, yazan, metin, zaman FROM is_mesaj_kopyasi WHERE is_id = ? ORDER BY zaman, id',
+			)
+			.all(isId);
+	}
+
+	function isMesajiYaz(isId, metin) {
+		if (!db.prepare('SELECT 1 FROM is_kaydi WHERE id = ?').get(isId)) {
+			throw new Error('İş bulunamadı.');
+		}
+		const hatalar = isMesajiDogrula({ isId, metin });
+		if (hatalar.length) throw new Error(hatalar.join(' '));
+
+		const govde = String(metin).trim();
+		const id = yeniKimlik();
+		const zaman = simdi();
+
+		db.exec('BEGIN');
+		try {
+			db.prepare(
+				`INSERT INTO is_mesaj_kopyasi (id, is_id, yazan, metin, zaman, cekildi)
+				 VALUES (?, ?, 'sahip', ?, ?, ?)`,
+			).run(id, isId, govde, zaman, zaman);
+			kuyrugaYaz(isMesajiEsitlemeKaydi({ id, isId, metin: govde, zaman }));
+			db.exec('COMMIT');
+		} catch (hata) {
+			db.exec('ROLLBACK');
+			throw hata;
+		}
+		return { id, isId, zaman };
 	}
 
 	/* -------------------------------------------------------------- */
@@ -950,6 +1453,17 @@ export function depoKur(db, kasa, { kuyrukDinleyici = null } = {}) {
 		odemeKaydet,
 		odemeSil,
 		odemeListesi,
+		asamaListesi,
+		asamaKaydet,
+		asamaSil,
+		dosyaListesi,
+		dosyaGetir,
+		dosyaEkle,
+		dosyaPaylas,
+		dosyaPaylasimiGeriAl,
+		dosyaSil,
+		isMesajlari,
+		isMesajiYaz,
 		revizeKaydet,
 		revizeSil,
 		revizeListesi,

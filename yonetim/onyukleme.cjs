@@ -57,6 +57,38 @@ contextBridge.exposeInMainWorld('yonetim', {
 		sil: (id) => cagir('revize:sil', id),
 	},
 
+	/** İlerleme ağacı. Otomatik aşamalar iş kaydedilirken düşüyor; bunlar
+	 *  sahibin elle eklediklerini yönetiyor. */
+	asama: {
+		liste: (isId) => cagir('asama:liste', isId),
+		kaydet: (kayit) => cagir('asama:kaydet', kayit),
+		sil: (id) => cagir('asama:sil', id),
+	},
+
+	dosya: {
+		liste: (isId) => cagir('dosya:liste', isId),
+		/**
+		 * Dosya seçiciyi ana süreçte açar. Arayüz bir YOL GÖNDEREMİYOR:
+		 * seçim ana süreçte yapılıyor, buradan yalnızca "seçici aç" isteği
+		 * gidiyor. Kum havuzundaki bir sayfaya dosya sistemine açılan bir
+		 * kapı vermenin gereği yok.
+		 */
+		ekle: (isId, asamaId) => cagir('dosya:ekle', isId, asamaId),
+		// Ağa çıkan tek dosya çağrısı bu; gönderim başarısızsa hata metni
+		// olduğu gibi geliyor ve künye kuyruğa yazılmıyor.
+		paylas: (id) => cagir('dosya:paylas', id),
+		paylasimiGeriAl: (id) => cagir('dosya:paylasimi-geri-al', id),
+		sil: (id) => cagir('dosya:sil', id),
+		/** Görsel için `data:` adresi, önizlenemiyorsa `null`. */
+		onizleme: (id) => cagir('dosya:onizleme', id),
+	},
+
+	isMesaj: {
+		liste: (isId) => cagir('is-mesaj:liste', isId),
+		// Talep yanıtıyla aynı: sunucuya değil kuyruğa gidiyor.
+		yaz: (isId, metin) => cagir('is-mesaj:yaz', isId, metin),
+	},
+
 	istatistik: {
 		ay: (ay) => cagir('istatistik:ay', ay),
 		aylar: () => cagir('istatistik:aylar'),

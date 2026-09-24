@@ -413,6 +413,34 @@ td.islem .dugme + .dugme {
 	white-space: nowrap;
 }
 
+/*
+  Dosya önizlemesi. Kutu, resim gelmese de YERİNİ TUTUYOR: önizlemesi olan
+  ve olmayan satırlar aynı yükseklikte kalsın, resimler yüklendikçe tablo
+  zıplamasın. Ölçü sabit, çünkü değişken boyutlu bir küçük resim satır
+  yüksekliğini de değiştirirdi.
+*/
+.onizleme {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 48px;
+	height: 48px;
+	border-radius: 6px;
+	border: 1px solid var(--cizgi);
+	background: var(--zemin-3);
+	overflow: hidden;
+	color: var(--metin-3);
+	font-size: 11px;
+	letter-spacing: 0.04em;
+}
+
+.onizleme img {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	display: block;
+}
+
 /* ---------------------------------------------------------------- */
 /* Kartlar ve istatistik                                             */
 /* ---------------------------------------------------------------- */

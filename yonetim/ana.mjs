@@ -17,14 +17,16 @@ import { app, BrowserWindow, Menu, shell, dialog, ipcMain, safeStorage, clipboar
 import { createRequire } from 'node:module';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { dirname, join } from 'node:path';
+import { basename, dirname, join } from 'node:path';
 
 import { yerelAc } from '../veri/db.mjs';
+import { IZINLI_TURLER, dosyayiGonder, dosyayiIncele } from '../veri/dosya-gonder.mjs';
 import { ayarlariOku, esitle } from '../veri/esitleme-ssh.mjs';
 import { akisBaslangici, akisBaslat } from '../veri/talep-akisi.mjs';
 import { canliAkisYoneticisiKur } from './canli-akis.mjs';
 import { depoKur } from './depo.mjs';
 import {
+	asamaGirdisiHazirla,
 	buAy,
 	isGirdisiHazirla,
 	musteriGirdisiHazirla,
@@ -180,6 +182,29 @@ function kanallariKur() {
 	kanal('revize:sil', (id) => depo.revizeSil(String(id)));
 	kanal('revize:liste', (secenek) => depo.revizeListesi(secenek ?? {}));
 
+	/* İlerleme ağacı. Otomatik aşamalar `is:kaydet` içinden düşüyor, bu
+	   kanallar yalnızca sahibin elle eklediklerini yönetiyor. */
+	kanal('asama:liste', (isId) => depo.asamaListesi(String(isId)));
+	kanal('asama:kaydet', (form) => depo.asamaKaydet(hazirla(asamaGirdisiHazirla, form)));
+	kanal('asama:sil', (id) => depo.asamaSil(String(id)));
+
+	/*
+	  DOSYA SEÇİCİ ANA SÜREÇTE. Arayüz bir dosya yolu GÖNDEREMİYOR, yalnızca
+	  "seçici aç" diyebiliyor: renderer'ın verdiği bir yolu açmak, dar
+	  tutulan IPC yüzeyine dosya sistemine erişim eklemek olurdu.
+	*/
+	kanal('dosya:liste', (isId) => depo.dosyaListesi(String(isId)));
+	kanal('dosya:ekle', (isId, asamaId) => dosyaSeciciyiAc(String(isId), asamaId ?? null));
+	kanal('dosya:paylas', (id) => depo.dosyaPaylas(String(id)));
+	kanal('dosya:paylasimi-geri-al', (id) => depo.dosyaPaylasimiGeriAl(String(id)));
+	kanal('dosya:sil', (id) => depo.dosyaSil(String(id)));
+	kanal('dosya:onizleme', (id) => onizlemeUret(String(id)));
+
+	/* İş bazlı yazışma. Sahibin mesajı doğrudan sunucuya gitmiyor: kuyruğa
+	   düşüyor ve aynı kimlikle yerel kopyaya da yazılıyor. */
+	kanal('is-mesaj:liste', (isId) => depo.isMesajlari(String(isId)));
+	kanal('is-mesaj:yaz', (isId, metin) => depo.isMesajiYaz(String(isId), String(metin ?? '')));
+
 	kanal('istatistik:ay', (ay) => depo.istatistik(String(ay || buAy())));
 	kanal('istatistik:aylar', () => depo.aylar());
 
@@ -294,6 +319,81 @@ function kanallariKur() {
 		});
 		return sonuc.response === 1;
 	});
+}
+
+/* ------------------------------------------------------------------ */
+/* Dosya seçici ve önizleme                                            */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Dosya seçiciyi açar ve seçilenleri işe ekler.
+ *
+ * Bir dosya reddedilirse (tür izinli değil, çok büyük, okunamıyor) ÖTEKİLER
+ * yine ekleniyor ve hata o dosyanın adıyla birlikte dönüyor. Tek bir kötü
+ * dosya yüzünden bütün seçimi geri çevirmek, kullanıcıyı seçimi baştan
+ * yapmaya zorlamak olurdu.
+ *
+ * Eklemek GÖNDERMEK DEĞİL: dosya sahibin defterine giriyor, paylaşma ayrı
+ * bir düğme. Bu yüzden burada ağ işi yok.
+ */
+async function dosyaSeciciyiAc(isId, asamaId) {
+	const secim = await dialog.showOpenDialog(pencere, {
+		title: 'İşe dosya ekle',
+		buttonLabel: 'Ekle',
+		properties: ['openFile', 'multiSelections'],
+		filters: [
+			{
+				name: 'Paylaşılabilen dosyalar',
+				extensions: [...IZINLI_TURLER.keys()].map((uzanti) => uzanti.slice(1)),
+			},
+		],
+	});
+	if (secim.canceled || !secim.filePaths.length) {
+		return { iptal: true, eklenen: 0, hatalar: [] };
+	}
+
+	let eklenen = 0;
+	const hatalar = [];
+	for (const yol of secim.filePaths) {
+		try {
+			await depo.dosyaEkle({ isId, yerelYol: yol, asamaId });
+			eklenen++;
+		} catch (hata) {
+			hatalar.push(`${basename(yol)}: ${hata.message}`);
+		}
+	}
+	return { iptal: false, eklenen, hatalar };
+}
+
+/** Önizleme için okunan en büyük dosya. Daha büyüğünü base64'e çevirip
+ *  arayüze göndermek, bir küçük resim uğruna onlarca megabayt taşımak olurdu. */
+const ONIZLEME_SINIRI = 4 * 1024 * 1024;
+
+/*
+  HEIC ÖNİZLEMESİ YOK. Chromium HEIC çözmüyor; veriyi gönderseydik arayüzde
+  kırık bir resim görünürdü. Kırık resim yerine "önizleme yok" demek daha
+  dürüst.
+*/
+const ONIZLENEBILEN = new Set(['image/png', 'image/jpeg', 'image/webp', 'image/gif']);
+
+/**
+ * Görselin `data:` adresi. Dosya diskten okunup base64'e çevriliyor, çünkü
+ * sayfanın içerik güvenlik politikası `img-src file: data:` diyor ve
+ * sahibin diskindeki rastgele bir yolu arayüze verip onu `file:` adresine
+ * çevirtmek gereksiz bir yüzey açardı.
+ */
+function onizlemeUret(id) {
+	const dosya = depo.dosyaGetir(id);
+	if (!dosya || Number(dosya.gorsel_mi) !== 1) return null;
+	if (!ONIZLENEBILEN.has(dosya.tur)) return null;
+	if (Number(dosya.boyut) > ONIZLEME_SINIRI) return null;
+	try {
+		return `data:${dosya.tur};base64,${readFileSync(dosya.yerel_yol).toString('base64')}`;
+	} catch {
+		// Dosya taşınmış ya da silinmiş olabilir. Önizlemesizlik, hata
+		// penceresinden iyidir.
+		return null;
+	}
 }
 
 /* ------------------------------------------------------------------ */
@@ -549,6 +649,17 @@ function baslat() {
 	*/
 	depo = depoKur(db, kasa, {
 		kuyrukDinleyici: (islem) => esitlemeYoneticisi?.degisiklikBildir(islem),
+		/*
+		  Dosya taşıma DIŞARIDAN veriliyor, kasa ile aynı gerekçe: depo
+		  Electron'suz ve ağsız sınanabilsin. Ayarlar her gönderimde yeniden
+		  okunuyor, çünkü sahip sunucu adresini uygulama açıkken
+		  değiştirebiliyor; eksikse `ayarlariOku` fırlatıyor ve hata
+		  kullanıcıya olduğu gibi gidiyor.
+		*/
+		dosyaTasima: {
+			incele: (yerelYol) => dosyayiIncele(yerelYol),
+			gonder: (yerelYol, depoAdi) => dosyayiGonder(ayarlariOku(db), yerelYol, depoAdi),
+		},
 	});
 	esitlemeYoneticisi = esitlemeYoneticisiniKur();
 

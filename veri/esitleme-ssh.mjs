@@ -19,6 +19,7 @@ import { simdi } from './db.mjs';
 import {
 	bekleyenler,
 	gonderildiIsaretle,
+	isMesajlariniIceAl,
 	paketHazirla,
 	talepleriIceAl,
 } from './esitleme.mjs';
@@ -39,6 +40,19 @@ export const AYAR_ANAHTARLARI = [
 ];
 
 /*
+  İSTEĞE BAĞLI ayarlar ve varsayılanları.
+
+  Zorunlu listeye konmadılar: bu iki değer eklendiğinde sahibin ayarları
+  çoktan doluydu ve zorunlu yapılsaydı eşitleme bir anda "ayar eksik" deyip
+  duracaktı. Varsayılanlar sunucudaki mevcut kurulumla aynı; başka bir yere
+  kurulursa arayüzden değiştirilebiliyor.
+*/
+export const ISTEGE_BAGLI_AYARLAR = {
+	'esitleme.uzak_dosya': '/var/lib/panel/dosyalar',
+	'esitleme.uzak_kullanici': 'panel',
+};
+
+/*
   Uzak yollar ve sunucu adı SSH üzerinden uzakta bir kabuğa giriyor. Bu
   değerleri sahip kendi eliyle giriyor, yine de kabukta anlam taşıyan
   karakterleri baştan reddediyoruz: yanlışlıkla yapıştırılan bir boşluk ya
@@ -57,7 +71,18 @@ export function ayarlariOku(db) {
 	if (!GUVENLI_SUNUCU.test(ayar['esitleme.sunucu'])) {
 		throw new Error('Sunucu adresi "kullanici@makine" biçiminde olmalı');
 	}
-	for (const anahtar of ['esitleme.uzak_veri', 'esitleme.uzak_vt', 'esitleme.uzak_node']) {
+	// Verilmeyen isteğe bağlı ayarlar varsayılanla dolduruluyor: çağıran taraf
+	// her yerde ayrı ayrı varsayılan tutmak zorunda kalmasın.
+	for (const [anahtar, varsayilan] of Object.entries(ISTEGE_BAGLI_AYARLAR)) {
+		if (!ayar[anahtar]) ayar[anahtar] = varsayilan;
+	}
+
+	for (const anahtar of [
+		'esitleme.uzak_veri',
+		'esitleme.uzak_vt',
+		'esitleme.uzak_node',
+		'esitleme.uzak_dosya',
+	]) {
 		if (!GUVENLI_YOL.test(ayar[anahtar])) {
 			throw new Error(`${anahtar} değeri yalnızca harf, rakam, nokta, alt çizgi, eğik çizgi ve tire içerebilir`);
 		}
@@ -174,14 +199,22 @@ export async function cek(db) {
 	}
 
 	const sonuc = talepleriIceAl(db, gelen);
+	/*
+	  İş yazışması da aynı çekişte geliyor. Ayrı bir çağrı yapılsaydı iki SSH
+	  turu olurdu ve ikisi arasında kopan bağlantı yarım bir durum bırakırdı.
+	*/
+	const isMesaji = isMesajlariniIceAl(db, gelen);
 
 	/*
 	  Damgayı sunucunun ürettiği ana değil, çekilen en son talebin
 	  güncellenme anına alıyoruz. Sunucunun saati ileri giderse aradaki
 	  talepler atlanmasın diye. Hiç talep gelmediyse damga olduğu gibi kalıyor.
 	*/
-	const enSon = (gelen.talepler ?? [])
-		.map((t) => t.guncellendi)
+	const enSon = [
+		...(gelen.talepler ?? []).map((t) => t.guncellendi),
+		// İş mesajları da damgayı ilerletmeli, yoksa her çekişte baştan gelirler.
+		...(gelen.is_mesajlari ?? []).map((m) => m.zaman),
+	]
 		.filter(Boolean)
 		.sort()
 		.pop();
@@ -192,7 +225,7 @@ export async function cek(db) {
 		).run(enSon);
 	}
 
-	return sonuc;
+	return { ...sonuc, isMesaji };
 }
 
 /** Önce gönder, sonra çek. Yönetim uygulamasındaki "Eşitle" düğmesi bunu çağırıyor. */

@@ -369,16 +369,285 @@ export function musteriEsitlemeKaydi(musteri) {
 	};
 }
 
-/** İşin sunucuya çıkan hâli: müşterinin gördüğü ad ve durum. Tutar yok. */
+/**
+ * İşin sunucuya çıkan hâli.
+ *
+ * 24 EYLÜL 2026'DA GENİŞLEDİ: ad ve durumun yanına özet, tutar, para birimi
+ * ve hedef teslim tarihi eklendi. Sebep sahibin kararı, müşteri kendi ödeme
+ * dökümünü panelde görecek ve kalan borcunu göremeyeceği bir döküm işe
+ * yaramaz (PANEL-TASARIMI.md §4).
+ *
+ * Çıkmaya devam ETMEYENLER: ön ödeme oranı, iş türü, başlangıç tarihi,
+ * tekrar eden işaretçisi ve iç notlar. Yani müşterinin zaten bildiği rakam
+ * çıkıyor, işin iç yüzü çıkmıyor.
+ *
+ * Boş özet ve boş hedef tarih gövdeye HİÇ konmuyor. Sunucu tarafı eksik
+ * alanı `null` yazdığı için sonuç aynı: alan temizlendiğinde panelde de
+ * temizleniyor. Gövdeyi gereksiz `null` ile şişirmemenin sebebi kuyruğun
+ * okunabilir kalması.
+ */
 export function isEsitlemeKaydi(is) {
+	const govde = {
+		id: is.id,
+		musteri_id: is.musteri_id,
+		ad: is.ad,
+		durum: is.durum,
+		tutar_kurus: Math.trunc(Number(is.tutar_kurus) || 0),
+		para_birimi: is.para_birimi || 'TRY',
+	};
+	const ozet = String(is.ozet ?? '').trim();
+	if (ozet !== '') govde.ozet = ozet;
+	const teslim = String(is.teslim_hedefi ?? '').trim();
+	if (teslim !== '') govde.teslim_hedefi = teslim;
+	return { islem: 'is.yaz', govde: kuyrukGovdesiSuz('is.yaz', govde) };
+}
+
+/** İş silindiğinde panelden de silinsin diye. Kimlikten başka bir şey
+ *  gitmiyor; sunucuda bağlı ödeme, aşama, dosya ve mesaj satırları yabancı
+ *  anahtar zinciriyle birlikte düşüyor. */
+export function isSilmeKaydi(id) {
+	return { islem: 'is.sil', govde: kuyrukGovdesiSuz('is.sil', { id }) };
+}
+
+/* ------------------------------------------------------------------ */
+/* Ödeme dökümü                                                        */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Ödemenin sunucuya çıkan hâli.
+ *
+ * YÖNTEM VE İÇ NOT BURADA YOK ve olamaz da: beyaz liste onları kabul
+ * etmiyor, `kuyrukGovdesiSuz` böyle bir alan görürse hata fırlatıyor.
+ * Müşterinin bilmesi gereken ne zaman ne kadar ödediği; parayı nakit mi
+ * havale mi verdiği sahibin defterinde kalıyor.
+ */
+export function odemeEsitlemeKaydi(odeme) {
 	return {
-		islem: 'is.yaz',
-		govde: kuyrukGovdesiSuz('is.yaz', {
-			id: is.id,
-			musteri_id: is.musteri_id,
-			ad: is.ad,
-			durum: is.durum,
+		islem: 'odeme.yaz',
+		govde: kuyrukGovdesiSuz('odeme.yaz', {
+			id: odeme.id,
+			is_id: odeme.is_id,
+			tur: odeme.tur,
+			tutar_kurus: Math.trunc(Number(odeme.tutar_kurus) || 0),
+			tarih: odeme.tarih,
 		}),
+	};
+}
+
+export function odemeSilmeKaydi(id) {
+	return { islem: 'odeme.sil', govde: kuyrukGovdesiSuz('odeme.sil', { id }) };
+}
+
+/* ------------------------------------------------------------------ */
+/* İlerleme ağacı                                                      */
+/* ------------------------------------------------------------------ */
+
+/** Aşamanın kendi durumu. İşin durumuyla karıştırılmamalı: bu, ağaçtaki tek
+ *  bir adımın hâli. */
+export const ASAMA_DURUMLARI = [
+	{ anahtar: 'tamamlandi', ad: 'Tamamlandı' },
+	{ anahtar: 'suruyor', ad: 'Sürüyor' },
+	{ anahtar: 'bekliyor', ad: 'Bekliyor' },
+];
+
+/**
+ * İŞİN DURUMU DEĞİŞTİĞİNDE KENDİLİĞİNDEN DÜŞEN AŞAMALAR.
+ *
+ * Sahibin her durum değişikliğinde bir de elle aşama yazması beklenemez;
+ * beklenirse yazılmaz ve müşterinin gördüğü ağaç işin gerçek hâlinden geri
+ * kalır. Bu yüzden beş durum için metin burada hazır duruyor.
+ *
+ * `iptal` BİLEREK LİSTEDE YOK. İptal bir ilerleme değil; müşterinin ağacına
+ * "iptal edildi" diye bir adım düşürmek, işin neden iptal olduğunu
+ * anlatmadan kötü haber vermek olurdu. Sahip isterse elle aşama ekleyebilir.
+ *
+ * `sira` onarlı artıyor: sahip iki otomatik aşamanın ARASINA elle bir adım
+ * koyabilsin diye. Birer birer artsaydı araya girmek için bütün ağacın
+ * yeniden numaralanması gerekirdi.
+ */
+export const OTOMATIK_ASAMALAR = {
+	teklif: {
+		sira: 10,
+		baslik: 'Teklif verildi',
+		aciklama: 'İşin kapsamı ve bedeli paylaşıldı, onay bekleniyor.',
+		durum: 'tamamlandi',
+	},
+	on_odeme_alindi: {
+		sira: 20,
+		baslik: 'Ön ödeme alındı',
+		aciklama: 'Ön ödeme tahsil edildi, iş sıraya girdi.',
+		durum: 'tamamlandi',
+	},
+	suruyor: {
+		sira: 30,
+		baslik: 'İş sürüyor',
+		aciklama: 'Üretim başladı.',
+		// Tek "sürüyor" aşama bu: ötekiler olup bitmiş anlar, bu ise bir hâl.
+		durum: 'suruyor',
+	},
+	teslim_edildi: {
+		sira: 40,
+		baslik: 'Teslim edildi',
+		aciklama: 'İş teslim edildi.',
+		durum: 'tamamlandi',
+	},
+	kapandi: {
+		sira: 50,
+		baslik: 'Kapandı',
+		aciklama: 'İş kapatıldı.',
+		durum: 'tamamlandi',
+	},
+};
+
+/** Bilinmeyen ya da otomatik aşaması olmayan durum için `null`. */
+export function otomatikAsamaTanimi(isDurumu) {
+	return OTOMATIK_ASAMALAR[isDurumu] ?? null;
+}
+
+/**
+ * Otomatik aşamanın kimliği İŞİN KİMLİĞİNDEN VE DURUMDAN türetiliyor,
+ * rastgele üretilmiyor.
+ *
+ * Sebebi ölçülebilir bir hata: sahip işi "sürüyor"dan "teslim edildi"ye
+ * alıp sonra yanlışlıkla geri çevirse, rastgele kimlikle her gidiş gelişte
+ * ağaca yeni bir "İş sürüyor" satırı düşerdi. Türetilmiş kimlikte aynı
+ * satırın üstüne yazılıyor, hem yerelde hem sunucuda.
+ */
+export function otomatikAsamaKimligi(isId, isDurumu) {
+	return `${isId}-oto-${isDurumu}`;
+}
+
+/** Aşama formunu doğrular. Dönen dizi boşsa kayıt geçerli. */
+export function asamaDogrula(kayit) {
+	const hatalar = [];
+	if (!String(kayit?.is_id ?? '').trim()) hatalar.push('Aşama bir işe bağlı olmalı.');
+	if (!String(kayit?.baslik ?? '').trim()) hatalar.push('Aşama başlığı boş bırakılamaz.');
+	if (!ASAMA_DURUMLARI.some((d) => d.anahtar === kayit?.durum)) {
+		hatalar.push('Bilinmeyen aşama durumu.');
+	}
+	if (!/^\d{4}-\d{2}-\d{2}$/.test(String(kayit?.tarih ?? ''))) hatalar.push('Tarih seçilmedi.');
+	if (!Number.isInteger(kayit?.sira)) hatalar.push('Sıra tam sayı olmalı.');
+	else if (kayit.sira < 0) hatalar.push('Sıra eksi olamaz.');
+	return hatalar;
+}
+
+export function asamaGirdisiHazirla(form) {
+	const kayit = {
+		id: form.id || null,
+		is_id: String(form.is_id ?? '').trim(),
+		baslik: String(form.baslik ?? '').trim(),
+		aciklama: String(form.aciklama ?? '').trim(),
+		durum: form.durum || 'tamamlandi',
+		tarih: gunNull(form.tarih),
+		sira: siraSayisi(form.sira),
+		paylasildi: Number(form.paylasildi) === 1 ? 1 : 0,
+	};
+	const hatalar = asamaDogrula(kayit);
+	return { kayit: hatalar.length ? null : kayit, hatalar };
+}
+
+/**
+ * Aşamanın sunucuya çıkan hâli.
+ *
+ * `paylasildi` gövdede YOK ve olmamalı: paylaşılmayan aşama zaten hiç
+ * gönderilmiyor, dolayısıyla sunucuda "gizli aşama" diye bir kavram
+ * doğmuyor. Bayrağı göndermek, gizliliği sunucunun iyi niyetine bırakmak
+ * olurdu.
+ */
+export function asamaEsitlemeKaydi(asama) {
+	return {
+		islem: 'asama.yaz',
+		govde: kuyrukGovdesiSuz('asama.yaz', {
+			id: asama.id,
+			is_id: asama.is_id,
+			sira: Math.trunc(Number(asama.sira) || 0),
+			kaynak: asama.kaynak === 'otomatik' ? 'otomatik' : 'elle',
+			baslik: asama.baslik,
+			aciklama: String(asama.aciklama ?? '').trim() || null,
+			durum: asama.durum,
+			tarih: asama.tarih,
+		}),
+	};
+}
+
+export function asamaSilmeKaydi(id) {
+	return { islem: 'asama.sil', govde: kuyrukGovdesiSuz('asama.sil', { id }) };
+}
+
+/* ------------------------------------------------------------------ */
+/* Dosya künyesi                                                       */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Dosyanın sunucuya çıkan KÜNYESİ. İçeriği bu kuyruktan gitmiyor, ayrıca
+ * kopyalanıyor (`veri/dosya-gonder.mjs`).
+ *
+ * `yerel_yol` gövdede YOK: sahibin diskindeki klasör yapısı müşteriyi
+ * ilgilendirmiyor ve beyaz liste onu zaten kabul etmiyor. `sha256` onaltılık
+ * metne çevriliyor, çünkü kuyruk JSON taşıyor ve ham bayt JSON'da durmuyor.
+ */
+export function dosyaEsitlemeKaydi(dosya) {
+	return {
+		islem: 'dosya.yaz',
+		govde: kuyrukGovdesiSuz('dosya.yaz', {
+			id: dosya.id,
+			is_id: dosya.is_id,
+			asama_id: dosya.asama_id ?? null,
+			gosterilen_ad: dosya.gosterilen_ad,
+			depo_adi: dosya.depo_adi,
+			tur: dosya.tur,
+			boyut: Math.trunc(Number(dosya.boyut) || 0),
+			sha256: ozetiHexe(dosya.sha256),
+			gorsel_mi: Number(dosya.gorsel_mi) === 1 ? 1 : 0,
+		}),
+	};
+}
+
+export function dosyaSilmeKaydi(id) {
+	return { islem: 'dosya.sil', govde: kuyrukGovdesiSuz('dosya.sil', { id }) };
+}
+
+/** SHA-256 özetini onaltılık metne çevirir. Zaten metinse dokunmuyor:
+ *  SQLite'tan BLOB, testten dize gelebiliyor. */
+export function ozetiHexe(ozet) {
+	if (typeof ozet === 'string') return ozet;
+	if (!ozet) return '';
+	return Buffer.from(ozet).toString('hex');
+}
+
+/* ------------------------------------------------------------------ */
+/* İş bazlı yazışma                                                    */
+/* ------------------------------------------------------------------ */
+
+/*
+  Destek talebi genel konular için; bu ise belirli bir işin kendi yazışması.
+  Desen talep yanıtıyla AYNI: sahibin yazdığı mesaj doğrudan sunucuya
+  gitmiyor, kuyruğa düşüyor ve aynı kimlikle yerel kopyaya da yazılıyor.
+  Aynı kimlik şart, yoksa sunucu mesajı geri verdiğinde ekranda iki kez
+  görünürdü.
+*/
+
+/** `veri/esitleme.mjs` içindeki içe alma sınırıyla aynı sayı. */
+export const IS_MESAJ_SINIRI = 20000;
+
+/** Sahibin yazdığı iş mesajını doğrular. Dönen dizi boşsa mesaj geçerli. */
+export function isMesajiDogrula({ isId, metin }) {
+	const hatalar = [];
+	if (!String(isId ?? '').trim()) hatalar.push('Mesaj bir işe bağlı olmalı.');
+	const govde = String(metin ?? '').trim();
+	if (govde === '') hatalar.push('Mesaj boş bırakılamaz.');
+	else if (govde.length > IS_MESAJ_SINIRI) {
+		hatalar.push(`Mesaj ${IS_MESAJ_SINIRI} karakteri aşamaz.`);
+	}
+	return hatalar;
+}
+
+/** Sahibin iş mesajının sunucuya çıkan hâli. Yazan bilgisi gitmiyor: sunucu
+ *  bu kanaldan gelen her mesajı zaten sahibin yazdığını biliyor. */
+export function isMesajiEsitlemeKaydi({ id, isId, metin, zaman }) {
+	return {
+		islem: 'is-mesaj.yaz',
+		govde: kuyrukGovdesiSuz('is-mesaj.yaz', { id, is_id: isId, metin, zaman }),
 	};
 }
 
@@ -511,6 +780,31 @@ export const ESITLEME_AYARLARI = [
 			'sunucunun PATH değişkenindeki sürüm eski olabilir ve panelin kullandığı ' +
 			'node:sqlite orada bulunmayabilir.',
 	},
+	/*
+	  Aşağıdaki ikisi İSTEĞE BAĞLI: boş bırakılırsa veri katmanındaki
+	  varsayılan kullanılıyor. Zorunlu yapılmadılar, çünkü eklendiklerinde
+	  sahibin ayarları çoktan doluydu ve zorunlu olsalardı eşitleme bir anda
+	  "ayar eksik" deyip dururdu.
+	*/
+	{
+		anahtar: 'esitleme.uzak_dosya',
+		etiket: 'Uzak dosya klasörü',
+		ornek: '/var/lib/panel/dosyalar',
+		istegeBagli: true,
+		ipucu:
+			'Paylaşılan dosyaların sunucuda durduğu klasör. Boş bırakılırsa ' +
+			'varsayılan kullanılıyor.',
+	},
+	{
+		anahtar: 'esitleme.uzak_kullanici',
+		etiket: 'Uzak panel kullanıcısı',
+		ornek: 'panel',
+		istegeBagli: true,
+		ipucu:
+			'Gönderilen dosyanın sahipliği bu kullanıcıya çevriliyor. SSH ile ' +
+			'bağlanan siz root olduğunuz için, düzeltilmezse panel süreci dosyayı ' +
+			'okuyamaz. Boş bırakılırsa varsayılan kullanılıyor.',
+	},
 ];
 
 /*
@@ -533,6 +827,8 @@ const AYAR_GUVENLI_SUNUCU = /^[A-Za-z0-9._-]+@[A-Za-z0-9._-]+$/;
 export function esitlemeAyariDogrula(ayar) {
 	const hatalar = [];
 	for (const alan of ESITLEME_AYARLARI) {
+		// İsteğe bağlı alan boş bırakılabilir: veri katmanı varsayılanı koyuyor.
+		if (alan.istegeBagli) continue;
 		if (String(ayar?.[alan.anahtar] ?? '').trim() === '') {
 			hatalar.push(`${alan.etiket} boş bırakılamaz.`);
 		}
@@ -793,6 +1089,15 @@ function boslukNull(deger) {
 	if (metin === '') return null;
 	const sayi = Number(metin);
 	return Number.isFinite(sayi) ? Math.round(sayi) : metin;
+}
+
+/** Aşama sırası: boş bırakılırsa 0. Tam sayıya yuvarlanıyor, ondalık bir
+ *  sıra numarasının anlamı yok. */
+function siraSayisi(deger) {
+	const metin = String(deger ?? '').trim();
+	if (metin === '') return 0;
+	const sayi = Number(metin.replace(',', '.'));
+	return Number.isFinite(sayi) ? Math.round(sayi) : Number.NaN;
 }
 
 /** Tarih alanları "YYYY-MM-DD" kalıyor. Date nesnesine çevirmiyoruz: saat

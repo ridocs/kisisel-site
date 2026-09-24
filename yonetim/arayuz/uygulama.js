@@ -16,6 +16,7 @@
 */
 
 import {
+	ASAMA_DURUMLARI,
 	ESITLEME_AYARLARI,
 	IS_DURUMLARI,
 	MUSTERI_DURUMLARI,
@@ -23,6 +24,7 @@ import {
 	OTOMATIK_ARALIK,
 	TALEP_DURUMLARI,
 	TALEP_ONCELIKLERI,
+	asamaGirdisiHazirla,
 	buAy,
 	esitlemeAyariDogrula,
 	isGirdisiHazirla,
@@ -564,9 +566,29 @@ async function isFormuAc(id, musteriId = null) {
 				ipucu: 'Serbest. Tipik aralık 40 ile 60 arası.',
 			},
 			{ ad: 'baslangic', etiket: 'Başlangıç', tip: 'date', deger: kayit?.baslangic ?? '' },
-			{ ad: 'teslim', etiket: 'Teslim', tip: 'date', deger: kayit?.teslim ?? '' },
+			{
+					ad: 'teslim',
+					etiket: 'Hedef teslim tarihi',
+					tip: 'date',
+					deger: kayit?.teslim ?? '',
+					ipucu: 'Müşteriye söylenen tarih. Panelinde görünüyor.',
+				},
 			{ ad: 'tekrar_eden', etiket: 'Tekrar eden iş', tip: 'onay', deger: kayit?.tekrar_eden === 1 },
-			{ ad: 'ozet', etiket: 'Özet', tip: 'metinalan', deger: kayit?.ozet ?? '', genis: true },
+			{
+					ad: 'ozet',
+					etiket: 'Özet',
+					tip: 'metinalan',
+					deger: kayit?.ozet ?? '',
+					genis: true,
+					ipucu: 'Müşteri bu metni panelinde okuyor. Buraya iç not yazmayın.',
+				},
+				{
+					tip: 'aciklama',
+					metin:
+						'Müşterinin paneline giden alanlar: iş adı, durum, özet, toplam tutar ve ' +
+						'hedef teslim tarihi. Tür, başlangıç tarihi, ön ödeme oranı ve revizeler ' +
+						'yalnızca sizde kalıyor.',
+				},
 		],
 		kaydet: async (degerler) => {
 			const form = { ...degerler, id: id ?? null };
@@ -738,6 +760,16 @@ async function isDetayiniCiz() {
 			metin: 'Revize ekle',
 			tikla: () => revizeFormuAc(null, is.id),
 		}),
+		el('button', {
+			sinif: 'dugme',
+			metin: 'Aşama ekle',
+			tikla: () => asamaFormuAc(null, is.id),
+		}),
+		el('button', {
+			sinif: 'dugme',
+			metin: 'Dosya ekle',
+			tikla: () => dosyaEkle(is.id),
+		}),
 		el('button', { sinif: 'dugme sade', metin: 'Listeye dön', tikla: () => ekranaGit('isler') }),
 	);
 
@@ -767,19 +799,369 @@ async function isDetayiniCiz() {
 		is.ozet ? el('p', { metin: is.ozet }) : null,
 	]);
 
+	/*
+	  Üç yeni kart kendi verisini kendisi çekiyor ve hepsi AYNI ANDA
+	  isteniyor. Sırayla beklemek üç gidiş dönüş demekti; hiçbiri ötekinin
+	  sonucuna bakmıyor.
+	*/
+	const [asamalar, dosyalar, mesajlar] = await Promise.all([
+		guvenli(() => kapi.asama.liste(is.id)),
+		guvenli(() => kapi.dosya.liste(is.id)),
+		guvenli(() => kapi.isMesaj.liste(is.id)),
+	]);
+
 	dugumler.icerik.replaceChildren(
 		olcumler,
 		el('div', { sinif: 'bosluk' }),
 		bilgi,
+		asamaKarti(is, asamalar ?? []),
+		dosyaKarti(is, dosyalar ?? []),
+		yazismaKarti(is, mesajlar ?? []),
 		el('div', { sinif: 'kart' }, [
 			el('h2', { metin: 'Ödemeler' }),
+			el('p', {
+				sinif: 'kucuk',
+				metin:
+					'Tarih, tür ve tutar müşterinin paneline gidiyor. Yöntem ve not yalnızca ' +
+					'sizde kalıyor: eşitleme beyaz listesi onları kabul etmiyor.',
+			}),
 			odemeTablosu(is.odemeler, () => ekraniCiz()),
 		]),
 		el('div', { sinif: 'kart' }, [
 			el('h2', { metin: 'Revizeler' }),
+			el('p', { sinif: 'kucuk', metin: 'Revizeler sunucuya çıkmıyor.' }),
 			revizeTablosu(is.revizeler, () => ekraniCiz()),
 		]),
 	);
+}
+
+/* ------------------------------------------------------------------ */
+/* İlerleme aşamaları                                                  */
+/* ------------------------------------------------------------------ */
+
+const asamaDurumAdi = (deger) => adiniBul(ASAMA_DURUMLARI, deger);
+
+async function asamaFormuAc(mevcut, isId) {
+	const dugum = mevcut ?? null;
+	formAc({
+		baslik: dugum ? 'Aşamayı düzenle' : 'Yeni aşama',
+		alanlar: [
+			{ ad: 'baslik', etiket: 'Başlık', deger: dugum?.baslik ?? '', genis: true },
+			{
+				ad: 'tarih',
+				etiket: 'Tarih',
+				tip: 'date',
+				deger: dugum?.tarih ?? new Date().toISOString().slice(0, 10),
+				ipucu: 'Geçmişe dönük aşama da eklenebilir.',
+			},
+			{
+				ad: 'durum',
+				etiket: 'Durum',
+				tip: 'secim',
+				deger: dugum?.durum ?? 'tamamlandi',
+				secenekler: ASAMA_DURUMLARI.map((d) => ({ deger: d.anahtar, ad: d.ad })),
+			},
+			{
+				ad: 'sira',
+				etiket: 'Sıra',
+				tip: 'number',
+				deger: dugum ? String(dugum.sira) : '25',
+				ipucu:
+					'Ağaçtaki yeri. Otomatik aşamalar onar onar artıyor (teklif 10, ön ödeme ' +
+					'20, sürüyor 30, teslim 40, kapanış 50), aradaki sayılar size kalıyor.',
+			},
+			{
+				ad: 'paylasildi',
+				etiket: 'Müşteriyle paylaş',
+				tip: 'onay',
+				deger: dugum ? dugum.paylasildi === 1 : true,
+			},
+			{
+				ad: 'aciklama',
+				etiket: 'Açıklama',
+				tip: 'metinalan',
+				deger: dugum?.aciklama ?? '',
+				genis: true,
+			},
+			{
+				tip: 'aciklama',
+				metin:
+					'İşaret kaldırılırsa aşama eşitleme kuyruğuna hiç yazılmaz, yani sunucuda ' +
+					'bulunmaz. Daha önce paylaşılmış bir aşamanın işareti kaldırılırsa ' +
+					'sunucudaki kopyası silinir.',
+			},
+		],
+		kaydet: async (degerler) => {
+			const form = { ...degerler, id: dugum?.id ?? null, is_id: isId };
+			const { hatalar } = asamaGirdisiHazirla(form);
+			if (hatalar.length) return hatalar;
+			const sonuc = await guvenli(() => kapi.asama.kaydet(form), 'Aşama kaydedildi.');
+			if (!sonuc) return ['Kaydedilemedi.'];
+			await ekraniCiz();
+			return null;
+		},
+	});
+}
+
+function asamaKarti(is, asamalar) {
+	return el('div', { sinif: 'kart' }, [
+		el('h2', { metin: 'İlerleme ağacı' }),
+		el('p', {
+			sinif: 'kucuk',
+			metin:
+				'İşin durumu değiştikçe otomatik bir aşama düşüyor; aralara elle adım ' +
+				'ekleyebilirsiniz. Paylaşılmayan aşama müşterinin panelinde bulunmaz.',
+		}),
+		tablo(
+			[
+				{ ad: 'Sıra', sinif: 'sayi' },
+				{ ad: 'Aşama' },
+				{ ad: 'Durum' },
+				{ ad: 'Tarih' },
+				{ ad: 'Kaynak' },
+				{ ad: 'Paylaşım' },
+				{ ad: '', sinif: 'sayi' },
+			],
+			asamalar.map((a) => [
+				el('td', { sinif: 'sayi', metin: String(a.sira) }),
+				el('td', {}, [
+					el('strong', { metin: a.baslik }),
+					a.aciklama ? el('span', { sinif: 'alt-metin', metin: a.aciklama }) : null,
+				]),
+				el('td', {}, [el('span', { sinif: 'etiket', metin: asamaDurumAdi(a.durum) })]),
+				el('td', { metin: gunBicim(a.tarih) }),
+				el('td', { metin: a.kaynak === 'otomatik' ? 'Otomatik' : 'Elle' }),
+				el('td', {}, [
+					el('span', {
+						sinif: `etiket ${a.paylasildi === 1 ? 'olumlu' : 'bekleyen'}`,
+						metin: a.paylasildi === 1 ? 'Paylaşıldı' : 'Gizli',
+					}),
+				]),
+				el('td', { sinif: 'islem' }, [
+					el('button', {
+						sinif: 'dugme kucuk',
+						metin: 'Düzenle',
+						tikla: () => asamaFormuAc(a, is.id),
+					}),
+					el('button', {
+						sinif: 'dugme kucuk tehlike',
+						metin: 'Sil',
+						tikla: async () => {
+							const onay = await kapi.onaySor(
+								'Aşama silinsin mi?',
+								`"${a.baslik}" aşaması silinecek. Paylaşılmışsa müşterinin panelinden de kalkar.`,
+							);
+							if (!onay) return;
+							await guvenli(() => kapi.asama.sil(a.id), 'Aşama silindi.');
+							await ekraniCiz();
+						},
+					}),
+				]),
+			]),
+			'Bu işte henüz aşama yok.',
+		),
+	]);
+}
+
+/* ------------------------------------------------------------------ */
+/* Dosyalar                                                            */
+/* ------------------------------------------------------------------ */
+
+/** Bayt sayısını okunur hâle getirir: 2411724 -> "2,3 MB". */
+function boyutBicim(bayt) {
+	const sayi = Number(bayt) || 0;
+	if (sayi < 1024) return `${sayi} B`;
+	if (sayi < 1024 * 1024) return `${(sayi / 1024).toFixed(0).replace('.', ',')} KB`;
+	return `${(sayi / 1048576).toFixed(1).replace('.', ',')} MB`;
+}
+
+async function dosyaEkle(isId) {
+	const sonuc = await guvenli(() => kapi.dosya.ekle(isId, null));
+	if (!sonuc || sonuc.iptal) return;
+	if (sonuc.hatalar.length) {
+		bildir(
+			`${sonuc.eklenen} dosya eklendi. Eklenemeyenler: ${sonuc.hatalar.join(' · ')}`,
+			true,
+		);
+	} else {
+		bildir(`${sonuc.eklenen} dosya eklendi. Paylaşmak için "Paylaş" düğmesine basın.`);
+	}
+	await ekraniCiz();
+}
+
+/**
+ * Görsel önizlemesi AYRI çağrılıyor ve geldiğinde yerine konuyor.
+ *
+ * Listeye gömülseydi her tazelemede bütün resimler base64 olarak taşınırdı.
+ * Önizlemesi olmayan dosya için düğüm boş kalıyor, yerine bir şey
+ * uydurulmuyor.
+ */
+function onizlemeKutusu(dosya) {
+	const kutu = el('div', { sinif: 'onizleme' });
+	if (dosya.gorsel_mi !== 1) {
+		/*
+		  Görsel olmayan dosyada kutu BOŞ BIRAKILMIYOR: boş gri kare kırık
+		  bir resim gibi okunuyordu. Yerine uzantı yazılıyor, hem satır
+		  yüksekliği aynı kalıyor hem de kutu bir şey söylüyor.
+		*/
+		const nokta = String(dosya.gosterilen_ad).lastIndexOf('.');
+		kutu.append(
+			el('span', {
+				metin: nokta >= 0 ? dosya.gosterilen_ad.slice(nokta + 1).toLocaleUpperCase('tr') : '?',
+			}),
+		);
+		return kutu;
+	}
+	kapi.dosya
+		.onizleme(dosya.id)
+		.then((adres) => {
+			if (!adres) return;
+			kutu.replaceChildren(
+				el('img', { src: adres, alt: `${dosya.gosterilen_ad} önizlemesi`, width: 48, height: 48 }),
+			);
+		})
+		.catch(() => {
+			// Önizleme üretilememesi bir hata değil, yalnızca bir eksiklik.
+		});
+	return kutu;
+}
+
+function dosyaKarti(is, dosyalar) {
+	return el('div', { sinif: 'kart' }, [
+		el('h2', { metin: 'Dosyalar' }),
+		el('p', {
+			sinif: 'kucuk',
+			metin:
+				'Eklemek göndermek değil: dosya önce burada durur, "Paylaş" dediğinizde ' +
+				'sunucuya kopyalanır ve künyesi kuyruğa yazılır. Gönderim başarısız olursa ' +
+				'künye kuyruğa hiç girmez, yani panelde olmayan bir dosya görünmez.',
+		}),
+		tablo(
+			[
+				{ ad: '' },
+				{ ad: 'Dosya' },
+				{ ad: 'Tür' },
+				{ ad: 'Boyut', sinif: 'sayi' },
+				{ ad: 'Paylaşım' },
+				{ ad: '', sinif: 'sayi' },
+			],
+			dosyalar.map((d) => [
+				el('td', {}, [onizlemeKutusu(d)]),
+				el('td', {}, [
+					el('strong', { metin: d.gosterilen_ad }),
+					el('span', { sinif: 'alt-metin', metin: d.yerel_yol }),
+				]),
+				el('td', { metin: d.tur }),
+				el('td', { sinif: 'sayi', metin: boyutBicim(d.boyut) }),
+				el('td', {}, [
+					el('span', {
+						sinif: `etiket ${d.paylasildi === 1 ? 'olumlu' : 'bekleyen'}`,
+						metin: d.paylasildi === 1 ? `Paylaşıldı ${anBicim(d.gonderildi)}` : 'Paylaşılmadı',
+					}),
+				]),
+				el('td', { sinif: 'islem' }, [
+					d.paylasildi === 1
+						? el('button', {
+								sinif: 'dugme kucuk',
+								metin: 'Paylaşımı geri al',
+								tikla: async () => {
+									await guvenli(
+										() => kapi.dosya.paylasimiGeriAl(d.id),
+										'Paylaşım geri alındı. Künye silme kaydı kuyruğa yazıldı.',
+									);
+									await ekraniCiz();
+								},
+							})
+						: el('button', {
+								sinif: 'dugme kucuk birincil',
+								metin: 'Paylaş',
+								tikla: async () => {
+									bildir(`"${d.gosterilen_ad}" gönderiliyor, bu biraz sürebilir.`);
+									const sonuc = await guvenli(() => kapi.dosya.paylas(d.id));
+									if (sonuc) bildir('Dosya gönderildi, künyesi kuyruğa yazıldı.');
+									await ekraniCiz();
+								},
+							}),
+					el('button', {
+						sinif: 'dugme kucuk tehlike',
+						metin: 'Sil',
+						tikla: async () => {
+							const onay = await kapi.onaySor(
+								'Dosya kaydı silinsin mi?',
+								`"${d.gosterilen_ad}" defterden silinecek. Diskteki dosyanıza dokunulmaz; ` +
+									'paylaşılmışsa müşterinin panelinden kalkar.',
+							);
+							if (!onay) return;
+							await guvenli(() => kapi.dosya.sil(d.id), 'Dosya kaydı silindi.');
+							await ekraniCiz();
+						},
+					}),
+				]),
+			]),
+			'Bu işe eklenmiş dosya yok.',
+		),
+	]);
+}
+
+/* ------------------------------------------------------------------ */
+/* İş bazlı yazışma                                                    */
+/* ------------------------------------------------------------------ */
+
+function yazismaKarti(is, mesajlar) {
+	const musteriAdi = is.musteri_adi ?? 'Müşteri';
+
+	const yazisma = el(
+		'div',
+		{ sinif: 'yazisma' },
+		mesajlar.length
+			? mesajlar.map((m) =>
+					el('article', { sinif: `mesaj ${m.yazan === 'sahip' ? 'sahip' : 'musteri'}` }, [
+						el('p', {
+							sinif: 'mesaj-basligi',
+							metin: `${m.yazan === 'sahip' ? 'Siz' : musteriAdi} · ${anBicim(m.zaman)}`,
+						}),
+						el('p', { sinif: 'mesaj-govde', metin: m.metin }),
+					]),
+				)
+			: [el('p', { sinif: 'bos', metin: 'Bu işte henüz mesaj yok.' })],
+	);
+
+	const alan = el('textarea', {
+		rows: 3,
+		placeholder: 'Bu işle ilgili mesajınız…',
+		'aria-label': 'İş mesajı',
+	});
+
+	return el('div', { sinif: 'kart' }, [
+		el('h2', { metin: 'İş yazışması' }),
+		el('p', {
+			sinif: 'kucuk',
+			metin:
+				'Destek talebi genel konular için; bu ise yalnızca bu işin yazışması. ' +
+				'Yazdığınız mesaj doğrudan sunucuya gitmez, eşitleme kuyruğuna girer ve ' +
+				'aynı anda buraya da yazılır.',
+		}),
+		yazisma,
+		alan,
+		el('div', { sinif: 'dugme-sirasi' }, [
+			el('button', {
+				sinif: 'dugme birincil',
+				metin: 'Mesajı kuyruğa ekle',
+				tikla: async () => {
+					const metin = alan.value.trim();
+					if (metin === '') {
+						bildir('Mesaj boş bırakılamaz.', true);
+						return;
+					}
+					const sonuc = await guvenli(() => kapi.isMesaj.yaz(is.id, metin));
+					if (!sonuc) return;
+					alan.value = '';
+					bildir('Mesaj eşitleme kuyruğuna eklendi. Bir sonraki eşitlemede gidecek.');
+					await ekraniCiz();
+				},
+			}),
+		]),
+	]);
 }
 
 function olcum(baslik, deger, sinif = '') {
@@ -1289,6 +1671,13 @@ const SEBEP_ADLARI = {
 	'davet.iptal': 'davet iptali',
 	'talep.yanit': 'talep yanıtı',
 	'talep.durum': 'talep durumu',
+	'odeme.yaz': 'ödeme kaydı',
+	'odeme.sil': 'ödeme silme',
+	'asama.yaz': 'ilerleme aşaması',
+	'asama.sil': 'aşama silme',
+	'dosya.yaz': 'dosya künyesi',
+	'dosya.sil': 'dosya künyesi silme',
+	'is-mesaj.yaz': 'iş mesajı',
 };
 
 const sebepAdi = (anahtar) => SEBEP_ADLARI[anahtar] ?? String(anahtar ?? '');

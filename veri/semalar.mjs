@@ -145,6 +145,11 @@ CREATE TABLE IF NOT EXISTS dosya (
 	is_id         TEXT NOT NULL REFERENCES is_kaydi (id) ON DELETE CASCADE,
 	asama_id      TEXT REFERENCES is_asama (id) ON DELETE SET NULL,
 	gosterilen_ad TEXT NOT NULL,
+	-- Sunucudaki (ve diskteki) ad. Burada SAKLANIYOR, her paylaşımda yeniden
+	-- üretilmiyor: paylaşım geri alınıp yeniden yapıldığında ad değişseydi
+	-- sunucuda öksüz kopyalar birikirdi ve panel tarafındaki benzersizlik
+	-- kısıtı çakışırdı.
+	depo_adi      TEXT UNIQUE,
 	yerel_yol     TEXT NOT NULL,
 	tur           TEXT NOT NULL,
 	boyut         INTEGER NOT NULL,

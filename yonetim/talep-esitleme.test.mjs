@@ -18,7 +18,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import { yerelAc, simdi } from '../veri/db.mjs';
-import { AYAR_ANAHTARLARI, ayarlariOku } from '../veri/esitleme-ssh.mjs';
+import { AYAR_ANAHTARLARI, ISTEGE_BAGLI_AYARLAR, ayarlariOku } from '../veri/esitleme-ssh.mjs';
 import { IZINLI_ALANLAR } from '../veri/izinli-alanlar.mjs';
 import { depoKur } from './depo.mjs';
 import {
@@ -259,21 +259,40 @@ test('durum kaydı yalnızca kimlik ve durum taşıyor', () => {
 /* Eşitleme ayarları                                                   */
 /* ------------------------------------------------------------------ */
 
-test('ayar alanları veri katmanındaki anahtar listesiyle birebir aynı', () => {
+test('zorunlu ayar alanları veri katmanındaki listeyle birebir aynı', () => {
+	/*
+	  Arayüz artık isteğe bağlı alanlar da soruyor (dosya klasörü ve panel
+	  kullanıcısı), o yüzden karşılaştırma ZORUNLU olanlar üzerinden yapılıyor.
+	  İki liste ayrışırsa arayüz bir alanı hiç sormaz ve eşitleme sebepsiz yere
+	  hata verir.
+	*/
 	assert.deepEqual(
-		ESITLEME_AYARLARI.map((a) => a.anahtar).sort(),
+		ESITLEME_AYARLARI.filter((a) => !a.istegeBagli).map((a) => a.anahtar).sort(),
 		[...AYAR_ANAHTARLARI].sort(),
-		'iki liste ayrışırsa arayüz bir alanı sormaz ve eşitleme sebepsiz yere hata verir',
 	);
+});
+
+test('isteğe bağlı ayarlar veri katmanındaki varsayılanlarla eşleşiyor', () => {
+	const arayuz = ESITLEME_AYARLARI.filter((a) => a.istegeBagli).map((a) => a.anahtar).sort();
+	assert.deepEqual(arayuz, Object.keys(ISTEGE_BAGLI_AYARLAR).sort());
 });
 
 test('ayar doğrulaması eksik değerde uyarıyor', () => {
 	const hatalar = esitlemeAyariDogrula({});
-	assert.equal(hatalar.length, ESITLEME_AYARLARI.length, 'dört alanın dördü de sayılmalı');
-	for (const alan of ESITLEME_AYARLARI) {
+	const zorunluSayisi = ESITLEME_AYARLARI.filter((a) => !a.istegeBagli).length;
+	assert.equal(hatalar.length, zorunluSayisi, 'her zorunlu alan ayrı ayrı sayılmalı');
+	// Yalnızca ZORUNLU alanlar uyarı üretmeli: isteğe bağlı olanlar boşken
+	// varsayılanla doluyor, onlar için uyarı çıkması yanlış olurdu.
+	for (const alan of ESITLEME_AYARLARI.filter((a) => !a.istegeBagli)) {
 		assert.ok(
 			hatalar.some((h) => h.includes(alan.etiket)),
 			`${alan.etiket} için uyarı yok`,
+		);
+	}
+	for (const alan of ESITLEME_AYARLARI.filter((a) => a.istegeBagli)) {
+		assert.ok(
+			!hatalar.some((h) => h.includes(alan.etiket)),
+			`${alan.etiket} isteğe bağlı, boşken uyarı vermemeli`,
 		);
 	}
 
@@ -358,7 +377,7 @@ test('özet bekleyen işlem sayısını, en eskisini ve ayar hatalarını veriyo
 		assert.equal(bos.bekleyenSayisi, 0);
 		assert.equal(bos.enEski, null);
 		assert.equal(bos.sonCalisma, null);
-		assert.equal(bos.ayarHatalari.length, ESITLEME_AYARLARI.length);
+		assert.equal(bos.ayarHatalari.length, ESITLEME_AYARLARI.filter((a) => !a.istegeBagli).length);
 
 		const talepId = ornekTalep(db);
 		depo.talepYanitla(talepId, 'İlk yanıt.');
@@ -453,6 +472,9 @@ test('kuyruğa kayıt düşen her yol otomatik eşitlemeyi haberdar ediyor', () 
 			'musteri.yaz',
 			'musteri.yaz',
 			'is.yaz',
+			// İş kaydı durum değişikliğiyle birlikte otomatik bir ilerleme
+			// aşaması da düşürüyor, o da aynı kapıdan geçiyor.
+			'asama.yaz',
 			'davet.yaz',
 			'talep.yanit',
 			'talep.durum',

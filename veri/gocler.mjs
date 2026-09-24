@@ -53,10 +53,20 @@ export const PANEL_GOCLERI = [
 
 export const YEREL_GOCLERI = [
 	/*
-	  1) Yerelde şu an eklenecek sütun yok: ilerleme aşamaları, dosyalar ve iş
-	     yazışması yeni TABLOLAR olarak geldi, onları şema kendisi kuruyor.
-	     Yine de listeyi boş bırakmıyoruz ki sürüm numarası iki taraf için de
-	     ilerlesin ve ileride eklenecek adımın yeri belli olsun.
+	  1) İlerleme aşamaları, dosyalar ve iş yazışması yeni TABLOLAR olarak
+	     geldi; onları şema kendisi kuruyor, burada yapılacak bir şey yok.
 	*/
 	() => {},
+
+	/*
+	  2) Dosyanın sunucudaki adı yerelde de saklanıyor (24 Eylül 2026).
+
+	  İlk sürümde bu sütun yoktu ve ad her paylaşımda yeniden üretiliyordu.
+	  Sonuç: paylaşım geri alınıp yeniden yapılınca sunucuda öksüz bir kopya
+	  kalıyor ve panel tarafındaki benzersizlik kısıtı çakışabiliyordu.
+	*/
+	(db) => {
+		if (!tabloVar(db, 'dosya')) return;
+		sutunEkle(db, 'dosya', 'depo_adi', 'TEXT');
+	},
 ];

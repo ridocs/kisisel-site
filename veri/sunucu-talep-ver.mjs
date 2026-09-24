@@ -40,6 +40,23 @@ const mesajDeyimi = db.prepare(
 	'SELECT id, yazan, metin, zaman FROM talep_mesaji WHERE talep_id = ? ORDER BY zaman',
 );
 
+/*
+  İŞ YAZIŞMASI DA BURADAN GİDİYOR.
+
+  İlk sürümde yalnızca destek talepleri çekiliyordu ve iş bazlı yazışma tek
+  yönlü kalmıştı: sahip yazabiliyor, müşterinin aynı işe yazdığı yanıt
+  yönetim uygulamasına hiç ulaşmıyordu. Özellik yarım kalıyordu.
+
+  Sahibin kendi mesajları da dönüyor: aynı kimlikle yazıldıkları için yerel
+  kopyada ikilenmiyorlar ve bu, yerel kopyanın sunucuyla aynı hizaya gelmesini
+  sağlıyor.
+*/
+const isMesajlari = sonrasi
+	? db
+			.prepare('SELECT id, is_id, yazan, metin, zaman FROM is_mesaji WHERE zaman > ? ORDER BY zaman LIMIT 500')
+			.all(sonrasi)
+	: db.prepare('SELECT id, is_id, yazan, metin, zaman FROM is_mesaji ORDER BY zaman LIMIT 500').all();
+
 const cikti = {
 	surum: 1,
 	uretildi: new Date().toISOString(),
@@ -54,6 +71,7 @@ const cikti = {
 		guncellendi: t.guncellendi,
 		mesajlar: mesajDeyimi.all(t.id),
 	})),
+	is_mesajlari: isMesajlari,
 };
 
 db.close();

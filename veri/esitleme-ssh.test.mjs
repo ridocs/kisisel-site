@@ -16,7 +16,7 @@ import { fileURLToPath } from 'node:url';
 import { execFileSync } from 'node:child_process';
 
 import { yerelAc, panelAc, simdi } from './db.mjs';
-import { kuyrugaYaz, bekleyenler, paketHazirla } from './esitleme.mjs';
+import { kuyrugaYaz, bekleyenler, paketHazirla, isMesajlariniIceAl } from './esitleme.mjs';
 import { ayarlariOku } from './esitleme-ssh.mjs';
 import { davetAnahtariUret } from './kimlik.mjs';
 
@@ -264,6 +264,106 @@ test('kabukta anlam taşıyan karakterli ayar reddediliyor', () => {
 		yaz.run('esitleme.sunucu', 'root@makine');
 		const ayar = ayarlariOku(yerel);
 		assert.equal(ayar['esitleme.sunucu'], 'root@makine');
+	} finally {
+		yerel.close();
+		rmSync(dizin, { recursive: true, force: true });
+	}
+});
+
+test('is yazismasi sunucudan yerele cekiliyor', () => {
+	const { dizin, yerel, panelYolu } = ortam();
+	try {
+		// Sahip bir müşteri ve iş tanımladı, sunucuya gitti.
+		kuyrugaYaz(yerel, 'musteri.yaz', { id: 'm1', gorunen_ad: 'Ali', durum: 'etkin' });
+		kuyrugaYaz(yerel, 'is.yaz', {
+			id: 'i1',
+			musteri_id: 'm1',
+			ad: 'Pompa mili',
+			durum: 'suruyor',
+			tutar_kurus: 900_000,
+		});
+		iceAl(panelYolu, paketHazirla(bekleyenler(yerel)));
+
+		/*
+		  Yerel defterde de müşteri ve iş var (gerçekte sahip onları orada
+		  oluşturuyor). Sıra önemli: iş müşteriye yabancı anahtarla bağlı,
+		  önce müşteri yazılmazsa kısıt patlıyor.
+		*/
+		yerel.prepare(
+			'INSERT INTO musteri (id, ad_soyad, olusturuldu, guncellendi) VALUES (?, ?, ?, ?)',
+		).run('m1', 'Ali', simdi(), simdi());
+		yerel.prepare(
+			'INSERT INTO is_kaydi (id, musteri_id, ad, olusturuldu, guncellendi) VALUES (?, ?, ?, ?, ?)',
+		).run('i1', 'm1', 'Pompa mili', simdi(), simdi());
+
+		// Müşteri panelde o işe mesaj yazdı.
+		const panel = panelAc(panelYolu);
+		panel.prepare(
+			"INSERT INTO is_mesaji (id, is_id, yazan, metin, zaman) VALUES (?, ?, 'musteri', ?, ?)",
+		).run('im1', 'i1', 'Mil çapı 40 mm olacak mı?', simdi());
+		panel.close();
+
+		// Sunucu betiği onu veriyor mu?
+		const ham = execFileSync('node', [TALEP_VER, panelYolu], { encoding: 'utf8' });
+		const gelen = JSON.parse(ham.trim().split('\n').pop());
+		assert.equal(gelen.is_mesajlari.length, 1, 'iş mesajı sunucudan verilmedi');
+		assert.equal(gelen.is_mesajlari[0].metin, 'Mil çapı 40 mm olacak mı?');
+
+		// Yerel kopyaya yazılıyor mu?
+		const sonuc = isMesajlariniIceAl(yerel, gelen);
+		assert.equal(sonuc.yazilan, 1);
+		const yazilan = yerel.prepare('SELECT * FROM is_mesaj_kopyasi WHERE id = ?').get('im1');
+		assert.equal(yazilan.metin, 'Mil çapı 40 mm olacak mı?');
+		assert.equal(yazilan.yazan, 'musteri');
+
+		// İkinci kez içe alınca ikilenmemeli.
+		isMesajlariniIceAl(yerel, gelen);
+		assert.equal(yerel.prepare('SELECT COUNT(*) AS n FROM is_mesaj_kopyasi').get().n, 1);
+	} finally {
+		yerel.close();
+		rmSync(dizin, { recursive: true, force: true });
+	}
+});
+
+test('yerelde olmayan ise gelen mesaj dusuyor', () => {
+	// Ele geçirilmiş bir sunucu, var olmayan bir işe mesaj bağlayarak yerel
+	// deftere satır açamamalı.
+	const { dizin, yerel } = ortam();
+	try {
+		const sonuc = isMesajlariniIceAl(yerel, {
+			is_mesajlari: [
+				{ id: 'x1', is_id: 'olmayan-is', yazan: 'musteri', metin: 'Sahte', zaman: simdi() },
+			],
+		});
+		assert.equal(sonuc.yazilan, 0);
+		assert.equal(sonuc.atlanan, 1);
+		assert.equal(yerel.prepare('SELECT COUNT(*) AS n FROM is_mesaj_kopyasi').get().n, 0);
+	} finally {
+		yerel.close();
+		rmSync(dizin, { recursive: true, force: true });
+	}
+});
+
+test('istege bagli ayarlar varsayilanla doluyor', () => {
+	const { dizin, yerel } = ortam();
+	try {
+		const yaz = yerel.prepare(
+			'INSERT INTO ayar (anahtar, deger) VALUES (?, ?) ON CONFLICT (anahtar) DO UPDATE SET deger = excluded.deger',
+		);
+		yaz.run('esitleme.sunucu', 'root@makine');
+		yaz.run('esitleme.uzak_veri', '/opt/panel/veri');
+		yaz.run('esitleme.uzak_vt', '/var/lib/panel/panel.db');
+		yaz.run('esitleme.ssh_anahtari', 'C:/anahtar');
+		yaz.run('esitleme.uzak_node', '/opt/node24/bin/node');
+
+		// Dosya dizini ve kullanıcı girilmedi: varsayılan gelmeli, hata değil.
+		const ayar = ayarlariOku(yerel);
+		assert.equal(ayar['esitleme.uzak_dosya'], '/var/lib/panel/dosyalar');
+		assert.equal(ayar['esitleme.uzak_kullanici'], 'panel');
+
+		// Girilirse o kullanılmalı.
+		yaz.run('esitleme.uzak_dosya', '/srv/dosyalar');
+		assert.equal(ayarlariOku(yerel)['esitleme.uzak_dosya'], '/srv/dosyalar');
 	} finally {
 		yerel.close();
 		rmSync(dizin, { recursive: true, force: true });

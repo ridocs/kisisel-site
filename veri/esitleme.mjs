@@ -166,3 +166,52 @@ export function talepleriIceAl(db, gelen) {
 	}
 	return { yazilan, atlanan };
 }
+
+/*
+  Sunucudan gelen İŞ YAZIŞMASI mesajlarını yerel kopyaya yazar.
+
+  Destek talebi mesajlarıyla aynı kurallar: gelen veri güvenilmez, yalnızca
+  beklenen alanlar okunuyor, metin sınırlanıyor ve yerelde olmayan bir işe
+  bağlanan mesaj DÜŞÜYOR. Sunucunun uydurduğu bir iş kimliği yerel deftere
+  satır açamamalı; destek talebinde taslak satır kuruluyordu çünkü talebin
+  kendisi sunucuda doğuyor, ama iş kaydı sahibin defterinde doğuyor.
+*/
+export function isMesajlariniIceAl(db, gelen) {
+	const mesajlar = Array.isArray(gelen?.is_mesajlari) ? gelen.is_mesajlari : [];
+	if (!mesajlar.length) return { yazilan: 0, atlanan: 0 };
+
+	const zaman = simdi();
+	let yazilan = 0;
+	let atlanan = 0;
+
+	const yaz = db.prepare(
+		`INSERT INTO is_mesaj_kopyasi (id, is_id, yazan, metin, zaman, cekildi)
+		 VALUES (?, ?, ?, ?, ?, ?)
+		 ON CONFLICT (id) DO UPDATE SET metin = excluded.metin, cekildi = excluded.cekildi`,
+	);
+	const isVarMi = db.prepare('SELECT 1 FROM is_kaydi WHERE id = ?');
+
+	db.exec('BEGIN');
+	try {
+		for (const ham of mesajlar) {
+			if (!ham?.id || !ham.is_id || typeof ham.metin !== 'string' || !isVarMi.get(ham.is_id)) {
+				atlanan++;
+				continue;
+			}
+			yaz.run(
+				String(ham.id),
+				String(ham.is_id),
+				ham.yazan === 'sahip' ? 'sahip' : 'musteri',
+				ham.metin.slice(0, METIN_SINIRI),
+				String(ham.zaman ?? zaman),
+				zaman,
+			);
+			yazilan++;
+		}
+		db.exec('COMMIT');
+	} catch (hata) {
+		db.exec('ROLLBACK');
+		throw hata;
+	}
+	return { yazilan, atlanan };
+}

@@ -274,14 +274,44 @@ test('arşivdeki müşteri sunucuya "kapali" olarak gidiyor', () => {
 	assert.equal(musteriEsitlemeKaydi({ id: 'm', ad_soyad: 'A', durum: 'etkin' }).govde.durum, 'etkin');
 });
 
-test('iş eşitleme kaydında tutar ve oran YOK', () => {
+/*
+  24 EYLÜL 2026'DA DEĞİŞTİ. Bu test eskiden "tutar ve oran YOK" diyordu;
+  tutar artık bilerek gidiyor (müşteri kendi ödeme dökümünü görüyor). Oran
+  ve iç ayrıntılar hâlâ gitmiyor ve testin asıl bekçilik ettiği şey o.
+*/
+test('iş eşitleme kaydında tutar var, ön ödeme oranı ve tür YOK', () => {
 	const { govde } = isEsitlemeKaydi({
 		id: 'i1',
 		musteri_id: 'm1',
 		ad: 'Site yenileme',
 		durum: 'suruyor',
+		ozet: 'İki dilli tanıtım sitesi',
+		tutar_kurus: 1_234_567,
+		para_birimi: 'TRY',
+		teslim_hedefi: '2026-10-15',
 	});
-	assert.deepEqual(Object.keys(govde).sort(), ['ad', 'durum', 'id', 'musteri_id']);
+	assert.deepEqual(Object.keys(govde).sort(), [
+		'ad', 'durum', 'id', 'musteri_id', 'ozet', 'para_birimi', 'teslim_hedefi', 'tutar_kurus',
+	]);
+	assert.equal(govde.tutar_kurus, 1_234_567);
+	assert.equal(govde.teslim_hedefi, '2026-10-15');
+});
+
+test('boş özet ve boş hedef tarih gövdeye hiç konmuyor', () => {
+	const { govde } = isEsitlemeKaydi({
+		id: 'i1',
+		musteri_id: 'm1',
+		ad: 'Site',
+		durum: 'teklif',
+		ozet: '   ',
+		tutar_kurus: 0,
+		teslim_hedefi: null,
+	});
+	assert.deepEqual(Object.keys(govde).sort(), [
+		'ad', 'durum', 'id', 'musteri_id', 'para_birimi', 'tutar_kurus',
+	]);
+	// Para birimi verilmediğinde varsayılan TRY.
+	assert.equal(govde.para_birimi, 'TRY');
 });
 
 test('davet kaydında anahtarın kendisi değil karması var', () => {

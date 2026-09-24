@@ -178,7 +178,9 @@ test('kuyruğa hassas veri SIZMIYOR', () => {
 		const { id: isId } = o.depo.isKaydet({
 			musteri_id: musteriId,
 			ad: 'Site yenileme',
-			ozet: 'Gizli kalması gereken iç not',
+			// Özet artık müşteriye gidiyor, dolayısıyla burada iç not değil
+			// müşterinin okuyacağı metin duruyor.
+			ozet: 'İki dilli tanıtım sitesi',
 			tur: 'Web sitesi',
 			durum: 'suruyor',
 			tutar_kurus: 1_234_567,
@@ -215,15 +217,20 @@ test('kuyruğa hassas veri SIZMIYOR', () => {
 				const govde = JSON.parse(k.govde);
 				delete govde.id;
 				delete govde.musteri_id;
+				delete govde.is_id;
 				delete govde.anahtar_karmasi;
 				return JSON.stringify(govde);
 			})
 			.join('\n');
 
-		// Ödeme ve revize kuyruğa HİÇ girmemeli.
+		/*
+		  24 EYLÜL 2026: ödeme artık kuyruğa GİRİYOR, revize hâlâ girmiyor.
+		  İş kaydı durum değişikliğiyle birlikte otomatik bir ilerleme
+		  aşaması da düşürüyor, o da listede.
+		*/
 		assert.deepEqual(
 			[...new Set(kuyruk.map((k) => k.islem))].sort(),
-			['davet.yaz', 'is.yaz', 'musteri.yaz'],
+			['asama.yaz', 'davet.yaz', 'is.yaz', 'musteri.yaz', 'odeme.yaz'],
 		);
 
 		const sizmamasiGerekenler = [
@@ -232,13 +239,11 @@ test('kuyruğa hassas veri SIZMIYOR', () => {
 			'05551112233', // telefon
 			'Çankaya', // ilçe
 			'Ankara', // şehir
-			'1234567', // iş tutarı (kuruş)
-			'555555', // ön ödeme tutarı
-			'99999', // revize tutarı
-			'Gizli kalması gereken iç not',
-			'Havale',
-			'Ek sayfa',
-			'Gizli',
+			'99999', // revize tutarı: revize sunucuya çıkmıyor
+			'Havale', // ödeme yöntemi
+			'Ek sayfa', // revize başlığı
+			'Web sitesi', // iş türü
+			'2026-09-01', // başlangıç tarihi: yalnızca hedef teslim çıkıyor
 		];
 		for (const parca of sizmamasiGerekenler) {
 			assert.ok(!hepsi.includes(parca), `kuyruğa sızdı: ${parca}\n${hepsi}`);
@@ -247,11 +252,21 @@ test('kuyruğa hassas veri SIZMIYOR', () => {
 		// Buna karşılık gitmesi GEREKENLER orada.
 		assert.ok(hepsi.includes('Ayşe Yılmaz'), 'görünen ad gitmeliydi');
 		assert.ok(hepsi.includes('Site yenileme'), 'işin görünen adı gitmeliydi');
+		assert.ok(hepsi.includes('1234567'), 'iş tutarı gitmeliydi');
+		assert.ok(hepsi.includes('555555'), 'ödeme tutarı gitmeliydi');
+		assert.ok(hepsi.includes('2026-09-20'), 'hedef teslim tarihi gitmeliydi');
 
 		// Her gövde yalnızca izin verilen alanlardan oluşmalı.
 		const izinli = {
 			'musteri.yaz': ['id', 'gorunen_ad', 'durum'],
-			'is.yaz': ['id', 'musteri_id', 'ad', 'durum'],
+			'is.yaz': [
+				'id', 'musteri_id', 'ad', 'durum', 'ozet', 'tutar_kurus',
+				'para_birimi', 'teslim_hedefi',
+			],
+			'odeme.yaz': ['id', 'is_id', 'tur', 'tutar_kurus', 'tarih'],
+			'asama.yaz': [
+				'id', 'is_id', 'sira', 'kaynak', 'baslik', 'aciklama', 'durum', 'tarih',
+			],
 			'davet.yaz': ['id', 'musteri_id', 'anahtar_karmasi', 'son_kullanma'],
 		};
 		for (const kayit of kuyruk) {
