@@ -10,6 +10,7 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { DatabaseSync } from 'node:sqlite';
 
 import { yerelAc, panelAc, gocUygula, simdi } from './db.mjs';
 import {
@@ -188,7 +189,15 @@ test('kimlikler benzersiz', () => {
 test('göç düzeneği sürümü ilerletiyor ve iki kez çalışmıyor', () => {
 	const dizin = geciciDizin();
 	try {
-		const db = panelAc(join(dizin, 'panel.db'));
+		/*
+		  HAM veritabanı kullanılıyor, `panelAc` değil.
+
+		  `panelAc` artık kendi göçlerini açılışta uyguluyor ve sürümü
+		  ilerletiyor; onun üstüne test kendi göç listesini çalıştırınca
+		  sürüm zaten ileride olduğu için adım atlanıyordu. Burada sınanan
+		  şey düzeneğin kendisi, panelin göçleri değil.
+		*/
+		const db = new DatabaseSync(join(dizin, 'duzenek.db'));
 		let sayac = 0;
 		const gocler = [
 			(d) => {
