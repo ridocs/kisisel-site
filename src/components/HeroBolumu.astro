@@ -37,12 +37,44 @@ const m = cevirici(dilBul(Astro.url));
 */
 const ikonlar = [
 	// --- Dar ekranda da görünen çekirdek (10) ---
-	{ ad: 'Astro', ikon: 'logos:astro-icon', tersle: true, sinif: 'top-[26%] left-[6%] md:top-[20%] md:left-[6%]' },
-	{ ad: 'TypeScript', ikon: 'logos:typescript-icon', sinif: 'top-[22%] right-[7%] md:top-[18%] md:right-[6%]' },
+	/*
+	  Astro dar ekranda YUKARI alındı: eski yeri (`top-[26%]`) telefonda
+	  başlığın ilk harfine değiyordu. Ölçümle bulundu, gözle doğrulandı.
+	  Geniş ekranda başlık daha aşağıda kaldığı için orada sorun yoktu.
+	*/
+	{ ad: 'Astro', ikon: 'logos:astro-icon', tersle: true, sinif: 'top-[18%] left-[5%] md:top-[20%] md:left-[6%]' },
+	/*
+	  TypeScript de dar ekranda yukarı alındı. 360 ve 320 piksel genişlikte
+	  başlık üç satıra bölünüp yukarı taşıyor ve eski yer (`top-[22%]`)
+	  başlığın sağ ucuna değiyordu. Ölçüldü.
+	*/
+	{ ad: 'TypeScript', ikon: 'logos:typescript-icon', sinif: 'top-[15%] right-[6%] md:top-[18%] md:right-[6%]' },
 	{ ad: 'Tailwind CSS', ikon: 'logos:tailwindcss-icon', sinif: 'bottom-[14%] left-[10%] md:bottom-[12%] md:left-[9%]' },
 	{ ad: 'React', ikon: 'logos:react', sinif: 'bottom-[16%] right-[9%] md:bottom-[12%] md:right-[9%]' },
-	{ ad: 'JavaScript', ikon: 'logos:javascript', sinif: 'top-[42%] left-[4%] md:top-[40%] md:left-[4%]' },
-	{ ad: 'Docker', ikon: 'logos:docker-icon', sinif: 'top-[46%] right-[4%] md:top-[44%] md:right-[4%]' },
+	/*
+	  JavaScript ve Docker DAR EKRANDA ALT BOŞLUĞA alındı.
+
+	  Önceki yerleri (`top-[42%]` ve `top-[46%]`) masaüstünde metnin
+	  solunda ve sağında boşluğa denk geliyor, ama telefonda metin ekranın
+	  tamamını kaplıyor ve bu iki kutu tam tanıtım paragrafının arkasına
+	  düşüyordu. Kutular metnin ARKASINDA (metin `z-10`), yani örtmüyorlar;
+	  yine de koyu kutunun üstündeki gri metin okunaksızlaşıyordu.
+
+	  Alt boşluk (`bottom-[30%]` bandı) telefonda düğmelerin altında kalıyor
+	  ve oradaki Tailwind ile React kutularına (`bottom-[14%]`, `bottom-[16%]`)
+	  değmiyor. `md:bottom-auto` şart: olmazsa geniş ekranda hem `top` hem
+	  `bottom` uygulanır ve kutu gerilir.
+	*/
+	{
+		ad: 'JavaScript',
+		ikon: 'logos:javascript',
+		sinif: 'bottom-[30%] left-[4%] md:bottom-auto md:top-[40%] md:left-[4%]',
+	},
+	{
+		ad: 'Docker',
+		ikon: 'logos:docker-icon',
+		sinif: 'bottom-[25%] right-[4%] md:bottom-auto md:top-[44%] md:right-[4%]',
+	},
 	{ ad: 'HTML5', ikon: 'logos:html-5', sinif: 'bottom-[6%] left-[30%] md:bottom-[5%] md:left-[32%]' },
 	{ ad: 'CSS3', ikon: 'logos:css-3', sinif: 'bottom-[7%] right-[29%] md:bottom-[5%] md:right-[32%]' },
 	{ ad: 'Node.js', ikon: 'logos:nodejs-icon', sinif: 'top-[13%] left-[18%] md:top-[10%] md:left-[16%]' },
