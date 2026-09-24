@@ -213,12 +213,29 @@ const KODLAYICI = new TextEncoder();
  * gerekmesin ve "bağlantı kapanınca zamanlayıcı temizlendi mi" sorusu
  * ölçülebilsin diye.
  */
-export function akisYaniti(
-	db,
+export function akisYaniti(db, { musteriId, talepId = null, baslangic = null, ...secenekler }) {
+	if (talepId && !talepSahibiMi(db, musteriId, talepId)) return null;
+
+	const pencere = pencereAc(db, { musteriId, talepId, baslangic });
+
+	return sseYaniti(pencere, { ...secenekler, acilisEk: { talep: talepId ?? null } });
+}
+
+/**
+ * SSE BORUSU. Yoklama penceresinden bağımsız: nabız, ömür sınırı, oturum
+ * denetimi, temizlik ve yanıt başlıkları burada.
+ *
+ * Destek yazışması ile iş yazışması AYNI boruyu kullanıyor. İkinci bir kopya
+ * yazılsaydı, buradaki zamanlayıcı temizliği ya da ömür sınırı bir gün
+ * yalnızca birinde düzeltilirdi; açık kalan her zamanlayıcı da bir bellek
+ * sızıntısı. Değişen tek şey `pencere.tur()`'ün ne döndürdüğü.
+ *
+ * `pencere`: `{ damga, tur() }`. `tur()` her çağrıda yeni olayları veriyor,
+ * her olayda `tur` alanı SSE olayının adı oluyor.
+ */
+export function sseYaniti(
+	pencere,
 	{
-		musteriId,
-		talepId = null,
-		baslangic = null,
 		/** Oturum hâlâ geçerli mi. Nabız sıklığında soruluyor. */
 		oturumGecerliMi = () => true,
 		/** İstemci koptuğunda tetiklenen işaret (`request.signal`). */
@@ -229,12 +246,10 @@ export function akisYaniti(
 		zamanlayiciKur = setInterval,
 		zamanlayiciSil = clearInterval,
 		simdi = () => Date.now(),
-	},
+		/** `acildi` olayına eklenen alanlar: hangi yazışmaya bağlanıldığı. */
+		acilisEk = {},
+	} = {},
 ) {
-	if (talepId && !talepSahibiMi(db, musteriId, talepId)) return null;
-
-	const pencere = pencereAc(db, { musteriId, talepId, baslangic });
-
 	let sayac = null;
 	let bitti = false;
 	let kopmaDinleyicisi = null;
@@ -305,7 +320,7 @@ export function akisYaniti(
 
 			/* Tarayıcıya yeniden bağlanma gecikmesini söylüyoruz. */
 			yaz(`retry: ${YENIDEN_MS}\n\n`);
-			olayYaz('acildi', { damga: pencere.damga, talep: talepId ?? null });
+			olayYaz('acildi', { damga: pencere.damga, ...acilisEk });
 
 			function tur() {
 				if (bitti) return;

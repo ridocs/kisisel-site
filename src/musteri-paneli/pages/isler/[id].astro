@@ -1,0 +1,390 @@
+---
+/*
+  İş detayı: ilerleme ağacı, ödeme dökümü, dosyalar ve işin kendi yazışması.
+
+  `isDetayGetir` müşteri kimliği olmadan ÇAĞRILAMAZ: imzası üç argüman
+  istiyor ve künye sorgusu `WHERE id = ? AND musteri_id = ?` diyor. İş bu
+  müşterinin değilse künye `null` dönüyor ve aşama, ödeme, dosya, mesaj
+  sorgularının HİÇBİRİ çalışmıyor. Başka bir müşterinin iş kimliği elle adres
+  çubuğuna yazılsa bile buradan 404 dönüyor; "var ama göremezsin" bile
+  denmiyor.
+
+  ÖDENEN TUTAR VERİTABANINDAN OKUNMUYOR, `is_odeme` satırlarından
+  hesaplanıyor (`sunucu/isler.mjs`). İki yerde tutulan bir sayı er geç
+  ayrışır.
+
+  Burada `<style>` bloğu ve satır içi `style` niteliği YOK; gerekçe
+  `duzen/Kabuk.astro` başlığında.
+*/
+import Kabuk from '../../duzen/Kabuk.astro';
+import Canli from '../../duzen/Canli.astro';
+import { ayarlar } from '../../sunucu/ayarlar.mjs';
+import { islemAnahtariGecerliMi } from '../../sunucu/csrf.mjs';
+import { panelVt } from '../../sunucu/veritabani.mjs';
+import { makineZamani, para, tarih, teslimCumlesi, zaman } from '../../sunucu/bicim.mjs';
+import { boyutMetni } from '../../sunucu/dosyalar.mjs';
+import { isDurumEtiketi } from '../../sunucu/talepler.mjs';
+import {
+	METIN_EN_COK,
+	asamaDurumEtiketi,
+	isDetayGetir,
+	isMesajiYaz,
+	odemeTuruEtiketi,
+} from '../../sunucu/isler.mjs';
+
+export const prerender = false;
+
+const taban = Astro.locals.taban ?? '';
+const musteri = Astro.locals.musteri;
+const db = panelVt();
+const { id } = Astro.params;
+
+let hata = '';
+/* Hatada yazılan metin kaybolmasın diye geri basılıyor. */
+let yazilan = '';
+
+if (Astro.request.method === 'POST') {
+	const form = await Astro.request.formData().catch(() => null);
+	const anahtar = form?.get('islem_anahtari');
+	const metin = form?.get('metin');
+	yazilan = typeof metin === 'string' ? metin : '';
+	if (
+		!islemAnahtariGecerliMi(
+			Astro.locals.oturumKarmasi,
+			ayarlar.gizli.csrf,
+			typeof anahtar === 'string' ? anahtar : '',
+		)
+	) {
+		hata = 'Form doğrulanamadı. Sayfayı tazeleyip yeniden deneyin.';
+	} else {
+		const sonuc = isMesajiYaz(db, { musteriId: musteri.id, isId: id, metin: yazilan });
+		/* Başarıda yönlendirme (POST sonrası GET): tazelemede mesaj ikilenmesin. */
+		if (sonuc.tamam) return Astro.redirect(`${taban}/isler/${id}`, 303);
+		hata = sonuc.hata;
+	}
+}
+
+const detay = isDetayGetir(db, musteri.id, id);
+if (!detay) return new Response('Bulunamadı', { status: 404 });
+
+const { is, asamalar, odemeler, dokum, dosyalar, mesajlar, teslim } = detay;
+
+/* Aşama başlıkları: dosyanın hangi adımda geldiğini yazabilmek için. */
+const asamaAdlari = new Map(asamalar.map((asama) => [asama.id, asama.baslik]));
+
+/*
+  Canlı akışın başlangıç damgası: sayfaya basılmış en son hareket. Akış
+  bundan öncesini tekrar göndermiyor, dolayısıyla açılışta liste ikilenmiyor.
+  İşin `guncellendi` değeri de hesaba katılıyor; mesajsız bir durum
+  değişikliği yalnızca orada görünüyor.
+*/
+const sonMesajZamani = mesajlar.length > 0 ? mesajlar[mesajlar.length - 1].zaman : is.guncellendi;
+const bilinenDamga = sonMesajZamani > is.guncellendi ? sonMesajZamani : is.guncellendi;
+
+/*
+  GECİKME DİLİ. Sahibin isteği: belirgin ama panik yaratmayan. Kırmızı bir
+  uyarı kutusu ve "GECİKTİ" gibi bir başlık müşteriyi telefona sarıldırıyor;
+  söylenecek şey ise planlanan tarihin geçtiğinden ibaret ve bir sonraki
+  adımın ne olduğunu söylemek daha faydalı.
+*/
+const teslimNotu = !teslim.var
+	? ''
+	: teslim.gecikti
+		? `Planlanan teslim tarihi ${tarih(is.teslim_hedefi)} idi ve ${teslimCumlesi(is.teslim_hedefi)}. İş sürüyor; aşağıdaki ilerleme adımlarında son durumu görebilir, sorunuz varsa bu sayfadan yazabilirsiniz.`
+		: teslim.yaklasti
+			? `Planlanan teslim ${tarih(is.teslim_hedefi)}, yani ${teslimCumlesi(is.teslim_hedefi)}.`
+			: '';
+---
+
+<Kabuk baslik={is.ad} aktif="pano" sayfaAdi="İş detayı">
+	<p class="geri"><a href={`${taban}/pano`}>← Panoya dön</a></p>
+
+	<div class="sayfa-bas">
+		<p class="ust-etiket">İŞ</p>
+		<h1>{is.ad}</h1>
+		<div class="cizgi" aria-hidden="true"></div>
+		<div class="meta">
+			<span class="rozet" data-is={is.durum} data-is-rozet>{isDurumEtiketi(is.durum)}</span>
+			{
+				teslim.var && (
+					<p>
+						Planlanan teslim:{' '}
+						<time datetime={makineZamani(is.teslim_hedefi)}>{tarih(is.teslim_hedefi)}</time>
+					</p>
+				)
+			}
+			<p>
+				Son güncelleme:{' '}
+				<time datetime={makineZamani(is.guncellendi)}>{zaman(is.guncellendi)}</time>
+			</p>
+		</div>
+		{is.ozet && <p class="acikli">{is.ozet}</p>}
+	</div>
+
+	{
+		teslimNotu && (
+			<p class="bildirim" data-tur={teslim.gecikti ? 'gecikme' : 'bilgi'}>
+				{teslimNotu}
+			</p>
+		)
+	}
+
+	<section class="kart bolum" aria-labelledby="odeme-basligi">
+		<h2 id="odeme-basligi">Ödeme dökümü</h2>
+
+		{/*
+		  ÖDENEN, AŞAĞIDAKİ SATIRLARDAN TOPLANDI. Veritabanında ayrı bir
+		  "ödenen" sütunu yok ve olmayacak: iki yerde tutulan sayı ayrışır.
+		  İade eksi yönde sayılıyor.
+		*/}
+		<dl class="odeme-ozet">
+			<div class="odeme-kalem">
+				<dt>Toplam tutar</dt>
+				<dd>{para(dokum.toplam, is.para_birimi)}</dd>
+			</div>
+			<div class="odeme-kalem">
+				<dt>Ödenen</dt>
+				<dd>{para(dokum.odenen, is.para_birimi)}</dd>
+			</div>
+			<div class="odeme-kalem" data-vurgu={dokum.kapandiMi ? 'kapandi' : 'kalan'}>
+				<dt>{dokum.fazla > 0 ? 'Fazla ödeme' : 'Kalan'}</dt>
+				<dd>{para(dokum.fazla > 0 ? dokum.fazla : dokum.kalan, is.para_birimi)}</dd>
+			</div>
+		</dl>
+
+		{
+			dokum.fazla > 0 && (
+				<p class="odeme-not">
+					Ödenen tutar iş bedelini aşıyor. Aradaki farkı iade edebilirim, bir
+					sonraki işinize de sayabiliriz; nasıl isterseniz aşağıya yazın.
+				</p>
+			)
+		}
+
+		{
+			odemeler.length === 0 ? (
+				<p class="odeme-not">
+					Henüz bir ödeme kaydı yok. Ödeme yaptığınızda tarihi ve tutarıyla
+					birlikte burada görünür.
+				</p>
+			) : (
+				<ul class="odeme-dizi">
+					{odemeler.map((odeme) => (
+						<li class="odeme-satir" data-tur={odeme.tur}>
+							<span class="odeme-tur">{odemeTuruEtiketi(odeme.tur)}</span>
+							<time class="odeme-tarih" datetime={makineZamani(odeme.tarih)}>
+								{tarih(odeme.tarih)}
+							</time>
+							{/*
+							  İade eksi işaretiyle yazılıyor: aynı listede artı ve eksi
+							  kalemler yan yana duruyor ve toplamı okuyan biri hangisinin
+							  ne yaptığını görmeli.
+							*/}
+							<span class="odeme-tutar">
+								{odeme.tur === 'iade'
+									? `- ${para(Math.abs(odeme.tutar_kurus), is.para_birimi)}`
+									: para(odeme.tutar_kurus, is.para_birimi)}
+							</span>
+						</li>
+					))}
+				</ul>
+			)
+		}
+	</section>
+
+	<section class="bolum" aria-labelledby="ilerleme-basligi">
+		<div class="bolum-bas">
+			<h2 id="ilerleme-basligi">İlerleme</h2>
+			{asamalar.length > 0 && <p class="kucuk soluk">{asamalar.length} adım</p>}
+		</div>
+
+		{
+			asamalar.length === 0 ? (
+				<div class="bos">
+					<strong class="bos-baslik">Henüz bir ilerleme adımı yok.</strong>
+					<p class="bos-metin">
+						İş ilerledikçe her adım tarihiyle birlikte buraya düşer: ne
+						yapıldığını ve sıradakini buradan takip edebilirsiniz.
+					</p>
+				</div>
+			) : (
+				/*
+				  DİKEY ZAMAN ÇİZELGESİ. Hat ve düğümler `::before`/`::after` ile
+				  çiziliyor, yani listenin kendisi düz bir `<ol>`: ekran okuyucu
+				  sıralı bir liste duyuyor, süs işaretleri erişilebilirlik
+				  ağacında hiç yok.
+
+				  Durum yalnızca işaretin biçimiyle değil, yanındaki rozetin
+				  METNİYLE de söyleniyor; renk tek başına taşıyıcı değil.
+				*/
+				<ol class="agac">
+					{asamalar.map((asama) => (
+						<li class="agac-adim" data-durum={asama.durum}>
+							<span class="agac-isaret" aria-hidden="true" />
+							<div class="agac-govde">
+								<div class="agac-bas">
+									<h3 class="agac-baslik">{asama.baslik}</h3>
+									<span class="rozet" data-asama={asama.durum}>
+										{asamaDurumEtiketi(asama.durum)}
+									</span>
+									{/*
+									  Otomatik ve elle aşamalar ayırt edilebiliyor: biri
+									  işin durumu değiştikçe kendiliğinden düşen bir kayıt,
+									  öteki sahibin yazdığı bir not. İkisine aynı gözle
+									  bakılmamalı.
+									*/}
+									{asama.kaynak === 'elle' && <span class="agac-kaynak">sahibin notu</span>}
+								</div>
+								<time class="agac-tarih" datetime={makineZamani(asama.tarih)}>
+									{tarih(asama.tarih)}
+								</time>
+								{asama.aciklama && <p class="agac-aciklama">{asama.aciklama}</p>}
+							</div>
+						</li>
+					))}
+				</ol>
+			)
+		}
+	</section>
+
+	<section class="bolum" aria-labelledby="dosya-basligi">
+		<div class="bolum-bas">
+			<h2 id="dosya-basligi">Dosyalar</h2>
+			{dosyalar.length > 0 && (
+				<p class="kucuk soluk">{dosyalar.length === 1 ? '1 dosya' : `${dosyalar.length} dosya`}</p>
+			)}
+		</div>
+
+		{
+			dosyalar.length === 0 ? (
+				<div class="bos">
+					<strong class="bos-baslik">Bu işe henüz dosya eklenmedi.</strong>
+					<p class="bos-metin">
+						Teknik resim, ölçü raporu ya da imalat fotoğrafı eklendiğinde
+						burada listelenir ve indirebilirsiniz.
+					</p>
+				</div>
+			) : (
+				<ul class="dosyalar">
+					{dosyalar.map((dosya) => (
+						<li class="dosya">
+							{/*
+							  GÖRSEL ÖNİZLEMESİ aynı uç noktadan, `?onizleme=1` ile
+							  geliyor. Sunucu bunu yalnızca `gorsel_mi` işaretli ve türü
+							  `image/` ile başlayan dosyalarda `inline` yapıyor; geri
+							  kalan her şey indiriliyor (sunucu/dosyalar.mjs).
+
+							  `alt` boş ve bağlantı metni dosyanın adı: aynı şeyi iki kez
+							  duyan bir ekran okuyucu kullanıcısı için önizleme gürültü.
+							*/}
+							{dosya.gorsel_mi ? (
+								<a class="dosya-onizleme" href={`${taban}/api/dosya/${dosya.id}?onizleme=1`}>
+									<img
+										src={`${taban}/api/dosya/${dosya.id}?onizleme=1`}
+										alt=""
+										loading="lazy"
+										decoding="async"
+										width="96"
+										height="96"
+									/>
+								</a>
+							) : (
+								<span class="dosya-simge" aria-hidden="true">
+									{(dosya.gosterilen_ad.split('.').pop() || '?').slice(0, 4).toUpperCase()}
+								</span>
+							)}
+
+							<div class="dosya-govde">
+								<a class="dosya-ad" href={`${taban}/api/dosya/${dosya.id}`} download>
+									{dosya.gosterilen_ad}
+								</a>
+								<p class="dosya-bilgi">
+									<span>{boyutMetni(dosya.boyut)}</span>
+									{dosya.asama_id && asamaAdlari.has(dosya.asama_id) && (
+										<span>{asamaAdlari.get(dosya.asama_id)}</span>
+									)}
+									<time datetime={makineZamani(dosya.olusturuldu)}>
+										{tarih(dosya.olusturuldu)}
+									</time>
+								</p>
+							</div>
+						</li>
+					))}
+				</ul>
+			)
+		}
+	</section>
+
+	<section class="bolum" aria-labelledby="yazisma-basligi">
+		<div class="bolum-bas">
+			<h2 id="yazisma-basligi">Bu işin yazışması</h2>
+			{mesajlar.length > 0 && (
+				<p class="kucuk soluk">{mesajlar.length === 1 ? '1 mesaj' : `${mesajlar.length} mesaj`}</p>
+			)}
+		</div>
+
+		<p class="acikli">
+			Bu yazışma yalnızca bu işe ait; genel konular için destek talebi
+			açabilirsiniz.
+		</p>
+
+		<Canli kip="is" is={is.id} bilinen={bilinenDamga} ad={musteri.gorunen_ad} />
+
+		{
+			hata && (
+				<p class="bildirim" data-tur="hata" role="alert">
+					{hata}
+				</p>
+			)
+		}
+
+		{
+			mesajlar.length === 0 ? (
+				<div class="bos dar">
+					<strong class="bos-baslik">Bu işte henüz yazışma yok.</strong>
+					<p class="bos-metin">
+						Aklınıza takılan bir şey olursa aşağıdan yazın; yanıtı yine burada
+						görürsünüz.
+					</p>
+				</div>
+			) : (
+				<ul class="mesajlar" aria-label="İş yazışması">
+					{mesajlar.map((mesaj) => (
+						/*
+						  `data-mesaj-id`: akışla gelen bir mesajın zaten basılı olup
+						  olmadığı buradan anlaşılıyor. Kimlik olmadan, gönderimden
+						  sonra sayfa yenilenince aynı mesaj ikilenirdi.
+						*/
+						<li class="mesaj" data-yazan={mesaj.yazan} data-mesaj-id={mesaj.id}>
+							<div class="mesaj-bas">
+								<span class="mesaj-yazan">
+									{mesaj.yazan === 'musteri' ? musteri.gorunen_ad : 'Mustafa Eybek'}
+								</span>
+								{mesaj.yazan === 'musteri' && <span>siz</span>}
+								<time datetime={makineZamani(mesaj.zaman)}>{zaman(mesaj.zaman)}</time>
+							</div>
+							<p class="mesaj-metin">{mesaj.metin}</p>
+						</li>
+					))}
+				</ul>
+			)
+		}
+
+		<div class="kart dar bosluk-ust">
+			<h3 id="yazma-basligi">Mesaj yazın</h3>
+			<form method="post">
+				<input type="hidden" name="islem_anahtari" value={Astro.locals.islemAnahtari} />
+				<label class="alan">
+					<span>Mesajınız</span>
+					<textarea name="metin" maxlength={METIN_EN_COK} required aria-describedby="is-yazma-yardim"
+						>{yazilan}</textarea
+					>
+					<span class="alan-yardim" id="is-yazma-yardim">
+						Yalnızca bu işe düşer. En çok {METIN_EN_COK} karakter.
+					</span>
+				</label>
+				<button class="dugme birincil" type="submit">Gönder</button>
+			</form>
+		</div>
+	</section>
+</Kabuk>

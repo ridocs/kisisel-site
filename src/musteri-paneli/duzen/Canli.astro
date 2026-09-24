@@ -15,7 +15,7 @@
   Gerekçesi o dosyanın başında: Astro'nun paketlediği `<script>` etiketi
   nonce niteliğini taşımıyor, `is:inline` olan taşıyor.
 */
-const { kip, talep = '', bilinen = '', ad = '' } = Astro.props;
+const { kip, talep = '', is = '', bilinen = '', ad = '' } = Astro.props;
 
 const taban = Astro.locals.taban ?? '';
 const nonce = Astro.locals.nonce ?? '';
@@ -28,9 +28,11 @@ const surum = typeof __PANEL_SURUM__ === 'undefined' ? 'gelistirme' : __PANEL_SU
 	class="canli"
 	hidden
 	data-canli
+	data-canli-kutu
 	data-taban={taban}
 	data-kip={kip}
 	data-talep={talep}
+	data-is={is}
 	data-bilinen={bilinen}
 	data-ad={ad}
 >

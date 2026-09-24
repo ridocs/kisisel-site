@@ -42,3 +42,9 @@ dist-panel-musteri/
 *.db
 *.db-wal
 *.db-shm
+
+# Geliştirme makinesinin yerel verisi: panel veritabanı, paylaşılan dosyaların
+# kopyası ve elle yazılmış tohum/ekran görüntüsü betikleri. `*.db` desenleri
+# yalnızca veritabanını kapatıyordu; dizinin geri kalanı da depoya girmemeli.
+# `PANEL_VT` ve `PANEL_DOSYA_DIZINI` varsayılanları zaten buraya bakıyor.
+veri-yerel/

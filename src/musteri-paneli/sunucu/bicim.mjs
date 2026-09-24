@@ -61,3 +61,59 @@ export function gecenSure(iso, simdiMs = Date.now()) {
 	}
 	return TARIH.format(d);
 }
+
+/*
+  PARA. Kuruş cinsinden tam sayı içeri, Türkçe biçimli metin dışarı.
+
+  Tutarlar veritabanında KURUŞ ve tam sayı; ondalık sayı para tutmuyor
+  (`veri/semalar.mjs` aynı gerekçeyi yazıyor). Bölme yalnızca GÖSTERİM
+  anında, bir kez yapılıyor; hesap hep tam sayıyla.
+
+  Biçim `tr-TR`: binlik ayracı nokta, ondalık ayracı virgül, iki basamak her
+  zaman yazılı (1.250,50 ve 1.250,00). `style: 'currency'` kullanılmadı çünkü
+  o, simgeyi sayının BAŞINA koyuyor (₺1.250,50); istenen biçim simgeyi sonda
+  istiyor.
+*/
+const SAYI = new Intl.NumberFormat('tr-TR', {
+	minimumFractionDigits: 2,
+	maximumFractionDigits: 2,
+});
+
+/** Bilinen para birimlerinin simgesi. Bilinmeyen kod olduğu gibi yazılıyor. */
+const SIMGELER = { TRY: '₺', USD: '$', EUR: '€', GBP: '£' };
+
+/** 125050 -> "1.250,50 ₺" */
+export function para(kurus, paraBirimi = 'TRY') {
+	const tam = Number.isFinite(kurus) ? Math.trunc(kurus) : 0;
+	const simge = SIMGELER[paraBirimi] ?? paraBirimi;
+	return `${SAYI.format(tam / 100)} ${simge}`;
+}
+
+/**
+ * Bugünden kaç gün sonra (artı) ya da kaç gün önce (eksi).
+ *
+ * `gecenSure` ile aynı sebeple YEREL GECE YARISINA göre sayılıyor: teslim
+ * tarihi bugün olan bir iş saat 23:50'de de "bugün teslim" olmalı, bir gün
+ * gecikmiş değil. Geçersiz tarihte `null`.
+ */
+export function gunFarki(iso, simdiMs = Date.now()) {
+	const d = cozumle(iso);
+	if (!d) return null;
+	const gunBasi = (t) => {
+		const g = new Date(t);
+		g.setHours(0, 0, 0, 0);
+		return g.getTime();
+	};
+	return Math.round((gunBasi(d.getTime()) - gunBasi(simdiMs)) / GUN_MS);
+}
+
+/** "3 gün sonra", "bugün", "2 gün gecikti". Teslim hedefinin insan hâli. */
+export function teslimCumlesi(iso, simdiMs = Date.now()) {
+	const fark = gunFarki(iso, simdiMs);
+	if (fark === null) return '';
+	if (fark === 0) return 'bugün';
+	if (fark === 1) return 'yarın';
+	if (fark === -1) return 'bir gün geçti';
+	if (fark > 1) return `${fark} gün sonra`;
+	return `${-fark} gün geçti`;
+}

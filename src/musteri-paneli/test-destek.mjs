@@ -71,14 +71,101 @@ export function sahipMesaji(db, { talepId, metin, simdiMs = Date.now() }) {
 	return id;
 }
 
-export function isEkle(db, { musteriId, ad, durum = 'suruyor' }) {
-	const id = yeniKimlik();
-	db.prepare('INSERT INTO is_ozeti (id, musteri_id, ad, durum, guncellendi) VALUES (?, ?, ?, ?, ?)').run(
-		id,
+export function isEkle(
+	db,
+	{
 		musteriId,
 		ad,
-		durum,
-		new Date().toISOString(),
+		durum = 'suruyor',
+		ozet = null,
+		tutarKurus = 0,
+		paraBirimi = 'TRY',
+		teslimHedefi = null,
+		guncellendi = new Date().toISOString(),
+	},
+) {
+	const id = yeniKimlik();
+	db.prepare(
+		`INSERT INTO is_ozeti (id, musteri_id, ad, durum, ozet, tutar_kurus, para_birimi,
+		                       teslim_hedefi, guncellendi)
+		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+	).run(id, musteriId, ad, durum, ozet, tutarKurus, paraBirimi, teslimHedefi, guncellendi);
+	return id;
+}
+
+export function odemeEkle(db, { isId, tur, tutarKurus, tarih, simdiMs = Date.now() }) {
+	const id = yeniKimlik();
+	db.prepare(
+		'INSERT INTO is_odeme (id, is_id, tur, tutar_kurus, tarih, guncellendi) VALUES (?, ?, ?, ?, ?, ?)',
+	).run(id, isId, tur, tutarKurus, tarih, new Date(simdiMs).toISOString());
+	return id;
+}
+
+export function asamaEkle(
+	db,
+	{ isId, sira = 0, kaynak = 'elle', baslik, aciklama = null, durum = 'tamamlandi', tarih, simdiMs = Date.now() },
+) {
+	const id = yeniKimlik();
+	db.prepare(
+		`INSERT INTO is_asama (id, is_id, sira, kaynak, baslik, aciklama, durum, tarih, guncellendi)
+		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+	).run(id, isId, sira, kaynak, baslik, aciklama, durum, tarih, new Date(simdiMs).toISOString());
+	return id;
+}
+
+/**
+ * Dosya künyesi. `depoAdi` verilmezse rastgele bir ad üretiliyor; testin
+ * diske bir şey yazması gerekiyorsa o adı kendisi kullanıyor.
+ *
+ * Diskteki ad ile gösterilen adın AYRI olması bu tablonun tasarım kararı:
+ * müşterinin verdiği ad dosya sistemine hiç yazılmıyor.
+ */
+export function dosyaEkle(
+	db,
+	{
+		isId,
+		asamaId = null,
+		gosterilenAd,
+		depoAdi = `${yeniKimlik()}.bin`,
+		tur = 'application/pdf',
+		boyut = 1024,
+		gorselMi = 0,
+		simdiMs = Date.now(),
+	},
+) {
+	const id = yeniKimlik();
+	db.prepare(
+		`INSERT INTO is_dosya (id, is_id, asama_id, gosterilen_ad, depo_adi, tur, boyut, sha256,
+		                       gorsel_mi, olusturuldu)
+		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+	).run(
+		id,
+		isId,
+		asamaId,
+		gosterilenAd,
+		depoAdi,
+		tur,
+		boyut,
+		Buffer.alloc(32),
+		gorselMi,
+		new Date(simdiMs).toISOString(),
 	);
+	return { id, depoAdi };
+}
+
+/**
+ * Sahibin iş yazışmasına yazdığı mesaj.
+ *
+ * `sunucu/isler.mjs` yalnızca `musteri` mesajı yazıyor ve doğru olan da bu:
+ * panel sahibin ağzından yazamamalı. Sahip tarafı sunucuya masaüstünden
+ * eşitlemeyle geliyor; testte o tarafı canlandırmak için doğrudan satır.
+ */
+export function isSahipMesaji(db, { isId, metin, simdiMs = Date.now() }) {
+	const id = yeniKimlik();
+	const simdi = new Date(simdiMs).toISOString();
+	db.prepare(
+		"INSERT INTO is_mesaji (id, is_id, yazan, metin, zaman) VALUES (?, ?, 'sahip', ?, ?)",
+	).run(id, isId, metin, simdi);
+	db.prepare('UPDATE is_ozeti SET guncellendi = ? WHERE id = ?').run(simdi, isId);
 	return id;
 }

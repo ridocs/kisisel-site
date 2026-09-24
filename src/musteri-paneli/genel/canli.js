@@ -29,16 +29,22 @@
 	var taban = kok.getAttribute('data-taban') || '';
 	var kip = kok.getAttribute('data-kip') || 'liste';
 	var talepId = kok.getAttribute('data-talep') || '';
+	var isId = kok.getAttribute('data-is') || '';
 	var bilinen = kok.getAttribute('data-bilinen') || '';
 	var musteriAdi = kok.getAttribute('data-ad') || '';
 
 	/*
-	  Gösterge sunucudan `hidden` geliyor ve ancak akış gerçekten
-	  kurulabildiğinde açılıyor. Betiksiz bir tarayıcıda hiç görünmüyor.
-	*/
-	kok.removeAttribute('hidden');
+	  Göstergeler sunucudan `hidden` geliyor ve ancak akış gerçekten
+	  kurulabildiğinde açılıyor. Betiksiz bir tarayıcıda hiç görünmüyorlar.
 
-	var durumKutusu = document.querySelector('[data-canli-durum]');
+	  İKİ GÖSTERGE VAR: sayfanın kendi rozeti ve alt çubuktaki bağlantı
+	  durumu. İkincisi her sayfada basılı ama yalnızca akışı olan sayfada
+	  açılıyor; akışı olmayan bir sayfada "Canlı" yazması yanlış bilgi olurdu.
+	*/
+	var kutular = document.querySelectorAll('[data-canli-kutu]');
+	for (var k = 0; k < kutular.length; k++) kutular[k].removeAttribute('hidden');
+
+	var durumKutulari = document.querySelectorAll('[data-canli-durum]');
 	var bildirimKutusu = document.querySelector('[data-canli-bildirim]');
 
 	/* Sunucudan basılmış mesajların kimlikleri: aynı mesaj iki kez eklenmesin. */
@@ -59,9 +65,10 @@
 	}
 
 	function durumSoyle(ad, metin) {
-		if (!durumKutusu) return;
-		durumKutusu.setAttribute('data-durum', ad);
-		durumKutusu.textContent = metin;
+		for (var d = 0; d < durumKutulari.length; d++) {
+			durumKutulari[d].setAttribute('data-durum', ad);
+			durumKutulari[d].textContent = metin;
+		}
 	}
 
 	function bildir(metin) {
@@ -175,9 +182,20 @@
 
 	/* ---------- Bağlantı ---------- */
 
-	var adres = taban + '/api/talepler/akis';
+	/*
+	  İŞ YAZIŞMASI AYRI UÇ NOKTA. Aynı adrese ikinci bir süzgeç eklemek yerine
+	  ayrı bir yol seçildi: iki akışın sorguları ayrı tablolara bakıyor ve tek
+	  uç noktada "hangi kip" diye dallanan bir yetki denetimi, denetimin
+	  atlanabileceği bir yer açar.
+	*/
+	var isKipi = kip === 'is';
+	var adres = taban + (isKipi ? '/api/isler/akis' : '/api/talepler/akis');
 	var sorgu = [];
-	if (talepId) sorgu.push('talep=' + encodeURIComponent(talepId));
+	if (isKipi) {
+		if (isId) sorgu.push('is=' + encodeURIComponent(isId));
+	} else if (talepId) {
+		sorgu.push('talep=' + encodeURIComponent(talepId));
+	}
 	if (bilinen) sorgu.push('bilinen=' + encodeURIComponent(bilinen));
 	if (sorgu.length) adres += '?' + sorgu.join('&');
 
@@ -194,8 +212,19 @@
 		var veri = coz(olay.data);
 		if (!veri || gorulen[veri.id]) return;
 		gorulen[veri.id] = true;
-		if (kip === 'yazisma') yazismayaEkle(veri);
+		/* İş yazışması da destek yazışmasıyla aynı listeyi ve aynı kartı kullanıyor. */
+		if (kip === 'yazisma' || isKipi) yazismayaEkle(veri);
 		else listedeIsaretle(veri.talep_id);
+	});
+
+	/* İşin durumu değişince detay sayfasındaki rozet tazeleniyor. */
+	kaynak.addEventListener('is', function (olay) {
+		var veri = coz(olay.data);
+		if (!veri) return;
+		var rozet = document.querySelector('[data-is-rozet]');
+		if (!rozet) return;
+		rozet.setAttribute('data-is', veri.durum);
+		rozet.textContent = veri.durum_etiketi || veri.durum;
 	});
 
 	kaynak.addEventListener('talep', function (olay) {

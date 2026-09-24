@@ -3,12 +3,33 @@
   Panelin ortak kabuğu.
 
   Burada `<style>` bloğu YOK ve olmayacak: içerik güvenliği politikası
-  `style-src 'self'` ve Astro geliştirme sunucusu bileşen stillerini satır içi
-  basıyor. Bütün stil `genel/panel.css` içinde.
+  `style-src 'self'` ve Astro geliştirme sunucusu bileşen stillerini satır
+  içi basıyor. Bütün stil `genel/panel.css` içinde. Satır içi `style`
+  niteliği de yok, aynı politika onu da engelliyor.
 
   Sayfa başlığına site adı eklenmiyor; kullanıcının kesin kuralı.
+
+  ÜST VE ALT ÇUBUK DURUM ODAKLI. Sahibin seçimi: müşteri panele girdiğinde
+  ilk bakışta bekleyen bir şey olup olmadığını görmeli. Üstte bekleyen yanıt
+  ve açık iş sayısı, hangi sayfada olduğu ve kim olarak girdiği; altta kime
+  ulaşacağı, oturumun ne kadar süreceği ve canlı akışın durumu.
+
+  SAYAÇLAR BURADA SORGULANIYOR, sayfalardan geçirilmiyor: kabuk her sayfada
+  basılıyor ve sayaç sayfadan gelirse er geç bir sayfada unutulur. İki sorgu
+  da sayım, ikisi de dizinli ve ikisi de müşteri süzgeçli.
 */
-const { baslik, aciklama, aktif } = Astro.props;
+import { panelVt } from '../sunucu/veritabani.mjs';
+import { acikIsSayisi, bekleyenYanitSayisi } from '../sunucu/isler.mjs';
+import {
+	FIRMA_ADI,
+	FIRMA_UNVANI,
+	KONUM,
+	TELEFON_BAGLANTISI,
+	TELEFON_GORUNEN,
+	WHATSAPP_BAGLANTISI,
+} from '../sunucu/firma.mjs';
+
+const { baslik, aciklama, aktif, sayfaAdi } = Astro.props;
 const taban = Astro.locals.taban ?? '';
 const musteri = Astro.locals.musteri ?? null;
 const islemAnahtari = Astro.locals.islemAnahtari ?? '';
@@ -25,6 +46,18 @@ const baglantilar = [
 	{ yol: '/pano', ad: 'Pano', anahtar: 'pano' },
 	{ yol: '/talepler', ad: 'Destek talepleri', anahtar: 'talepler' },
 ];
+
+/* Sayaçlar yalnızca girişliyken; giriş sayfasında sorulacak bir müşteri yok. */
+let yanitSayisi = 0;
+let isSayisi = 0;
+if (musteri) {
+	const db = panelVt();
+	yanitSayisi = bekleyenYanitSayisi(db, musteri.id);
+	isSayisi = acikIsSayisi(db, musteri.id);
+}
+
+/* Üst çubuktaki konum göstergesi: sayfanın kendi adı, gezinme vurgusundan ayrı. */
+const konumAdi = sayfaAdi ?? baslik;
 ---
 
 <!doctype html>
@@ -72,28 +105,89 @@ const baglantilar = [
 			<a class="atla" href="#ana">İçeriğe atla</a>
 			<header class="ust">
 				<div class="ust-ic">
-					<a class="marka" href={musteri ? `${taban}/pano` : `${taban}/`}>Müşteri paneli</a>
+					<div class="ust-sol">
+						<a class="marka" href={musteri ? `${taban}/pano` : `${taban}/`}>Müşteri paneli</a>
+						{/*
+						  AKTİF SAYFA GÖSTERGESİ. Gezinme vurgusundan ayrı duruyor,
+						  çünkü ikisi aynı şeyi söylemiyor: iş detayında gezinme
+						  "Pano" diyor ama kullanıcı panoda değil.
+						*/}
+						{konumAdi && (
+							<span class="ust-konum">
+								<span class="ust-konum-ayrac" aria-hidden="true">/</span>
+								<span class="ust-konum-ad">{konumAdi}</span>
+							</span>
+						)}
+					</div>
+
 					{
 						musteri && (
-							<nav class="gezinme" aria-label="Panel">
-								{baglantilar.map((b) => (
-									<a
-										href={`${taban}${b.yol}`}
-										aria-current={aktif === b.anahtar ? 'page' : undefined}
-									>
-										{b.ad}
-									</a>
-								))}
+							<>
 								{/*
-								  Çıkış bir FORM: bağlantı olsaydı, önceden getiren bir
-								  eklenti ya da tarayıcı sekmesi oturumu kendiliğinden
-								  kapatabilirdi. Durum değiştiren istek GET olmaz.
+								  DURUM ŞERİDİ. Sayılar rozet değil rakam: "3" tek başına
+								  ne olduğunu söylemiyor, yanındaki sözcük söylüyor.
+								  Sıfır olan sayaç hiç basılmıyor; sürekli görünen bir
+								  "0 yeni yanıt" bir süre sonra okunmaz oluyor.
 								*/}
-								<form method="post" action={`${taban}/cikis`}>
-									<input type="hidden" name="islem_anahtari" value={islemAnahtari} />
-									<button class="dugme sade" type="submit">Çıkış</button>
-								</form>
-							</nav>
+								<ul class="ust-durum" aria-label="Durum">
+									{yanitSayisi > 0 && (
+										<li>
+											<a class="ust-sayac" href={`${taban}/talepler`} data-vurgu="1">
+												<span class="ust-sayac-sayi">{yanitSayisi}</span>
+												<span class="ust-sayac-ad">yeni yanıt</span>
+											</a>
+										</li>
+									)}
+									{isSayisi > 0 && (
+										<li>
+											<a class="ust-sayac" href={`${taban}/pano`}>
+												<span class="ust-sayac-sayi">{isSayisi}</span>
+												<span class="ust-sayac-ad">açık iş</span>
+											</a>
+										</li>
+									)}
+									<li class="ust-musteri">
+										<span class="gizli">Giriş yapan:</span>
+										{musteri.gorunen_ad}
+									</li>
+								</ul>
+
+								<nav class="gezinme" aria-label="Panel">
+									{baglantilar.map((b) => (
+										<a
+											href={`${taban}${b.yol}`}
+											aria-current={aktif === b.anahtar ? 'page' : undefined}
+										>
+											{b.ad}
+										</a>
+									))}
+									{/*
+									  TEMA DÜĞMESİ `hidden` BAŞLIYOR ve betik açıyor.
+									  JavaScript çalışmayan bir tarayıcıda hiçbir şey
+									  yapmayan bir düğme görünmesin: tema bir iyileştirme,
+									  yokluğu bir arıza değil. Sayfa zaten sistem
+									  tercihiyle doğru temada açılıyor.
+									*/}
+									<button
+										class="dugme sade tema-dugme"
+										type="button"
+										hidden
+										data-tema-dugme
+										aria-pressed="false"
+									>
+										<span data-tema-metin>Koyu tema</span>
+									</button>
+									{/*
+									  Çıkış bir FORM: bağlantı olsaydı, önceden getiren bir
+									  eklenti ya da tarayıcı sekmesi oturumu kendiliğinden
+									  kapatabilirdi. Durum değiştiren istek GET olmaz.
+									*/}
+									<form method="post" action={`${taban}/cikis`}>
+										<input type="hidden" name="islem_anahtari" value={islemAnahtari} />
+										<button class="dugme sade" type="submit">Çıkış</button>
+									</form>
+								</nav>
+							</>
 						)
 					}
 				</div>
@@ -110,13 +204,90 @@ const baglantilar = [
 
 			<footer class="alt">
 				<div class="alt-ic">
-					{
-						musteri
-							? `${musteri.gorunen_ad} olarak giriş yapıldı. Bir saat hareketsiz kalırsanız oturum kendiliğinden kapanır.`
-							: 'Bu panele yalnızca davet anahtarıyla kaydedilmiş cihazlar girebilir.'
-					}
+					<div class="alt-firma">
+						<span class="alt-ad">{FIRMA_ADI}</span>
+						<span class="alt-unvan">{FIRMA_UNVANI}</span>
+						{KONUM && <span class="alt-konum">{KONUM}</span>}
+					</div>
+
+					{/*
+					  İLETİŞİM KISAYOLU. Panelde bir şey ters gittiğinde müşteri
+					  destek talebi açmak zorunda kalmasın: acil olan şey acil
+					  kanaldan gider. Numara sitenin kendi kaynağından okunuyor,
+					  burada ikinci kez yazılmıyor (sunucu/firma.mjs).
+					*/}
+					{TELEFON_GORUNEN && (
+						<div class="alt-iletisim">
+							{WHATSAPP_BAGLANTISI && (
+								<a class="alt-baglanti" href={WHATSAPP_BAGLANTISI} rel="noopener noreferrer" target="_blank">
+									WhatsApp
+								</a>
+							)}
+							{TELEFON_BAGLANTISI && (
+								<a class="alt-baglanti" href={`tel:${TELEFON_BAGLANTISI}`}>{TELEFON_GORUNEN}</a>
+							)}
+						</div>
+					)}
+
+					<div class="alt-oturum">
+						{
+							musteri
+								? `${musteri.gorunen_ad} olarak giriş yapıldı. Bir saat hareketsiz kalırsanız oturum kendiliğinden kapanır.`
+								: 'Bu panele yalnızca davet anahtarıyla kaydedilmiş cihazlar girebilir.'
+						}
+					</div>
+
+					{/*
+					  BAĞLANTI DURUMU. `hidden` başlıyor; canlı akış betiği yalnızca
+					  akışın olduğu sayfalarda açıyor. Akışı olmayan bir sayfada
+					  "Canlı" yazan bir gösterge yanlış bilgi olurdu, çünkü orada
+					  bağlanacak bir şey yok.
+					*/}
+					<p class="alt-canli canli" hidden data-canli-kutu>
+						<span class="canli-nokta" aria-hidden="true"></span>
+						<span class="canli-durum" data-canli-durum data-durum="baglaniyor" aria-live="polite"
+							>Bağlanıyor</span
+						>
+					</p>
 				</div>
 			</footer>
 		</div>
+
+		{/*
+		  TEMA DÜĞMESİNİN BETİĞİ. Satır içi ve nonce'lu: politika
+		  `script-src 'self' 'nonce-…'` ve satır içi betik ancak nonce ile
+		  çalışıyor. Başlıktaki betikle aynı `tema` anahtarını yazıyor, yani
+		  panelde yapılan seçim siteye de geçiyor.
+
+		  Düğme burada AÇILIYOR: betik hiç çalışmazsa düğme `hidden` kalıyor.
+		*/}
+		<script is:inline nonce={nonce}>
+			(function () {
+				var dugme = document.querySelector('[data-tema-dugme]');
+				if (!dugme) return;
+				var metin = dugme.querySelector('[data-tema-metin]');
+				dugme.hidden = false;
+
+				function yaz() {
+					var koyu = document.documentElement.classList.contains('dark');
+					dugme.setAttribute('aria-pressed', koyu ? 'true' : 'false');
+					/* Düğme YAPACAĞI ŞEYİ yazıyor, bulunduğu durumu değil. */
+					if (metin) metin.textContent = koyu ? 'Açık tema' : 'Koyu tema';
+				}
+
+				yaz();
+
+				dugme.addEventListener('click', function () {
+					var koyu = !document.documentElement.classList.contains('dark');
+					document.documentElement.classList.toggle('dark', koyu);
+					try {
+						localStorage.setItem('tema', koyu ? 'koyu' : 'acik');
+					} catch (hata) {
+						/* Gizli sekmede yazma engellenebiliyor; seçim o sekmede kalıyor. */
+					}
+					yaz();
+				});
+			})();
+		</script>
 	</body>
 </html>

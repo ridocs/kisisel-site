@@ -71,6 +71,19 @@ const origin = zorunlu('PANEL_ORIGIN', 'panelin tarayıcıdaki tam kökeni, örn
 const vtDeger = secmeli('PANEL_VT', join(KOK, 'veri-yerel', 'panel.db'));
 
 /*
+  Paylaşılan dosyaların diskteki dizini.
+
+  Varsayılan sunucudaki yol; sahibin masaüstü tarafı (`veri/dosya-gonder.mjs`)
+  dosyaları oraya kopyalıyor. Ortam değişkeniyle değiştirilebiliyor: geliştirme
+  makinesinde `/var/lib` yok ve testin de kendi geçici dizini gerekiyor.
+
+  Diskteki dosya adı HER ZAMAN veritabanındaki `depo_adi`; bu ayar yalnızca
+  dizini söylüyor. İstekten gelen hiçbir değer bu yola karışmıyor
+  (`sunucu/dosyalar.mjs`).
+*/
+const dosyaDeger = secmeli('PANEL_DOSYA_DIZINI', '/var/lib/panel/dosyalar');
+
+/*
   Gizli anahtar üç ayrı iş için kullanılıyor. Aynı baytları üç yerde doğrudan
   kullanmak yerine her kullanım için etiketli bir alt anahtar türetiliyor:
   bir kullanımdan sızan bilgi diğerine yaramaz.
@@ -87,6 +100,8 @@ export const ayarlar = {
 	rpAd: secmeli('PANEL_RP_AD', 'Müşteri Paneli'),
 	origin,
 	vtYolu: isAbsolute(vtDeger) ? vtDeger : join(KOK, vtDeger),
+	/** Paylaşılan dosyaların diskteki dizini. Gerekçe yukarıda. */
+	dosyaDizini: isAbsolute(dosyaDeger) ? dosyaDeger : join(KOK, dosyaDeger),
 	/** Ters vekilin `X-Forwarded-For` başlığına güvenilsin mi. */
 	vekilGuvenilir: secmeli('PANEL_VEKIL_GUVENILIR', '0') === '1',
 	/** Oturum IP karmasına da bağlansın mı (PANEL-TASARIMI.md §7). */

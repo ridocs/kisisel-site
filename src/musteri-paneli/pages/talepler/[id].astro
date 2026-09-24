@@ -65,7 +65,7 @@ const sonMesajZamani = mesajSayisi > 0 ? talep.mesajlar[mesajSayisi - 1].zaman :
 const bilinenDamga = sonMesajZamani > talep.guncellendi ? sonMesajZamani : talep.guncellendi;
 ---
 
-<Kabuk baslik={talep.baslik} aktif="talepler">
+<Kabuk baslik={talep.baslik} aktif="talepler" sayfaAdi="Destek talebi">
 	<p class="geri"><a href={`${taban}/talepler`}>← Bütün talepler</a></p>
 
 	<div class="sayfa-bas">

@@ -181,12 +181,115 @@ a {
 	padding-bottom: 0.5rem;
 }
 
+/*
+  Üst çubuğun sol ucu: marka ve AKTİF SAYFA göstergesi.
+
+  Gösterge gezinme vurgusundan ayrı duruyor çünkü ikisi aynı şeyi
+  söylemiyor: iş detayında gezinme "Pano" diyor, kullanıcı ise panoda değil.
+  Ayrı bir kırıntı çubuğu (breadcrumb) kurmak yerine tek bir eğik çizgi ve
+  sayfa adı: panelin derinliği iki seviye, üçüncü bir seviye yok.
+*/
+.ust-sol {
+	display: flex;
+	align-items: baseline;
+	gap: 0.5rem;
+	min-width: 0;
+	margin-right: auto;
+}
+
 .marka {
 	font-weight: 650;
 	letter-spacing: -0.01em;
 	color: var(--metin);
 	text-decoration: none;
-	margin-right: auto;
+	white-space: nowrap;
+}
+
+.ust-konum {
+	display: flex;
+	align-items: baseline;
+	gap: 0.5rem;
+	min-width: 0;
+	font-size: 0.9375rem;
+	color: var(--soluk);
+}
+
+.ust-konum-ayrac {
+	color: var(--kenar);
+}
+
+.ust-konum-ad {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+/*
+  DURUM ŞERİDİ. Sayı ve sözcük yan yana: tek başına bir "3" ne olduğunu
+  söylemiyor. Sıfır olan sayaç hiç basılmıyor (Kabuk.astro), bu yüzden
+  burada "boş" hâli için kural yok.
+*/
+.ust-durum {
+	list-style: none;
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.375rem 0.75rem;
+	margin: 0;
+	padding: 0;
+	font-size: 0.8125rem;
+}
+
+.ust-sayac {
+	display: inline-flex;
+	align-items: baseline;
+	gap: 0.3125rem;
+	padding: 0.1875rem 0.625rem;
+	border: 1px solid var(--kenar);
+	border-radius: 999px;
+	color: var(--soluk);
+	text-decoration: none;
+	white-space: nowrap;
+}
+
+.ust-sayac:hover {
+	background: var(--yuzey-2);
+	color: var(--metin);
+}
+
+.ust-sayac-sayi {
+	font-weight: 700;
+	color: var(--metin);
+	font-variant-numeric: tabular-nums;
+}
+
+/*
+  Bekleyen yanıt sayacı vurgulu: müşterinin panele girme sebebi çoğu zaman
+  bu. Renk tek başına taşıyıcı değil, yanında "yeni yanıt" yazıyor.
+*/
+.ust-sayac[data-vurgu="1"] {
+	border-color: color-mix(in oklab, var(--vurgu) 45%, var(--kenar));
+}
+
+.ust-sayac[data-vurgu="1"] .ust-sayac-sayi {
+	color: var(--vurgu);
+}
+
+.ust-musteri {
+	color: var(--soluk);
+	max-width: 14rem;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+/*
+  Tema düğmesi `hidden` başlıyor ve betik açıyor (Kabuk.astro). `hidden`
+  niteliği esnek kutu içinde tarayıcı varsayılanıyla ezilebildiği için
+  burada açıkça yazılı.
+*/
+.tema-dugme[hidden] {
+	display: none;
 }
 
 .gezinme {
@@ -225,9 +328,77 @@ a {
 	font-size: 0.8125rem;
 }
 
+/*
+  ALT ÇUBUK. Dört parça: kim olduğum, bana nasıl ulaşılır, oturumun durumu ve
+  canlı bağlantının durumu.
+
+  İletişim kısayolu burada çünkü panelde bir şey ters gittiğinde müşteri
+  destek talebi açmak zorunda kalmamalı: acil olan şey acil kanaldan gider.
+
+  Oturum satırı tam genişlikte ve ikinci sırada; `order` ile taşınıyor.
+  Odaklanılabilir tek şey iletişim bağlantıları ve onların yeri değişmiyor,
+  yani klavye sırası görsel sırayla ayrışmıyor.
+*/
 .alt-ic {
 	padding-top: 1rem;
 	padding-bottom: 1rem;
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.5rem 1.5rem;
+}
+
+.alt-firma {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	gap: 0.25rem 0.625rem;
+	min-width: 0;
+}
+
+.alt-ad {
+	font-weight: 650;
+	color: var(--metin);
+}
+
+.alt-iletisim {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem;
+}
+
+.alt-iletisim a {
+	color: var(--soluk);
+	text-decoration: none;
+	border: 1px solid var(--kenar);
+	border-radius: 999px;
+	padding: 0.125rem 0.625rem;
+	white-space: nowrap;
+}
+
+.alt-iletisim a:hover {
+	color: var(--metin);
+	background: var(--yuzey-2);
+}
+
+.alt-oturum {
+	order: 2;
+	flex: 1 0 100%;
+}
+
+/*
+  Bağlantı durumu alt çubukta `hidden` başlıyor; canlı akış betiği yalnızca
+  akışı olan sayfalarda açıyor. Akışı olmayan bir sayfada "Canlı" yazan bir
+  gösterge yanlış bilgi olurdu.
+*/
+/*
+  Seçici `.canli:not([hidden])` kadar belirgin olmak ZORUNDA: o kural bu
+  dosyanın sonunda duruyor ve alt çubuğun kendi boşluğunu eziyordu.
+*/
+.canli.alt-canli:not([hidden]) {
+	order: 1;
+	margin: 0 0 0 auto;
+	font-size: 0.8125rem;
 }
 
 /* ---------- Tipografi ---------- */
@@ -1049,6 +1220,353 @@ details.davet[open] > summary {
 	background: var(--vurgu);
 }
 
+/* ---------- İlerleme ağacı ---------- */
+
+/*
+  DİKEY ZAMAN ÇİZELGESİ.
+
+  Hat ve düğümler tamamen CSS: listenin kendisi düz bir `<ol>`, yani ekran
+  okuyucu sıralı bir liste duyuyor ve süs işaretleri erişilebilirlik
+  ağacında hiç yok.
+
+  Hat `::before` ile ve yalnızca SONRAKİ adım varken çiziliyor: son düğümün
+  altından boşluğa uzanan bir çizgi, bitmemiş bir liste izlenimi veriyordu.
+
+  DURUM ÜÇ İŞARETLE ayrılıyor ve üçü de biçim olarak farklı: dolu daire
+  (tamamlandı), kalın halka (sürüyor), kesikli halka (bekliyor). Renk buna
+  eklenen bir katman, tek taşıyıcı değil; ayrıca her düğümde durumu yazan
+  bir rozet var.
+
+  Mobilde de okunaklı: sol boşluk 2rem, yani dar pencerede metin sütunu
+  hâlâ 40 karakterin üstünde kalıyor.
+*/
+.agac {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+.agac-adim {
+	position: relative;
+	padding: 0 0 1.5rem 2rem;
+	min-width: 0;
+}
+
+.agac-adim:last-child {
+	padding-bottom: 0;
+}
+
+.agac-adim:not(:last-child)::before {
+	content: "";
+	position: absolute;
+	left: 0.5rem;
+	top: 1.5rem;
+	bottom: 0;
+	width: 1px;
+	background: var(--kenar);
+}
+
+.agac-isaret {
+	position: absolute;
+	left: 0;
+	top: 0.3125rem;
+	width: 1.0625rem;
+	height: 1.0625rem;
+	border-radius: 50%;
+	border: 2px solid var(--kenar);
+	background: var(--zemin);
+	box-sizing: border-box;
+}
+
+.agac-adim[data-durum="tamamlandi"] .agac-isaret {
+	background: var(--basari);
+	border-color: var(--basari);
+}
+
+/* Sürüyor: kalın halka, ortası boş. "Henüz dolmadı" demenin biçimsel hâli. */
+.agac-adim[data-durum="suruyor"] .agac-isaret {
+	border-width: 4px;
+	border-color: var(--vurgu);
+}
+
+/* Bekliyor: kesikli halka. Solukluk tek başına ayrım için yeterli değildi. */
+.agac-adim[data-durum="bekliyor"] .agac-isaret {
+	border-style: dashed;
+	border-color: var(--soluk);
+}
+
+.agac-govde {
+	min-width: 0;
+}
+
+.agac-bas {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.375rem 0.625rem;
+}
+
+.agac-baslik {
+	font-size: 1rem;
+	font-weight: 600;
+	letter-spacing: 0;
+	margin: 0;
+	overflow-wrap: break-word;
+}
+
+/*
+  Otomatik ve elle eklenen aşama ayrımı. Otomatik olan işaretlenmiyor: o
+  varsayılan. İşaretlenen, sahibin elle yazdığı not.
+*/
+.agac-kaynak {
+	font-size: 0.6875rem;
+	font-weight: 600;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: var(--soluk);
+	border: 1px dashed var(--kenar);
+	border-radius: 999px;
+	padding: 0.0625rem 0.5rem;
+	white-space: nowrap;
+}
+
+.agac-tarih {
+	display: block;
+	margin-top: 0.25rem;
+	font-size: 0.8125rem;
+	color: var(--soluk);
+}
+
+.agac-aciklama {
+	margin: 0.5rem 0 0;
+	color: var(--soluk);
+	line-height: 1.65;
+	max-width: 62ch;
+	overflow-wrap: break-word;
+}
+
+/* Aşama durumları da ayrı bir küme; talep ve iş durumlarıyla karışmıyorlar. */
+.rozet[data-asama="tamamlandi"] {
+	color: var(--basari);
+	border-color: color-mix(in oklab, var(--basari) 40%, var(--kenar));
+}
+
+.rozet[data-asama="suruyor"] {
+	color: var(--vurgu);
+	border-color: color-mix(in oklab, var(--vurgu) 40%, var(--kenar));
+}
+
+.rozet[data-asama="bekliyor"] {
+	color: var(--soluk);
+	background: var(--yuzey-2);
+}
+
+/* ---------- Ödeme dökümü ---------- */
+
+/*
+  Üç rakam üstte, kalemler altta. Müşterinin sorduğu sıra bu: ne kadardı, ne
+  kadarını ödedim, ne kadar kaldı.
+
+  Ödenen tutar `is_odeme` satırlarından HESAPLANIYOR (`sunucu/isler.mjs`);
+  burada gösterilen sayı ile aşağıdaki listenin toplamı aynı kaynaktan
+  geliyor, iki ayrı hesap yok.
+*/
+.odeme-ozet {
+	display: grid;
+	gap: 0.75rem;
+	grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+	margin: 0 0 1.25rem;
+}
+
+.odeme-kalem {
+	border: 1px solid var(--kenar);
+	border-radius: var(--yuvarlak-kucuk);
+	background: var(--yuzey-2);
+	padding: 0.75rem 0.875rem;
+	min-width: 0;
+}
+
+.odeme-kalem dt {
+	font-size: 0.625rem;
+	font-weight: 700;
+	letter-spacing: 0.18em;
+	text-transform: uppercase;
+	color: var(--soluk);
+	margin: 0 0 0.375rem;
+}
+
+.odeme-kalem dd {
+	margin: 0;
+	font-size: 1.25rem;
+	font-weight: 700;
+	letter-spacing: -0.01em;
+	/* Tutarlar alt alta hizalansın: oranlı rakam sütunu titretiyor. */
+	font-variant-numeric: tabular-nums;
+	overflow-wrap: break-word;
+}
+
+.odeme-kalem[data-vurgu="kalan"] {
+	border-color: color-mix(in oklab, var(--vurgu) 40%, var(--kenar));
+}
+
+.odeme-kalem[data-vurgu="kalan"] dd {
+	color: var(--vurgu);
+}
+
+.odeme-kalem[data-vurgu="kapandi"] dd {
+	color: var(--basari);
+}
+
+.odeme-dizi {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	border-top: 1px solid var(--kenar);
+}
+
+.odeme-satir {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	gap: 0.25rem 0.75rem;
+	padding: 0.625rem 0;
+	border-bottom: 1px solid var(--kenar);
+}
+
+.odeme-tur {
+	font-weight: 600;
+}
+
+.odeme-tarih {
+	margin-right: auto;
+	font-size: 0.8125rem;
+	color: var(--soluk);
+}
+
+.odeme-tutar {
+	font-weight: 600;
+	font-variant-numeric: tabular-nums;
+	white-space: nowrap;
+}
+
+/* İade eksi yönde: hem işaretiyle hem rengiyle. */
+.odeme-satir[data-tur="iade"] .odeme-tutar {
+	color: var(--uyari);
+}
+
+.odeme-not {
+	margin: 1rem 0 0;
+	color: var(--soluk);
+	font-size: 0.9375rem;
+	max-width: 56ch;
+}
+
+/* ---------- Dosyalar ---------- */
+
+.dosyalar {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: grid;
+	gap: 0.75rem;
+	grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr));
+}
+
+.dosya {
+	display: flex;
+	align-items: center;
+	gap: 0.875rem;
+	border: 1px solid var(--kenar);
+	border-radius: var(--yuvarlak);
+	background: var(--yuzey);
+	padding: 0.875rem;
+	min-width: 0;
+}
+
+/*
+  Görsel önizlemesi aynı indirme uç noktasından, `?onizleme=1` ile geliyor.
+  Sunucu bunu yalnızca görsellerde `inline` yapıyor; geri kalan her şey
+  indiriliyor (sunucu/dosyalar.mjs).
+*/
+.dosya-onizleme,
+.dosya-simge {
+	flex: none;
+	width: 4rem;
+	height: 4rem;
+	border: 1px solid var(--kenar);
+	border-radius: var(--yuvarlak-kucuk);
+	overflow: hidden;
+	background: var(--yuzey-2);
+}
+
+.dosya-onizleme {
+	display: block;
+}
+
+.dosya-onizleme img {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	display: block;
+}
+
+/* Görsel olmayan dosya: uzantısı kendi rozeti oluyor. */
+.dosya-simge {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 0.6875rem;
+	font-weight: 700;
+	letter-spacing: 0.06em;
+	color: var(--soluk);
+}
+
+.dosya-govde {
+	min-width: 0;
+}
+
+.dosya-ad {
+	font-weight: 600;
+	overflow-wrap: anywhere;
+}
+
+.dosya-bilgi {
+	margin: 0.25rem 0 0;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.125rem 0.625rem;
+	font-size: 0.8125rem;
+	color: var(--soluk);
+}
+
+/* ---------- Gecikme ve tutar işaretleri ---------- */
+
+/*
+  GECİKME DİLİ SAKİN. Sahibin isteği: belirgin ama panik yaratmayan. Kırmızı
+  dolgulu bir kutu ve büyük harfli bir başlık müşteriyi telefona
+  sarıldırıyor; söylenecek şey planlanan tarihin geçtiğinden ibaret.
+  Bu yüzden yalnızca sol kenarlık ve bir rozet, dolgu yok.
+*/
+.bildirim[data-tur="gecikme"] {
+	border-left-color: var(--uyari);
+	color: var(--metin);
+}
+
+.rozet[data-gecikme="1"] {
+	color: var(--uyari);
+	border-color: color-mix(in oklab, var(--uyari) 40%, var(--kenar));
+}
+
+.ozet-kutu[data-vurgu="gecikme"] {
+	border-color: color-mix(in oklab, var(--uyari) 40%, var(--kenar));
+}
+
+/* Liste satırındaki kalan tutar: rozet değil, düz rakam. */
+.satir-tutar {
+	font-variant-numeric: tabular-nums;
+	white-space: nowrap;
+}
+
 @media (max-width: 40rem) {
 	.ust-ic,
 	.govde,
@@ -1094,5 +1612,52 @@ details.davet[open] > summary {
 
 	.satir-ad {
 		flex: 1 0 100%;
+	}
+
+	/*
+	  Dar pencerede üst çubuk üç kata ayrılıyor: marka ve konum, durum
+	  şeridi, gezinme. Üçünü tek satıra sıkıştırmak sayıları okunmaz
+	  yapıyordu.
+	*/
+	.ust-sol,
+	.ust-durum {
+		flex: 1 0 100%;
+	}
+
+	/*
+	  Telefonda müşterinin adı üst çubukta ikinci kez yazılmıyor: alt çubukta
+	  zaten tam cümleyle duruyor ve dar ekranda yer sayaçlara gerekiyor.
+	*/
+	.ust-musteri {
+		display: none;
+	}
+
+	.gezinme {
+		gap: 0.75rem;
+	}
+
+	.alt-ic {
+		gap: 0.625rem 1rem;
+	}
+
+	/* Bağlantı durumu dar ekranda kendi satırına düşüyor, sağa yapışmıyor. */
+	.canli.alt-canli:not([hidden]) {
+		margin-left: 0;
+		flex: 1 0 100%;
+		order: 3;
+	}
+
+	/* Ödeme özetinde üç kutu alt alta: iki sütunda rakamlar kırılıyordu. */
+	.odeme-ozet {
+		grid-template-columns: 1fr;
+	}
+
+	.dosyalar {
+		grid-template-columns: 1fr;
+	}
+
+	/* Zaman çizelgesi sol boşluğu daralıyor, metin sütunu genişliyor. */
+	.agac-adim {
+		padding-left: 1.75rem;
 	}
 }
