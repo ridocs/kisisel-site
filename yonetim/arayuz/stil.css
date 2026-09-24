@@ -606,6 +606,87 @@ td.islem .dugme + .dugme {
 }
 
 /* ---------------------------------------------------------------- */
+/* Canlı akış göstergesi ve okunmamış işareti                        */
+/* ---------------------------------------------------------------- */
+
+/*
+  Sessizce bozulmuş bir akış, olmayan akıştan kötüdür. Bu satır her
+  yazışma ekranında duruyor ve bağlantının canlı mı, kopuk mu olduğunu
+  tek bakışta söylüyor.
+
+  Renk TEK BAŞINA taşımıyor: noktanın yanında metin de değişiyor, yani
+  renk körlüğünden etkilenmiyor.
+*/
+.akis-gostergesi {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 1px 9px 1px 7px;
+	border-radius: 99px;
+	border: 1px solid var(--cizgi);
+	background: var(--zemin-2);
+	color: var(--metin-3);
+	font-size: 11.5px;
+	white-space: nowrap;
+}
+
+.akis-gostergesi::before {
+	content: '';
+	width: 7px;
+	height: 7px;
+	border-radius: 50%;
+	background: var(--metin-3);
+	flex: none;
+}
+
+.akis-gostergesi.iyi {
+	color: var(--olumlu);
+	border-color: color-mix(in oklch, var(--olumlu) 40%, var(--cizgi));
+}
+
+.akis-gostergesi.iyi::before {
+	background: var(--olumlu);
+}
+
+.akis-gostergesi.kotu {
+	color: var(--bekleyen);
+	border-color: color-mix(in oklch, var(--bekleyen) 40%, var(--cizgi));
+}
+
+.akis-gostergesi.kotu::before {
+	background: var(--bekleyen);
+}
+
+/*
+  Yan çubuktaki sayaç. Kırmızı DEĞİL: kopmuş bir akış hata, okunmamış
+  mesaj ise sadece iş. Tehlike rengini her şeye vermek, gerçekten
+  tehlikeli olanı görünmez yapar.
+*/
+.okunmamis-sayaci {
+	margin-left: auto;
+	min-width: 18px;
+	padding: 0 5px;
+	border-radius: 99px;
+	background: var(--zemin);
+	border: 1px solid color-mix(in oklch, var(--olumlu) 45%, var(--cizgi));
+	color: var(--olumlu);
+	font-size: 11px;
+	font-weight: 600;
+	text-align: center;
+}
+
+/* Liste satırında hangi talepte okunmamış mesaj var. */
+.okunmamis-nokta {
+	display: inline-block;
+	width: 7px;
+	height: 7px;
+	margin-right: 7px;
+	border-radius: 50%;
+	background: var(--olumlu);
+	vertical-align: middle;
+}
+
+/* ---------------------------------------------------------------- */
 /* Destek talebi yazışması                                           */
 /* ---------------------------------------------------------------- */
 

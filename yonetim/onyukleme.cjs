@@ -96,6 +96,23 @@ contextBridge.exposeInMainWorld('yonetim', {
 		// Yanıt sunucuya değil, eşitleme kuyruğuna gidiyor.
 		yanitla: (talepId, metin) => cagir('talep:yanitla', talepId, metin),
 		durum: (talepId, durum) => cagir('talep:durum', talepId, durum),
+
+		/** Canlı akışın bağlantı durumu. Açılışta bir kez soruluyor. */
+		akisDurumu: () => cagir('talep:akis-durum'),
+		/**
+		 * Akıştan gelen hareket. Gövde YOK: yalnızca "şu talepte şu kimlikte
+		 * bir hareket oldu" bilgisi geliyor, metni arayüz `getir` ile
+		 * veritabanından okuyor. `ekranDinle` ile aynı kalıp: yalnızca
+		 * dinleme yönü açık, olay nesnesi geçmiyor.
+		 */
+		akisDinle: (islev) => {
+			ipcRenderer.on('talep:akis-olayi', (_olay, hareket) => islev(hareket));
+		},
+		/** Bağlantı durumu değiştikçe. Sessizce bozulmuş bir akış, olmayan
+		 *  akıştan kötüdür; gösterge bu kanaldan besleniyor. */
+		akisDurumDinle: (islev) => {
+			ipcRenderer.on('talep:akis-durumu', (_olay, akisDurumu) => islev(akisDurumu));
+		},
 	},
 
 	panoyaYaz: (metin) => cagir('pano:yaz', metin),

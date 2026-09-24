@@ -1,0 +1,50 @@
+---
+/*
+  Canlı akışın bağlanma noktası ve durum göstergesi.
+
+  İki iş yapıyor:
+  1. Tarayıcı tarafına gereken bilgiyi `data-` niteliklerinde taşıyor
+     (taban adres, kip, talep kimliği, bilinen son damga, müşterinin adı).
+  2. Betiği nonce ile yüklüyor.
+
+  KUTU `hidden` BAŞLIYOR ve betik onu açıyor. JavaScript çalışmayan bir
+  tarayıcıda "Bağlanıyor" yazan, hiçbir zaman bağlanmayacak bir kutu
+  görünmesin: akış bir iyileştirme, yokluğu bir arıza değil.
+
+  Betik `genel/canli.js` dosyasından, yani `public` klasöründen geliyor.
+  Gerekçesi o dosyanın başında: Astro'nun paketlediği `<script>` etiketi
+  nonce niteliğini taşımıyor, `is:inline` olan taşıyor.
+*/
+const { kip, talep = '', bilinen = '', ad = '' } = Astro.props;
+
+const taban = Astro.locals.taban ?? '';
+const nonce = Astro.locals.nonce ?? '';
+
+/* Önbellek kırma damgası. Gerekçe Kabuk.astro içinde, stil bağlantısında. */
+const surum = typeof __PANEL_SURUM__ === 'undefined' ? 'gelistirme' : __PANEL_SURUM__;
+---
+
+<div
+	class="canli"
+	hidden
+	data-canli
+	data-taban={taban}
+	data-kip={kip}
+	data-talep={talep}
+	data-bilinen={bilinen}
+	data-ad={ad}
+>
+	{/*
+	  `aria-live="polite"`: durum değişince ekran okuyucu kullanıcının sözünü
+	  kesmeden söylüyor. Nokta yalnızca süs, erişilebilirlik ağacından çıkarıldı.
+	*/}
+	<span class="canli-nokta" aria-hidden="true"></span>
+	<span class="canli-durum" data-canli-durum data-durum="baglaniyor" aria-live="polite"
+		>Bağlanıyor</span
+	>
+</div>
+
+{/* Boşken görünmüyor (`.bildirim:empty`). Betik yalnızca gerektiğinde dolduruyor. */}
+<p class="bildirim" data-tur="bilgi" data-canli-bildirim role="status"></p>
+
+<script is:inline nonce={nonce} src={`${taban}/canli.js?s=${surum}`} defer></script>

@@ -15,6 +15,7 @@
   hatası yüzünden yeniden yazdırmak kabul edilebilir değil.
 */
 import Kabuk from '../../duzen/Kabuk.astro';
+import Canli from '../../duzen/Canli.astro';
 import { ayarlar } from '../../sunucu/ayarlar.mjs';
 import { islemAnahtariGecerliMi } from '../../sunucu/csrf.mjs';
 import { panelVt } from '../../sunucu/veritabani.mjs';
@@ -70,6 +71,12 @@ const isler = isleriListele(db, musteri.id);
 const acik = talepler.filter((talep) => talep.durum !== 'kapandi').length;
 
 const mesajSayisi = (sayi) => (sayi === 1 ? '1 mesaj' : `${sayi} mesaj`);
+
+/*
+  Akışın başlangıç damgası: listedeki en son hareket. Liste `guncellendi`
+  değerine göre sıralı olduğu için bu ilk satır. Talep yoksa şu an.
+*/
+const bilinenDamga = talepler.length > 0 ? talepler[0].guncellendi : new Date().toISOString();
 ---
 
 <Kabuk baslik="Destek talepleri" aktif="talepler">
@@ -90,6 +97,8 @@ const mesajSayisi = (sayi) => (sayi === 1 ? '1 mesaj' : `${sayi} mesaj`);
 			</p>
 		)
 	}
+
+	<Canli kip="liste" bilinen={bilinenDamga} ad={musteri.gorunen_ad} />
 
 	<section class="bolum" aria-labelledby="liste-basligi">
 		<div class="bolum-bas">
@@ -118,7 +127,11 @@ const mesajSayisi = (sayi) => (sayi === 1 ? '1 mesaj' : `${sayi} mesaj`);
 			) : (
 				<ul class="dizi">
 					{talepler.map((talep) => (
-						<li>
+						/*
+						  `data-talep-id`: akıştan yeni mesaj gelince hangi
+						  satırın işaretleneceği buradan bulunuyor.
+						*/
+						<li data-talep-id={talep.id}>
 							<a class="satir" href={`${taban}/talepler/${talep.id}`}>
 								<span class="satir-ad">{talep.baslik}</span>
 								<span class="satir-bilgi">
@@ -126,7 +139,7 @@ const mesajSayisi = (sayi) => (sayi === 1 ? '1 mesaj' : `${sayi} mesaj`);
 									<span class="rozet" data-durum={talep.durum}>
 										{talepDurumEtiketi(talep.durum)}
 									</span>
-									<span>{mesajSayisi(talep.mesaj_sayisi)}</span>
+									<span data-satir-mesaj>{mesajSayisi(talep.mesaj_sayisi)}</span>
 									<time datetime={makineZamani(talep.guncellendi)}>
 										{tarih(talep.guncellendi)}
 									</time>

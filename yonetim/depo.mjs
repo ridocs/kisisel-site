@@ -797,6 +797,147 @@ export function depoKur(db, kasa, { kuyrukDinleyici = null } = {}) {
 		return { id: talepId, durum };
 	}
 
+	/* -------------------------------------------------------------- */
+	/* Canlı akıştan gelen tek kayıt                                   */
+	/* -------------------------------------------------------------- */
+
+	/*
+	  `veri/esitleme.mjs` içindeki `talepleriIceAl` aynı işi PAKET için
+	  yapıyor: düzenli eşitlemede çekilen talep listesini yerele yazıyor.
+	  Canlı akış paket değil tek tek olay taşıdığı için burada onun tek
+	  kayıtlık karşılığı duruyor. İkisi de aynı iki kuralı uyguluyor:
+
+	  1. Gelen veri GÜVENİLMEZ, çünkü sunucu ele geçmiş olabilir. Yalnızca
+	     beklenen alanlar okunuyor, metin uzunluğu sınırlanıyor ve müşteri
+	     kimliği yerelde gerçekten varsa bağlanıyor. Tanınmayan alan yok
+	     sayılıyor.
+	  2. `ON CONFLICT (id)` ile yazılıyor. Aynı mesaj hem akıştan hem
+	     eşitlemeden gelebilir, üstelik sahibin kendi yanıtı da akıştan geri
+	     döner (kimliği aynı, çünkü kuyruğa giden kimlikle yerel kopyaya
+	     yazılan kimlik aynı). Hiçbiri ikinci kez görünmemeli.
+
+	  Dönen `yeni` alanı "bu kayıt gerçekten ilk kez görüldü" demek.
+	  Ekrandaki okunmamış işareti buna bakıyor: geri dönen kendi yanıtının
+	  okunmamış sayılması yanlış olurdu.
+	*/
+
+	/** Akıştan gelen mesaj gövdesinin üst sınırı. `veri/esitleme.mjs`
+	 *  içindeki paket sınırıyla aynı sayı; o sabit dışa açılmadığı için
+	 *  burada tekrar yazılı. */
+	const AKIS_METIN_SINIRI = 20000;
+
+	const akisMusteriVarMi = db.prepare('SELECT 1 FROM musteri WHERE id = ?');
+	const akisTalepVarMi = db.prepare('SELECT 1 FROM talep_kopyasi WHERE id = ?');
+	const akisMesajVarMi = db.prepare('SELECT 1 FROM talep_mesaj_kopyasi WHERE id = ?');
+
+	/*
+	  Çakışmada `musteri_id` ve `is_id` KASITLI olarak güncellenmiyor.
+	  Bağlantıyı yerel taraf kuruyor ve sunucunun uydurduğu bir kimlik var
+	  olan bir bağı koparmamalı. `talepleriIceAl` de aynı şeyi yapıyor.
+	*/
+	const akisTalepYaz = db.prepare(
+		`INSERT INTO talep_kopyasi (id, musteri_id, is_id, baslik, durum, oncelik, olusturuldu, guncellendi, cekildi)
+		 VALUES (?, ?, NULL, ?, ?, ?, ?, ?, ?)
+		 ON CONFLICT (id) DO UPDATE SET
+		   baslik = excluded.baslik, durum = excluded.durum, oncelik = excluded.oncelik,
+		   guncellendi = excluded.guncellendi, cekildi = excluded.cekildi`,
+	);
+	const akisMesajYaz = db.prepare(
+		`INSERT INTO talep_mesaj_kopyasi (id, talep_id, yazan, metin, zaman)
+		 VALUES (?, ?, ?, ?, ?)
+		 ON CONFLICT (id) DO UPDATE SET metin = excluded.metin`,
+	);
+	/* Mesaj geldiğinde talebin son hareket damgası ilerliyor: liste bu alana
+	   göre sıralı ve yeni yazışan talep üste çıkmalı. Geriye gitmiyor. */
+	const akisTalepDamgasi = db.prepare(
+		'UPDATE talep_kopyasi SET guncellendi = ? WHERE id = ? AND guncellendi < ?',
+	);
+
+	/** Sunucunun verdiği müşteri kimliğini yerelde gerçekten varsa kabul
+	 *  eder, yoksa boş bırakır. */
+	function akistanMusteri(ham) {
+		const kimlik = ham ? String(ham) : '';
+		return kimlik && akisMusteriVarMi.get(kimlik) ? kimlik : null;
+	}
+
+	function akistanTalep(ham) {
+		if (!ham.id || typeof ham.baslik !== 'string') {
+			return { atlandi: true, sebep: 'eksik alan' };
+		}
+		const id = String(ham.id);
+		const zaman = simdi();
+		const yeni = !akisTalepVarMi.get(id);
+		akisTalepYaz.run(
+			id,
+			akistanMusteri(ham.musteri_id),
+			String(ham.baslik).slice(0, 500),
+			String(ham.durum ?? 'acik').slice(0, 40),
+			ham.oncelik ? String(ham.oncelik).slice(0, 20) : null,
+			String(ham.olusturuldu ?? zaman),
+			String(ham.guncellendi ?? zaman),
+			zaman,
+		);
+		return { tur: 'talep', id, talepId: id, yeni, atlandi: false };
+	}
+
+	function akistanMesaj(ham) {
+		if (!ham.id || !ham.talep_id || typeof ham.metin !== 'string') {
+			return { atlandi: true, sebep: 'eksik alan' };
+		}
+		const id = String(ham.id);
+		const talepId = String(ham.talep_id);
+		const yazan = ham.yazan === 'sahip' ? 'sahip' : 'musteri';
+		const zaman = String(ham.zaman ?? simdi());
+		const yeni = !akisMesajVarMi.get(id);
+
+		db.exec('BEGIN');
+		try {
+			/*
+			  Talep yerelde yoksa TASLAK bir satır kuruluyor. Sunucu her turda
+			  önce talep sonra mesaj akıtıyor, yani normalde talep çoktan
+			  yazılmış olur; ama sıraya güvenip mesajı düşürmek, müşterinin
+			  ilk mesajını, yani en acil olanı kaybetmek demekti (yabancı
+			  anahtar onu reddederdi). Akış mesajla birlikte başlığı ve
+			  müşteri kimliğini de taşıyor, taslak bu yüzden kurulabiliyor.
+			  Bir sonraki eşitleme gerçek satırı getirip üstüne yazıyor.
+			*/
+			if (!akisTalepVarMi.get(talepId)) {
+				akisTalepYaz.run(
+					talepId,
+					akistanMusteri(ham.musteri_id),
+					typeof ham.baslik === 'string' ? ham.baslik.slice(0, 500) : 'Başlıksız talep',
+					'acik',
+					null,
+					zaman,
+					zaman,
+					simdi(),
+				);
+			}
+			akisMesajYaz.run(id, talepId, yazan, ham.metin.slice(0, AKIS_METIN_SINIRI), zaman);
+			akisTalepDamgasi.run(zaman, talepId, zaman);
+			db.exec('COMMIT');
+		} catch (hata) {
+			db.exec('ROLLBACK');
+			throw hata;
+		}
+		return { tur: 'mesaj', id, talepId, yazan, yeni, atlandi: false };
+	}
+
+	/**
+	 * Canlı akıştan gelen tek olayı yerel kopyaya yazar.
+	 *
+	 * Tanınmayan tür sessizce atlanıyor: akışın ileride yeni bir olay türü
+	 * taşıması, eski bir uygulamayı çökertmemeli.
+	 *
+	 * @returns {{ tur?: string, id?: string, talepId?: string, yazan?: string,
+	 *            yeni?: boolean, atlandi: boolean, sebep?: string }}
+	 */
+	function akisOlayiniIsle(ham) {
+		if (ham?.tur === 'talep') return akistanTalep(ham);
+		if (ham?.tur === 'mesaj') return akistanMesaj(ham);
+		return { atlandi: true, sebep: 'tanınmayan tür' };
+	}
+
 	return {
 		musteriListesi,
 		musteriGetir,
@@ -825,6 +966,7 @@ export function depoKur(db, kasa, { kuyrukDinleyici = null } = {}) {
 		talepGetir,
 		talepYanitla,
 		talepDurumu,
+		akisOlayiniIsle,
 		sifrelemeVarMi: () => Boolean(kasa?.kullanilabilir?.()),
 	};
 }

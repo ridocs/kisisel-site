@@ -160,6 +160,14 @@ const durum = {
 	talepDurumSuzgeci: '',
 	acikTalepId: null,
 	/*
+	  Canlı akışın son bildirdiği bağlantı durumu ve okunmamış talepler.
+	  Okunmamış küme kimlik tutuyor, sayı değil: yan çubukta sayıyı,
+	  listede hangi satırın yeni olduğunu göstermek için ikisi de gerekiyor.
+	  Bellek dışına yazılmıyor, uygulama kapanınca sıfırlanıyor.
+	*/
+	akis: null,
+	okunmamisTalepler: new Set(),
+	/*
 	  Eşitlemenin son çalışmasından kalanlar. Hata metni OLDUĞU GİBİ
 	  tutuluyor: SSH'ın söylediği şey kullanıcıya gösterilecek.
 	*/
@@ -1717,6 +1725,122 @@ async function esitlemeCiz() {
 }
 
 /* ------------------------------------------------------------------ */
+/* Canlı akış: gösterge, okunmamış işareti, olay dağıtımı              */
+/* ------------------------------------------------------------------ */
+
+/*
+  Akış olayı EKRANA GÖRE işleniyor. Talep detayı açıkken yeni mesaj
+  yazışmaya ekleniyor, liste açıkken satırlar tazeleniyor, başka bir
+  ekrandayken yalnızca okunmamış işareti artıyor.
+
+  Ekranı komple yeniden çizen tek bir yol yok, çünkü kullanıcı o sırada
+  yanıt yazıyor olabilir. Altından çekilen bir metin kutusu, gösterilen
+  tazeliğe değmez.
+*/
+let akisDinleyicisi = null;
+
+/** O an ekranda duran akış göstergeleri. Ekran değişince sıfırlanıyor:
+ *  kapanmış bir ekranın düğümünü boyamanın anlamı yok. */
+let akisGostergeleri = [];
+
+const AKIS_METINLERI = {
+	canli: 'Akış canlı',
+	baglaniyor: 'Akışa bağlanılıyor…',
+	koptu: 'Akış koptu, yeniden bağlanıyor',
+	'sessiz-koptu': 'Akıştan yanıt yok, yeniden bağlanıyor',
+	hata: 'Akış hatası',
+	durduruldu: 'Akış durduruldu',
+	kapali: 'Akış kapalı',
+	'ayar-eksik': 'Akış beklemede, bağlantı ayarları eksik',
+};
+
+const AKIS_KOTU = ['koptu', 'sessiz-koptu', 'hata', 'ayar-eksik', 'kapali'];
+
+function akisMetni(d) {
+	if (!d) return 'Akış durumu okunmadı';
+	return AKIS_METINLERI[d.ad] ?? `Akış: ${d.ad}`;
+}
+
+function akisGostergesiniCiz(dugum) {
+	const d = durum.akis;
+	dugum.textContent = akisMetni(d);
+	dugum.classList.toggle('iyi', d?.ad === 'canli');
+	dugum.classList.toggle('kotu', Boolean(d && AKIS_KOTU.includes(d.ad)));
+	/*
+	  Ham hata metni başlıkta duruyor, ekranda değil. SSH'ın söyledikleri
+	  kullanıcının görmesi gereken şeyler ama bir satırlık göstergeye
+	  sığmıyor; üzerine gelince tamamı okunuyor.
+	*/
+	dugum.title = d?.sonHata
+		? `${akisMetni(d)}. Son hata: ${d.sonHata}`
+		: d?.sonOlay
+			? `Son hareket ${anBicim(d.sonOlay)}`
+			: akisMetni(d);
+}
+
+/** Yazışma ekranlarına konan küçük bağlantı göstergesi. */
+function akisGostergesi() {
+	const dugum = el('span', {
+		sinif: 'akis-gostergesi',
+		role: 'status',
+		'aria-live': 'polite',
+	});
+	akisGostergeleri.push(dugum);
+	akisGostergesiniCiz(dugum);
+	return dugum;
+}
+
+/**
+ * Yan çubuktaki "Destek talepleri" düğmesinin sayacı.
+ *
+ * Başka bir ekrandayken gelen müşteri mesajı burada görünüyor. Sayı talep
+ * sayısı, mesaj sayısı değil: kullanıcının sorusu "kaç kişi bekliyor".
+ */
+function okunmamisRozetiniCiz() {
+	const dugme = dugumler.gezinti.querySelector('button[data-ekran="talepler"]');
+	if (!dugme) return;
+	const adet = durum.okunmamisTalepler.size;
+	let rozet = dugme.querySelector('.okunmamis-sayaci');
+	if (!adet) {
+		rozet?.remove();
+		dugme.removeAttribute('title');
+		return;
+	}
+	if (!rozet) {
+		rozet = el('span', { sinif: 'okunmamis-sayaci' });
+		dugme.insertBefore(rozet, dugme.querySelector('kbd'));
+	}
+	rozet.textContent = String(adet);
+	dugme.title = `${adet} talepte okunmamış mesaj var`;
+}
+
+/** Talep açılınca okunmuş sayılıyor. */
+function okunduIsaretle(talepId) {
+	if (!durum.okunmamisTalepler.delete(talepId)) return;
+	okunmamisRozetiniCiz();
+}
+
+kapi.talep.akisDurumDinle((yeni) => {
+	durum.akis = yeni;
+	for (const dugum of akisGostergeleri) akisGostergesiniCiz(dugum);
+});
+
+kapi.talep.akisDinle(async (hareket) => {
+	/*
+	  Okunmamış işareti YALNIZCA müşterinin ilk kez görülen mesajı için.
+	  Sahibin kendi yanıtı akıştan geri döndüğünde `yeni` zaten false
+	  (yerel kopyaya yazarken kullanılan kimlik sunucuya da o kimlikle
+	  gitti), talep güncellemesi ise bir mesaj değil.
+	*/
+	const acikTalep = durum.ekran === 'talep-detay' && durum.acikTalepId === hareket.talepId;
+	if (hareket.tur === 'mesaj' && hareket.yeni && hareket.yazan === 'musteri' && !acikTalep) {
+		durum.okunmamisTalepler.add(hareket.talepId);
+		okunmamisRozetiniCiz();
+	}
+	if (akisDinleyicisi) await akisDinleyicisi(hareket);
+});
+
+/* ------------------------------------------------------------------ */
 /* Ekran: Destek talepleri                                             */
 /* ------------------------------------------------------------------ */
 
@@ -1748,6 +1872,7 @@ async function talepleriCiz() {
 				tazele();
 			},
 		}),
+		akisGostergesi(),
 		el('button', {
 			sinif: 'dugme',
 			metin: 'Eşitleme ekranı',
@@ -1758,6 +1883,21 @@ async function talepleriCiz() {
 	const kap = el('div');
 	dugumler.icerik.replaceChildren(kap);
 	await tazele();
+
+	/*
+	  Akıştan gelen hareket listeyi tazeliyor. Tazelenen YALNIZCA tablo:
+	  süzgeç ve arama kutusu araç çubuğunda duruyor, dokunulmuyor, yani
+	  kullanıcı ararken yazdığı kaybolmuyor.
+
+	  Art arda gelen olaylar tek tazelemeye toplanıyor. Sunucu yarım
+	  saniyede bir tarıyor ve bir turda onlarca hareket akabilir; her biri
+	  için ayrı sorgu çalıştırmanın kimseye faydası yok.
+	*/
+	let tazelemeIsareti = null;
+	akisDinleyicisi = () => {
+		clearTimeout(tazelemeIsareti);
+		tazelemeIsareti = setTimeout(tazele, 150);
+	};
 
 	async function tazele() {
 		const liste =
@@ -1784,7 +1924,12 @@ async function talepleriCiz() {
 						el('strong', { metin: t.musteri_adi ?? 'Bağlanmamış müşteri' }),
 						t.is_adi ? el('span', { sinif: 'alt-metin', metin: t.is_adi }) : null,
 					]),
-					el('td', { metin: t.baslik }),
+					el('td', {}, [
+						durum.okunmamisTalepler.has(t.id)
+							? el('span', { sinif: 'okunmamis-nokta', 'aria-label': 'Okunmamış mesaj' })
+							: null,
+						el('span', { metin: t.baslik }),
+					]),
 					el('td', {}, [el('span', { sinif: 'etiket', metin: talepDurumAdi(t.durum) })]),
 					el('td', { metin: talepOncelikAdi(t.oncelik) }),
 					el('td', { sinif: 'sayi', metin: String(t.mesajSayisi) }),
@@ -1810,8 +1955,10 @@ async function talepleriCiz() {
 			el('p', {
 				sinif: 'kucuk ust-bosluk',
 				metin:
-					'Talepler sunucudan çekiliyor ve burada yalnızca kopyası duruyor. Yazdığınız ' +
-					'yanıt doğrudan sunucuya gitmez, eşitleme kuyruğuna girer.',
+					'Talepler sunucudan çekiliyor ve burada yalnızca kopyası duruyor. Yeni mesaj ' +
+					'canlı akıştan saniyeler içinde düşüyor, akış koptuğunda düzenli eşitleme ' +
+					'onu yine getiriyor. Yazdığınız yanıt doğrudan sunucuya gitmez, eşitleme ' +
+					'kuyruğuna girer.',
 			}),
 		);
 	}
@@ -1828,14 +1975,19 @@ async function talepDetayiniCiz() {
 		return;
 	}
 
+	// Açılan talep okunmuş sayılıyor: yan çubuktaki sayaç buna göre düşüyor.
+	okunduIsaretle(talep.id);
+
 	const kapaliMi = talep.durum === 'kapandi';
 	const musteriAdi = talep.musteri_adi ?? 'Müşteri';
+	const durumEtiketi = el('span', { sinif: 'etiket', metin: talepDurumAdi(talep.durum) });
 
 	dugumler.baslik.textContent = talep.baslik;
 	dugumler.araclar.replaceChildren(
 		...[
 			el('span', { sinif: 'etiket', metin: musteriAdi }),
-			el('span', { sinif: 'etiket', metin: talepDurumAdi(talep.durum) }),
+			durumEtiketi,
+			akisGostergesi(),
 			kapaliMi
 				? null
 				: el('button', {
@@ -1880,22 +2032,55 @@ async function talepDetayiniCiz() {
 		}),
 	]);
 
+	function mesajDugumu(m) {
+		const sahibinMi = m.yazan === 'sahip';
+		return el('article', { sinif: `mesaj ${sahibinMi ? 'sahip' : 'musteri'}` }, [
+			el('p', {
+				sinif: 'mesaj-basligi',
+				metin: `${sahibinMi ? 'Siz' : musteriAdi} · ${anBicim(m.zaman)}`,
+			}),
+			el('p', { sinif: 'mesaj-govde', metin: m.metin }),
+		]);
+	}
+
+	const bosUyarisi = el('p', { sinif: 'bos', metin: 'Bu talepte henüz mesaj yok.' });
 	const yazisma = el(
 		'div',
 		{ sinif: 'yazisma' },
-		talep.mesajlar.length
-			? talep.mesajlar.map((m) => {
-					const sahibinMi = m.yazan === 'sahip';
-					return el('article', { sinif: `mesaj ${sahibinMi ? 'sahip' : 'musteri'}` }, [
-						el('p', {
-							sinif: 'mesaj-basligi',
-							metin: `${sahibinMi ? 'Siz' : musteriAdi} · ${anBicim(m.zaman)}`,
-						}),
-						el('p', { sinif: 'mesaj-govde', metin: m.metin }),
-					]);
-				})
-			: [el('p', { sinif: 'bos', metin: 'Bu talepte henüz mesaj yok.' })],
+		talep.mesajlar.length ? talep.mesajlar.map(mesajDugumu) : [bosUyarisi],
 	);
+
+	/*
+	  Canlı akıştan gelen mesaj EKLENİYOR, ekran yeniden çizilmiyor.
+
+	  Yeniden çizmek daha kısa kod olurdu ama kullanıcı tam o sırada yanıt
+	  yazıyor olabilir ve yazdığı silinirdi. Bu işin çıkış noktası zaten
+	  karşılıklı yazışma: iki taraf da aynı anda yazıyor.
+
+	  Hangi mesajın zaten ekranda olduğu kimlikle biliniyor. Aynı mesaj hem
+	  akıştan hem eşitlemeden gelebilir; kimlik ikisinde de aynı, yani iki
+	  kez eklenmiyor.
+	*/
+	const gosterilenler = new Set(talep.mesajlar.map((m) => m.id));
+
+	akisDinleyicisi = async (hareket) => {
+		if (hareket.talepId !== talep.id) return;
+		const taze = await guvenli(() => kapi.talep.getir(talep.id));
+		if (!taze) return;
+
+		durumEtiketi.textContent = talepDurumAdi(taze.durum);
+		let eklendi = false;
+		for (const m of taze.mesajlar) {
+			if (gosterilenler.has(m.id)) continue;
+			gosterilenler.add(m.id);
+			bosUyarisi.remove();
+			yazisma.append(mesajDugumu(m));
+			eklendi = true;
+		}
+		// Yeni mesaj görünsün. `nearest` seçildi: zaten görünüyorsa sayfayı
+		// oynatmıyor, okurken ekranı altından çekmesin.
+		if (eklendi) yazisma.lastElementChild?.scrollIntoView({ block: 'nearest' });
+	};
 
 	const yanitAlani = el('textarea', {
 		rows: 4,
@@ -1964,6 +2149,13 @@ async function ekraniCiz() {
 	const ekran = EKRANLAR[durum.ekran] ?? EKRANLAR.musteriler;
 	dugumler.baslik.textContent = ekran.baslik;
 	dugumler.araclar.replaceChildren();
+	/*
+	  Akış bağları her çizimde sıfırlanıyor. Eski ekranın dinleyicisi
+	  kalsaydı, kapanmış bir ekranın düğümlerini boyamaya çalışırdı; ekranı
+	  kuran işlev kendi dinleyicisini kendisi takıyor.
+	*/
+	akisDinleyicisi = null;
+	akisGostergeleri = [];
 	for (const dugme of dugumler.gezinti.querySelectorAll('button')) {
 		const secili = dugme.dataset.ekran === durum.ekran;
 		if (secili) dugme.setAttribute('aria-current', 'page');
@@ -2007,6 +2199,11 @@ async function baslat() {
 	// İlk durum bir kez soruluyor; sonrası ana süreçten itiliyor.
 	durum.otomatik = await guvenli(() => kapi.esitleme.durum());
 	otomatikRozetiCiz();
+
+	// Akış için de aynı: pencere yüklenmeden önce olan bir durum
+	// değişikliği kaybolur, açılışta bir kez sorup hizalanıyoruz.
+	durum.akis = await guvenli(() => kapi.talep.akisDurumu());
+	okunmamisRozetiniCiz();
 
 	dugumler.rozet.textContent = durum.sifreleme
 		? 'Anahtarlık açık: TC ve vergi numarası şifreli.'

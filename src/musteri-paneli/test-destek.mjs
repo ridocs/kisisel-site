@@ -50,6 +50,27 @@ export function davetEkle(db, { musteriId, karma, sonKullanmaMs, kullanildi = nu
 	return id;
 }
 
+/**
+ * Sahibin yazdığı bir yanıt.
+ *
+ * `sunucu/talepler.mjs` yalnızca `musteri` mesajı yazıyor ve doğru olan da
+ * bu: panel sahibin ağzından yazamamalı. Sahip tarafı sunucuya masaüstünden
+ * eşitlemeyle geliyor. Testte o tarafı canlandırmak için doğrudan satır.
+ */
+export function sahipMesaji(db, { talepId, metin, simdiMs = Date.now() }) {
+	const id = yeniKimlik();
+	const simdi = new Date(simdiMs).toISOString();
+	db.prepare(
+		"INSERT INTO talep_mesaji (id, talep_id, yazan, metin, zaman) VALUES (?, ?, 'sahip', ?, ?)",
+	).run(id, talepId, metin, simdi);
+	db.prepare('UPDATE talep SET durum = ?, guncellendi = ? WHERE id = ?').run(
+		'yanitlandi',
+		simdi,
+		talepId,
+	);
+	return id;
+}
+
 export function isEkle(db, { musteriId, ad, durum = 'suruyor' }) {
 	const id = yeniKimlik();
 	db.prepare('INSERT INTO is_ozeti (id, musteri_id, ad, durum, guncellendi) VALUES (?, ?, ?, ?, ?)').run(

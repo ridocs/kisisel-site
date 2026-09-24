@@ -20,7 +20,9 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
 import { yerelAc } from '../veri/db.mjs';
-import { esitle } from '../veri/esitleme-ssh.mjs';
+import { ayarlariOku, esitle } from '../veri/esitleme-ssh.mjs';
+import { akisBaslangici, akisBaslat } from '../veri/talep-akisi.mjs';
+import { canliAkisYoneticisiKur } from './canli-akis.mjs';
 import { depoKur } from './depo.mjs';
 import {
 	buAy,
@@ -56,6 +58,12 @@ let depo = null;
  * `otomatik-esitleme.mjs` içinde.
  */
 let esitlemeYoneticisi = null;
+/**
+ * Destek talebi hareketlerinin canlı akışı. Eşitlemenin YERİNE geçmiyor,
+ * yanında duruyor: eşitleme iki yönlü ve dayanıklı, akış tek yönlü ve
+ * hızlı. Akış koparsa yazışma üç dakikalık yoldan yine geliyor.
+ */
+let canliAkis = null;
 
 /* ------------------------------------------------------------------ */
 /* Kasa: Electron safeStorage sarmalayıcısı                            */
@@ -185,6 +193,9 @@ function kanallariKur() {
 		const sonuc = depo.esitlemeAyariYaz(form ?? {});
 		// Ayarlar tamamlandıysa otomatik eşitleme beklemeden uyanıyor.
 		esitlemeYoneticisi.ayarlariYenile();
+		// Canlı akış da: adres ya da anahtar değiştiyse açık bağlantı yanlış
+		// yere bakıyor, eksikten tama döndüyse akış burada başlıyor.
+		canliAkis?.ayarlariYenile();
 		return sonuc;
 	});
 	kanal('esitleme:otomatik-yaz', (form) => {
@@ -217,6 +228,12 @@ function kanallariKur() {
 		depo.talepYanitla(String(talepId), String(metin ?? '')),
 	);
 	kanal('talep:durum', (talepId, durum) => depo.talepDurumu(String(talepId), String(durum)));
+	/*
+	  Akışın durumu SORULABİLİYOR da itiliyor da. Sorma yolu yalnızca açılış
+	  için: pencere yüklenmeden önce olan bir durum değişikliği kaybolur,
+	  arayüz açılırken bir kez sorup kendini hizalıyor.
+	*/
+	kanal('talep:akis-durum', () => (canliAkis ? canliAkis.durum() : null));
 
 	/*
 	  Davet üretimi. Anahtarın metni ve QR'ı YALNIZCA bu cevapta var;
@@ -335,6 +352,43 @@ function esitlemeYoneticisiniKur() {
 			};
 		},
 		durumDegisti: esitlemeDurumunuBildir,
+	});
+}
+
+/* ------------------------------------------------------------------ */
+/* Canlı akış                                                          */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Akıştan gelen tek hareket.
+ *
+ * Önce YEREL KOPYAYA yazılıyor, sonra arayüze haber veriliyor. Sıra
+ * önemli: arayüz haberi alınca veriyi kendi kanalından okuyor ve o an
+ * yazılmış olmalı. Arayüze mesaj metni GÖNDERİLMİYOR, yalnızca "şu talepte
+ * şu kimlikte bir hareket oldu" bilgisi; metin zaten var olan `talep:getir`
+ * kanalından, veritabanından geliyor.
+ */
+function akisOlayiniIsle(olay) {
+	if (!depo) return;
+	const sonuc = depo.akisOlayiniIsle(olay);
+	if (!sonuc || sonuc.atlandi) return;
+	if (!pencere || pencere.isDestroyed()) return;
+	pencere.webContents.send('talep:akis-olayi', sonuc);
+}
+
+function akisDurumunuBildir(akisDurumu) {
+	if (!pencere || pencere.isDestroyed()) return;
+	pencere.webContents.send('talep:akis-durumu', akisDurumu);
+}
+
+function canliAkisiKur() {
+	return canliAkisYoneticisiKur({
+		akisBaslat,
+		// Ayarlar eksikse bu çağrı fırlatıyor ve akış hiç başlamıyor.
+		ayarlariOku: () => ayarlariOku(db),
+		baslangicOku: () => akisBaslangici(db),
+		olayGeldi: akisOlayiniIsle,
+		durumDegisti: akisDurumunuBildir,
 	});
 }
 
@@ -498,10 +552,22 @@ function baslat() {
 	});
 	esitlemeYoneticisi = esitlemeYoneticisiniKur();
 
+	canliAkis = canliAkisiKur();
+
 	kanallariKur();
 	menuyuKur();
 	pencereyiKur();
 	esitlemeYoneticisi.baslat();
+
+	/*
+	  Akış PENCERE YÜKLENDİKTEN sonra başlıyor. Daha erken başlasa, ilk
+	  saniyede gelen hareketin bildirimi boşluğa giderdi: `webContents.send`
+	  sayfa yüklenmeden gönderilen mesajı düşürüyor. Kayıt yine de yerel
+	  kopyaya yazılırdı, ama ekran onu ancak bir sonraki çizimde görürdü.
+
+	  Ayarlar eksikse `baslat()` hiçbir şey açmıyor, sessizce bekliyor.
+	*/
+	pencere.webContents.once('did-finish-load', () => canliAkis?.baslat());
 
 	/*
 	  Önceki oturumdan gönderilmemiş kayıt kaldıysa açılışta eşitleniyor.
@@ -519,8 +585,12 @@ function baslat() {
 
 function kapat() {
 	// Zamanlayıcılar önce susuyor: kapanan veritabanına SSH sonucu yazmaya
-	// çalışan bir koşu, kapanışı hataya çevirirdi.
+	// çalışan bir koşu, kapanışı hataya çevirirdi. Akış da aynı sebeple
+	// burada kapanıyor; üstelik kapatılmazsa sunucuda öksüz bir izleyici
+	// süreç kalırdı.
 	esitlemeYoneticisi?.durdur();
+	canliAkis?.durdur();
+	canliAkis = null;
 	try {
 		db?.close();
 	} catch {

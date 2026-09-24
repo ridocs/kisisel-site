@@ -18,6 +18,7 @@ import { basliklariEkle, nonceUret } from './sunucu/basliklar.mjs';
 import { cerezOku, cereziSil, istemciIzleri, json, kokenGuvenliMi } from './sunucu/istek.mjs';
 import { islemAnahtari } from './sunucu/csrf.mjs';
 import { oturumOku, oturumTazele } from './sunucu/oturum.mjs';
+import { AKIS_YOLU } from './sunucu/canli.mjs';
 import { musteriGetir, panelVt } from './sunucu/veritabani.mjs';
 
 const TABAN = (import.meta.env.BASE_URL || '/').replace(/\/+$/, '');
@@ -84,8 +85,18 @@ export async function onRequest(context, next) {
 	if (durum.gecerli) {
 		const musteri = musteriGetir(db, durum.musteriId);
 		if (musteri) {
-			/* Hareketsizlik sayacı her istekte sıfırlanıyor, mutlak ömre dokunulmuyor. */
-			oturumTazele(db, karma, simdiMs);
+			/*
+			  Hareketsizlik sayacı her istekte sıfırlanıyor, mutlak ömre
+			  dokunulmuyor.
+
+			  TEK İSTİSNA CANLI AKIŞ. O uç nokta saatlerce açık kalan tek bir
+			  istek; sayacı orada sıfırlamak, açık duran bir sekmenin oturumu
+			  süresiz uzatması demekti ve §7'deki bir saatlik hareketsizlik
+			  kuralı fiilen kalkardı. Akış oturumu YALNIZCA OKUYOR; kullanıcı
+			  gerçekten bir şey yaptığında (sayfa gezinmesi, mesaj gönderimi)
+			  sayaç zaten sıfırlanıyor.
+			*/
+			if (yol !== AKIS_YOLU) oturumTazele(db, karma, simdiMs);
 			context.locals.musteri = musteri;
 			context.locals.oturumKarmasi = karma;
 			context.locals.islemAnahtari = islemAnahtari(karma, ayarlar.gizli.csrf);

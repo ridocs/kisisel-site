@@ -339,6 +339,20 @@ __Secure-panel_oturum = <256 bit rastgele, base64url>
 Durum değiştiren her istekte ayrıca bir işlem anahtarı taşınır (oturuma bağlı,
 formda gizli alan, sabit zamanlı karşılaştırma).
 
+### Canlı akış oturumu UZATMIYOR
+
+Yazışma sayfası `/api/talepler/akis` uç noktasına bağlanıyor ve o istek
+saatlerce açık kalıyor. Ara katman **bu tek yolda** `oturumTazele`
+çağırmıyor. Sebep: sayacı orada sıfırlamak, açık duran bir sekmenin oturumu
+süresiz uzatması demekti ve yukarıdaki bir saatlik hareketsizlik kuralı
+fiilen kalkardı.
+
+Sonuç ölçüldü: akış isteği `son_gorulme` damgasına dokunmuyor, sıradan bir
+sayfa isteği tazeliyor. Akışın kendi ömrü de hareketsizlik süresiyle aynı
+(bir saat); dolunca sunucu bağlantıyı kapatıyor. Oturum gerçekten canlıysa
+tarayıcı yeniden bağlanıyor, değilse akış nabız sıklığında yapılan
+denetimde kapanıyor.
+
 ---
 
 ## 8. Zorunlu savunmalar

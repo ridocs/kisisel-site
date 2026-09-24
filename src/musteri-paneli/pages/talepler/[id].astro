@@ -13,6 +13,7 @@
   değil.
 */
 import Kabuk from '../../duzen/Kabuk.astro';
+import Canli from '../../duzen/Canli.astro';
 import { ayarlar } from '../../sunucu/ayarlar.mjs';
 import { islemAnahtariGecerliMi } from '../../sunucu/csrf.mjs';
 import { panelVt } from '../../sunucu/veritabani.mjs';
@@ -53,6 +54,15 @@ if (!talep) return new Response('Bulunamadı', { status: 404 });
 
 const kapali = talep.durum === 'kapandi';
 const mesajSayisi = talep.mesajlar.length;
+
+/*
+  Canlı akışın başlangıç damgası: sayfaya basılmış en son hareket. Akış
+  bundan öncesini tekrar göndermiyor, dolayısıyla açılışta liste ikilenmiyor.
+  Talebin `guncellendi` değeri de hesaba katılıyor; mesajsız bir durum
+  değişikliği yalnızca orada görünüyor.
+*/
+const sonMesajZamani = mesajSayisi > 0 ? talep.mesajlar[mesajSayisi - 1].zaman : talep.olusturuldu;
+const bilinenDamga = sonMesajZamani > talep.guncellendi ? sonMesajZamani : talep.guncellendi;
 ---
 
 <Kabuk baslik={talep.baslik} aktif="talepler">
@@ -63,14 +73,18 @@ const mesajSayisi = talep.mesajlar.length;
 		<h1>{talep.baslik}</h1>
 		<div class="cizgi" aria-hidden="true"></div>
 		<div class="meta">
-			<span class="rozet" data-durum={talep.durum}>{talepDurumEtiketi(talep.durum)}</span>
+			<span class="rozet" data-durum={talep.durum} data-talep-rozet>
+				{talepDurumEtiketi(talep.durum)}
+			</span>
 			{talep.is_adi && <p>İlgili iş: {talep.is_adi}</p>}
 			<p>
 				Açılış: <time datetime={makineZamani(talep.olusturuldu)}>{zaman(talep.olusturuldu)}</time>
 			</p>
-			<p>{mesajSayisi === 1 ? '1 mesaj' : `${mesajSayisi} mesaj`}</p>
+			<p data-mesaj-sayisi>{mesajSayisi === 1 ? '1 mesaj' : `${mesajSayisi} mesaj`}</p>
 		</div>
 	</div>
+
+	<Canli kip="yazisma" talep={talep.id} bilinen={bilinenDamga} ad={musteri.gorunen_ad} />
 
 	{
 		hata && (
@@ -83,7 +97,13 @@ const mesajSayisi = talep.mesajlar.length;
 	<ul class="mesajlar" aria-label="Yazışma">
 		{
 			talep.mesajlar.map((mesaj) => (
-				<li class="mesaj" data-yazan={mesaj.yazan}>
+				/*
+				  `data-mesaj-id`: akışla gelen bir mesajın zaten basılı olup
+				  olmadığı buradan anlaşılıyor. Müşteri mesajını gönderdikten
+				  sonra sayfa yeniden yükleniyor ve aynı mesaj akıştan da
+				  gelebiliyor; kimlik olmadan ikilenirdi.
+				*/
+				<li class="mesaj" data-yazan={mesaj.yazan} data-mesaj-id={mesaj.id}>
 					<div class="mesaj-bas">
 						<span class="mesaj-yazan">
 							{mesaj.yazan === 'musteri' ? musteri.gorunen_ad : 'Mustafa Eybek'}
