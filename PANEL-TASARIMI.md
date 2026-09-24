@@ -45,7 +45,8 @@ ticari panelde yok.
 | Veri | Sunucu okuyabilir | Arama ve bildirim çalışsın; uçtan uca şifreleme abartı |
 | Müşterinin gördüğü | Yalnızca destek talepleri ve kendi işlerinin özeti | Kullanıcı kararı |
 | Sahibin arayüzü | **Ayrı** bir masaüstü uygulaması | Kullanıcı kararı; internette yönetici arayüzü yok |
-| Kimlik ve mali veri | Sunucuya **hiç gitmiyor**, yalnızca yerelde | §4, veri asgariliği |
+| Kimlik verisi | Sunucuya **hiç gitmiyor**, yalnızca yerelde | §4, veri asgariliği |
+| Mali veri | **24 Eylül'de değişti:** tutar ve ödeme dökümü sunucuda | Kullanıcı kararı, §4.1 |
 | Hareketsizlik süresi | 1 saat | Kullanıcı kararı |
 
 ### Reddedilen seçenekler ve sebepleri
@@ -81,7 +82,7 @@ ticari panelde yok.
 | Kimlik avı (sahte giriş sayfası) | WebAuthn imzası alan adına bağlı |
 | Yedek yola düşürme (downgrade) | Yedek yol yok |
 | Davet anahtarının kaba kuvvetle bulunması | 256 bit entropi, süreli, tek kullanımlık |
-| Sunucu veritabanının sızması | Anahtarların yalnızca karması saklanıyor |
+| Sunucu veritabanının sızması | Anahtarların yalnızca karması saklanıyor. **24 Eylül'den beri iş tutarları ve ödemeler de orada**, §4.1; kimlik numaraları değil |
 | Oturum çerezi hırsızlığı | Kısa ömür, yenileme, çıkışta iptal, IP ve tarayıcı değişiminde uyarı |
 | CSRF | `SameSite=Strict` **artı** işlem anahtarı |
 | Hesap sayımı | Tüm akışlarda aynı cevap, aynı süre |
@@ -119,14 +120,44 @@ kaynağı. Sunucudaki veritabanı onun **kısıtlı bir kopyası**: yalnızca
 müşterinin panelde görmesi gereken şeyler.
 
 Sunucuya hiç gitmeyenler: **TC kimlik numarası, vergi numarası, açık adres,
-iş tutarları, ödeme durumu, ön ödeme oranları, revize ücretleri ve bütün
-istatistikler.** Sunucu ele geçse bile bu bilgilerin hiçbiri orada değil.
+telefon, ödeme yöntemi, ön ödeme oranı, revize ücretleri, maliyet, iç notlar
+ve bütün istatistikler.** Sunucu ele geçse bile bunların hiçbiri orada değil.
+
+### 4.1 Mali verinin sınırı 24 Eylül 2026'da değişti
+
+Panel ilk kurulduğunda **hiçbir tutar** sunucuya çıkmıyordu. O gün sahip
+müşterinin kendi ödeme dökümünü panelde görmesini istedi ve seçenekler
+arasından tam dökümü seçti. Müşteri kalan borcunu göremeyecekse özelliğin
+anlamı yok, dolayısıyla tutarın sunucuda durması kaçınılmaz oldu.
+
+Yeni sınır şu cümleyle özetlenebilir: **müşterinin zaten bildiği rakam
+çıkabilir, işin iç yüzü çıkamaz.**
+
+| Çıkan | Çıkmayan |
+|---|---|
+| İşin toplam tutarı | Ön ödeme oranı |
+| Ödemelerin türü, tutarı, tarihi | Ödeme yöntemi (nakit, havale) |
+| Hedef teslim tarihi | Maliyet, kâr, iskonto |
+| İşin müşteriye gösterilen özeti | İç notlar, revize ücretleri |
+
+Bu bir güvenlik gevşemesidir ve bilinçlidir: sunucu ele geçerse artık
+müşterilerin iş tutarları da görülebilir. Buna karşılık kimlik numaraları
+hâlâ orada değil ve bunu koruyan testler duruyor (`veri/veri.test.mjs`,
+`veri/esitleme.test.mjs`). Beyaz listenin emniyet deseni de aynı sınıra göre
+daraltıldı: listeye bir kimlik ya da iletişim alanı eklenirse uygulama hiç
+açılmıyor.
+
+### 4.2 Eşitlemenin yönü
 
 Eşitleme SSH üzerinden ve tek yönlü ağırlıklı:
 
 - **Yerelden sunucuya:** müşteri kaydı (yalnızca görünen ad), davet anahtarı
-  karması, işin müşteriye gösterilecek özeti ve durumu.
-- **Sunucudan yerele:** müşterinin açtığı destek talepleri.
+  karması, işin özeti, tutarı ve durumu, ödeme dökümü, ilerleme aşamaları,
+  paylaşılan dosyaların künyesi ve sahibin iş yazışmasındaki mesajları.
+- **Sunucudan yerele:** müşterinin açtığı destek talepleri ve iş
+  yazışmasındaki mesajları.
+- **Dosyaların içeriği kuyruktan GİTMİYOR**, ayrıca kopyalanıyor: kuyruk
+  JSON taşıyor ve tek bir büyük dosya bütün eşitlemeyi bekletirdi.
 
 Sunucu hiçbir zaman yerel veritabanına yazamaz; yerel uygulama çeker. Yani
 ele geçirilmiş bir sunucu sahibin defterini bozamaz.
