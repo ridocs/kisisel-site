@@ -19,11 +19,15 @@ import iletisim from '../../icerik/iletisim-bilgisi.json';
 
 /**
  * Sahibin adı ve unvanı. Alt çubuğun ilk satırı.
- * Unvan sitedeki dar hâlinden değil, sahibin kendi tanımından: yazılım ve
- * teknoloji tarafı kadar CAD tarafı da var.
+ *
+ * Unvan sitedekiyle AYNI olmak zorunda: müşteri iki yüzü de görüyor ve
+ * ikisinde farklı unvan okumak güven kırıyor. Sitedeki karşılığı
+ * `src/icerik/metinler/iletisim.json` içindeki `rol` alanı; burada elle
+ * tekrarlanmasının sebebi, o dosyanın iki dilli olması ve panelin tek dilli
+ * olması. Biri değişirse öbürü de değişmeli.
  */
 export const FIRMA_ADI = 'Mustafa Eybek';
-export const FIRMA_UNVANI = 'Software & Technology Developer';
+export const FIRMA_UNVANI = 'Technical Solutions Developer';
 
 /**
  * WhatsApp numarası: `wa.me` yalnızca rakam kabul ediyor.
