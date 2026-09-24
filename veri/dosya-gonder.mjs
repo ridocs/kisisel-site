@@ -89,6 +89,37 @@ export async function dosyayiIncele(yerelYol) {
 	};
 }
 
+/**
+ * Gönderilen dosyanın sahibini panel kullanıcısına çevirir ve iznini daraltır.
+ * Kullanıcı adı ayardan geliyor, kodda sabit değil: sunucu kurulumu değişirse
+ * burası da değişmeli.
+ */
+function sahipligiDuzelt(ayar, hedef) {
+	const kullanici = ayar['esitleme.uzak_kullanici'] ?? 'panel';
+	if (!/^[a-z_][a-z0-9_-]*$/.test(kullanici)) {
+		return Promise.reject(new Error('Uzak kullanıcı adı geçersiz'));
+	}
+	return new Promise((coz, at) => {
+		const surec = spawn(
+			'ssh',
+			[
+				'-i', ayar['esitleme.ssh_anahtari'],
+				'-o', 'BatchMode=yes',
+				ayar['esitleme.sunucu'],
+				'chown', `${kullanici}:${kullanici}`, hedef,
+				'&&', 'chmod', '640', hedef,
+			],
+			{ shell: false },
+		);
+		let hata = '';
+		surec.stderr.on('data', (p) => (hata += p));
+		surec.on('error', at);
+		surec.on('close', (kod) =>
+			kod === 0 ? coz() : at(new Error(`Dosya sahipliği düzeltilemedi: ${hata.trim()}`)),
+		);
+	});
+}
+
 /** Dosyanın SHA-256 özeti: gönderim sonrası bütünlük denetimi için. */
 export function dosyaOzeti(yerelYol) {
 	return new Promise((coz, at) => {
@@ -139,7 +170,13 @@ export function dosyayiGonder(ayar, yerelYol, depoAdi, { zamanAsimiMs = 120000 }
 				at(new Error(`Dosya gönderilemedi (${kod}): ${hata.trim()}`));
 				return;
 			}
-			coz(hedef);
+			/*
+			  Sahipliği düzelt. SSH ile bağlanan sahip root ve root'un yazdığı
+			  dosyanın sahibi de root oluyor; panel süreci başka bir kullanıcı
+			  olarak çalıştığı için onu okuyamayabilir. Aynı tuzak veritabanında
+			  yaşandı, orada WAL dosyaları root sahipli kalıyordu.
+			*/
+			sahipligiDuzelt(ayar, hedef).then(() => coz(hedef), at);
 		});
 	});
 }
