@@ -63,16 +63,31 @@ test('panel şeması kuruluyor ve kimlik bilgisi tablosu yerinde', () => {
 	}
 });
 
-test('panel veritabanında tutar sütunu YOK', () => {
-	// Bu test tasarımın kendisini koruyor: mali veri sunucuya gitmiyor.
-	// Birisi ileride is_ozeti tablosuna tutar eklerse burada durur.
+test('panel veritabanında kimlik, iletişim ve işin iç yüzü YOK', () => {
+	/*
+	  Bu test tasarımın sınırını koruyor ve o sınır 24 Eylül 2026'da DARALDI.
+
+	  Önce mali verinin tamamı yasaktı. Sahip müşterinin kendi ödeme dökümünü
+	  panelde görmesini isteyince tutar ve ödemeler bilinçli olarak serbest
+	  bırakıldı: müşterinin zaten bildiği rakam. Yasak kalan ve bu testin
+	  koruduğu şey, kimlik numaraları, iletişim bilgileri ve işin iç yüzü.
+	*/
 	const dizin = geciciDizin();
 	try {
 		const db = panelAc(join(dizin, 'panel.db'));
-		const sutunlar = db.prepare('PRAGMA table_info(is_ozeti)').all().map((s) => s.name);
-		for (const yasak of ['tutar_kurus', 'tutar', 'on_odeme_orani', 'odenen']) {
-			assert.ok(!sutunlar.includes(yasak), `is_ozeti içinde ${yasak} olmamalı`);
+
+		const isSutunlari = db.prepare('PRAGMA table_info(is_ozeti)').all().map((s) => s.name);
+		for (const yasak of ['on_odeme_orani', 'maliyet_kurus', 'not_metni', 'tekrar_eden']) {
+			assert.ok(!isSutunlari.includes(yasak), `is_ozeti içinde ${yasak} olmamalı`);
 		}
+		// Tutar ARTIK OLMALI: özellik bunun üstüne kuruldu.
+		assert.ok(isSutunlari.includes('tutar_kurus'), 'ödeme dökümü için tutar gerekli');
+
+		const odemeSutunlari = db.prepare('PRAGMA table_info(is_odeme)').all().map((s) => s.name);
+		for (const yasak of ['yontem', 'not_metni']) {
+			assert.ok(!odemeSutunlari.includes(yasak), `is_odeme içinde ${yasak} olmamalı`);
+		}
+
 		const musteriSutunlari = db.prepare('PRAGMA table_info(musteri)').all().map((s) => s.name);
 		for (const yasak of ['tc_sifreli', 'vergi_sifreli', 'telefon', 'ilce', 'sehir']) {
 			assert.ok(!musteriSutunlari.includes(yasak), `panel musteri içinde ${yasak} olmamalı`);

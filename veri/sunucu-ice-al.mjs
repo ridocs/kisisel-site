@@ -77,15 +77,128 @@ function uygula(db, islem, govde) {
 
 		case 'is.yaz':
 			db.prepare(
-				`INSERT INTO is_ozeti (id, musteri_id, ad, durum, guncellendi)
-				 VALUES (?, ?, ?, ?, ?)
+				`INSERT INTO is_ozeti
+				   (id, musteri_id, ad, durum, ozet, tutar_kurus, para_birimi, teslim_hedefi, guncellendi)
+				 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
 				 ON CONFLICT (id) DO UPDATE SET
-				   ad = excluded.ad, durum = excluded.durum, guncellendi = excluded.guncellendi`,
-			).run(temiz.id, temiz.musteri_id, temiz.ad, temiz.durum, zaman);
+				   ad = excluded.ad,
+				   durum = excluded.durum,
+				   ozet = excluded.ozet,
+				   tutar_kurus = excluded.tutar_kurus,
+				   para_birimi = excluded.para_birimi,
+				   teslim_hedefi = excluded.teslim_hedefi,
+				   guncellendi = excluded.guncellendi`,
+			).run(
+				temiz.id,
+				temiz.musteri_id,
+				temiz.ad,
+				temiz.durum,
+				temiz.ozet ?? null,
+				Math.trunc(Number(temiz.tutar_kurus) || 0),
+				temiz.para_birimi ?? 'TRY',
+				temiz.teslim_hedefi ?? null,
+				zaman,
+			);
 			return;
 
 		case 'is.sil':
 			db.prepare('DELETE FROM is_ozeti WHERE id = ?').run(temiz.id);
+			return;
+
+		case 'odeme.yaz':
+			db.prepare(
+				`INSERT INTO is_odeme (id, is_id, tur, tutar_kurus, tarih, guncellendi)
+				 VALUES (?, ?, ?, ?, ?, ?)
+				 ON CONFLICT (id) DO UPDATE SET
+				   tur = excluded.tur,
+				   tutar_kurus = excluded.tutar_kurus,
+				   tarih = excluded.tarih,
+				   guncellendi = excluded.guncellendi`,
+			).run(
+				temiz.id,
+				temiz.is_id,
+				temiz.tur,
+				Math.trunc(Number(temiz.tutar_kurus) || 0),
+				temiz.tarih,
+				zaman,
+			);
+			return;
+
+		case 'odeme.sil':
+			db.prepare('DELETE FROM is_odeme WHERE id = ?').run(temiz.id);
+			return;
+
+		case 'asama.yaz':
+			db.prepare(
+				`INSERT INTO is_asama (id, is_id, sira, kaynak, baslik, aciklama, durum, tarih, guncellendi)
+				 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+				 ON CONFLICT (id) DO UPDATE SET
+				   sira = excluded.sira,
+				   kaynak = excluded.kaynak,
+				   baslik = excluded.baslik,
+				   aciklama = excluded.aciklama,
+				   durum = excluded.durum,
+				   tarih = excluded.tarih,
+				   guncellendi = excluded.guncellendi`,
+			).run(
+				temiz.id,
+				temiz.is_id,
+				Math.trunc(Number(temiz.sira) || 0),
+				temiz.kaynak === 'otomatik' ? 'otomatik' : 'elle',
+				temiz.baslik,
+				temiz.aciklama ?? null,
+				temiz.durum ?? 'tamamlandi',
+				temiz.tarih,
+				zaman,
+			);
+			return;
+
+		case 'asama.sil':
+			db.prepare('DELETE FROM is_asama WHERE id = ?').run(temiz.id);
+			return;
+
+		case 'dosya.yaz':
+			/*
+			  Yalnızca KÜNYE yazılıyor. Dosyanın içeriği kuyruktan değil ayrı
+			  bir kopyalamayla geliyor; künye önce gelirse müşteri indirmeye
+			  çalıştığında dosya henüz yerinde olmayabilir, bu yüzden panel
+			  tarafı indirmeden önce dosyanın varlığını denetliyor.
+			*/
+			db.prepare(
+				`INSERT INTO is_dosya
+				   (id, is_id, asama_id, gosterilen_ad, depo_adi, tur, boyut, sha256, gorsel_mi, olusturuldu)
+				 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+				 ON CONFLICT (id) DO UPDATE SET
+				   gosterilen_ad = excluded.gosterilen_ad,
+				   asama_id = excluded.asama_id,
+				   tur = excluded.tur,
+				   boyut = excluded.boyut,
+				   sha256 = excluded.sha256,
+				   gorsel_mi = excluded.gorsel_mi`,
+			).run(
+				temiz.id,
+				temiz.is_id,
+				temiz.asama_id ?? null,
+				temiz.gosterilen_ad,
+				temiz.depo_adi,
+				temiz.tur,
+				Math.trunc(Number(temiz.boyut) || 0),
+				hexeBayt(temiz.sha256),
+				Number(temiz.gorsel_mi) === 1 ? 1 : 0,
+				zaman,
+			);
+			return;
+
+		case 'dosya.sil':
+			db.prepare('DELETE FROM is_dosya WHERE id = ?').run(temiz.id);
+			return;
+
+		case 'is-mesaj.yaz':
+			db.prepare(
+				`INSERT INTO is_mesaji (id, is_id, yazan, metin, zaman)
+				 VALUES (?, ?, 'sahip', ?, ?)
+				 ON CONFLICT (id) DO NOTHING`,
+			).run(temiz.id, temiz.is_id, temiz.metin, temiz.zaman ?? zaman);
 			return;
 
 		case 'davet.yaz':

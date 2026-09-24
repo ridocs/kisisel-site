@@ -63,8 +63,12 @@ test('kuyruktan çıkan paket panel veritabanına uygulanıyor', () => {
 		assert.equal(musteri.gorunen_ad, 'Ali Veli');
 		const is = panel.prepare('SELECT * FROM is_ozeti WHERE id = ?').get('i1');
 		assert.equal(is.ad, 'Web sitesi');
-		// Tutar sunucuya hiç ulaşmamalı: sütunu bile yok.
-		assert.equal(is.tutar_kurus, undefined);
+		/*
+		  Tutar 24 Eylül 2026'dan beri sunucuya ÇIKIYOR: müşteri kendi ödeme
+		  dökümünü panelde görüyor. İşin iç yüzü (ön ödeme oranı, maliyet,
+		  notlar) hâlâ çıkmıyor, onu beyaz liste testleri koruyor.
+		*/
+		assert.equal(is.tutar_kurus, 4500000);
 		panel.close();
 	} finally {
 		yerel.close();

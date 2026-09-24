@@ -52,7 +52,14 @@ function ortamKur() {
 
 /** Sunucudan çekilmiş gibi bir talep. */
 function ornekTalep(db, id = 't1') {
-	const an = simdi();
+	/*
+	  Damga BİR SAAT GERİDE kuruluyor, `simdi()` ile değil.
+
+	  Önceki hâli takvime bağlıydı: test sabit bir tarih ve saat veriyordu,
+	  o an gelecekte olduğu sürece geçiyor, gün ilerleyince geçmişte kalıp
+	  kırılıyordu. Gerçek bir hata değildi, testin kendi kırılganlığıydı.
+	*/
+	const an = new Date(Date.now() - 3600_000).toISOString();
 	db.prepare(
 		`INSERT INTO talep_kopyasi
 		 (id, musteri_id, is_id, baslik, durum, oncelik, olusturuldu, guncellendi, cekildi)
@@ -117,13 +124,14 @@ test('akıştan gelen mesaj yerel kopyaya yazılıyor', () => {
 	const o = ortamKur();
 	try {
 		ornekTalep(o.db);
+		const mesajAni = simdi();
 		const sonuc = o.depo.akisOlayiniIsle({
 			tur: 'mesaj',
 			id: 'm-yeni',
 			talep_id: 't1',
 			yazan: 'musteri',
 			metin: 'Hâlâ giremiyorum.',
-			zaman: '2026-09-24T08:00:00.000Z',
+			zaman: mesajAni,
 		});
 
 		assert.equal(sonuc.atlandi, false);
@@ -137,7 +145,7 @@ test('akıştan gelen mesaj yerel kopyaya yazılıyor', () => {
 
 		// Talebin son hareket damgası ilerledi: liste bu alana göre sıralı.
 		const talep = o.db.prepare('SELECT guncellendi FROM talep_kopyasi WHERE id = ?').get('t1');
-		assert.equal(talep.guncellendi, '2026-09-24T08:00:00.000Z');
+		assert.equal(talep.guncellendi, mesajAni);
 	} finally {
 		o.kapat();
 	}

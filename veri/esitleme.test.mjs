@@ -50,19 +50,52 @@ test('süzgeç hassas alanları düşürüyor', () => {
 	assert.deepEqual(Object.keys(cikti).sort(), ['durum', 'gorunen_ad', 'id']);
 });
 
-test('iş kaydında tutar ve ödeme bilgisi süzülüyor', () => {
+test('iş kaydında tutar çıkıyor ama işin iç yüzü süzülüyor', () => {
+	/*
+	  24 Eylül 2026'da sınır DEĞİŞTİ: müşteri kendi ödeme dökümünü panelde
+	  görecek, dolayısıyla tutar sunucuya çıkıyor. Değişmeyen şey, işin iç
+	  yüzünün (ön ödeme oranı, maliyet, iç notlar) yerelde kalması.
+	*/
 	const cikti = suz('is.yaz', {
 		id: 'i1',
 		musteri_id: 'm1',
 		ad: 'Web sitesi',
 		durum: 'suruyor',
+		ozet: 'müşteri bunu görecek',
 		tutar_kurus: 4500000,
+		para_birimi: 'TRY',
+		teslim_hedefi: '2026-10-15',
+		// Aşağıdakilerin hiçbiri çıkmamalı:
 		on_odeme_orani: 50,
-		ozet: 'içeride kalmalı',
+		maliyet_kurus: 1200000,
+		not_metni: 'iç not',
+		tekrar_eden: 1,
 	});
-	assert.deepEqual(Object.keys(cikti).sort(), ['ad', 'durum', 'id', 'musteri_id']);
-	assert.equal(cikti.tutar_kurus, undefined);
-	assert.equal(cikti.ozet, undefined);
+
+	assert.equal(cikti.tutar_kurus, 4500000, 'müşterinin bildiği rakam çıkmalı');
+	assert.equal(cikti.ozet, 'müşteri bunu görecek');
+	assert.equal(cikti.teslim_hedefi, '2026-10-15');
+
+	assert.equal(cikti.on_odeme_orani, undefined, 'ön ödeme oranı işin iç yüzü');
+	assert.equal(cikti.maliyet_kurus, undefined, 'maliyet asla çıkmamalı');
+	assert.equal(cikti.not_metni, undefined, 'iç not asla çıkmamalı');
+	assert.equal(cikti.tekrar_eden, undefined);
+});
+
+test('ödeme dökümünde yöntem ve iç not süzülüyor', () => {
+	const cikti = suz('odeme.yaz', {
+		id: 'o1',
+		is_id: 'i1',
+		tur: 'on_odeme',
+		tutar_kurus: 1500000,
+		tarih: '2026-09-20',
+		// Müşterinin görmesi gerekmeyenler:
+		yontem: 'nakit',
+		not_metni: 'elden alındı',
+	});
+	assert.deepEqual(Object.keys(cikti).sort(), ['id', 'is_id', 'tarih', 'tur', 'tutar_kurus']);
+	assert.equal(cikti.yontem, undefined, 'ödeme yöntemi sunucuya çıkmamalı');
+	assert.equal(cikti.not_metni, undefined);
 });
 
 test('bilinmeyen işlem reddediliyor', () => {
@@ -74,8 +107,8 @@ test('beyaz listenin kendisi hassas alana karşı korunuyor', () => {
 	// modül yüklenirken patlamalı. Desenin o adları gerçekten tanıdığını
 	// burada doğruluyoruz, yoksa kemer takılı görünüp boşta durur.
 	for (const hassas of [
-		'tutar_kurus', 'tc_sifreli', 'vergi_sifreli', 'telefon', 'adres',
-		'ilce', 'sehir', 'iban', 'on_odeme_orani', 'odeme_turu', 'revize_tutari',
+		'tc_sifreli', 'vergi_sifreli', 'telefon', 'adres', 'ilce', 'sehir',
+		'iban', 'yontem', 'not_metni', 'maliyet_kurus', 'iskonto_orani',
 	]) {
 		assert.ok(HASSAS_ALAN_DESENI.test(hassas), `${hassas} hassas sayılmalıydı`);
 	}

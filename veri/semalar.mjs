@@ -117,6 +117,59 @@ CREATE TABLE IF NOT EXISTS talep_mesaj_kopyasi (
 
 CREATE INDEX IF NOT EXISTS talep_mesaj_talep ON talep_mesaj_kopyasi (talep_id, zaman);
 
+-- İlerleme ağacının sahip tarafındaki kaydı. Otomatik aşamalar işin durumu
+-- değiştikçe buraya düşüyor, elle eklenenler de burada duruyor; ikisi de
+-- eşitlemeyle panele gidiyor.
+CREATE TABLE IF NOT EXISTS is_asama (
+	id          TEXT PRIMARY KEY,
+	is_id       TEXT NOT NULL REFERENCES is_kaydi (id) ON DELETE CASCADE,
+	sira        INTEGER NOT NULL DEFAULT 0,
+	kaynak      TEXT NOT NULL DEFAULT 'elle' CHECK (kaynak IN ('otomatik', 'elle')),
+	baslik      TEXT NOT NULL,
+	aciklama    TEXT,
+	durum       TEXT NOT NULL DEFAULT 'tamamlandi'
+	            CHECK (durum IN ('tamamlandi', 'suruyor', 'bekliyor')),
+	tarih       TEXT NOT NULL,
+	-- Müşteriye gösterilmeyecek aşamalar da olabilir (iç not gibi).
+	paylasildi  INTEGER NOT NULL DEFAULT 1 CHECK (paylasildi IN (0, 1)),
+	olusturuldu TEXT NOT NULL,
+	guncellendi TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS is_asama_is ON is_asama (is_id, sira, tarih);
+
+-- İşe eklenen dosyalar. Aslı sahibin bilgisayarında; paylasildi işaretliyse
+-- kopyası sunucuya gidiyor ve müşteri indirebiliyor.
+CREATE TABLE IF NOT EXISTS dosya (
+	id            TEXT PRIMARY KEY,
+	is_id         TEXT NOT NULL REFERENCES is_kaydi (id) ON DELETE CASCADE,
+	asama_id      TEXT REFERENCES is_asama (id) ON DELETE SET NULL,
+	gosterilen_ad TEXT NOT NULL,
+	yerel_yol     TEXT NOT NULL,
+	tur           TEXT NOT NULL,
+	boyut         INTEGER NOT NULL,
+	sha256        BLOB NOT NULL,
+	gorsel_mi     INTEGER NOT NULL DEFAULT 0 CHECK (gorsel_mi IN (0, 1)),
+	paylasildi    INTEGER NOT NULL DEFAULT 0 CHECK (paylasildi IN (0, 1)),
+	gonderildi    TEXT,
+	olusturuldu   TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS dosya_is ON dosya (is_id, olusturuldu);
+
+-- İş bazlı yazışmanın yerel kopyası. Destek talebi kopyasıyla aynı mantık:
+-- gerçeğin kaynağı sunucudaki tablo, bu çevrimdışı görüntüleme için.
+CREATE TABLE IF NOT EXISTS is_mesaj_kopyasi (
+	id       TEXT PRIMARY KEY,
+	is_id    TEXT NOT NULL REFERENCES is_kaydi (id) ON DELETE CASCADE,
+	yazan    TEXT NOT NULL CHECK (yazan IN ('musteri', 'sahip')),
+	metin    TEXT NOT NULL,
+	zaman    TEXT NOT NULL,
+	cekildi  TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS is_mesaj_kopyasi_is ON is_mesaj_kopyasi (is_id, zaman);
+
 -- Sunucuya gönderilmeyi bekleyen değişiklikler. Eşitleme çevrimdışı çalışsın
 -- ve yarım kalan bir gönderim iki kez uygulanmasın diye.
 CREATE TABLE IF NOT EXISTS esitleme_kuyrugu (
@@ -140,9 +193,14 @@ export const SEMA_PANEL = `
 -- Sunucudaki panel veritabanı: yerel defterin KISITLI kopyası.
 --
 -- Burada bilinçli olarak OLMAYANLAR (PANEL-TASARIMI.md §4):
--- TC kimlik numarası, vergi numarası, açık adres, telefon, iş tutarları,
--- ödeme durumu, ön ödeme oranı, revize ücretleri, istatistikler.
+-- TC kimlik numarası, vergi numarası, açık adres, telefon, ödeme yöntemi,
+-- ön ödeme oranı, revize ücretleri, maliyet, iç notlar ve istatistikler.
 -- Sunucu ele geçse bile bunların hiçbiri orada değil.
+--
+-- 24 EYLÜL 2026'DA DEĞİŞEN: iş tutarı ve müşterinin ödeme dökümü artık
+-- BURADA. Sahip müşterinin kendi borcunu panelde görmesini istedi ve bu
+-- özellik tutarın sunucuda durmasını zorunlu kılıyor. Çıkan şey müşterinin
+-- zaten bildiği rakam; işin iç yüzü (maliyet, yöntem, notlar) hâlâ yerelde.
 --
 -- Ham hiçbir sır saklanmıyor: davet anahtarı da oturum kimliği de yalnızca
 -- SHA-256 karmasıyla duruyor. Veritabanı sızsa bile bunlardan giriş yapılamaz.
@@ -161,14 +219,111 @@ CREATE TABLE IF NOT EXISTS musteri (
 
 -- Müşterinin panelde gördüğü iş listesi. Tutar ve ödeme bilgisi YOK.
 CREATE TABLE IF NOT EXISTS is_ozeti (
-	id          TEXT PRIMARY KEY,
-	musteri_id  TEXT NOT NULL REFERENCES musteri (id) ON DELETE CASCADE,
-	ad          TEXT NOT NULL,
-	durum       TEXT NOT NULL,
-	guncellendi TEXT NOT NULL
+	id            TEXT PRIMARY KEY,
+	musteri_id    TEXT NOT NULL REFERENCES musteri (id) ON DELETE CASCADE,
+	ad            TEXT NOT NULL,
+	durum         TEXT NOT NULL,
+	ozet          TEXT,
+	/*
+	  MALİ VERİ BURADA, VE BU BİLİNÇLİ BİR KARAR DEĞİŞİKLİĞİ.
+
+	  Panel ilk kurulduğunda tutarlar sunucuya HİÇ çıkmıyordu. 24 Eylül 2026'da
+	  sahibi müşterinin kendi ödeme dökümünü panelde görmesini istedi ve tam
+	  dökümü seçti. Müşteri kalan borcunu göremeyecekse özelliğin anlamı yok,
+	  dolayısıyla tutarın sunucuda durması kaçınılmaz.
+
+	  Sınır hâlâ var ve daralmadı: TC kimlik numarası, vergi numarası, açık
+	  adres ve telefon buraya ASLA çıkmıyor, iç notlar ve maliyet bilgisi de
+	  öyle. Çıkan tek şey müşterinin zaten bildiği rakam: kendi işinin bedeli
+	  ve kendi ödemeleri.
+
+	  Ödenen tutar burada TUTULMUYOR, is_odeme satırlarından toplanıyor.
+	  İki yerde tutulan sayı er geç ayrışır ve hangisinin doğru olduğu
+	  anlaşılmaz.
+	*/
+	tutar_kurus   INTEGER NOT NULL DEFAULT 0,
+	para_birimi   TEXT NOT NULL DEFAULT 'TRY',
+	/** Müşteriye söylenen hedef teslim tarihi. Geçerse panelde uyarı çıkıyor. */
+	teslim_hedefi TEXT,
+	guncellendi   TEXT NOT NULL
 );
 
 CREATE INDEX IF NOT EXISTS is_ozeti_musteri ON is_ozeti (musteri_id, guncellendi);
+
+/*
+  Müşterinin gördüğü ödeme dökümü. Yöntem (nakit, havale) ve iç not BURADA
+  YOK: müşterinin bilmesi gereken ne zaman ne kadar ödediği.
+*/
+CREATE TABLE IF NOT EXISTS is_odeme (
+	id          TEXT PRIMARY KEY,
+	is_id       TEXT NOT NULL REFERENCES is_ozeti (id) ON DELETE CASCADE,
+	tur         TEXT NOT NULL CHECK (tur IN ('on_odeme', 'ara_odeme', 'son_odeme', 'iade')),
+	tutar_kurus INTEGER NOT NULL,
+	tarih       TEXT NOT NULL,
+	guncellendi TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS is_odeme_is ON is_odeme (is_id, tarih);
+
+/*
+  İlerleme ağacı. İki kaynaktan besleniyor: işin durumu değiştikçe düşen
+  otomatik aşamalar ve sahibin elle eklediği ara adımlar (numune geldi,
+  teknik resim onaylandı gibi).
+
+  sira kronolojiyi taşıyor, tarih ise o aşamanın gerçekleştiği an. İkisi
+  ayrı çünkü sahip geçmişe dönük bir aşama ekleyebilir.
+*/
+CREATE TABLE IF NOT EXISTS is_asama (
+	id          TEXT PRIMARY KEY,
+	is_id       TEXT NOT NULL REFERENCES is_ozeti (id) ON DELETE CASCADE,
+	sira        INTEGER NOT NULL DEFAULT 0,
+	kaynak      TEXT NOT NULL DEFAULT 'elle' CHECK (kaynak IN ('otomatik', 'elle')),
+	baslik      TEXT NOT NULL,
+	aciklama    TEXT,
+	durum       TEXT NOT NULL DEFAULT 'tamamlandi'
+	            CHECK (durum IN ('tamamlandi', 'suruyor', 'bekliyor')),
+	tarih       TEXT NOT NULL,
+	guncellendi TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS is_asama_is ON is_asama (is_id, sira, tarih);
+
+/*
+  İşe eklenen dosyalar: teknik resim, ölçü raporu, imalat fotoğrafı.
+
+  Dosyanın KENDİSİ veritabanında değil, diskte ayrı bir dizinde duruyor;
+  burada yalnızca künyesi var. depo_adi diskteki addır ve rastgele
+  üretilir: müşterinin verdiği ad doğrudan dosya sistemine yazılsaydı
+  ../ içeren bir ad dizin dışına çıkabilirdi.
+*/
+CREATE TABLE IF NOT EXISTS is_dosya (
+	id          TEXT PRIMARY KEY,
+	is_id       TEXT NOT NULL REFERENCES is_ozeti (id) ON DELETE CASCADE,
+	asama_id    TEXT REFERENCES is_asama (id) ON DELETE SET NULL,
+	gosterilen_ad TEXT NOT NULL,
+	depo_adi    TEXT NOT NULL UNIQUE,
+	tur         TEXT NOT NULL,
+	boyut       INTEGER NOT NULL,
+	sha256      BLOB NOT NULL,
+	gorsel_mi   INTEGER NOT NULL DEFAULT 0 CHECK (gorsel_mi IN (0, 1)),
+	olusturuldu TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS is_dosya_is ON is_dosya (is_id, olusturuldu);
+
+/*
+  İş bazlı yazışma. Destek talebi genel konular için; bu ise belirli bir işin
+  kendi yazışması, böylece konu karışmıyor.
+*/
+CREATE TABLE IF NOT EXISTS is_mesaji (
+	id       TEXT PRIMARY KEY,
+	is_id    TEXT NOT NULL REFERENCES is_ozeti (id) ON DELETE CASCADE,
+	yazan    TEXT NOT NULL CHECK (yazan IN ('musteri', 'sahip')),
+	metin    TEXT NOT NULL,
+	zaman    TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS is_mesaji_is ON is_mesaji (is_id, zaman);
 
 -- 256 bitlik tek kullanımlık davet. Anahtarın kendisi buraya HİÇ gelmiyor;
 -- sahibin bilgisayarında üretiliyor, sunucuya yalnızca karması yazılıyor.

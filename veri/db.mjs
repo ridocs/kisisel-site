@@ -15,6 +15,7 @@ import { mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 
 import { SEMA_YEREL, SEMA_PANEL } from './semalar.mjs';
+import { PANEL_GOCLERI, YEREL_GOCLERI } from './gocler.mjs';
 
 export { SEMA_YEREL, SEMA_PANEL };
 
@@ -41,12 +42,24 @@ export function veritabaniAc(dosyaYolu, sema) {
 	return db;
 }
 
+/*
+  Açma işlevleri göçü de UYGULUYOR.
+
+  Ayrı bir "göç et" adımı bırakılsaydı, onu çağırmayı unutan bir yol eski
+  şemayla çalışmaya devam ederdi ve hata ancak eksik sütuna yazarken
+  görünürdü. Göç zaten sürüm numarasına bağlı ve ikinci kez çalışmıyor,
+  yani her açılışta denemek ucuz.
+*/
 export function yerelAc(dosyaYolu) {
-	return veritabaniAc(dosyaYolu, SEMA_YEREL);
+	const db = veritabaniAc(dosyaYolu, SEMA_YEREL);
+	gocUygula(db, YEREL_GOCLERI);
+	return db;
 }
 
 export function panelAc(dosyaYolu) {
-	return veritabaniAc(dosyaYolu, SEMA_PANEL);
+	const db = veritabaniAc(dosyaYolu, SEMA_PANEL);
+	gocUygula(db, PANEL_GOCLERI);
+	return db;
 }
 
 /**

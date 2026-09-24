@@ -301,8 +301,15 @@ test('kuyruğa hassas alan yazılmaya çalışılırsa hata fırlıyor', () => {
 		['musteri.yaz', { id: 'm', gorunen_ad: 'A', tc: '10000000146' }],
 		['musteri.yaz', { id: 'm', gorunen_ad: 'A', telefon: '05550000000' }],
 		['musteri.yaz', { id: 'm', gorunen_ad: 'A', sehir: 'Ankara' }],
-		['is.yaz', { id: 'i', musteri_id: 'm', ad: 'x', durum: 'suruyor', tutar_kurus: 500 }],
+		/*
+		  `tutar_kurus` BURADAN ÇIKARILDI: 24 Eylül 2026'dan beri izinli.
+		  Müşteri kendi ödeme dökümünü panelde görüyor, dolayısıyla tutar
+		  sunucuya çıkıyor. İşin iç yüzü hâlâ yasak ve aşağıdakiler onu
+		  sınıyor.
+		*/
 		['is.yaz', { id: 'i', musteri_id: 'm', ad: 'x', durum: 'suruyor', on_odeme_orani: 40 }],
+		['is.yaz', { id: 'i', musteri_id: 'm', ad: 'x', durum: 'suruyor', not_metni: 'iç not' }],
+		['odeme.yaz', { id: 'o', is_id: 'i', tur: 'on_odeme', tutar_kurus: 100, tarih: '2026-09-20', yontem: 'nakit' }],
 		['davet.yaz', { id: 'd', musteri_id: 'm', anahtar_karmasi: 'ab', vergi_no: '1234567890' }],
 	];
 	for (const [islem, govde] of denemeler) {
@@ -315,8 +322,14 @@ test('kuyruğa hassas alan yazılmaya çalışılırsa hata fırlıyor', () => {
 });
 
 test('bilinmeyen işlem kuyruğa giremiyor', () => {
-	assert.throws(() => kuyrukGovdesiSuz('odeme.yaz', { id: 'x' }), /Bilinmeyen eşitleme işlemi/);
+	/*
+	  `odeme.yaz` buradan ÇIKARILDI: artık tanınan bir işlem, müşterinin ödeme
+	  dökümü onunla gidiyor. Yerine hâlâ tanınmayanlar kondu: revize kaydı ve
+	  istatistikler sunucuya hiç çıkmıyor.
+	*/
 	assert.throws(() => kuyrukGovdesiSuz('revize.yaz', { id: 'x' }), /Bilinmeyen eşitleme işlemi/);
+	assert.throws(() => kuyrukGovdesiSuz('istatistik.yaz', { id: 'x' }), /Bilinmeyen eşitleme işlemi/);
+	assert.throws(() => kuyrukGovdesiSuz('musteri.hepsiniVer', { id: 'x' }), /Bilinmeyen eşitleme işlemi/);
 });
 
 test('kuyruk gövdesi iç içe nesne kabul etmiyor', () => {
