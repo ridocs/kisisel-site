@@ -1,0 +1,247 @@
+---
+/*
+  Pano: müşterinin işleri ve destek taleplerinin özeti.
+
+  24 EYLÜL 2026'DA DEĞİŞEN: iş tutarı ve ödeme dökümü artık sunucuda
+  (`veri/semalar.mjs` gerekçeyi yazıyor), dolayısıyla pano kalan borcu da
+  gösteriyor. Çıkan rakam müşterinin zaten bildiği rakam; işin iç yüzü
+  (maliyet, ödeme yöntemi, iç notlar) hâlâ yalnızca sahibin bilgisayarında.
+
+  KALAN BORÇ `is_odeme` SATIRLARINDAN HESAPLANIYOR, veritabanından
+  okunmuyor: iki yerde tutulan sayı ayrışır (`sunucu/isler.mjs`).
+
+  Her sorgu müşteri kimliğiyle süzülüyor; süzgeç `sunucu/isler.mjs` ve
+  `sunucu/talepler.mjs` içindeki işlevlerin imzasında zorunlu.
+
+  Sayfanın üstündeki kutular YENİ SORGU AÇMIYOR: aşağıda zaten çekilen
+  listelerden hesaplanıyor.
+*/
+import Kabuk from '../duzen/Kabuk.astro';
+import { panelVt } from '../sunucu/veritabani.mjs';
+import { gecenSure, makineZamani, para, tarih, teslimCumlesi } from '../sunucu/bicim.mjs';
+import { acikTalepSayisi, isDurumEtiketi, talepleriListele, talepDurumEtiketi } from '../sunucu/talepler.mjs';
+import { BITEN_DURUMLAR, isleriOzetle } from '../sunucu/isler.mjs';
+
+export const prerender = false;
+
+const taban = Astro.locals.taban ?? '';
+const musteri = Astro.locals.musteri;
+const db = panelVt();
+
+const isler = isleriOzetle(db, musteri.id);
+const talepler = talepleriListele(db, musteri.id);
+const sonTalepler = talepler.slice(0, 5);
+const acik = acikTalepSayisi(db, musteri.id);
+
+/* Kapanmış ve iptal edilmiş işler "devam eden" sayılmıyor. */
+const surenIsler = isler.filter((is) => !BITEN_DURUMLAR.has(is.durum));
+
+/*
+  KALAN TOPLAM BORÇ. Yalnızca açık işlerden: kapanmış bir işin kalanı varsa
+  o bir borç değil, kapanırken yazılmış bir fark. Eksi kalanlar (fazla ödeme)
+  toplama girmiyor; fazla ödeme borcu azaltmıyor, ayrı bir konu ve iş
+  detayında ayrıca söyleniyor.
+*/
+const kalanToplam = surenIsler.reduce((toplam, is) => toplam + Math.max(0, is.dokum.kalan), 0);
+/* Para birimi işlerden okunuyor; hepsi aynı birimdeyse o birim yazılıyor. */
+const paraBirimi = surenIsler[0]?.para_birimi ?? 'TRY';
+const karisikBirim = surenIsler.some((is) => is.para_birimi !== paraBirimi);
+
+/*
+  YAKLAŞAN TESLİM: açık işler içinde hedefi olan ve tarihi en yakın olan.
+  Geçmiş tarihler de aday, çünkü geçmiş bir teslim en acil olanıdır.
+*/
+const hedefliIsler = surenIsler
+	.filter((is) => is.teslim.var)
+	.sort((a, b) => Date.parse(a.teslim_hedefi) - Date.parse(b.teslim_hedefi));
+const yaklasan = hedefliIsler[0] ?? null;
+const gecikenSayisi = surenIsler.filter((is) => is.teslim.gecikti).length;
+
+/*
+  Son hareket iki listenin EN YENİ `guncellendi` değeri. Dize
+  karşılaştırması yeterli: değerler ISO 8601 ve ISO 8601 sözlük sırası
+  zaman sırasıyla aynı.
+*/
+const sonHareket = [...isler, ...talepler]
+	.map((satir) => satir.guncellendi)
+	.filter(Boolean)
+	.sort()
+	.at(-1);
+
+const acikCumle =
+	acik === 0
+		? 'Açık destek talebiniz yok.'
+		: acik === 1
+			? 'Bir destek talebiniz açık.'
+			: `${acik} destek talebiniz açık.`;
+---
+
+<Kabuk baslik="Pano" aktif="pano" sayfaAdi="Pano">
+	<div class="sayfa-bas">
+		<p class="ust-etiket">PANO</p>
+		<h1>Merhaba, {musteri.gorunen_ad}</h1>
+		<div class="cizgi" aria-hidden="true"></div>
+		<p class="acikli">
+			{acikCumle} İşlerinizin durumunu, ödemelerinizi ve yazışmalarınızı
+			buradan takip edebilirsiniz.
+		</p>
+	</div>
+
+	<ul class="ozet">
+		<li class="ozet-kutu">
+			<span class="kucuk-etiket">DEVAM EDEN İŞ</span>
+			<span class="ozet-sayi">{surenIsler.length}</span>
+			<span class="ozet-alt">
+				{
+					isler.length === 0
+						? 'Kayıtlı iş yok.'
+						: `Toplam ${isler.length} iş kaydınız var.`
+				}
+			</span>
+		</li>
+
+		<li class="ozet-kutu">
+			<span class="kucuk-etiket">KALAN BORÇ</span>
+			<span class="ozet-sayi">{para(kalanToplam, paraBirimi)}</span>
+			<span class="ozet-alt">
+				{
+					karisikBirim
+						? 'Farklı para birimlerindeki işler ayrı ayrı sayfalarında.'
+						: kalanToplam === 0
+							? 'Bekleyen ödeme yok.'
+							: 'Devam eden işlerin toplamı.'
+				}
+			</span>
+		</li>
+
+		<li class="ozet-kutu" data-vurgu={gecikenSayisi > 0 ? 'gecikme' : undefined}>
+			{/*
+			  Etiket duruma göre: tarihi geçmiş bir teslime "yaklaşan" demek
+			  yanlış. Kutu aynı kutu, söylediği şey değişiyor.
+			*/}
+			<span class="kucuk-etiket">
+				{yaklasan?.teslim.gecikti ? 'GEÇEN TESLİM' : 'YAKLAŞAN TESLİM'}
+			</span>
+			<span class="ozet-sayi">
+				{yaklasan ? teslimCumlesi(yaklasan.teslim_hedefi) : 'Yok'}
+			</span>
+			<span class="ozet-alt">
+				{
+					yaklasan ? (
+						<>
+							{yaklasan.ad} ·{' '}
+							<time datetime={makineZamani(yaklasan.teslim_hedefi)}>
+								{tarih(yaklasan.teslim_hedefi)}
+							</time>
+						</>
+					) : (
+						'Planlanmış teslim tarihi yok.'
+					)
+				}
+			</span>
+		</li>
+
+		<li class="ozet-kutu">
+			<span class="kucuk-etiket">AÇIK TALEP</span>
+			<span class="ozet-sayi">{acik}</span>
+			<span class="ozet-alt">
+				{
+					sonHareket
+						? `Son hareket ${gecenSure(sonHareket)}.`
+						: 'Henüz bir hareket olmadı.'
+				}
+			</span>
+		</li>
+	</ul>
+
+	<section class="bolum" aria-labelledby="hizmetler-basligi">
+		<div class="bolum-bas">
+			<h2 id="hizmetler-basligi">İşleriniz</h2>
+		</div>
+		{
+			isler.length === 0 ? (
+				<div class="bos">
+					<strong class="bos-baslik">Henüz bir iş kaydınız yok.</strong>
+					<p class="bos-metin">
+						Bir iş başladığında burada adı, durumu ve ödeme dökümü görünür.
+						Durum değiştikçe kayıt kendiliğinden güncellenir.
+					</p>
+				</div>
+			) : (
+				<ul class="dizi">
+					{isler.map((is) => (
+						<li>
+							{/*
+							  Satırın tamamı iş detayına gidiyor. Kalan tutar satırda
+							  yazılı: müşterinin en sık sorduğu şey bu ve bir tık
+							  ötede durmasının bir karşılığı yok.
+							*/}
+							<a class="satir" href={`${taban}/isler/${is.id}`}>
+								<span class="satir-ad">{is.ad}</span>
+								<span class="satir-bilgi">
+									{is.teslim.gecikti && (
+										<span class="rozet" data-gecikme="1">
+											teslim tarihi geçti
+										</span>
+									)}
+									{!BITEN_DURUMLAR.has(is.durum) && is.dokum.kalan > 0 && (
+										<span class="satir-tutar">
+											{para(is.dokum.kalan, is.para_birimi)} kalan
+										</span>
+									)}
+									<span class="rozet" data-is={is.durum}>
+										{isDurumEtiketi(is.durum)}
+									</span>
+									<time datetime={makineZamani(is.guncellendi)}>
+										{tarih(is.guncellendi)}
+									</time>
+								</span>
+							</a>
+						</li>
+					))}
+				</ul>
+			)
+		}
+	</section>
+
+	<section class="bolum" aria-labelledby="talepler-basligi">
+		<div class="bolum-bas">
+			<h2 id="talepler-basligi">Son destek talepleri</h2>
+			{talepler.length > 0 && (
+				<a href={`${taban}/talepler`}>Bütün talepler ({talepler.length})</a>
+			)}
+		</div>
+		{
+			sonTalepler.length === 0 ? (
+				<div class="bos">
+					<strong class="bos-baslik">Henüz talep açmadınız.</strong>
+					<p class="bos-metin">
+						Bir sorun, istek ya da soru için talep açın. Yazışma tek yerde
+						durur, e-postada kaybolmaz.
+					</p>
+					<a class="dugme birincil" href={`${taban}/talepler`}>
+						İlk talebinizi açın
+					</a>
+				</div>
+			) : (
+				<ul class="dizi">
+					{sonTalepler.map((talep) => (
+						<li>
+							<a class="satir" href={`${taban}/talepler/${talep.id}`}>
+								<span class="satir-ad">{talep.baslik}</span>
+								<span class="satir-bilgi">
+									<span class="rozet" data-durum={talep.durum}>
+										{talepDurumEtiketi(talep.durum)}
+									</span>
+									<time datetime={makineZamani(talep.guncellendi)}>
+										{tarih(talep.guncellendi)}
+									</time>
+								</span>
+							</a>
+						</li>
+					))}
+				</ul>
+			)
+		}
+	</section>
+</Kabuk>

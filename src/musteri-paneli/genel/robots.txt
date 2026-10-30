@@ -1,0 +1,3 @@
+# Panel kişiye özel. Arama motorlarının burada işi yok.
+User-agent: *
+Disallow: /

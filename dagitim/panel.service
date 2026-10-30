@@ -1,0 +1,75 @@
+# Müşteri paneli: systemd servis birimi ÖRNEĞİ.
+#
+# Yer tutucular (<...>) gerçek değerlerle değiştirilip sunucuda
+# /etc/systemd/system/panel.service olarak kurulur. Bu dosya depoda ve depo
+# herkese açık: buraya gerçek yol, kullanıcı adı veya sır YAZILMAZ.
+#
+# Kurulum adımları: dagitim/KURULUM.md
+
+[Unit]
+Description=Musteri paneli
+Documentation=https://github.com/ridocs/kisisel-site/blob/main/PANEL-TASARIMI.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+
+# Kendi kullanıcısı. root ile ÇALIŞTIRMAYIN: panel internetten gelen istek
+# işliyor, bir açık bulunursa yetkisi kadar zarar verir.
+User=<panel-kullanicisi>
+Group=<panel-grubu>
+
+WorkingDirectory=<panel-dizini>
+
+# Sırlar buradan geliyor, birim dosyasından değil. Dosyanın izni 0600 ve
+# sahibi panel kullanıcısı olmalı; `systemctl cat` ile içeriği görünmez.
+EnvironmentFile=<ortam-dosyasi>
+
+# Yalnızca yerel arayüzü dinliyor. Dışarıya açan tek şey ters vekil.
+Environment=HOST=127.0.0.1
+Environment=PORT=4327
+Environment=NODE_ENV=production
+
+ExecStart=/usr/bin/node <panel-dizini>/server/entry.mjs
+
+Restart=on-failure
+RestartSec=3
+
+# Çöküp duran bir süreç sonsuza kadar yeniden başlatılmasın; 5 dakikada
+# 5 denemeden sonra dursun ki sorun görünür olsun.
+StartLimitIntervalSec=300
+StartLimitBurst=5
+
+# ---- Sertleştirme ----
+# Panelin işi bir veritabanı dosyasına yazmak. Başka hiçbir şeye ihtiyacı yok.
+NoNewPrivileges=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectSystem=strict
+ProtectHome=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+ProtectClock=yes
+ProtectHostname=yes
+RestrictSUIDSGID=yes
+RestrictRealtime=yes
+RestrictNamespaces=yes
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+RemoveIPC=yes
+
+# ProtectSystem=strict bütün dosya sistemini salt okunur yapıyor. Yazılabilir
+# tek yer veritabanı dizini: SQLite'ın WAL ve shm dosyaları da oraya çıkıyor,
+# yani veritabanı dosyası değil DİZİNİ yazılabilir olmak zorunda.
+ReadWritePaths=<veritabani-dizini>
+
+# Ağ: yalnızca yerel soketler ve IP. Panelin dışarı bağlanması gerekmiyor.
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+
+SystemCallFilter=@system-service
+SystemCallErrorNumber=EPERM
+
+[Install]
+WantedBy=multi-user.target

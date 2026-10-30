@@ -1,0 +1,161 @@
+// @ts-check
+import { defineConfig } from 'astro/config';
+import node from '@astrojs/node';
+import { ayarlariDogrula } from './src/musteri-paneli/sunucu/ayarlar.mjs';
+
+/*
+  Derleme mi geliştirme mi: `vite.ssr.noExternal` kararı buna bağlı ve ikisi
+  zıt yönde. Gerekçe aşağıda, o ayarın yanında.
+
+  Astro'nun `vite` alanı düz bir nesne, Vite'ın kendi `({ command }) => …`
+  biçimini kabul etmiyor; bu yüzden komut argümandan okunuyor.
+*/
+const DERLEME_MI = process.argv.includes('build');
+
+/*
+  MÜŞTERİ PANELİ: `twinshareapp.com/web-sitem/panel/`
+
+  Bu dosya kasıtlı olarak `astro.config.mjs`'i MİRAS ALMIYOR.
+
+  `astro.config.genel.mjs` temel yapılandırmayı yayıyor ve orada ölçülmüş bir
+  sonuç var: sunucu kipinde Astro sitenin bütün sayfalarını da servis ediyor,
+  `astro:routes:resolved` ile elemek işe yaramıyor. Orada çözüm nginx'e
+  bırakıldı çünkü o panel zaten sitenin bileşenlerini kullanıyor.
+
+  Burada gerek yok. `srcDir` doğrudan `src/musteri-paneli/` gösteriyor, yani
+  Astro'nun gördüğü rotalar YALNIZCA bu klasördeki rotalar. Sitenin
+  `src/pages/` altı bu derlemeye hiç girmiyor; blog, hakkımda, hizmetler
+  sayfaları burada var olmuyor. Ters vekilde yapılacak eleme bunun üstüne
+  ikinci bir katman, tek dayanak değil.
+
+  YAYINLANAN SİTEYE HİÇBİR ŞEY SIZMIYOR:
+  - `astro.config.mjs` değişmedi, `npm run build` çıktısı aynı.
+  - Buradaki hiçbir eklenti oraya eklenmedi; bu dosyada zaten yalnızca Node
+    adaptörü var. Tailwind, MDX, sitemap, icon, React: hiçbiri yok, panelin
+    işine yaramıyorlar.
+  - Çıktı `dist-panel/`. `dist/` hiç elleniyor değil.
+
+  DİL: panel yalnızca Türkçe. `i18n` yapılandırması bilinçli olarak yok;
+  panel müşteriye özel ve iki dilli olmasının bir karşılığı yok.
+*/
+
+/*
+  Zorunlu ortam değişkenleri AÇILIŞTA denetleniyor.
+
+  Hata ilk isteğe kadar ertelenseydi sunucu "çalışıyor" görünür, müşteri de
+  giriş denemesinde anlamsız bir hata alırdı. Burada durursa sebebi ekranda
+  yazıyor. Değerler `.env.ornek`te; gerçekleri DEPOYA GİRMİYOR.
+*/
+ayarlariDogrula();
+
+export default defineConfig({
+	site: 'https://twinshareapp.com',
+	base: '/web-sitem/panel',
+	srcDir: './src/musteri-paneli',
+	/*
+	  Statik dosyalar (stil sayfası, robots.txt) panelin kendi klasöründen.
+	  Varsayılan `public/` sitenin varlıkları; onları panel adresinin altında
+	  ikinci kez yayınlamanın anlamı yok.
+	*/
+	publicDir: './src/musteri-paneli/genel',
+	/*
+	  Çıktı ayrı dizine. `dist/` yayın sitesinin; ikisi aynı klasöre yazarsa
+	  sunucuya yanlış olanı göndermek çok kolay olur.
+	*/
+	outDir: './dist-panel-musteri',
+	output: 'server',
+	adapter: node({ mode: 'standalone' }),
+	/*
+	  AYRI ÖNBELLEK DİZİNİ. Ölçülmüş tuzak (MIMARI.md §7): aynı klasörde iki
+	  Astro sunucusu `.astro/` altına aynı geçici adla yazıyor ve biri
+	  diğerinin dosyasını tüketince yazılan içerik sessizce kayboluyor.
+	  Panelin kendi önbelleği olunca site sunucusuyla yan yana çalışabiliyor.
+	*/
+	cacheDir: './node_modules/.astro-musteri-paneli',
+	/*
+	  Varsayılan 4321 sitenin dev sunucusunun portu. Panel kendi portunda
+	  durursa ikisi aynı anda açılabiliyor ve hangi sunucunun cevap verdiği
+	  belirsiz kalmıyor.
+	*/
+	server: { port: 4327, host: false },
+	/*
+	  GELİŞTİRME ARAÇ ÇUBUĞU KAPALI, güvenlik başlıklarıyla çakıştığı için.
+	  Araç çubuğu sayfaya satır içi betik enjekte ediyor; panelin içerik
+	  güvenliği politikası `script-src 'self'` ve nonce olduğu için o betik
+	  tarayıcıda engelleniyor ve konsol hatayla doluyor. Politikayı
+	  geliştirmede gevşetmek, üretimde denenmemiş bir politika bırakırdı.
+	*/
+	devToolbar: { enabled: false },
+	/*
+	  ÇALIŞMA ZAMANI BAĞIMLILIKLARI ÇIKTIYA GÖMÜLÜYOR.
+
+	  Astro'nun node adapteri paketleri varsayılan olarak dışarıda bırakıyor
+	  ve sunucuda `node_modules` bekliyor. Sunucuda ilk çalıştırmada bu
+	  kendini `Cannot find package '@oslojs/encoding'` diye gösterdi:
+	  SimpleWebAuthn'ın bağımlılığı orada yoktu.
+
+	  Sunucuda npm kurulumu yönetmek yerine paketleri çıktının içine alıyoruz.
+	  Böylece dağıtım tek parça: `server/` ve `client/` klasörlerini kopyalamak
+	  yetiyor, sunucuda ne package.json ne node_modules gerekiyor. Bedeli
+	  çıktının birkaç yüz kilobayt büyümesi.
+	*/
+	/*
+	  ASTRO'NUN KENDİ ORIGIN KONTROLÜ KAPALI, ama koruma kalkmadı.
+
+	  Astro `checkOrigin` ile POST isteklerinde `Origin` başlığını İSTEK
+	  URL'SİNDEN türettiği adresle karşılaştırıyor. Ters vekil arkasında o
+	  adres yanlış: süreç düz HTTP üzerinden 127.0.0.1'i dinliyor, ziyaretçi
+	  ise HTTPS ile alan adına bağlanıyor. Sonuç: doğru `Origin` ve
+	  `Sec-Fetch-Site` başlıklarını taşıyan meşru form gönderimleri bile
+	  "Cross-site POST form submissions are forbidden" ile 403 alıyordu.
+	  Canlıda ölçüldü; panelde talep açma, mesaj yazma ve çıkış çalışmıyordu.
+
+	  Yerine geçen koruma daha güçlü ve vekil farkındalığıyla yazılmış
+	  (sunucu/istek.mjs, sunucu/csrf.mjs):
+	    1. `Sec-Fetch-Site` same-origin olmalı, yoksa `Origin` başlığı
+	       ORTAM DEĞİŞKENİNDEKİ adresle karşılaştırılıyor (istek URL'siyle
+	       değil, yani vekil bunu bozamıyor).
+	    2. Durum değiştiren her istekte oturuma bağlı işlem anahtarı,
+	       sabit zamanlı karşılaştırmayla.
+	    3. Çerez `SameSite=Strict`.
+	*/
+	security: { checkOrigin: false },
+	/*
+	  BAĞIMLILIKLAR YALNIZCA DERLEMEDE ÇIKTIYA GÖMÜLÜYOR.
+
+	  Derlemede gerekli: sunucuda ne `package.json` var ne `node_modules`.
+	  Tek tek saymak denendi ve yanlış yoldu, önce `@oslojs/encoding` eksik
+	  çıktı, eklendi, sonra `zod` çıktı. Liste tutmak her bağımlılığın
+	  bağımlılığını elle takip etmek demek ve eksiği ancak sunucuda çöken bir
+	  servis gösteriyor.
+
+	  Geliştirmede ise zararlı: Vite'ın SSR modül çalıştırıcısı CJS
+	  bağımlılıkları gömmeye çalışınca dev sunucusu hiç açılmıyor.
+
+	  `ssr` nesnesi geliştirmede BOŞ BIRAKILIYOR, `noExternal: false`
+	  YAZILMIYOR. Vite bu alanda yalnızca `true` ya da dizi kabul ediyor;
+	  `false` verilince "Value is none of these types" ile düşüyor ve Astro
+	  bu hatayı yutup yalnızca "Dev server process exited before becoming
+	  ready" diyor. Gerçek sebep `.astro/dev.log` dosyasında görünüyor.
+	*/
+	vite: {
+		/*
+		  Derleme damgası: `panel.css` bağlantısına sorgu olarak ekleniyor.
+
+		  Panelin stil dosyası `public` klasöründen sabit adla servis ediliyor,
+		  yani Astro'nun içerik hash'i onu kapsamıyor. Canlıda ölçüldü: yeni
+		  CSS sunucuda duruyordu ama tarayıcı ve ara önbellek eski sürümü
+		  veriyordu, dolayısıyla yeni kurallar (atla bağlantısı, marka çizgisi)
+		  hiç uygulanmıyordu. Sorgu her derlemede değiştiği için önbellek
+		  kendiliğinden geçersizleşiyor.
+		*/
+		define: { __PANEL_SURUM__: JSON.stringify(Date.now().toString(36)) },
+		...(DERLEME_MI ? { ssr: { noExternal: true } } : {}),
+	},
+	/*
+	  Astro'nun kendi CSP desteği (security.csp) BURADA KULLANILMIYOR: o,
+	  `<meta http-equiv>` etiketi basıyor ve tarayıcı iki politikanın
+	  KESİŞİMİNİ uyguluyor. Politika ara katmanda, tek yerde ve başlık olarak
+	  veriliyor (src/musteri-paneli/sunucu/basliklar.mjs).
+	*/
+});

@@ -277,11 +277,12 @@ const iletisimBolumuKimligi = hakkimdaSayfasindaMi ? iletisimCapasi.slice(1) : u
 					  Sıvı metal düğme; dar ekranda gizlenip yerini mobil menüdeki
 					  karşılığına bırakıyor.
 
-					  `hedef` YOK: giriş henüz kurulmadı, düğme pasif duruyor.
-					  Adres belli olunca tek yapılacak şey `hedef` vermek.
+					  Adres `yol()` YERİNE doğrudan `taban` ile kuruluyor, çünkü panel
+					  tek dilli: `/web-sitem/panel/`. `yol(dil, 'panel')` İngilizce
+					  sayfalarda `/web-sitem/en/panel/` üretirdi ve orada bir şey yok.
 					*/}
 					<div class="hidden md:block">
-						<CubukDugmesi etiket={m('nav.girisYap')} pasifNotu={m('nav.yakinda')} />
+						<CubukDugmesi etiket={m('nav.girisYap')} hedef={`${taban}/panel/`} />
 					</div>
 
 					<button
@@ -324,18 +325,16 @@ const iletisimBolumuKimligi = hakkimdaSayfasindaMi ? iletisimCapasi.slice(1) : u
 					}
 					<li>
 						{/*
-						  Masaüstündeki vurgulu düğmenin dar ekran karşılığı. O da pasif:
-						  iki yerde aynı düğmenin farklı davranması, hangisinin doğru
-						  olduğunu belirsizleştirirdi.
+						  Masaüstündeki vurgulu düğmenin dar ekran karşılığı. İkisi de
+						  aynı adrese gidiyor: iki yerde aynı düğmenin farklı davranması,
+						  hangisinin doğru olduğunu belirsizleştirirdi.
 						*/}
-						<button
-							type="button"
-							disabled
-							class="mt-2 grid h-11 w-full cursor-not-allowed place-items-center rounded-lg bg-slate-900 text-[15px] leading-5 font-medium text-white opacity-55 dark:bg-white dark:text-neutral-900"
+						<a
+							href={`${taban}/panel/`}
+							class="mt-2 grid h-11 w-full place-items-center rounded-lg bg-slate-900 text-[15px] leading-5 font-medium text-white transition-opacity hover:opacity-90 dark:bg-white dark:text-neutral-900"
 						>
 							{m('nav.girisYap')}
-							<span class="sr-only"> ({m('nav.yakinda')})</span>
-						</button>
+						</a>
 					</li>
 				</ul>
 			</div>
