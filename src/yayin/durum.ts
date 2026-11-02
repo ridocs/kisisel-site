@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { promisify } from 'node:util';
 import { getCollection } from 'astro:content';
 
-import { canliSayfalar, canliYokla, sunucuDurumu } from './sunucu.mjs';
+import { canliSayfalar, canliYokla, yayinDurumu } from './sunucu.mjs';
 import { PANEL_YOLLARI } from './yayinla.mjs';
 
 const calistir = promisify(execFile);
@@ -16,7 +16,7 @@ const calistir = promisify(execFile);
   neden?" Beş ayrı yerden veri topluyor ve hepsini aynı ekranda gösteriyor —
   ayrı ayrı bakmak gerekirse kimse bakmıyor.
 
-  Toplamanın hiçbir adımı hata FIRLATMIYOR. Sunucuya ulaşamamak olağan bir
+  Toplamanın hiçbir adımı hata FIRLATMIYOR. Cloudflare'e ulaşamamak olağan bir
   durum (uçakta, otelde, anahtarsız bir makinede) ve sayfanın o gün çökmek
   yerine ne bilmediğini söylemesi gerekiyor. Her alan bu yüzden kendi hata
   metnini taşıyor.
@@ -27,8 +27,8 @@ const calistir = promisify(execFile);
 
 const PROJE_KOKU = join(fileURLToPath(new URL('.', import.meta.url)), '..', '..');
 
-/** Sitenin yayın öneki. Yerel yazı adresleri bununla kuruluyor. */
-const SITE_YOLU = '/web-sitem';
+/** Sitenin yayın öneki. Site alan adının kökünde, önek yok. */
+const SITE_YOLU = '';
 
 export interface Yazi {
 	baslik: string;
@@ -58,7 +58,7 @@ export interface GitDurumu {
 
 export interface Durum {
 	canli: Awaited<ReturnType<typeof canliYokla>>;
-	sunucu: Awaited<ReturnType<typeof sunucuDurumu>>;
+	yayin: Awaited<ReturnType<typeof yayinDurumu>>;
 	/** Yazılmış ama yayındaki site haritasında olmayan, taslak olmayan yazılar. */
 	yayinlanmamis: Yazi[];
 	taslaklar: Yazi[];
@@ -132,14 +132,14 @@ async function gitDurumu(): Promise<GitDurumu> {
 
 export async function durumGetir(): Promise<Durum> {
 	/*
-	  Üç yavaş iş (HTTP yoklaması, site haritası, ssh) aynı anda başlatılıyor.
+	  Üç yavaş iş (HTTP yoklaması, site haritası, Cloudflare) aynı anda başlatılıyor.
 	  Sırayla yapılsaydı sayfa açılışı üçünün toplamı kadar sürerdi; ölçüldüğünde
 	  bu ~4 saniye yerine ~2 saniye demek.
 	*/
-	const [canli, yayindakiler, sunucu, git, yazilar] = await Promise.all([
+	const [canli, yayindakiler, yayin, git, yazilar] = await Promise.all([
 		canliYokla(),
 		canliSayfalar(),
-		sunucuDurumu(),
+		yayinDurumu(),
 		gitDurumu(),
 		getCollection('blog'),
 	]);
@@ -169,7 +169,7 @@ export async function durumGetir(): Promise<Durum> {
 
 	return {
 		canli,
-		sunucu,
+		yayin,
 		yayinlanmamis,
 		taslaklar,
 		toplamYazi: hepsi.length,

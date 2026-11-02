@@ -16,7 +16,7 @@ Mustafa Eybek'in kişisel tanıtım ve blog sitesi.
 
 | | |
 |---|---|
-| Yayın adresi | `https://twinshareapp.com/web-sitem/` |
+| Yayın adresi | `https://mustafaeybek.com/` (Cloudflare Pages, proje `mustafaeybek`) |
 | Yönetim paneli | Yalnızca masaüstünde (`npm run panel`). İnternete açık kopya **kaldırıldı**. |
 | Depo | `github.com/ridocs/kisisel-site`, ana dal `main` |
 | Yığın | Astro 7 · Tailwind CSS 4 · MDX · TypeScript |
@@ -48,17 +48,12 @@ Mustafa Eybek'in kişisel tanıtım ve blog sitesi.
 
 2. **Koyu temada lacivert yok.** Koyu zeminler nötr gri, chroma sıfır.
 
-### Alt dizinde yayın — her şeyi etkileyen karar
+### Kendi alan adında yayın
 
-Site alan adının kökünde değil `/web-sitem/` altında duruyor. Bunun üç
-sonucu var ve üçü de kodda ayrı ayrı ele alınmış:
-
-- Astro `base: '/web-sitem'` ile derleniyor; elle yazılan her adres bu önekten
-  geçmek zorunda (`src/i18n/ceviriler.ts` içindeki `yol()` / `taban`).
-- `robots.txt` alan adı kökünden okunuyor, alt dizinden **okunmuyor**. Site
-  haritası beyanı bu yüzden kökteki dosyaya ayrıca yazılmalı (bkz. §8).
-- Arama motorları otoriteyi kök alan adına yazıyor; alt dizin bunu
-  devralmıyor.
+Site 2 Kasım 2026'da `/web-sitem/` alt dizininden `mustafaeybek.com` köküne ve
+Cloudflare Pages'e taşındı. Bağlantı üreten kod `base` ayarından besleniyor
+(`src/i18n/ceviriler.ts` içindeki `yol()` / `taban`), yani önek tek yerde:
+`astro.config.mjs` içindeki `TABAN`, şu an boş.
 
 ---
 
@@ -336,23 +331,16 @@ Yerel kip. Bir koleksiyon (`yazilar`) ve iki tekil (`metinlerTr`,
 
 ---
 
-## 6. Sunucu ve dağıtım
+## 6. Dağıtım
 
-> **Sunucu adresi, dizin yolları ve süreç adları BU DEPODA YAZILI DEĞİL.**
-> Depo herkese açık; o bilgiler yalnızca kullanıcının yerel notlarında
-> duruyor. `DAGITIM.md` de aynı sebeple yer tutucularla genel tutulmuştur.
+Site Cloudflare Pages'te, sunucu yok. Yayın doğrudan yükleme:
+`wrangler pages deploy` (panel ya da `npm run yayinla`). Yükleme atomik, önceki
+sürümler Cloudflare'de duruyor, geri alma Cloudflare panelinden. Ayrıntı
+`DAGITIM.md`. Güvenlik başlıkları `public/_headers` içinde.
 
-Yapının şekli şöyle (somut değerler olmadan):
-
-- Site, alan adının **statik kökü altında bir dizinde** duruyor. Yayın
-  **atomik takasla** yapılıyor: yeni sürüm komşu bir dizine yükleniyor,
-  sahiplik ayarlanıyor, sonra iki dizin yer değiştiriyor. Bir önceki sürüm
-  `…eski` adıyla duruyor, geri alma bundan ibaret.
-- İnternete açık panel **artık çalışmıyor** (17 Eylül 2026'da kaldırıldı).
-  Klon ve parola dosyası sunucuda duruyor ama hiçbir şey onları sunmuyor.
-- **Dağıtım anahtarı internete bakan makinede YOK** — bilerek. Makine ele
-  geçse bile sunucuya yazma yetkisi kazanılmıyor; internete açık panel bu
-  yüzden `PANEL_YEREL_*` bayraklarıyla çalışıyor.
+Ziyaretçi istatistiği eskiden nginx kayıtlarından okunuyordu; Cloudflare'de
+böyle bir kayıt yok. Veri artık Cloudflare'in alan adı panelinde, panelin
+İstatistik sayfası oraya yönlendiriyor. Sayaç betiği eklenmedi, kural aynı.
 
 ### nginx'te panel blokları
 

@@ -10,17 +10,17 @@ import gorselTabani from './araclar/gorsel-tabani-eklentisi.mjs';
 
 // Yayın yolu tek yerde: `base` ile markdown görsellerinin öneki aynı değeri
 // kullanmak zorunda, ikisi ayrışırsa görseller sessizce 404 veriyor.
-const TABAN = '/web-sitem';
+// Site kendi alan adının kökünde; önek yok.
+const TABAN = '';
 
 // https://astro.build/config
 export default defineConfig({
 	// Sitemap, RSS ve canonical mutlak URL üretebilmek için buna ihtiyaç duyar.
-	site: 'https://twinshareapp.com',
-	// Site alan adının kökünde değil, bir alt dizinde yayınlanıyor.
-	// Astro yalnızca kendi ürettiği varlık yollarını (_astro/…) bu önekle
-	// yazar; elle yazdığımız bağlantılar src/i18n/ceviriler.ts içindeki
-	// `taban` üzerinden aynı öneki alıyor.
-	base: TABAN,
+	site: 'https://mustafaeybek.com',
+	// Alt dizine dönülürse: Astro yalnızca kendi ürettiği varlık yollarını
+	// (_astro/…) bu önekle yazar; elle yazdığımız bağlantılar
+	// src/i18n/ceviriler.ts içindeki `taban` üzerinden aynı öneki alıyor.
+	base: TABAN || undefined,
 	/*
 	  STİLLER SATIR İÇİNDE, AYRI DOSYADA DEĞİL.
 
