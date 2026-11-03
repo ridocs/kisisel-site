@@ -1,4 +1,4 @@
-# Kişisel site (Astro) — twinshareapp.com/web-sitem
+# Kişisel site (Astro) — mustafaeybek.com
 
 **Önce `MIMARI.md`'yi oku.** Dosya haritası, üç ayrı Astro yapılandırmasının
 hangisinin ne ürettiği, sunucu/panel kurulumu ve ölçülerek öğrenilmiş tuzaklar
@@ -6,8 +6,8 @@ orada. Bu dosya yalnızca günlük komutları anlatır.
 
 Bilinmesi gereken üç şey, kısaca:
 
-1. Site `/web-sitem/` **alt dizininde** yayınlanıyor. Elle yazılan her adres
-   önekten geçmek zorunda.
+1. Site alan adının kökünde, Cloudflare Pages'te. Yayın panelden ya da
+   `npm run yayinla` ile; ayrıntı `DAGITIM.md`.
 2. **Ziyaretçiye JavaScript inmiyor.** React bileşeni ekleme; verilen React
    kodunu Astro + CSS ile yeniden kur.
 3. Koyu temada **lacivert yok** — nötr gri, chroma sıfır.

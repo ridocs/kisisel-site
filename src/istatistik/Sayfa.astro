@@ -98,7 +98,7 @@ const cekimAni = new Date().toLocaleString('tr-TR', {
 <Kabuk
 	baslik="Ziyaretçi istatistiği"
 	aktif="istatistik"
-	not={`twinshareapp.com/web-sitem · nginx erişim kayıtlarından · ${cekimAni}`}
+	not={`mustafaeybek.com · Cloudflare · ${cekimAni}`}
 >
 	{
 		!sonuc.basarili && (
@@ -107,13 +107,9 @@ const cekimAni = new Date().toLocaleString('tr-TR', {
 					<span class="p-im p-metin-agir" aria-hidden="true">
 						✕
 					</span>
-					Kayıtlara ulaşılamadı
+					Ziyaretçi verisi Cloudflare'de
 				</h2>
 				<p class="p-not">{sonuc.hata}</p>
-				<p class="p-not p-not--kisik">
-					Sayfayı yenilemek yeniden dener. Kayıtlar sunucuda duruyor, bir şey
-					kaybolmadı.
-				</p>
 			</div>
 		)
 	}

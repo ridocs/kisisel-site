@@ -2,20 +2,12 @@ import { spawn } from 'node:child_process';
 import { cp, mkdir, readdir, rm, writeFile } from 'node:fs/promises';
 import { join, posix, relative, sep } from 'node:path';
 
-import {
-	HEDEF_KOK,
-	SUNUCU,
-	YAYIN_DIZINI,
-	canliSayfalar,
-	hataMetni,
-	sshBayraklari,
-	ssh,
-} from './sunucu.mjs';
+import { CLOUDFLARE_PANELI, PAGES_PROJESI, canliSayfalar, hataMetni, wranglerYolu } from './sunucu.mjs';
 
 /*
   YAYINLAMA YORDAMI
 
-  Üç iş yapıyor: derleme, sunucuya gönderme, geri alma. Üçü de ilerlerken
+  Üç iş yapıyor: derleme, Cloudflare Pages'e gönderme, geri alma. Üçü de ilerlerken
   `bildir` geri çağrısıyla ne olduğunu söylüyor — panel bu satırları canlı
   gösteriyor, kullanıcı donmuş sanmasın.
 
@@ -343,7 +335,7 @@ export async function derle(bildir) {
 		return {
 			basarili: false,
 			hata:
-				`Derleme ${sonuc.kod} koduyla durdu; sunucuya hiçbir şey gönderilmedi.\n\n` +
+				`Derleme ${sonuc.kod} koduyla durdu; yayına hiçbir şey gönderilmedi.\n\n` +
 				(sonuc.cikti.trim() || 'Astro hiçbir çıktı vermedi.'),
 		};
 	}
@@ -409,148 +401,77 @@ async function uretilenSayfalar() {
 		.map((tam) => {
 			// Windows'ta yol ayracı ters eğik çizgi; adres her zaman düz çizgi.
 			const goreli = relative(kok, tam).split(sep).join('/');
-			// "blog/x/index.html" → "/web-sitem/blog/x", "404.html" → "/web-sitem/404"
+			// "blog/x/index.html" → "/blog/x", "404.html" → "/404"
 			const ic = goreli.replace(/(^|\/)index\.html$/, '').replace(/\.html$/, '');
-			return posix.join('/web-sitem', ic).replace(/\/+$/, '') || '/web-sitem';
+			return posix.join('/', ic).replace(/\/+$/, '') || '/';
 		})
 		.sort();
 }
 
 /* ------------------------------------------------------------------ */
-/* Sunucuya gönderme                                                   */
+/* Cloudflare Pages'e gönderme                                         */
 /* ------------------------------------------------------------------ */
 
 /*
-  ATOMİK YER DEĞİŞTİRME — sunucudaki sıralama
+  Pages yüklemesi kendiliğinden atomik: yeni sürüm tamamen yüklenip hazır
+  olduktan sonra alan adı ona geçiyor. Yükleme yarıda kalırsa yayındaki site
+  değişmiyor. Önceki sürümler Cloudflare'de duruyor, silinmiyor.
 
-  Dosyalar önce `web-sitem.yeni` altına kopyalanıyor, yayın dizini ancak
-  kopyalama bittikten sonra tek bir `mv` ile değiştiriliyor. Doğrudan
-  `web-sitem` üzerine kopyalansaydı, kopyalama sürerken siteyi açan ziyaretçi
-  yarısı eski yarısı yeni bir site görürdü.
-
-  ESKİ SÜRÜM KORUNUYOR. Elde kullanılan yordamda bu bloğun ilk satırı
-  `rm -rf web-sitem.eski` idi; buradan çıkarıldı ki bir önceki sürüm geri
-  alınabilsin. Ama YALNIZCA ÇIKARMAK YETMİYOR: `mv web-sitem web-sitem.eski`
-  komutu, hedef zaten bir dizinse üzerine yazmıyor, İÇİNE giriyor —
-  `web-sitem.eski/web-sitem` oluşuyor ve ikinci yayın sessizce bozuluyor.
-
-  Bu yüzden eski sürüm önce geçici bir ada alınıyor ve yer değiştirme bittikten
-  SONRA siliniyor. Böylece geri alınacak sürümün hiç bulunmadığı bir aralık
-  oluşmuyor: ya `web-sitem.eski` duruyor, ya geçici adı.
+  `--branch main`: Pages'te üretim dalı bu. Başka dal adı önizleme adresine
+  yayınlar, alan adı değişmezdi.
 */
-function devreyeAlmaKomutu() {
+function yuklemeArgumanlari() {
 	return [
-		'set -e',
-		`chown -R www-data:www-data ${HEDEF_KOK}/${YAYIN_DIZINI}.yeni`,
-		`find ${HEDEF_KOK}/${YAYIN_DIZINI}.yeni -type d -exec chmod 755 {} +`,
-		`find ${HEDEF_KOK}/${YAYIN_DIZINI}.yeni -type f -exec chmod 644 {} +`,
-		`cd ${HEDEF_KOK}`,
-		`rm -rf ${YAYIN_DIZINI}.eski.silinecek`,
-		`if [ -e ${YAYIN_DIZINI}.eski ]; then mv ${YAYIN_DIZINI}.eski ${YAYIN_DIZINI}.eski.silinecek; fi`,
-		`mv ${YAYIN_DIZINI} ${YAYIN_DIZINI}.eski`,
-		`mv ${YAYIN_DIZINI}.yeni ${YAYIN_DIZINI}`,
-		`rm -rf ${YAYIN_DIZINI}.eski.silinecek`,
-		'echo yayin-tamam',
-	].join('\n');
+		wranglerYolu(kokuIste()),
+		'pages',
+		'deploy',
+		'cikti',
+		'--project-name',
+		PAGES_PROJESI,
+		'--branch',
+		'main',
+		'--commit-dirty=true',
+	];
 }
 
 /**
- * Derlenmiş çıktıyı sunucuya taşır.
+ * Derlenmiş çıktıyı Cloudflare Pages'e yükler.
  *
- * `kuru` verildiğinde sunucuda HİÇBİR ŞEY DEĞİŞMİYOR: çalıştırılacak komutlar
- * olduğu gibi yazdırılıyor ve yalnızca salt okunur bir yoklama yapılıyor.
- * Akışın kendisini canlı siteyi riske atmadan sınamanın tek yolu bu.
+ * `kuru` verildiğinde hiçbir şey değişmiyor: çalıştırılacak komut yazdırılıyor
+ * ve yalnızca Cloudflare oturumu sınanıyor.
  */
 export async function gonder(bildir, { kuru = false } = {}) {
-	const hazirlaKomutu = `rm -rf ${HEDEF_KOK}/${YAYIN_DIZINI}.yeni && mkdir -p ${HEDEF_KOK}/${YAYIN_DIZINI}.yeni`;
+	if (kuru) {
+		bildir('uyari', 'KURU ÇALIŞTIRMA — yayında hiçbir şey değişmeyecek.');
+		bildir('komut', `wrangler pages deploy cikti --project-name ${PAGES_PROJESI} --branch main`);
+		bildir('adim', 'Cloudflare oturumu sınanıyor…');
+		const oturum = await komutCalistir(process.execPath, [wranglerYolu(kokuIste()), 'whoami'], derlemeDizini(), bildir);
+		if (oturum.kod !== 0 || /not authenticated/i.test(oturum.cikti)) {
+			return { basarili: false, hata: hataMetni(new Error(oturum.cikti)) };
+		}
+		bildir('bitti', 'Kuru çalıştırma tamam: Cloudflare oturumu açık.');
+		return { basarili: true };
+	}
+
+	bildir('adim', "Dosyalar Cloudflare Pages'e yükleniyor…");
+	const yukleme = await komutCalistir(process.execPath, yuklemeArgumanlari(), derlemeDizini(), bildir);
+	if (yukleme.kod !== 0) {
+		return {
+			basarili: false,
+			hata:
+				`Yükleme ${yukleme.kod} koduyla durdu. Yayındaki site değişmedi.\n\n` +
+				hataMetni(new Error(yukleme.cikti.trim() || 'wrangler hiçbir çıktı vermedi.')),
+		};
+	}
 
 	/*
-	  `cikti/.` sondaki nokta bilinçli: scp'ye "dizinin KENDİSİNİ değil
-	  İÇİNDEKİLERİ kopyala" demenin yolu bu.
-
-	  Yol göreli, çünkü komut derleme dizininde çalışıyor. Mutlak Windows yolu
-	  verilseydi scp `C:` önekini uzak makine adı sanabilirdi.
+	  Site çıktı; şimdi depo. Sıra bu: gönderilen commit, gerçekten yayında olan
+	  sürümü gösteriyor.
 	*/
-	const scpArgumanlari = [
-		...sshBayraklari(),
-		'-q',
-		'-r',
-		'cikti/.',
-		`${SUNUCU}:${HEDEF_KOK}/${YAYIN_DIZINI}.yeni/`,
-	];
+	await depoyuGonder(bildir);
 
-	if (kuru) {
-		bildir('uyari', 'KURU ÇALIŞTIRMA — sunucuda hiçbir şey değişmeyecek.');
-		bildir('komut', hazirlaKomutu);
-		bildir(
-			'komut',
-			YEREL_YAYIN
-				? `cp -r cikti/. ${HEDEF_KOK}/${YAYIN_DIZINI}.yeni/`
-				: `scp -r cikti/. ${SUNUCU}:${HEDEF_KOK}/${YAYIN_DIZINI}.yeni/`,
-		);
-		bildir('komut', `ssh … "${devreyeAlmaKomutu()}"`);
-		bildir('adim', 'Sunucuya salt okunur bir yoklama yapılıyor…');
-		try {
-			const cikti = await ssh(`ls -ld ${HEDEF_KOK}/${YAYIN_DIZINI}*`, { zamanAsimiMs: 30_000 });
-			bildir('bilgi', cikti.trim());
-			bildir('bitti', 'Kuru çalıştırma tamam: bağlantı çalışıyor, hedef dizin yerinde.');
-			return { basarili: true };
-		} catch (hata) {
-			return { basarili: false, hata: hataMetni(hata) };
-		}
-	}
-
-	try {
-		bildir('adim', 'Sunucuda geçici dizin hazırlanıyor…');
-		await ssh(hazirlaKomutu, { zamanAsimiMs: 60_000 });
-
-		bildir('adim', 'Dosyalar kopyalanıyor (adımların en uzunu)…');
-		/*
-		  Yerelde `cp`, uzakta `scp`. İkisi de "dizinin içindekileri" kopyalıyor:
-		  `cikti/.` sondaki nokta bunun için.
-		*/
-		const kopyalama = YEREL_YAYIN
-			? await komutCalistir(
-					'cp',
-					['-r', 'cikti/.', `${HEDEF_KOK}/${YAYIN_DIZINI}.yeni/`],
-					derlemeDizini(),
-					bildir,
-				)
-			: await komutCalistir('scp', scpArgumanlari, derlemeDizini(), bildir);
-		if (kopyalama.kod !== 0) {
-			// Yarım kalan kopya sunucuda durmasın. Yayın dizinine henüz
-			// dokunulmadığı için site eski hâlinde; temizlenecek tek şey `.yeni`.
-			await ssh(`rm -rf ${HEDEF_KOK}/${YAYIN_DIZINI}.yeni`, { zamanAsimiMs: 60_000 }).catch(
-				() => {},
-			);
-			return {
-				basarili: false,
-				hata:
-					`Kopyalama ${kopyalama.kod} koduyla durdu. Yayın dizinine DOKUNULMADI, site eski hâlinde.\n\n` +
-					(kopyalama.cikti.trim() || 'scp hiçbir çıktı vermedi.'),
-			};
-		}
-
-		bildir('adim', 'Devreye alınıyor…');
-		const cikti = await ssh(devreyeAlmaKomutu(), { zamanAsimiMs: 120_000 });
-		if (!cikti.includes('yayin-tamam')) {
-			return {
-				basarili: false,
-				hata: `Devreye alma beklenen onayı vermedi. Sunucunun yanıtı:\n${cikti.trim()}`,
-			};
-		}
-
-		/*
-		  Site çıktı; şimdi depo. Sıra bu: gönderilen commit, sunucuda gerçekten
-		  duran sürümü gösteriyor.
-		*/
-		await depoyuGonder(bildir);
-
-		bildir('bitti', 'Yayınlandı. Önceki sürüm `web-sitem.eski` olarak duruyor.');
-		return { basarili: true };
-	} catch (hata) {
-		return { basarili: false, hata: hataMetni(hata) };
-	}
+	bildir('bitti', 'Yayınlandı. Önceki sürümler Cloudflare panelinde duruyor.');
+	return { basarili: true };
 }
 
 /* ------------------------------------------------------------------ */
@@ -558,57 +479,15 @@ export async function gonder(bildir, { kuru = false } = {}) {
 /* ------------------------------------------------------------------ */
 
 /*
-  Geri alma silmek yerine TAKAS ediyor: yayından kalkan sürüm `.eski` olarak
-  duruyor. Böylece geri almanın kendisi de geri alınabiliyor — yanlış düğmeye
-  basmak tek yönlü bir yol olmamalı.
+  Wrangler'da Pages için geri alma komutu yok; Cloudflare panelinde tek tık:
+  Deployments > önceki sürüm > Rollback. Uydurma bir düğme yerine doğru yeri
+  gösteriyoruz.
 */
-function geriAlmaKomutu() {
-	return [
-		'set -e',
-		`cd ${HEDEF_KOK}`,
-		`if [ ! -d ${YAYIN_DIZINI}.eski ]; then echo eski-surum-yok; exit 1; fi`,
-		`rm -rf ${YAYIN_DIZINI}.takas`,
-		`mv ${YAYIN_DIZINI} ${YAYIN_DIZINI}.takas`,
-		`mv ${YAYIN_DIZINI}.eski ${YAYIN_DIZINI}`,
-		`mv ${YAYIN_DIZINI}.takas ${YAYIN_DIZINI}.eski`,
-		'echo geri-alma-tamam',
-	].join('\n');
-}
-
-export async function geriAl(bildir, { kuru = false } = {}) {
-	if (kuru) {
-		bildir('uyari', 'KURU ÇALIŞTIRMA — sunucuda hiçbir şey değişmeyecek.');
-		bildir('komut', `ssh … "${geriAlmaKomutu()}"`);
-		bildir('bitti', 'Kuru çalıştırma tamam.');
-		return { basarili: true };
-	}
-
-	try {
-		bildir('adim', 'Önceki sürüm geri yükleniyor…');
-		const cikti = await ssh(geriAlmaKomutu(), { zamanAsimiMs: 120_000 });
-		if (cikti.includes('eski-surum-yok')) {
-			return { basarili: false, hata: 'Sunucuda geri alınacak bir sürüm yok.' };
-		}
-		if (!cikti.includes('geri-alma-tamam')) {
-			return {
-				basarili: false,
-				hata: `Geri alma beklenen onayı vermedi. Sunucunun yanıtı:\n${cikti.trim()}`,
-			};
-		}
-		bildir('bitti', 'Önceki sürüm yayında. Az önce kaldırılan sürüm `web-sitem.eski` oldu.');
-		return { basarili: true };
-	} catch (hata) {
-		/*
-		  `set -e` yüzünden sıfırdan farklı çıkış kodu hata olarak geliyor;
-		  "eski sürüm yok" durumu da buraya düşüyor. Metin orada da anlaşılır
-		  olsun diye ayrıca sınanıyor.
-		*/
-		const metin = String(hata?.stdout ?? '') + String(hata?.stderr ?? '');
-		if (metin.includes('eski-surum-yok')) {
-			return { basarili: false, hata: 'Sunucuda geri alınacak bir sürüm yok.' };
-		}
-		return { basarili: false, hata: hataMetni(hata) };
-	}
+export async function geriAl() {
+	return {
+		basarili: false,
+		hata: `Geri alma Cloudflare panelinden yapılıyor: ${CLOUDFLARE_PANELI} > Deployments > önceki sürüm > Rollback.`,
+	};
 }
 
 /* ------------------------------------------------------------------ */

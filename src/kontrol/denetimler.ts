@@ -564,28 +564,7 @@ export async function denetle(): Promise<Rapor> {
 				if (!ham.startsWith('/')) continue;
 				const adres = rotaDuzle(ham.split('#')[0].split('?')[0]);
 
-				/*
-				  Site bir alt dizinde yayınlanıyor. İç bağlantı önekle yazılmazsa
-				  yayında alan adının kökünü gösteriyor ve 404 veriyor. Ama panelde
-				  `base` kaldırıldığı için bunu ÇALIŞTIRARAK doğrulayamıyoruz —
-				  o yüzden "gözden geçir" kovasına giriyor.
-				*/
-				if (!adres.startsWith('/web-sitem')) {
-					bulgular.push({
-						onem: 'gozdenGecir',
-						denetim: 'İç bağlantı',
-						dosya,
-						satir: dosyaSatiri(yazi.id, satir.no),
-						sorun: `Bağlantı site önekiyle başlamıyor: ${ham}`,
-						neden:
-							'Site "/web-sitem" altında yayınlanıyor. Öneksiz bir iç bağlantı ' +
-							'alan adının köküne gidiyor ve yayında 404 veriyor.',
-						cozum: `Adresin başına "/web-sitem" ekleyin: "/web-sitem${adres}".`,
-					});
-					continue;
-				}
-
-				const ic = rotaDuzle(adres.slice('/web-sitem'.length) || '/');
+				const ic = adres;
 
 				// Uzantılı adresler sayfa değil, public/ altındaki bir dosya.
 				const sonParca = ic.split('/').pop() ?? '';

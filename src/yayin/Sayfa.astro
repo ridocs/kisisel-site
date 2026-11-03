@@ -1,6 +1,6 @@
 ---
 import { durumGetir, neKadarOnce } from './durum';
-import { CANLI_ADRES } from './sunucu.mjs';
+import { CANLI_ADRES, CLOUDFLARE_PANELI } from './sunucu.mjs';
 import Kabuk from '../panel/Kabuk.astro';
 
 /*
@@ -69,24 +69,22 @@ if (!durum.canli.ulasildi) {
 }
 
 /* 2 — En son ne zaman yayınlandı */
-if (!durum.sunucu.ulasildi) {
+if (!durum.yayin.ulasildi) {
 	satirlar.push({
 		baslik: 'Son yayın',
-		metin: `Sunucuya bağlanılamadı, bu yüzden bilinmiyor. ${durum.sunucu.hata ?? ''}`.trim(),
+		metin: `Cloudflare'e bağlanılamadı, bu yüzden bilinmiyor. ${durum.yayin.hata ?? ''}`.trim(),
 		ton: 'dikkat',
 	});
-} else if (!durum.sunucu.sonYayin) {
+} else if (!durum.yayin.sonYayin) {
 	satirlar.push({
 		baslik: 'Son yayın',
-		metin: 'Yayın dizininde `index.html` bulunamadı. Site hiç yayınlanmamış olabilir.',
+		metin: 'Cloudflare Pages projesinde yayın yok. Site hiç yayınlanmamış olabilir.',
 		ton: 'agir',
 	});
 } else {
 	satirlar.push({
 		baslik: 'Son yayın',
-		metin: `${tarihBicimi.format(durum.sunucu.sonYayin)} · ${neKadarOnce(
-			durum.sunucu.sonYayin,
-		)} · sunucuda ${durum.sunucu.dosyaSayisi} dosya.`,
+		metin: `${durum.yayin.sonYayin} · Cloudflare'de ${durum.yayin.surumSayisi} sürüm duruyor.`,
 		ton: 'sakin',
 	});
 }
@@ -162,17 +160,12 @@ satirlar.push({
 });
 
 /* 6 — Geri alınabilir sürüm */
-const geriAlinabilir = durum.sunucu.ulasildi === true && durum.sunucu.eskiSurumVar === true;
 satirlar.push({
 	baslik: 'Geri alınabilir sürüm',
-	metin: !durum.sunucu.ulasildi
-		? 'Sunucuya bağlanılamadığı için bilinmiyor.'
-		: geriAlinabilir
-			? `Var${
-					durum.sunucu.eskiSurumTarihi
-						? ` · ${tarihBicimi.format(durum.sunucu.eskiSurumTarihi)}`
-						: ''
-				}. Yayın bozulursa tek tıkla dönülebilir.`
+	metin: !durum.yayin.ulasildi
+		? "Cloudflare'e bağlanılamadığı için bilinmiyor."
+		: durum.yayin.surumSayisi > 1
+			? 'Var. Yayın bozulursa Cloudflare panelinden dönülebilir.'
 			: 'Yok. İlk yayından sonra oluşacak.',
 	ton: 'sakin',
 });
@@ -289,12 +282,12 @@ const saltOkur = process.env.PANEL_SALT_OKUR === '1';
 				</h3>
 				<div id="onizleme-ozet" class="p-not"></div>
 				<p class="p-not p-not--kisik">
-					Şu anki sürüm sunucuda <code class="p-kod">web-sitem.eski</code> olarak
-					saklanacak; yanlış giderse "Geri al" ile dönülebilir.
+					Şu anki sürüm Cloudflare'de saklanacak; yanlış giderse Cloudflare
+					panelinden geri dönülebilir.
 				</p>
 				<div class="p-dugme-sirasi p-kart-govde">
 					<button id="dugme-gonder" type="button" class="p-dugme p-dugme--uyari">
-						Sunucuya yayınla
+						Yayınla
 					</button>
 					<button id="dugme-vazgec" type="button" class="p-dugme"> Vazgeç </button>
 				</div>
@@ -313,32 +306,10 @@ const saltOkur = process.env.PANEL_SALT_OKUR === '1';
 		<section class="p-kart">
 			<h2 class="p-kart-baslik">Geri al</h2>
 			<p class="p-not">
-				{
-					!durum.sunucu.ulasildi
-						? 'Sunucuya bağlanılamadığı için geri alınacak bir sürüm olup olmadığı bilinmiyor; düğme bu yüzden kapalı.'
-						: geriAlinabilir
-							? 'Sunucudaki bir önceki sürümü yayına alır. Şu anki sürüm silinmez, yer değiştirir — geri almanın kendisi de geri alınabilir.'
-							: 'Şu anda geri alınacak bir sürüm yok. İlk yayından sonra bu düğme çalışır.'
-				}
+				Önceki sürümler Cloudflare'de duruyor. Geri alma tek tıkla
+				<a href={CLOUDFLARE_PANELI}>Cloudflare panelinden</a>
+				yapılıyor: Deployments, önceki sürüm, Rollback.
 			</p>
-			<div class="p-kart-govde">
-				<button id="dugme-geri-al" type="button" disabled={!geriAlinabilir} class="p-dugme">
-					Önceki sürüme dön
-				</button>
-			</div>
-			<div id="geri-al-onay" hidden class="p-uyari p-kart-govde">
-				<p class="p-durum-metin">
-					Yayındaki sürüm kaldırılıp bir öncekiyle değiştirilecek. Emin misiniz?
-				</p>
-				<div class="p-dugme-sirasi p-kart-govde">
-					<button id="dugme-geri-al-onayla" type="button" class="p-dugme p-dugme--uyari">
-						Evet, geri al
-					</button>
-					<button id="dugme-geri-al-vazgec" type="button" class="p-dugme">
-						Vazgeç
-					</button>
-				</div>
-			</div>
 		</section>
 		</>
 		)}
@@ -378,13 +349,9 @@ const saltOkur = process.env.PANEL_SALT_OKUR === '1';
 			const dugmeDerle = document.getElementById('dugme-derle');
 			const dugmeGonder = document.getElementById('dugme-gonder');
 			const dugmeVazgec = document.getElementById('dugme-vazgec');
-			const dugmeGeriAl = document.getElementById('dugme-geri-al');
-			const dugmeGeriAlOnayla = document.getElementById('dugme-geri-al-onayla');
-			const dugmeGeriAlVazgec = document.getElementById('dugme-geri-al-vazgec');
 			const kutuKuru = document.getElementById('kutu-kuru');
 			const onizleme = document.getElementById('onizleme');
 			const onizlemeOzet = document.getElementById('onizleme-ozet');
-			const geriAlOnay = document.getElementById('geri-al-onay');
 			const kayit = document.getElementById('kayit');
 
 			/*
@@ -419,19 +386,10 @@ const saltOkur = process.env.PANEL_SALT_OKUR === '1';
 				kayit.scrollTop = kayit.scrollHeight;
 			}
 
-			/*
-			  "Önceki sürüme dön" sunucuda geri alınacak sürüm yoksa baştan
-			  kapalı geliyor. Kilidi açarken bu unutulursa düğme işlem bitince
-			  kendiliğinden tıklanabilir hâle geliyordu — basan da "geri alınacak
-			  sürüm yok" hatasıyla karşılaşıyordu. Başlangıç hâli saklanıyor.
-			*/
-			const geriAlBastanKapali = dugmeGeriAl.disabled;
-
 			function dugmeleriKilitle(kilitli) {
-				for (const d of [dugmeDerle, dugmeGonder, dugmeGeriAlOnayla]) {
+				for (const d of [dugmeDerle, dugmeGonder]) {
 					if (d) d.disabled = kilitli;
 				}
-				dugmeGeriAl.disabled = kilitli || geriAlBastanKapali;
 			}
 
 			/*
@@ -551,22 +509,6 @@ const saltOkur = process.env.PANEL_SALT_OKUR === '1';
 			dugmeVazgec.addEventListener('click', () => {
 				onizleme.hidden = true;
 				satirYaz('uyari', 'Vazgeçildi; sunucuya dokunulmadı.');
-			});
-
-			dugmeGeriAl.addEventListener('click', () => {
-				geriAlOnay.hidden = false;
-			});
-
-			dugmeGeriAlVazgec.addEventListener('click', () => {
-				geriAlOnay.hidden = true;
-			});
-
-			dugmeGeriAlOnayla.addEventListener('click', async () => {
-				const kuru = kutuKuru.checked;
-				geriAlOnay.hidden = true;
-				kayitTemizle();
-				const sonuc = await islemCalistir({ islem: 'geri-al', kuru: kuru });
-				if (sonuc && !kuru) setTimeout(() => location.reload(), 2500);
 			});
 		})();
 	</script>

@@ -1,83 +1,44 @@
-# Dağıtım — alt dizin altında yayın
+# Dağıtım
 
-Site statik. `npm run build` sonrası `dist/` klasörünün **içeriği** sunucuda
-yayın yoluna denk gelen dizine kopyalanır — `dist` klasörünün kendisi değil,
-içindekiler.
+Site Cloudflare Pages'te, proje adı `mustafaeybek`, adres `https://mustafaeybek.com/`.
+Sunucu yok; yayın doğrudan yükleme.
 
-Yayın yolu `astro.config.mjs` içinde tanımlı:
+## Yayın
 
-```js
-site: 'https://alan-adi.example',
-base: '/alt-dizin',
-```
+Panelden: Durum sayfası > Derle > Yayınla.
 
-Bu iki satır değiştiğinde elle yazılmış bağlantılar da kendiliğinden uyum
-sağlar: bağlantı üreten her yer `src/i18n/ceviriler.ts` içindeki `taban`
-sabitinden geçiyor. Alan adının kökünde yayınlanacaksa `base` satırı
-tamamen kaldırılır.
-
-Astro'nun `base` ayarı yalnızca kendi ürettiği varlık yollarını (`_astro/…`)
-önekler. Elle yazılan bağlantılar öneksiz kalır ve 404 verir; bu yüzden
-öneki uygulamak `taban` sabitinin işi.
-
-## 1) Derle
+Elle:
 
 ```bash
-npm run build
+npx wrangler login        # bir kez, tarayıcıda izin verilir
+npm run yayinla
 ```
 
-## 2) Sunucuya kopyala
+`yayinla` önce `astro build` çalıştırır, sonra `dist/` klasörünü üretim dalına yükler.
+Yükleme atomiktir: tamamlanmadan alan adı yeni sürüme geçmez, yarıda kalırsa site değişmez.
+
+## Geri alma
+
+Cloudflare paneli > Workers & Pages > mustafaeybek > Deployments > önceki sürüm > Rollback.
+
+## Proje yeniden kurulursa
 
 ```bash
-rsync -avz --delete dist/ <kullanıcı>@<sunucu>:<hedef-dizin>/
+npx wrangler pages project create mustafaeybek --production-branch=main --force
 ```
 
-`rsync` yoksa `scp -r dist/* <kullanıcı>@<sunucu>:<hedef-dizin>/` da olur;
-`--delete` karşılığı olmadığı için silinen dosyalar sunucuda kalır.
+`--force` burada şart. Wrangler 4.156 olmayan bir projeyi Workers'a devretmeye kalkıyor,
+siteye `astro add cloudflare` kurmayı deniyor ve `package.json` dosyasını bozuyor. Site
+statik, adaptör gerekmiyor. Proje varken `pages deploy` doğrudan çalışır, `--force` istemez.
 
-## 3) Web sunucusu ayarı (nginx)
+## Alan adı
 
-Alan adının kökünde başka bir uygulama çalışıyorsa yalnızca ilgili yol
-statik dosyalara yönlendirilir:
+- `mustafaeybek.com`: Pages projesinin Custom domains sekmesinden bağlı, kök kayıt
+  `CNAME @ -> mustafaeybek.pages.dev` (vekilli).
+- `www.mustafaeybek.com`: `CNAME www -> mustafaeybek.com` (vekilli) ve bölgedeki 301
+  yönlendirme kuralı (`https://www.*` -> `https://${1}`). Ayrı bir Pages bağı gerekmiyor.
 
-```nginx
-location /alt-dizin/ {
-    alias <hedef-dizin>/;
-    index index.html;
-    # Astro dizin tabanlı yollar üretiyor: /alt-dizin/blog/ -> blog/index.html
-    try_files $uri $uri/ $uri/index.html =404;
-}
+## Yanıt başlıkları
 
-# Sondaki eğik çizgi olmadan gelen istekler
-location = /alt-dizin {
-    return 301 /alt-dizin/;
-}
-```
-
-Hash'li varlıklar içerik değiştiğinde ad değiştirir; uzun süre önbelleğe
-alınabilirler:
-
-```nginx
-location /alt-dizin/_astro/ {
-    alias <hedef-dizin>/_astro/;
-    expires 1y;
-    add_header Cache-Control "public, immutable";
-}
-```
-
-Ardından: `nginx -t && systemctl reload nginx`
-
-## 4) CDN önbelleği
-
-Alan adı bir CDN arkasındaysa (ör. Cloudflare) ilk yayından önceki 404 yanıtı
-önbellekte kalabilir; ilgili yol için önbellek temizlenmeli.
-
-## 5) Doğrulama
-
-```bash
-curl -s -o /dev/null -w "%{http_code}\n" https://alan-adi.example/alt-dizin/
-curl -s https://alan-adi.example/alt-dizin/ | grep -o '/alt-dizin/_astro/[^"]*\.css'
-```
-
-Beklenen: `200` ve bir CSS yolu. O CSS yolunun kendisi de `200` dönmeli —
-dönmüyorsa `alias` yolu yanlıştır.
+`public/_headers`: güvenlik başlıkları, `_astro/` önbelleği ve geçici `pages.dev`
+adresinin arama motorlarına kapatılması.

@@ -1,10 +1,4 @@
-import { execFile } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { homedir } from 'node:os';
-import { join } from 'node:path';
-import { promisify } from 'node:util';
-
-const calistir = promisify(execFile);
 
 /*
   ZİYARETÇİ İSTATİSTİĞİ — nginx erişim kayıtlarından
@@ -18,12 +12,10 @@ const calistir = promisify(execFile);
 */
 
 /** Sitenin yayınlandığı yol; kayıtlarda yalnızca bu önekli satırlar bizim. */
-const SITE_YOLU = '/web-sitem';
+const SITE_YOLU = '';
 
 /** Kaç günlük pencere gösteriliyor. Sunucudaki arşiv de 14 gün tutuyor. */
 export const GUN_SAYISI = 14;
-
-const SUNUCU = 'root@45.141.151.156';
 
 /*
   Kayıt satırının biçimi nginx yapılandırmasında şöyle tanımlı:
@@ -187,73 +179,6 @@ function ziyaretciKimligi(ip: string, tarayiciKimligi: string): string {
 }
 
 /*
-  Sunucudan ham kayıtları çeker.
-
-  Süzme uzak uçta yapılıyor: 14 günlük arşivin tamamı ~2 MB, `/web-sitem`
-  satırları ise ~100 KB. Ağdan geçen veriyi yirmide birine indiriyor.
-
-  `~` kabuk genişletmesi burada yok — komut kabuksuz çalıştırılıyor, ev dizini
-  elle kuruluyor.
-*/
-/*
-  Kayıtları toplayan kabuk komutu. İki yerde de aynı: uzaktan SSH ile, yerelde
-  doğrudan. Tek yerde yazılı olması, birinin güncellenip diğerinin unutulmasını
-  engelliyor.
-*/
-const KAYIT_KOMUTU =
-	'{ cat /var/log/nginx/access.log /var/log/nginx/access.log.1; ' +
-	'zcat -f /var/log/nginx/access.log.*.gz; } 2>/dev/null | ' +
-	`grep -F '${SITE_YOLU}'`;
-
-/*
-  PANEL SUNUCUNUN KENDİSİNDE Mİ ÇALIŞIYOR?
-
-  Panelin internete açık kopyası sunucunun üzerinde çalışıyor ve kayıtlar orada
-  zaten yerel dosya. SSH'a ihtiyaç yok — ve OLMAMALI: SSH anahtarı sitenin
-  dağıtım anahtarı, internete bakan bir makinede durmamalı. Anahtar olmayınca
-  o makine ele geçse bile sunucuya yazma yetkisi kazanılmıyor.
-
-  Masaüstü panelinde bu değişken tanımsız; oradan kayıtlara yalnızca SSH ile
-  ulaşılabiliyor, davranış eskisi gibi.
-*/
-const YEREL_KAYIT = process.env.PANEL_YEREL_KAYIT === '1';
-
-async function sunucudanCek(): Promise<string> {
-	if (YEREL_KAYIT) {
-		const { stdout } = await calistir('sh', ['-c', KAYIT_KOMUTU], {
-			timeout: 30_000,
-			maxBuffer: 32 * 1024 * 1024,
-			encoding: 'utf8',
-		});
-		return stdout;
-	}
-
-	const anahtar = join(homedir(), '.ssh', 'twinshare_server');
-	const uzakKomut = KAYIT_KOMUTU;
-
-	const { stdout } = await calistir(
-		'ssh',
-		[
-			'-i',
-			anahtar,
-			// Parola sorulmasın: anahtar çalışmıyorsa komut beklemeden hata versin,
-			// yoksa sayfa sonsuza kadar yüklenir görünürdü.
-			'-o',
-			'BatchMode=yes',
-			'-o',
-			'ConnectTimeout=10',
-			'-o',
-			'StrictHostKeyChecking=accept-new',
-			SUNUCU,
-			uzakKomut,
-		],
-		{ timeout: 30_000, maxBuffer: 32 * 1024 * 1024, encoding: 'utf8' },
-	);
-
-	return stdout;
-}
-
-/*
   "15/Sep/2026:00:07:05 +0300" → { tarih: "2026-09-15", saat: 0 }
 
   Saat, kayıttaki yerel saatten olduğu gibi alınıyor; UTC'ye çevrilmiyor.
@@ -368,7 +293,7 @@ function kaynakAdi(referer: string): string {
 		const { hostname } = new URL(referer);
 		// Sitenin kendi sayfaları arası geçişler "nereden geldi" sorusunun
 		// cevabı değil; tek satırda toplanıp dışarıdan gelenleri gizlemesin.
-		if (hostname.endsWith('twinshareapp.com')) return 'Site içi gezinme';
+		if (hostname.endsWith('mustafaeybek.com')) return 'Site içi gezinme';
 		return hostname;
 	} catch {
 		return referer;
@@ -615,43 +540,13 @@ export function ozetle(hamKayit: string): Ozet {
 /*
   Sayfanın çağırdığı tek giriş noktası.
 
-  Hata fırlatmıyor: sunucuya ulaşılamaması olağan bir durum (uçakta, otelde,
-  anahtarsız bir makinede). Sayfa böyle bir günde çökmek yerine ne olduğunu
-  anlatmalı, bu yüzden hata bir değer olarak dönüyor.
+  Site Cloudflare Pages'te; okunacak bir nginx kaydı yok. Sitede sayaç betiği
+  de olmayacağı için ziyaretçi verisi Cloudflare'in alan adı panelinde duruyor
+  (Analytics > Traffic). `ozetle` bir erişim kaydı kaynağı bağlanırsa diye duruyor.
 */
 export async function ozetGetir(): Promise<Sonuc> {
-	try {
-		const ham = await sunucudanCek();
-		return { basarili: true, ozet: ozetle(ham) };
-	} catch (hata) {
-		return { basarili: false, hata: hataMetni(hata) };
-	}
-}
-
-function hataMetni(hata: unknown): string {
-	const metin = hata instanceof Error ? `${hata.message}\n${String((hata as { stderr?: string }).stderr ?? '')}` : String(hata);
-
-	if (/ENOENT/.test(metin)) {
-		return 'Bu makinede `ssh` komutu bulunamadı. Git for Windows ya da OpenSSH istemcisi kurulu olmalı.';
-	}
-	/*
-	  Anahtar dosyası yokken ssh önce "identity file … not accessible" uyarısı
-	  veriyor, ARDINDAN "Permission denied (publickey)" diyor. İkisi aynı
-	  çıktıda olduğu için eksik dosya önce sınanıyor; ters sırada her eksik
-	  anahtar "sunucu reddetti" diye görünür ve yanlış yerde aranırdı.
-	*/
-	if (/identity file .* not accessible/i.test(metin)) {
-		return 'SSH anahtarı bulunamadı: `~/.ssh/twinshare_server` yok.';
-	}
-	if (/Permission denied|publickey/i.test(metin)) {
-		return 'Sunucu anahtarı kabul etmedi. `~/.ssh/twinshare_server` dosyası yerinde mi ve sunucuda yetkili mi?';
-	}
-	if (/timed out|ETIMEDOUT|Connection timed out/i.test(metin)) {
-		return 'Sunucuya bağlanılamadı: bağlantı zaman aşımına uğradı. İnternet bağlantısını kontrol edin.';
-	}
-	if (/Could not resolve|Name or service not known|Temporary failure/i.test(metin)) {
-		return 'Sunucu adresi çözülemedi. Ağ bağlantısı yok gibi görünüyor.';
-	}
-
-	return `Kayıtlar çekilemedi. Sunucunun verdiği yanıt:\n${metin.trim()}`;
+	return {
+		basarili: false,
+		hata: "Site Cloudflare'e taşındı, sunucu kaydı artık tutulmuyor. Ziyaretçi verisi Cloudflare panelinde: mustafaeybek.com > Analytics > Traffic.",
+	};
 }

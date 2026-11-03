@@ -8,6 +8,7 @@
 	"scripts": {
 		"dev": "astro dev",
 		"build": "astro build",
+		"yayinla": "astro build && wrangler pages deploy dist --project-name mustafaeybek --branch main",
 		"preview": "astro preview",
 		"astro": "astro",
 		"yazi": "node masaustu/sunucu-nobetcisi.mjs",
@@ -53,6 +54,7 @@
 		"electron": "^44.3.0",
 		"qrcode": "^1.5.4",
 		"sharp": "^0.35.4",
-		"unplugin-icons": "^24.0.0"
+		"unplugin-icons": "^24.0.0",
+		"wrangler": "^4.156.2"
 	}
 }
