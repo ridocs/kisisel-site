@@ -115,12 +115,34 @@ export async function yayinDurumu() {
 		return {
 			ulasildi: true,
 			surumSayisi: liste.length,
-			sonYayin: son ? String(son.Status ?? son.status ?? '') : null,
-			adres: son ? String(son.Deployment ?? son.url ?? '') : null,
+			sonYayin: son ? yayinZamani(String(son.Status ?? '')) : null,
+			adres: son ? String(son.Deployment ?? '') : null,
 		};
 	} catch (hata) {
 		return { ulasildi: false, hata: hataMetni(hata) };
 	}
+}
+
+const ZAMAN_BIRIMLERI = {
+	second: 'saniye',
+	minute: 'dakika',
+	hour: 'saat',
+	day: 'gün',
+	week: 'hafta',
+	month: 'ay',
+	year: 'yıl',
+};
+
+/*
+  Wrangler bu listede `Status` alanına durum değil göreli zaman yazıyor
+  ("30 seconds ago"). Bilinen kalıp Türkçeye çevriliyor; "Failure" gibi başka
+  bir sözcük gelirse olduğu gibi gösteriliyor ki gizlenmesin.
+*/
+export function yayinZamani(metin) {
+	const eslesme = /^(\d+|an?)\s+(second|minute|hour|day|week|month|year)s?\s+ago$/i.exec(metin.trim());
+	if (!eslesme) return metin;
+	const adet = /^\d/.test(eslesme[1]) ? eslesme[1] : '1';
+	return `${adet} ${ZAMAN_BIRIMLERI[eslesme[2].toLowerCase()]} önce`;
 }
 
 /*
